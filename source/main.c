@@ -21,7 +21,7 @@
 #include "pid.h"
 #include "odom.h"
 #include "ultrasonic.h"
-//#include "infrared.h"
+#include "infrared.h"
 #include "cal.h"
 
 static void WriteValue(uint32 count)
@@ -52,7 +52,7 @@ int main()
     Pid_Init(I2c_LeftReadCmdVelocity, I2c_RightReadCmdVelocity);
     Odom_Init();
     Ultrasonic_Init();
-    //Infrared_Init();
+    Infrared_Init();
 
     Control_Start();
     Time_Start();
@@ -62,7 +62,7 @@ int main()
     Pid_Start();
     Odom_Start();
     Ultrasonic_Start();
-    //Infrared_Start();
+    Infrared_Start();
     
     UART_Debug_PutString("Hello, my name is ArloSoc!  I am the microcontroller for Arlobot.\r\n");
     
