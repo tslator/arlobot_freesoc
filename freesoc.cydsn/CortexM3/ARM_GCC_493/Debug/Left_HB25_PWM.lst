@@ -1,0 +1,2072 @@
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 1
+
+
+   1              		.syntax unified
+   2              		.cpu cortex-m3
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 1
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.thumb
+  14              		.file	"Left_HB25_PWM.c"
+  15              		.text
+  16              	.Ltext0:
+  17              		.cfi_sections	.debug_frame
+  18              		.section	.text.Left_HB25_PWM_Enable,"ax",%progbits
+  19              		.align	2
+  20              		.global	Left_HB25_PWM_Enable
+  21              		.thumb
+  22              		.thumb_func
+  23              		.type	Left_HB25_PWM_Enable, %function
+  24              	Left_HB25_PWM_Enable:
+  25              	.LFB2:
+  26              		.file 1 ".\\Generated_Source\\PSoC5\\Left_HB25_PWM.c"
+   1:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** /*******************************************************************************
+   2:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * File Name: Left_HB25_PWM.c
+   3:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Version 3.30
+   4:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+   5:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Description:
+   6:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  The PWM User Module consist of an 8 or 16-bit counter with two 8 or 16-bit
+   7:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  comparitors. Each instance of this user module is capable of generating
+   8:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  two PWM outputs with the same period. The pulse width is selectable between
+   9:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  1 and 255/65535. The period is selectable between 2 and 255/65536 clocks.
+  10:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  The compare value output may be configured to be active when the present
+  11:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  counter is less than or less than/equal to the compare value.
+  12:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  A terminal count output is also provided. It generates a pulse one clock
+  13:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  width wide when the counter is equal to zero.
+  14:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+  15:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Note:
+  16:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+  17:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *******************************************************************************
+  18:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Copyright 2008-2014, Cypress Semiconductor Corporation.  All rights reserved.
+  19:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * You may use this file only in accordance with the license, terms, conditions,
+  20:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * disclaimers, and limitations in the end user license agreement accompanying
+  21:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * the software package with which this file was provided.
+  22:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** ********************************************************************************/
+  23:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+  24:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #include "Left_HB25_PWM.h"
+  25:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+  26:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** /* Error message for removed <resource> through optimization */
+  27:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #ifdef Left_HB25_PWM_PWMUDB_genblk1_ctrlreg__REMOVED
+  28:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #error PWM_v3_30 detected with a constant 0 for the enable or \
+  29:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****          constant 1 for reset. This will prevent the component from operating.
+  30:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #endif /* Left_HB25_PWM_PWMUDB_genblk1_ctrlreg__REMOVED */
+  31:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 2
+
+
+  32:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** uint8 Left_HB25_PWM_initVar = 0u;
+  33:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+  34:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+  35:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** /*******************************************************************************
+  36:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Function Name: Left_HB25_PWM_Start
+  37:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** ********************************************************************************
+  38:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+  39:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Summary:
+  40:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  The start function initializes the pwm with the default values, the
+  41:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  enables the counter to begin counting.  It does not enable interrupts,
+  42:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  the EnableInt command should be called if interrupt generation is required.
+  43:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+  44:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Parameters:
+  45:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  None
+  46:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+  47:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Return:
+  48:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  None
+  49:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+  50:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Global variables:
+  51:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  Left_HB25_PWM_initVar: Is modified when this function is called for the
+  52:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *   first time. Is used to ensure that initialization happens only once.
+  53:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+  54:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *******************************************************************************/
+  55:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** void Left_HB25_PWM_Start(void) 
+  56:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** {
+  57:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /* If not Initialized then initialize all required hardware and software */
+  58:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     if(Left_HB25_PWM_initVar == 0u)
+  59:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     {
+  60:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         Left_HB25_PWM_Init();
+  61:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         Left_HB25_PWM_initVar = 1u;
+  62:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     }
+  63:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     Left_HB25_PWM_Enable();
+  64:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+  65:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** }
+  66:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+  67:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+  68:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** /*******************************************************************************
+  69:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Function Name: Left_HB25_PWM_Init
+  70:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** ********************************************************************************
+  71:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+  72:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Summary:
+  73:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  Initialize component's parameters to the parameters set by user in the
+  74:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  customizer of the component placed onto schematic. Usually called in
+  75:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  Left_HB25_PWM_Start().
+  76:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+  77:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Parameters:
+  78:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  None
+  79:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+  80:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Return:
+  81:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  None
+  82:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+  83:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *******************************************************************************/
+  84:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** void Left_HB25_PWM_Init(void) 
+  85:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** {
+  86:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #if (Left_HB25_PWM_UsingFixedFunction || Left_HB25_PWM_UseControl)
+  87:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         uint8 ctrl;
+  88:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #endif /* (Left_HB25_PWM_UsingFixedFunction || Left_HB25_PWM_UseControl) */
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 3
+
+
+  89:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+  90:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #if(!Left_HB25_PWM_UsingFixedFunction)
+  91:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #if(Left_HB25_PWM_UseStatus)
+  92:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             /* Interrupt State Backup for Critical Region*/
+  93:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             uint8 Left_HB25_PWM_interruptState;
+  94:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #endif /* (Left_HB25_PWM_UseStatus) */
+  95:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #endif /* (!Left_HB25_PWM_UsingFixedFunction) */
+  96:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+  97:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #if (Left_HB25_PWM_UsingFixedFunction)
+  98:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         /* You are allowed to write the compare value (FF only) */
+  99:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         Left_HB25_PWM_CONTROL |= Left_HB25_PWM_CFG0_MODE;
+ 100:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #if (Left_HB25_PWM_DeadBand2_4)
+ 101:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             Left_HB25_PWM_CONTROL |= Left_HB25_PWM_CFG0_DB;
+ 102:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #endif /* (Left_HB25_PWM_DeadBand2_4) */
+ 103:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 104:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         ctrl = Left_HB25_PWM_CONTROL3 & ((uint8 )(~Left_HB25_PWM_CTRL_CMPMODE1_MASK));
+ 105:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         Left_HB25_PWM_CONTROL3 = ctrl | Left_HB25_PWM_DEFAULT_COMPARE1_MODE;
+ 106:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 107:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****          /* Clear and Set SYNCTC and SYNCCMP bits of RT1 register */
+ 108:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         Left_HB25_PWM_RT1 &= ((uint8)(~Left_HB25_PWM_RT1_MASK));
+ 109:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         Left_HB25_PWM_RT1 |= Left_HB25_PWM_SYNC;
+ 110:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 111:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         /*Enable DSI Sync all all inputs of the PWM*/
+ 112:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         Left_HB25_PWM_RT1 &= ((uint8)(~Left_HB25_PWM_SYNCDSI_MASK));
+ 113:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         Left_HB25_PWM_RT1 |= Left_HB25_PWM_SYNCDSI_EN;
+ 114:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 115:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #elif (Left_HB25_PWM_UseControl)
+ 116:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         /* Set the default compare mode defined in the parameter */
+ 117:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         ctrl = Left_HB25_PWM_CONTROL & ((uint8)(~Left_HB25_PWM_CTRL_CMPMODE2_MASK)) &
+ 118:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 ((uint8)(~Left_HB25_PWM_CTRL_CMPMODE1_MASK));
+ 119:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         Left_HB25_PWM_CONTROL = ctrl | Left_HB25_PWM_DEFAULT_COMPARE2_MODE |
+ 120:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                                    Left_HB25_PWM_DEFAULT_COMPARE1_MODE;
+ 121:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #endif /* (Left_HB25_PWM_UsingFixedFunction) */
+ 122:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 123:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #if (!Left_HB25_PWM_UsingFixedFunction)
+ 124:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #if (Left_HB25_PWM_Resolution == 8)
+ 125:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             /* Set FIFO 0 to 1 byte register for period*/
+ 126:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             Left_HB25_PWM_AUX_CONTROLDP0 |= (Left_HB25_PWM_AUX_CTRL_FIFO0_CLR);
+ 127:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #else /* (Left_HB25_PWM_Resolution == 16)*/
+ 128:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             /* Set FIFO 0 to 1 byte register for period */
+ 129:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             Left_HB25_PWM_AUX_CONTROLDP0 |= (Left_HB25_PWM_AUX_CTRL_FIFO0_CLR);
+ 130:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             Left_HB25_PWM_AUX_CONTROLDP1 |= (Left_HB25_PWM_AUX_CTRL_FIFO0_CLR);
+ 131:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #endif /* (Left_HB25_PWM_Resolution == 8) */
+ 132:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 133:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         Left_HB25_PWM_WriteCounter(Left_HB25_PWM_INIT_PERIOD_VALUE);
+ 134:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #endif /* (!Left_HB25_PWM_UsingFixedFunction) */
+ 135:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 136:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     Left_HB25_PWM_WritePeriod(Left_HB25_PWM_INIT_PERIOD_VALUE);
+ 137:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 138:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #if (Left_HB25_PWM_UseOneCompareMode)
+ 139:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             Left_HB25_PWM_WriteCompare(Left_HB25_PWM_INIT_COMPARE_VALUE1);
+ 140:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #else
+ 141:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             Left_HB25_PWM_WriteCompare1(Left_HB25_PWM_INIT_COMPARE_VALUE1);
+ 142:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             Left_HB25_PWM_WriteCompare2(Left_HB25_PWM_INIT_COMPARE_VALUE2);
+ 143:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #endif /* (Left_HB25_PWM_UseOneCompareMode) */
+ 144:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 145:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #if (Left_HB25_PWM_KillModeMinTime)
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 4
+
+
+ 146:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             Left_HB25_PWM_WriteKillTime(Left_HB25_PWM_MinimumKillTime);
+ 147:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #endif /* (Left_HB25_PWM_KillModeMinTime) */
+ 148:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 149:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #if (Left_HB25_PWM_DeadBandUsed)
+ 150:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             Left_HB25_PWM_WriteDeadTime(Left_HB25_PWM_INIT_DEAD_TIME);
+ 151:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #endif /* (Left_HB25_PWM_DeadBandUsed) */
+ 152:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 153:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #if (Left_HB25_PWM_UseStatus || Left_HB25_PWM_UsingFixedFunction)
+ 154:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         Left_HB25_PWM_SetInterruptMode(Left_HB25_PWM_INIT_INTERRUPTS_MODE);
+ 155:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #endif /* (Left_HB25_PWM_UseStatus || Left_HB25_PWM_UsingFixedFunction) */
+ 156:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 157:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #if (Left_HB25_PWM_UsingFixedFunction)
+ 158:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         /* Globally Enable the Fixed Function Block chosen */
+ 159:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         Left_HB25_PWM_GLOBAL_ENABLE |= Left_HB25_PWM_BLOCK_EN_MASK;
+ 160:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         /* Set the Interrupt source to come from the status register */
+ 161:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         Left_HB25_PWM_CONTROL2 |= Left_HB25_PWM_CTRL2_IRQ_SEL;
+ 162:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #else
+ 163:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #if(Left_HB25_PWM_UseStatus)
+ 164:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 165:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             /* CyEnterCriticalRegion and CyExitCriticalRegion are used to mark following region cri
+ 166:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             /* Enter Critical Region*/
+ 167:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             Left_HB25_PWM_interruptState = CyEnterCriticalSection();
+ 168:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             /* Use the interrupt output of the status register for IRQ output */
+ 169:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             Left_HB25_PWM_STATUS_AUX_CTRL |= Left_HB25_PWM_STATUS_ACTL_INT_EN_MASK;
+ 170:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 171:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****              /* Exit Critical Region*/
+ 172:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             CyExitCriticalSection(Left_HB25_PWM_interruptState);
+ 173:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 174:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             /* Clear the FIFO to enable the Left_HB25_PWM_STATUS_FIFOFULL
+ 175:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                    bit to be set on FIFO full. */
+ 176:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             Left_HB25_PWM_ClearFIFO();
+ 177:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #endif /* (Left_HB25_PWM_UseStatus) */
+ 178:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #endif /* (Left_HB25_PWM_UsingFixedFunction) */
+ 179:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** }
+ 180:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 181:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 182:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** /*******************************************************************************
+ 183:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Function Name: Left_HB25_PWM_Enable
+ 184:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** ********************************************************************************
+ 185:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+ 186:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Summary:
+ 187:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  Enables the PWM block operation
+ 188:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+ 189:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Parameters:
+ 190:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  None
+ 191:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+ 192:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Return:
+ 193:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  None
+ 194:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+ 195:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Side Effects:
+ 196:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  This works only if software enable mode is chosen
+ 197:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+ 198:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *******************************************************************************/
+ 199:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** void Left_HB25_PWM_Enable(void) 
+ 200:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** {
+  27              		.loc 1 200 0
+  28              		.cfi_startproc
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 5
+
+
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  31              		@ link register save eliminated.
+  32 0000 7047     		bx	lr
+  33              		.cfi_endproc
+  34              	.LFE2:
+  35              		.size	Left_HB25_PWM_Enable, .-Left_HB25_PWM_Enable
+  36 0002 00BF     		.section	.text.Left_HB25_PWM_Stop,"ax",%progbits
+  37              		.align	2
+  38              		.global	Left_HB25_PWM_Stop
+  39              		.thumb
+  40              		.thumb_func
+  41              		.type	Left_HB25_PWM_Stop, %function
+  42              	Left_HB25_PWM_Stop:
+  43              	.LFB3:
+ 201:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /* Globally Enable the Fixed Function Block chosen */
+ 202:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #if (Left_HB25_PWM_UsingFixedFunction)
+ 203:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         Left_HB25_PWM_GLOBAL_ENABLE |= Left_HB25_PWM_BLOCK_EN_MASK;
+ 204:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         Left_HB25_PWM_GLOBAL_STBY_ENABLE |= Left_HB25_PWM_BLOCK_STBY_EN_MASK;
+ 205:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #endif /* (Left_HB25_PWM_UsingFixedFunction) */
+ 206:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 207:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /* Enable the PWM from the control register  */
+ 208:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #if (Left_HB25_PWM_UseControl || Left_HB25_PWM_UsingFixedFunction)
+ 209:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         Left_HB25_PWM_CONTROL |= Left_HB25_PWM_CTRL_ENABLE;
+ 210:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #endif /* (Left_HB25_PWM_UseControl || Left_HB25_PWM_UsingFixedFunction) */
+ 211:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** }
+ 212:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 213:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 214:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** /*******************************************************************************
+ 215:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Function Name: Left_HB25_PWM_Stop
+ 216:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** ********************************************************************************
+ 217:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+ 218:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Summary:
+ 219:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  The stop function halts the PWM, but does not change any modes or disable
+ 220:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  interrupts.
+ 221:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+ 222:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Parameters:
+ 223:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  None
+ 224:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+ 225:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Return:
+ 226:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  None
+ 227:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+ 228:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Side Effects:
+ 229:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  If the Enable mode is set to Hardware only then this function
+ 230:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  has no effect on the operation of the PWM
+ 231:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+ 232:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *******************************************************************************/
+ 233:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** void Left_HB25_PWM_Stop(void) 
+ 234:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** {
+  44              		.loc 1 234 0
+  45              		.cfi_startproc
+  46              		@ args = 0, pretend = 0, frame = 0
+  47              		@ frame_needed = 0, uses_anonymous_args = 0
+  48              		@ link register save eliminated.
+  49 0000 7047     		bx	lr
+  50              		.cfi_endproc
+  51              	.LFE3:
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 6
+
+
+  52              		.size	Left_HB25_PWM_Stop, .-Left_HB25_PWM_Stop
+  53 0002 00BF     		.section	.text.Left_HB25_PWM_WriteCounter,"ax",%progbits
+  54              		.align	2
+  55              		.global	Left_HB25_PWM_WriteCounter
+  56              		.thumb
+  57              		.thumb_func
+  58              		.type	Left_HB25_PWM_WriteCounter, %function
+  59              	Left_HB25_PWM_WriteCounter:
+  60              	.LFB4:
+ 235:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #if (Left_HB25_PWM_UseControl || Left_HB25_PWM_UsingFixedFunction)
+ 236:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         Left_HB25_PWM_CONTROL &= ((uint8)(~Left_HB25_PWM_CTRL_ENABLE));
+ 237:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #endif /* (Left_HB25_PWM_UseControl || Left_HB25_PWM_UsingFixedFunction) */
+ 238:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 239:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /* Globally disable the Fixed Function Block chosen */
+ 240:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #if (Left_HB25_PWM_UsingFixedFunction)
+ 241:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         Left_HB25_PWM_GLOBAL_ENABLE &= ((uint8)(~Left_HB25_PWM_BLOCK_EN_MASK));
+ 242:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         Left_HB25_PWM_GLOBAL_STBY_ENABLE &= ((uint8)(~Left_HB25_PWM_BLOCK_STBY_EN_MASK));
+ 243:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #endif /* (Left_HB25_PWM_UsingFixedFunction) */
+ 244:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** }
+ 245:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 246:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #if (Left_HB25_PWM_UseOneCompareMode)
+ 247:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #if (Left_HB25_PWM_CompareMode1SW)
+ 248:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 249:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 250:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         /*******************************************************************************
+ 251:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         * Function Name: Left_HB25_PWM_SetCompareMode
+ 252:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         ********************************************************************************
+ 253:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *
+ 254:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         * Summary:
+ 255:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *  This function writes the Compare Mode for the pwm output when in Dither mode,
+ 256:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *  Center Align Mode or One Output Mode.
+ 257:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *
+ 258:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         * Parameters:
+ 259:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *  comparemode:  The new compare mode for the PWM output. Use the compare types
+ 260:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *                defined in the H file as input arguments.
+ 261:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *
+ 262:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         * Return:
+ 263:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *  None
+ 264:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *
+ 265:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *******************************************************************************/
+ 266:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         void Left_HB25_PWM_SetCompareMode(uint8 comparemode) 
+ 267:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         {
+ 268:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             #if(Left_HB25_PWM_UsingFixedFunction)
+ 269:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 270:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 #if(0 != Left_HB25_PWM_CTRL_CMPMODE1_SHIFT)
+ 271:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                     uint8 comparemodemasked = ((uint8)((uint8)comparemode << Left_HB25_PWM_CTRL_CMP
+ 272:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 #else
+ 273:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                     uint8 comparemodemasked = comparemode;
+ 274:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 #endif /* (0 != Left_HB25_PWM_CTRL_CMPMODE1_SHIFT) */
+ 275:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 276:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 Left_HB25_PWM_CONTROL3 &= ((uint8)(~Left_HB25_PWM_CTRL_CMPMODE1_MASK)); /*Clear Exi
+ 277:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 Left_HB25_PWM_CONTROL3 |= comparemodemasked;
+ 278:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 279:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             #elif (Left_HB25_PWM_UseControl)
+ 280:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 281:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 #if(0 != Left_HB25_PWM_CTRL_CMPMODE1_SHIFT)
+ 282:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                     uint8 comparemode1masked = ((uint8)((uint8)comparemode << Left_HB25_PWM_CTRL_CM
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 7
+
+
+ 283:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                                                 Left_HB25_PWM_CTRL_CMPMODE1_MASK;
+ 284:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 #else
+ 285:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                     uint8 comparemode1masked = comparemode & Left_HB25_PWM_CTRL_CMPMODE1_MASK;
+ 286:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 #endif /* (0 != Left_HB25_PWM_CTRL_CMPMODE1_SHIFT) */
+ 287:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 288:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 #if(0 != Left_HB25_PWM_CTRL_CMPMODE2_SHIFT)
+ 289:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                     uint8 comparemode2masked = ((uint8)((uint8)comparemode << Left_HB25_PWM_CTRL_CM
+ 290:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                                                Left_HB25_PWM_CTRL_CMPMODE2_MASK;
+ 291:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 #else
+ 292:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                     uint8 comparemode2masked = comparemode & Left_HB25_PWM_CTRL_CMPMODE2_MASK;
+ 293:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 #endif /* (0 != Left_HB25_PWM_CTRL_CMPMODE2_SHIFT) */
+ 294:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 295:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 /*Clear existing mode */
+ 296:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 Left_HB25_PWM_CONTROL &= ((uint8)(~(Left_HB25_PWM_CTRL_CMPMODE1_MASK |
+ 297:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                                             Left_HB25_PWM_CTRL_CMPMODE2_MASK)));
+ 298:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 Left_HB25_PWM_CONTROL |= (comparemode1masked | comparemode2masked);
+ 299:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 300:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             #else
+ 301:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 uint8 temp = comparemode;
+ 302:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             #endif /* (Left_HB25_PWM_UsingFixedFunction) */
+ 303:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         }
+ 304:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #endif /* Left_HB25_PWM_CompareMode1SW */
+ 305:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 306:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #else /* UseOneCompareMode */
+ 307:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 308:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #if (Left_HB25_PWM_CompareMode1SW)
+ 309:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 310:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 311:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         /*******************************************************************************
+ 312:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         * Function Name: Left_HB25_PWM_SetCompareMode1
+ 313:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         ********************************************************************************
+ 314:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *
+ 315:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         * Summary:
+ 316:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *  This function writes the Compare Mode for the pwm or pwm1 output
+ 317:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *
+ 318:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         * Parameters:
+ 319:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *  comparemode:  The new compare mode for the PWM output. Use the compare types
+ 320:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *                defined in the H file as input arguments.
+ 321:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *
+ 322:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         * Return:
+ 323:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *  None
+ 324:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *
+ 325:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *******************************************************************************/
+ 326:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         void Left_HB25_PWM_SetCompareMode1(uint8 comparemode) 
+ 327:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         {
+ 328:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             #if(0 != Left_HB25_PWM_CTRL_CMPMODE1_SHIFT)
+ 329:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 uint8 comparemodemasked = ((uint8)((uint8)comparemode << Left_HB25_PWM_CTRL_CMPMODE
+ 330:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                                            Left_HB25_PWM_CTRL_CMPMODE1_MASK;
+ 331:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             #else
+ 332:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 uint8 comparemodemasked = comparemode & Left_HB25_PWM_CTRL_CMPMODE1_MASK;
+ 333:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             #endif /* (0 != Left_HB25_PWM_CTRL_CMPMODE1_SHIFT) */
+ 334:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 335:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             #if (Left_HB25_PWM_UseControl)
+ 336:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 Left_HB25_PWM_CONTROL &= ((uint8)(~Left_HB25_PWM_CTRL_CMPMODE1_MASK)); /*Clear exis
+ 337:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 Left_HB25_PWM_CONTROL |= comparemodemasked;
+ 338:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             #endif /* (Left_HB25_PWM_UseControl) */
+ 339:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         }
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 8
+
+
+ 340:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #endif /* Left_HB25_PWM_CompareMode1SW */
+ 341:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 342:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #if (Left_HB25_PWM_CompareMode2SW)
+ 343:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 344:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 345:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /*******************************************************************************
+ 346:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Function Name: Left_HB25_PWM_SetCompareMode2
+ 347:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     ********************************************************************************
+ 348:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 349:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Summary:
+ 350:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  This function writes the Compare Mode for the pwm or pwm2 output
+ 351:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 352:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Parameters:
+ 353:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  comparemode:  The new compare mode for the PWM output. Use the compare types
+ 354:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *                defined in the H file as input arguments.
+ 355:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 356:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Return:
+ 357:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  None
+ 358:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 359:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *******************************************************************************/
+ 360:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     void Left_HB25_PWM_SetCompareMode2(uint8 comparemode) 
+ 361:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     {
+ 362:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 363:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #if(0 != Left_HB25_PWM_CTRL_CMPMODE2_SHIFT)
+ 364:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             uint8 comparemodemasked = ((uint8)((uint8)comparemode << Left_HB25_PWM_CTRL_CMPMODE2_SH
+ 365:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                                                  Left_HB25_PWM_CTRL_CMPMODE2_MASK;
+ 366:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #else
+ 367:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             uint8 comparemodemasked = comparemode & Left_HB25_PWM_CTRL_CMPMODE2_MASK;
+ 368:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #endif /* (0 != Left_HB25_PWM_CTRL_CMPMODE2_SHIFT) */
+ 369:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 370:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #if (Left_HB25_PWM_UseControl)
+ 371:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             Left_HB25_PWM_CONTROL &= ((uint8)(~Left_HB25_PWM_CTRL_CMPMODE2_MASK)); /*Clear existing
+ 372:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             Left_HB25_PWM_CONTROL |= comparemodemasked;
+ 373:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #endif /* (Left_HB25_PWM_UseControl) */
+ 374:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     }
+ 375:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #endif /*Left_HB25_PWM_CompareMode2SW */
+ 376:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 377:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #endif /* UseOneCompareMode */
+ 378:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 379:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 380:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #if (!Left_HB25_PWM_UsingFixedFunction)
+ 381:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 382:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 383:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /*******************************************************************************
+ 384:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Function Name: Left_HB25_PWM_WriteCounter
+ 385:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     ********************************************************************************
+ 386:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 387:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Summary:
+ 388:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  Writes a new counter value directly to the counter register. This will be
+ 389:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  implemented for that currently running period and only that period. This API
+ 390:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  is valid only for UDB implementation and not available for fixed function
+ 391:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  PWM implementation.
+ 392:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 393:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Parameters:
+ 394:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  counter:  The period new period counter value.
+ 395:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 396:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Return:
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 9
+
+
+ 397:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  None
+ 398:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 399:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Side Effects:
+ 400:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  The PWM Period will be reloaded when a counter value will be a zero
+ 401:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 402:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *******************************************************************************/
+ 403:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     void Left_HB25_PWM_WriteCounter(uint16 counter) \
+ 404:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                                        
+ 405:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     {
+  61              		.loc 1 405 0
+  62              		.cfi_startproc
+  63              		@ args = 0, pretend = 0, frame = 0
+  64              		@ frame_needed = 0, uses_anonymous_args = 0
+  65              		@ link register save eliminated.
+  66              	.LVL0:
+ 406:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         CY_SET_REG16(Left_HB25_PWM_COUNTER_LSB_PTR, counter);
+  67              		.loc 1 406 0
+  68 0000 014B     		ldr	r3, .L4
+  69 0002 1880     		strh	r0, [r3]	@ movhi
+  70 0004 7047     		bx	lr
+  71              	.L5:
+  72 0006 00BF     		.align	2
+  73              	.L4:
+  74 0008 1A680040 		.word	1073768474
+  75              		.cfi_endproc
+  76              	.LFE4:
+  77              		.size	Left_HB25_PWM_WriteCounter, .-Left_HB25_PWM_WriteCounter
+  78              		.section	.text.Left_HB25_PWM_ReadCounter,"ax",%progbits
+  79              		.align	2
+  80              		.global	Left_HB25_PWM_ReadCounter
+  81              		.thumb
+  82              		.thumb_func
+  83              		.type	Left_HB25_PWM_ReadCounter, %function
+  84              	Left_HB25_PWM_ReadCounter:
+  85              	.LFB5:
+ 407:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     }
+ 408:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 409:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 410:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /*******************************************************************************
+ 411:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Function Name: Left_HB25_PWM_ReadCounter
+ 412:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     ********************************************************************************
+ 413:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 414:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Summary:
+ 415:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  This function returns the current value of the counter.  It doesn't matter
+ 416:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  if the counter is enabled or running.
+ 417:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 418:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Parameters:
+ 419:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  None
+ 420:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 421:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Return:
+ 422:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  The current value of the counter.
+ 423:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 424:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *******************************************************************************/
+ 425:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     uint16 Left_HB25_PWM_ReadCounter(void) 
+ 426:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     {
+  86              		.loc 1 426 0
+  87              		.cfi_startproc
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 10
+
+
+  88              		@ args = 0, pretend = 0, frame = 0
+  89              		@ frame_needed = 0, uses_anonymous_args = 0
+  90              		@ link register save eliminated.
+ 427:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         /* Force capture by reading Accumulator */
+ 428:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         /* Must first do a software capture to be able to read the counter */
+ 429:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         /* It is up to the user code to make sure there isn't already captured data in the FIFO */
+ 430:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****           (void)CY_GET_REG8(Left_HB25_PWM_COUNTERCAP_LSB_PTR_8BIT);
+  91              		.loc 1 430 0
+  92 0000 024B     		ldr	r3, .L7
+  93 0002 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 431:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 432:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         /* Read the data from the FIFO */
+ 433:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         return (CY_GET_REG16(Left_HB25_PWM_CAPTURE_LSB_PTR));
+  94              		.loc 1 433 0
+  95 0004 024B     		ldr	r3, .L7+4
+  96 0006 1888     		ldrh	r0, [r3]
+ 434:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     }
+  97              		.loc 1 434 0
+  98 0008 80B2     		uxth	r0, r0
+  99 000a 7047     		bx	lr
+ 100              	.L8:
+ 101              		.align	2
+ 102              	.L7:
+ 103 000c 1D640040 		.word	1073767453
+ 104 0010 BA680040 		.word	1073768634
+ 105              		.cfi_endproc
+ 106              	.LFE5:
+ 107              		.size	Left_HB25_PWM_ReadCounter, .-Left_HB25_PWM_ReadCounter
+ 108              		.section	.text.Left_HB25_PWM_WritePeriod,"ax",%progbits
+ 109              		.align	2
+ 110              		.global	Left_HB25_PWM_WritePeriod
+ 111              		.thumb
+ 112              		.thumb_func
+ 113              		.type	Left_HB25_PWM_WritePeriod, %function
+ 114              	Left_HB25_PWM_WritePeriod:
+ 115              	.LFB6:
+ 435:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 436:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #if (Left_HB25_PWM_UseStatus)
+ 437:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 438:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 439:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         /*******************************************************************************
+ 440:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         * Function Name: Left_HB25_PWM_ClearFIFO
+ 441:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         ********************************************************************************
+ 442:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *
+ 443:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         * Summary:
+ 444:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *  This function clears all capture data from the capture FIFO
+ 445:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *
+ 446:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         * Parameters:
+ 447:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *  None
+ 448:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *
+ 449:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         * Return:
+ 450:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *  None
+ 451:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *
+ 452:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         *******************************************************************************/
+ 453:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         void Left_HB25_PWM_ClearFIFO(void) 
+ 454:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         {
+ 455:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             while(0u != (Left_HB25_PWM_ReadStatusRegister() & Left_HB25_PWM_STATUS_FIFONEMPTY))
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 11
+
+
+ 456:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             {
+ 457:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 (void)Left_HB25_PWM_ReadCapture();
+ 458:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             }
+ 459:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         }
+ 460:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 461:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #endif /* Left_HB25_PWM_UseStatus */
+ 462:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 463:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #endif /* !Left_HB25_PWM_UsingFixedFunction */
+ 464:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 465:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 466:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** /*******************************************************************************
+ 467:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Function Name: Left_HB25_PWM_WritePeriod
+ 468:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** ********************************************************************************
+ 469:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+ 470:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Summary:
+ 471:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  This function is used to change the period of the counter.  The new period
+ 472:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  will be loaded the next time terminal count is detected.
+ 473:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+ 474:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Parameters:
+ 475:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  period:  Period value. May be between 1 and (2^Resolution)-1.  A value of 0
+ 476:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *           will result in the counter remaining at zero.
+ 477:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+ 478:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Return:
+ 479:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  None
+ 480:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+ 481:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *******************************************************************************/
+ 482:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** void Left_HB25_PWM_WritePeriod(uint16 period) 
+ 483:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** {
+ 116              		.loc 1 483 0
+ 117              		.cfi_startproc
+ 118              		@ args = 0, pretend = 0, frame = 0
+ 119              		@ frame_needed = 0, uses_anonymous_args = 0
+ 120              		@ link register save eliminated.
+ 121              	.LVL1:
+ 484:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #if(Left_HB25_PWM_UsingFixedFunction)
+ 485:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         CY_SET_REG16(Left_HB25_PWM_PERIOD_LSB_PTR, (uint16)period);
+ 486:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #else
+ 487:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         CY_SET_REG16(Left_HB25_PWM_PERIOD_LSB_PTR, period);
+ 122              		.loc 1 487 0
+ 123 0000 014B     		ldr	r3, .L10
+ 124 0002 1880     		strh	r0, [r3]	@ movhi
+ 125 0004 7047     		bx	lr
+ 126              	.L11:
+ 127 0006 00BF     		.align	2
+ 128              	.L10:
+ 129 0008 9A680040 		.word	1073768602
+ 130              		.cfi_endproc
+ 131              	.LFE6:
+ 132              		.size	Left_HB25_PWM_WritePeriod, .-Left_HB25_PWM_WritePeriod
+ 133              		.section	.text.Left_HB25_PWM_WriteCompare,"ax",%progbits
+ 134              		.align	2
+ 135              		.global	Left_HB25_PWM_WriteCompare
+ 136              		.thumb
+ 137              		.thumb_func
+ 138              		.type	Left_HB25_PWM_WriteCompare, %function
+ 139              	Left_HB25_PWM_WriteCompare:
+ 140              	.LFB7:
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 12
+
+
+ 488:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #endif /* (Left_HB25_PWM_UsingFixedFunction) */
+ 489:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** }
+ 490:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 491:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #if (Left_HB25_PWM_UseOneCompareMode)
+ 492:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 493:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 494:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /*******************************************************************************
+ 495:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Function Name: Left_HB25_PWM_WriteCompare
+ 496:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     ********************************************************************************
+ 497:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 498:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Summary:
+ 499:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  This funtion is used to change the compare1 value when the PWM is in Dither
+ 500:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  mode. The compare output will reflect the new value on the next UDB clock.
+ 501:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  The compare output will be driven high when the present counter value is
+ 502:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  compared to the compare value based on the compare mode defined in
+ 503:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  Dither Mode.
+ 504:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 505:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Parameters:
+ 506:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  compare:  New compare value.
+ 507:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 508:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Return:
+ 509:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  None
+ 510:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 511:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Side Effects:
+ 512:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  This function is only available if the PWM mode parameter is set to
+ 513:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  Dither Mode, Center Aligned Mode or One Output Mode
+ 514:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 515:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *******************************************************************************/
+ 516:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     void Left_HB25_PWM_WriteCompare(uint16 compare) \
+ 517:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                                        
+ 518:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     {
+ 141              		.loc 1 518 0
+ 142              		.cfi_startproc
+ 143              		@ args = 0, pretend = 0, frame = 0
+ 144              		@ frame_needed = 0, uses_anonymous_args = 0
+ 145              		@ link register save eliminated.
+ 146              	.LVL2:
+ 519:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #if(Left_HB25_PWM_UsingFixedFunction)
+ 520:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             CY_SET_REG16(Left_HB25_PWM_COMPARE1_LSB_PTR, (uint16)compare);
+ 521:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #else
+ 522:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             CY_SET_REG16(Left_HB25_PWM_COMPARE1_LSB_PTR, compare);
+ 147              		.loc 1 522 0
+ 148 0000 014B     		ldr	r3, .L13
+ 149 0002 1880     		strh	r0, [r3]	@ movhi
+ 150 0004 7047     		bx	lr
+ 151              	.L14:
+ 152 0006 00BF     		.align	2
+ 153              	.L13:
+ 154 0008 5A680040 		.word	1073768538
+ 155              		.cfi_endproc
+ 156              	.LFE7:
+ 157              		.size	Left_HB25_PWM_WriteCompare, .-Left_HB25_PWM_WriteCompare
+ 158              		.section	.text.Left_HB25_PWM_Init,"ax",%progbits
+ 159              		.align	2
+ 160              		.global	Left_HB25_PWM_Init
+ 161              		.thumb
+ 162              		.thumb_func
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 13
+
+
+ 163              		.type	Left_HB25_PWM_Init, %function
+ 164              	Left_HB25_PWM_Init:
+ 165              	.LFB1:
+  85:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #if (Left_HB25_PWM_UsingFixedFunction || Left_HB25_PWM_UseControl)
+ 166              		.loc 1 85 0
+ 167              		.cfi_startproc
+ 168              		@ args = 0, pretend = 0, frame = 0
+ 169              		@ frame_needed = 0, uses_anonymous_args = 0
+ 170 0000 08B5     		push	{r3, lr}
+ 171              		.cfi_def_cfa_offset 8
+ 172              		.cfi_offset 3, -8
+ 173              		.cfi_offset 14, -4
+ 129:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             Left_HB25_PWM_AUX_CONTROLDP1 |= (Left_HB25_PWM_AUX_CTRL_FIFO0_CLR);
+ 174              		.loc 1 129 0
+ 175 0002 0B4A     		ldr	r2, .L17
+ 176 0004 1378     		ldrb	r3, [r2]	@ zero_extendqisi2
+ 177 0006 43F00103 		orr	r3, r3, #1
+ 178 000a 1370     		strb	r3, [r2]
+ 130:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #endif /* (Left_HB25_PWM_Resolution == 8) */
+ 179              		.loc 1 130 0
+ 180 000c 0132     		adds	r2, r2, #1
+ 181 000e 1378     		ldrb	r3, [r2]	@ zero_extendqisi2
+ 182 0010 43F00103 		orr	r3, r3, #1
+ 183 0014 1370     		strb	r3, [r2]
+ 133:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #endif /* (!Left_HB25_PWM_UsingFixedFunction) */
+ 184              		.loc 1 133 0
+ 185 0016 44F62060 		movw	r0, #20000
+ 186 001a FFF7FEFF 		bl	Left_HB25_PWM_WriteCounter
+ 187              	.LVL3:
+ 136:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 188              		.loc 1 136 0
+ 189 001e 44F62060 		movw	r0, #20000
+ 190 0022 FFF7FEFF 		bl	Left_HB25_PWM_WritePeriod
+ 191              	.LVL4:
+ 139:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #else
+ 192              		.loc 1 139 0
+ 193 0026 40F2DC50 		movw	r0, #1500
+ 194 002a FFF7FEFF 		bl	Left_HB25_PWM_WriteCompare
+ 195              	.LVL5:
+ 196 002e 08BD     		pop	{r3, pc}
+ 197              	.L18:
+ 198              		.align	2
+ 199              	.L17:
+ 200 0030 9D640040 		.word	1073767581
+ 201              		.cfi_endproc
+ 202              	.LFE1:
+ 203              		.size	Left_HB25_PWM_Init, .-Left_HB25_PWM_Init
+ 204              		.section	.text.Left_HB25_PWM_Start,"ax",%progbits
+ 205              		.align	2
+ 206              		.global	Left_HB25_PWM_Start
+ 207              		.thumb
+ 208              		.thumb_func
+ 209              		.type	Left_HB25_PWM_Start, %function
+ 210              	Left_HB25_PWM_Start:
+ 211              	.LFB0:
+  56:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /* If not Initialized then initialize all required hardware and software */
+ 212              		.loc 1 56 0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 14
+
+
+ 213              		.cfi_startproc
+ 214              		@ args = 0, pretend = 0, frame = 0
+ 215              		@ frame_needed = 0, uses_anonymous_args = 0
+ 216 0000 08B5     		push	{r3, lr}
+ 217              		.cfi_def_cfa_offset 8
+ 218              		.cfi_offset 3, -8
+ 219              		.cfi_offset 14, -4
+  58:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     {
+ 220              		.loc 1 58 0
+ 221 0002 044B     		ldr	r3, .L22
+ 222 0004 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 223 0006 23B9     		cbnz	r3, .L19
+  60:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         Left_HB25_PWM_initVar = 1u;
+ 224              		.loc 1 60 0
+ 225 0008 FFF7FEFF 		bl	Left_HB25_PWM_Init
+ 226              	.LVL6:
+  61:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     }
+ 227              		.loc 1 61 0
+ 228 000c 0122     		movs	r2, #1
+ 229 000e 014B     		ldr	r3, .L22
+ 230 0010 1A70     		strb	r2, [r3]
+ 231              	.L19:
+ 232 0012 08BD     		pop	{r3, pc}
+ 233              	.L23:
+ 234              		.align	2
+ 235              	.L22:
+ 236 0014 00000000 		.word	.LANCHOR0
+ 237              		.cfi_endproc
+ 238              	.LFE0:
+ 239              		.size	Left_HB25_PWM_Start, .-Left_HB25_PWM_Start
+ 240              		.section	.text.Left_HB25_PWM_ReadCapture,"ax",%progbits
+ 241              		.align	2
+ 242              		.global	Left_HB25_PWM_ReadCapture
+ 243              		.thumb
+ 244              		.thumb_func
+ 245              		.type	Left_HB25_PWM_ReadCapture, %function
+ 246              	Left_HB25_PWM_ReadCapture:
+ 247              	.LFB8:
+ 523:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #endif /* (Left_HB25_PWM_UsingFixedFunction) */
+ 524:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 525:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #if (Left_HB25_PWM_PWMMode == Left_HB25_PWM__B_PWM__DITHER)
+ 526:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             #if(Left_HB25_PWM_UsingFixedFunction)
+ 527:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 CY_SET_REG16(Left_HB25_PWM_COMPARE2_LSB_PTR, (uint16)(compare + 1u));
+ 528:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             #else
+ 529:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 CY_SET_REG16(Left_HB25_PWM_COMPARE2_LSB_PTR, (compare + 1u));
+ 530:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             #endif /* (Left_HB25_PWM_UsingFixedFunction) */
+ 531:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #endif /* (Left_HB25_PWM_PWMMode == Left_HB25_PWM__B_PWM__DITHER) */
+ 532:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     }
+ 533:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 534:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 535:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #else
+ 536:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 537:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 538:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /*******************************************************************************
+ 539:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Function Name: Left_HB25_PWM_WriteCompare1
+ 540:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     ********************************************************************************
+ 541:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 15
+
+
+ 542:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Summary:
+ 543:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  This funtion is used to change the compare1 value.  The compare output will
+ 544:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  reflect the new value on the next UDB clock.  The compare output will be
+ 545:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  driven high when the present counter value is less than or less than or
+ 546:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  equal to the compare register, depending on the mode.
+ 547:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 548:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Parameters:
+ 549:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  compare:  New compare value.
+ 550:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 551:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Return:
+ 552:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  None
+ 553:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 554:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *******************************************************************************/
+ 555:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     void Left_HB25_PWM_WriteCompare1(uint16 compare) \
+ 556:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                                         
+ 557:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     {
+ 558:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #if(Left_HB25_PWM_UsingFixedFunction)
+ 559:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             CY_SET_REG16(Left_HB25_PWM_COMPARE1_LSB_PTR, (uint16)compare);
+ 560:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #else
+ 561:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             CY_SET_REG16(Left_HB25_PWM_COMPARE1_LSB_PTR, compare);
+ 562:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #endif /* (Left_HB25_PWM_UsingFixedFunction) */
+ 563:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     }
+ 564:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 565:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 566:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /*******************************************************************************
+ 567:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Function Name: Left_HB25_PWM_WriteCompare2
+ 568:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     ********************************************************************************
+ 569:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 570:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Summary:
+ 571:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  This funtion is used to change the compare value, for compare1 output.
+ 572:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  The compare output will reflect the new value on the next UDB clock.
+ 573:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  The compare output will be driven high when the present counter value is
+ 574:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  less than or less than or equal to the compare register, depending on the
+ 575:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  mode.
+ 576:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 577:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Parameters:
+ 578:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  compare:  New compare value.
+ 579:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 580:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Return:
+ 581:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  None
+ 582:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 583:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *******************************************************************************/
+ 584:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     void Left_HB25_PWM_WriteCompare2(uint16 compare) \
+ 585:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                                         
+ 586:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     {
+ 587:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #if(Left_HB25_PWM_UsingFixedFunction)
+ 588:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             CY_SET_REG16(Left_HB25_PWM_COMPARE2_LSB_PTR, compare);
+ 589:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #else
+ 590:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             CY_SET_REG16(Left_HB25_PWM_COMPARE2_LSB_PTR, compare);
+ 591:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #endif /* (Left_HB25_PWM_UsingFixedFunction) */
+ 592:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     }
+ 593:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #endif /* UseOneCompareMode */
+ 594:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 595:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #if (Left_HB25_PWM_DeadBandUsed)
+ 596:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 597:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 598:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /*******************************************************************************
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 16
+
+
+ 599:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Function Name: Left_HB25_PWM_WriteDeadTime
+ 600:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     ********************************************************************************
+ 601:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 602:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Summary:
+ 603:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  This function writes the dead-band counts to the corresponding register
+ 604:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 605:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Parameters:
+ 606:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  deadtime:  Number of counts for dead time
+ 607:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 608:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Return:
+ 609:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  None
+ 610:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 611:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *******************************************************************************/
+ 612:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     void Left_HB25_PWM_WriteDeadTime(uint8 deadtime) 
+ 613:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     {
+ 614:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         /* If using the Dead Band 1-255 mode then just write the register */
+ 615:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #if(!Left_HB25_PWM_DeadBand2_4)
+ 616:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             CY_SET_REG8(Left_HB25_PWM_DEADBAND_COUNT_PTR, deadtime);
+ 617:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #else
+ 618:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             /* Otherwise the data has to be masked and offset */
+ 619:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             /* Clear existing data */
+ 620:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             Left_HB25_PWM_DEADBAND_COUNT &= ((uint8)(~Left_HB25_PWM_DEADBAND_COUNT_MASK));
+ 621:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 622:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             /* Set new dead time */
+ 623:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             #if(Left_HB25_PWM_DEADBAND_COUNT_SHIFT)
+ 624:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 Left_HB25_PWM_DEADBAND_COUNT |= ((uint8)((uint8)deadtime << Left_HB25_PWM_DEADBAND_
+ 625:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                                                     Left_HB25_PWM_DEADBAND_COUNT_MASK;
+ 626:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             #else
+ 627:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 Left_HB25_PWM_DEADBAND_COUNT |= deadtime & Left_HB25_PWM_DEADBAND_COUNT_MASK;
+ 628:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             #endif /* (Left_HB25_PWM_DEADBAND_COUNT_SHIFT) */
+ 629:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 630:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #endif /* (!Left_HB25_PWM_DeadBand2_4) */
+ 631:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     }
+ 632:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 633:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 634:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /*******************************************************************************
+ 635:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Function Name: Left_HB25_PWM_ReadDeadTime
+ 636:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     ********************************************************************************
+ 637:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 638:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Summary:
+ 639:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  This function reads the dead-band counts from the corresponding register
+ 640:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 641:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Parameters:
+ 642:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  None
+ 643:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 644:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Return:
+ 645:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  Dead Band Counts
+ 646:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 647:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *******************************************************************************/
+ 648:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     uint8 Left_HB25_PWM_ReadDeadTime(void) 
+ 649:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     {
+ 650:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         /* If using the Dead Band 1-255 mode then just read the register */
+ 651:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #if(!Left_HB25_PWM_DeadBand2_4)
+ 652:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             return (CY_GET_REG8(Left_HB25_PWM_DEADBAND_COUNT_PTR));
+ 653:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #else
+ 654:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 655:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             /* Otherwise the data has to be masked and offset */
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 17
+
+
+ 656:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             #if(Left_HB25_PWM_DEADBAND_COUNT_SHIFT)
+ 657:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 return ((uint8)(((uint8)(Left_HB25_PWM_DEADBAND_COUNT & Left_HB25_PWM_DEADBAND_COUN
+ 658:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                                                                            Left_HB25_PWM_DEADBAND_C
+ 659:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             #else
+ 660:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****                 return (Left_HB25_PWM_DEADBAND_COUNT & Left_HB25_PWM_DEADBAND_COUNT_MASK);
+ 661:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             #endif /* (Left_HB25_PWM_DEADBAND_COUNT_SHIFT) */
+ 662:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #endif /* (!Left_HB25_PWM_DeadBand2_4) */
+ 663:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     }
+ 664:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #endif /* DeadBandUsed */
+ 665:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 666:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #if (Left_HB25_PWM_UseStatus || Left_HB25_PWM_UsingFixedFunction)
+ 667:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 668:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 669:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /*******************************************************************************
+ 670:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Function Name: Left_HB25_PWM_SetInterruptMode
+ 671:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     ********************************************************************************
+ 672:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 673:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Summary:
+ 674:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  This function configures the interrupts mask control of theinterrupt
+ 675:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  source status register.
+ 676:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 677:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Parameters:
+ 678:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  uint8 interruptMode: Bit field containing the interrupt sources enabled
+ 679:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 680:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Return:
+ 681:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  None
+ 682:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 683:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *******************************************************************************/
+ 684:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     void Left_HB25_PWM_SetInterruptMode(uint8 interruptMode) 
+ 685:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     {
+ 686:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         CY_SET_REG8(Left_HB25_PWM_STATUS_MASK_PTR, interruptMode);
+ 687:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     }
+ 688:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 689:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 690:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /*******************************************************************************
+ 691:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Function Name: Left_HB25_PWM_ReadStatusRegister
+ 692:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     ********************************************************************************
+ 693:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 694:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Summary:
+ 695:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  This function returns the current state of the status register.
+ 696:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 697:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Parameters:
+ 698:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  None
+ 699:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 700:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Return:
+ 701:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  uint8 : Current status register value. The status register bits are:
+ 702:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  [7:6] : Unused(0)
+ 703:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  [5]   : Kill event output
+ 704:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  [4]   : FIFO not empty
+ 705:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  [3]   : FIFO full
+ 706:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  [2]   : Terminal count
+ 707:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  [1]   : Compare output 2
+ 708:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  [0]   : Compare output 1
+ 709:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 710:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *******************************************************************************/
+ 711:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     uint8 Left_HB25_PWM_ReadStatusRegister(void) 
+ 712:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     {
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 18
+
+
+ 713:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         return (CY_GET_REG8(Left_HB25_PWM_STATUS_PTR));
+ 714:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     }
+ 715:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 716:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #endif /* (Left_HB25_PWM_UseStatus || Left_HB25_PWM_UsingFixedFunction) */
+ 717:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 718:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 719:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #if (Left_HB25_PWM_UseControl)
+ 720:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 721:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 722:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /*******************************************************************************
+ 723:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Function Name: Left_HB25_PWM_ReadControlRegister
+ 724:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     ********************************************************************************
+ 725:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 726:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Summary:
+ 727:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  Returns the current state of the control register. This API is available
+ 728:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  only if the control register is not removed.
+ 729:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 730:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Parameters:
+ 731:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  None
+ 732:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 733:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Return:
+ 734:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  uint8 : Current control register value
+ 735:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 736:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *******************************************************************************/
+ 737:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     uint8 Left_HB25_PWM_ReadControlRegister(void) 
+ 738:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     {
+ 739:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         uint8 result;
+ 740:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 741:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         result = CY_GET_REG8(Left_HB25_PWM_CONTROL_PTR);
+ 742:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         return (result);
+ 743:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     }
+ 744:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 745:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 746:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /*******************************************************************************
+ 747:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Function Name: Left_HB25_PWM_WriteControlRegister
+ 748:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     ********************************************************************************
+ 749:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 750:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Summary:
+ 751:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  Sets the bit field of the control register. This API is available only if
+ 752:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  the control register is not removed.
+ 753:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 754:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Parameters:
+ 755:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  uint8 control: Control register bit field, The status register bits are:
+ 756:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  [7]   : PWM Enable
+ 757:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  [6]   : Reset
+ 758:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  [5:3] : Compare Mode2
+ 759:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  [2:0] : Compare Mode2
+ 760:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 761:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Return:
+ 762:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  None
+ 763:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 764:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *******************************************************************************/
+ 765:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     void Left_HB25_PWM_WriteControlRegister(uint8 control) 
+ 766:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     {
+ 767:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         CY_SET_REG8(Left_HB25_PWM_CONTROL_PTR, control);
+ 768:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     }
+ 769:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 19
+
+
+ 770:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #endif /* (Left_HB25_PWM_UseControl) */
+ 771:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 772:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 773:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #if (!Left_HB25_PWM_UsingFixedFunction)
+ 774:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 775:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 776:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /*******************************************************************************
+ 777:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Function Name: Left_HB25_PWM_ReadCapture
+ 778:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     ********************************************************************************
+ 779:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 780:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Summary:
+ 781:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  Reads the capture value from the capture FIFO.
+ 782:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 783:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Parameters:
+ 784:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  None
+ 785:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 786:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Return:
+ 787:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  uint8/uint16: The current capture value
+ 788:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 789:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *******************************************************************************/
+ 790:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     uint16 Left_HB25_PWM_ReadCapture(void) 
+ 791:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     {
+ 248              		.loc 1 791 0
+ 249              		.cfi_startproc
+ 250              		@ args = 0, pretend = 0, frame = 0
+ 251              		@ frame_needed = 0, uses_anonymous_args = 0
+ 252              		@ link register save eliminated.
+ 792:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         return (CY_GET_REG16(Left_HB25_PWM_CAPTURE_LSB_PTR));
+ 253              		.loc 1 792 0
+ 254 0000 014B     		ldr	r3, .L25
+ 255 0002 1888     		ldrh	r0, [r3]
+ 793:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     }
+ 256              		.loc 1 793 0
+ 257 0004 80B2     		uxth	r0, r0
+ 258 0006 7047     		bx	lr
+ 259              	.L26:
+ 260              		.align	2
+ 261              	.L25:
+ 262 0008 BA680040 		.word	1073768634
+ 263              		.cfi_endproc
+ 264              	.LFE8:
+ 265              		.size	Left_HB25_PWM_ReadCapture, .-Left_HB25_PWM_ReadCapture
+ 266              		.section	.text.Left_HB25_PWM_ReadCompare,"ax",%progbits
+ 267              		.align	2
+ 268              		.global	Left_HB25_PWM_ReadCompare
+ 269              		.thumb
+ 270              		.thumb_func
+ 271              		.type	Left_HB25_PWM_ReadCompare, %function
+ 272              	Left_HB25_PWM_ReadCompare:
+ 273              	.LFB9:
+ 794:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 795:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #endif /* (!Left_HB25_PWM_UsingFixedFunction) */
+ 796:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 797:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 798:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #if (Left_HB25_PWM_UseOneCompareMode)
+ 799:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 800:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 20
+
+
+ 801:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /*******************************************************************************
+ 802:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Function Name: Left_HB25_PWM_ReadCompare
+ 803:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     ********************************************************************************
+ 804:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 805:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Summary:
+ 806:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  Reads the compare value for the compare output when the PWM Mode parameter is
+ 807:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  set to Dither mode, Center Aligned mode, or One Output mode.
+ 808:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 809:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Parameters:
+ 810:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  None
+ 811:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 812:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Return:
+ 813:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  uint8/uint16: Current compare value
+ 814:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 815:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *******************************************************************************/
+ 816:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     uint16 Left_HB25_PWM_ReadCompare(void) 
+ 817:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     {
+ 274              		.loc 1 817 0
+ 275              		.cfi_startproc
+ 276              		@ args = 0, pretend = 0, frame = 0
+ 277              		@ frame_needed = 0, uses_anonymous_args = 0
+ 278              		@ link register save eliminated.
+ 818:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #if(Left_HB25_PWM_UsingFixedFunction)
+ 819:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             return ((uint16)CY_GET_REG16(Left_HB25_PWM_COMPARE1_LSB_PTR));
+ 820:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #else
+ 821:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****             return (CY_GET_REG16(Left_HB25_PWM_COMPARE1_LSB_PTR));
+ 279              		.loc 1 821 0
+ 280 0000 014B     		ldr	r3, .L28
+ 281 0002 1888     		ldrh	r0, [r3]
+ 822:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         #endif /* (Left_HB25_PWM_UsingFixedFunction) */
+ 823:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     }
+ 282              		.loc 1 823 0
+ 283 0004 80B2     		uxth	r0, r0
+ 284 0006 7047     		bx	lr
+ 285              	.L29:
+ 286              		.align	2
+ 287              	.L28:
+ 288 0008 5A680040 		.word	1073768538
+ 289              		.cfi_endproc
+ 290              	.LFE9:
+ 291              		.size	Left_HB25_PWM_ReadCompare, .-Left_HB25_PWM_ReadCompare
+ 292              		.section	.text.Left_HB25_PWM_ReadPeriod,"ax",%progbits
+ 293              		.align	2
+ 294              		.global	Left_HB25_PWM_ReadPeriod
+ 295              		.thumb
+ 296              		.thumb_func
+ 297              		.type	Left_HB25_PWM_ReadPeriod, %function
+ 298              	Left_HB25_PWM_ReadPeriod:
+ 299              	.LFB10:
+ 824:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 825:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #else
+ 826:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 827:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 828:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /*******************************************************************************
+ 829:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Function Name: Left_HB25_PWM_ReadCompare1
+ 830:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     ********************************************************************************
+ 831:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 21
+
+
+ 832:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Summary:
+ 833:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  Reads the compare value for the compare1 output.
+ 834:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 835:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Parameters:
+ 836:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  None
+ 837:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 838:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Return:
+ 839:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  uint8/uint16: Current compare value.
+ 840:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 841:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *******************************************************************************/
+ 842:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     uint16 Left_HB25_PWM_ReadCompare1(void) 
+ 843:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     {
+ 844:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         return (CY_GET_REG16(Left_HB25_PWM_COMPARE1_LSB_PTR));
+ 845:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     }
+ 846:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 847:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 848:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     /*******************************************************************************
+ 849:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Function Name: Left_HB25_PWM_ReadCompare2
+ 850:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     ********************************************************************************
+ 851:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 852:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Summary:
+ 853:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  Reads the compare value for the compare2 output.
+ 854:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 855:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Parameters:
+ 856:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  None
+ 857:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 858:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     * Return:
+ 859:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *  uint8/uint16: Current compare value.
+ 860:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *
+ 861:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     *******************************************************************************/
+ 862:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     uint16 Left_HB25_PWM_ReadCompare2(void) 
+ 863:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     {
+ 864:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         return (CY_GET_REG16(Left_HB25_PWM_COMPARE2_LSB_PTR));
+ 865:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     }
+ 866:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 867:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** #endif /* (Left_HB25_PWM_UseOneCompareMode) */
+ 868:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 869:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** 
+ 870:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** /*******************************************************************************
+ 871:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Function Name: Left_HB25_PWM_ReadPeriod
+ 872:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** ********************************************************************************
+ 873:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+ 874:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Summary:
+ 875:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  Reads the period value used by the PWM hardware.
+ 876:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+ 877:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Parameters:
+ 878:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  None
+ 879:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+ 880:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** * Return:
+ 881:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *  uint8/16: Period value
+ 882:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *
+ 883:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** *******************************************************************************/
+ 884:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** uint16 Left_HB25_PWM_ReadPeriod(void) 
+ 885:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** {
+ 300              		.loc 1 885 0
+ 301              		.cfi_startproc
+ 302              		@ args = 0, pretend = 0, frame = 0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 22
+
+
+ 303              		@ frame_needed = 0, uses_anonymous_args = 0
+ 304              		@ link register save eliminated.
+ 886:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #if(Left_HB25_PWM_UsingFixedFunction)
+ 887:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         return ((uint16)CY_GET_REG16(Left_HB25_PWM_PERIOD_LSB_PTR));
+ 888:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #else
+ 889:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****         return (CY_GET_REG16(Left_HB25_PWM_PERIOD_LSB_PTR));
+ 305              		.loc 1 889 0
+ 306 0000 014B     		ldr	r3, .L31
+ 307 0002 1888     		ldrh	r0, [r3]
+ 890:.\Generated_Source\PSoC5/Left_HB25_PWM.c ****     #endif /* (Left_HB25_PWM_UsingFixedFunction) */
+ 891:.\Generated_Source\PSoC5/Left_HB25_PWM.c **** }
+ 308              		.loc 1 891 0
+ 309 0004 80B2     		uxth	r0, r0
+ 310 0006 7047     		bx	lr
+ 311              	.L32:
+ 312              		.align	2
+ 313              	.L31:
+ 314 0008 9A680040 		.word	1073768602
+ 315              		.cfi_endproc
+ 316              	.LFE10:
+ 317              		.size	Left_HB25_PWM_ReadPeriod, .-Left_HB25_PWM_ReadPeriod
+ 318              		.global	Left_HB25_PWM_initVar
+ 319              		.bss
+ 320              		.set	.LANCHOR0,. + 0
+ 321              		.type	Left_HB25_PWM_initVar, %object
+ 322              		.size	Left_HB25_PWM_initVar, 1
+ 323              	Left_HB25_PWM_initVar:
+ 324 0000 00       		.space	1
+ 325              		.text
+ 326              	.Letext0:
+ 327              		.file 2 ".\\Generated_Source\\PSoC5\\cytypes.h"
+ 328              		.section	.debug_info,"",%progbits
+ 329              	.Ldebug_info0:
+ 330 0000 28020000 		.4byte	0x228
+ 331 0004 0400     		.2byte	0x4
+ 332 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 333 000a 04       		.byte	0x4
+ 334 000b 01       		.uleb128 0x1
+ 335 000c 65010000 		.4byte	.LASF31
+ 336 0010 01       		.byte	0x1
+ 337 0011 1E020000 		.4byte	.LASF32
+ 338 0015 40000000 		.4byte	.LASF33
+ 339 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 340 001d 00000000 		.4byte	0
+ 341 0021 00000000 		.4byte	.Ldebug_line0
+ 342 0025 02       		.uleb128 0x2
+ 343 0026 01       		.byte	0x1
+ 344 0027 06       		.byte	0x6
+ 345 0028 79020000 		.4byte	.LASF0
+ 346 002c 02       		.uleb128 0x2
+ 347 002d 01       		.byte	0x1
+ 348 002e 08       		.byte	0x8
+ 349 002f B4000000 		.4byte	.LASF1
+ 350 0033 02       		.uleb128 0x2
+ 351 0034 02       		.byte	0x2
+ 352 0035 05       		.byte	0x5
+ 353 0036 47020000 		.4byte	.LASF2
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 23
+
+
+ 354 003a 02       		.uleb128 0x2
+ 355 003b 02       		.byte	0x2
+ 356 003c 07       		.byte	0x7
+ 357 003d 8C020000 		.4byte	.LASF3
+ 358 0041 02       		.uleb128 0x2
+ 359 0042 04       		.byte	0x4
+ 360 0043 05       		.byte	0x5
+ 361 0044 6B020000 		.4byte	.LASF4
+ 362 0048 02       		.uleb128 0x2
+ 363 0049 04       		.byte	0x4
+ 364 004a 07       		.byte	0x7
+ 365 004b E2000000 		.4byte	.LASF5
+ 366 004f 02       		.uleb128 0x2
+ 367 0050 08       		.byte	0x8
+ 368 0051 05       		.byte	0x5
+ 369 0052 10020000 		.4byte	.LASF6
+ 370 0056 02       		.uleb128 0x2
+ 371 0057 08       		.byte	0x8
+ 372 0058 07       		.byte	0x7
+ 373 0059 4E010000 		.4byte	.LASF7
+ 374 005d 03       		.uleb128 0x3
+ 375 005e 04       		.byte	0x4
+ 376 005f 05       		.byte	0x5
+ 377 0060 696E7400 		.ascii	"int\000"
+ 378 0064 02       		.uleb128 0x2
+ 379 0065 04       		.byte	0x4
+ 380 0066 07       		.byte	0x7
+ 381 0067 41010000 		.4byte	.LASF8
+ 382 006b 04       		.uleb128 0x4
+ 383 006c F4000000 		.4byte	.LASF9
+ 384 0070 02       		.byte	0x2
+ 385 0071 3801     		.2byte	0x138
+ 386 0073 2C000000 		.4byte	0x2c
+ 387 0077 04       		.uleb128 0x4
+ 388 0078 20010000 		.4byte	.LASF10
+ 389 007c 02       		.byte	0x2
+ 390 007d 3901     		.2byte	0x139
+ 391 007f 3A000000 		.4byte	0x3a
+ 392 0083 02       		.uleb128 0x2
+ 393 0084 04       		.byte	0x4
+ 394 0085 04       		.byte	0x4
+ 395 0086 A6000000 		.4byte	.LASF11
+ 396 008a 02       		.uleb128 0x2
+ 397 008b 08       		.byte	0x8
+ 398 008c 04       		.byte	0x4
+ 399 008d 85020000 		.4byte	.LASF12
+ 400 0091 02       		.uleb128 0x2
+ 401 0092 01       		.byte	0x1
+ 402 0093 08       		.byte	0x8
+ 403 0094 74020000 		.4byte	.LASF13
+ 404 0098 04       		.uleb128 0x4
+ 405 0099 DD000000 		.4byte	.LASF14
+ 406 009d 02       		.byte	0x2
+ 407 009e E201     		.2byte	0x1e2
+ 408 00a0 A4000000 		.4byte	0xa4
+ 409 00a4 05       		.uleb128 0x5
+ 410 00a5 6B000000 		.4byte	0x6b
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 24
+
+
+ 411 00a9 04       		.uleb128 0x4
+ 412 00aa 00000000 		.4byte	.LASF15
+ 413 00ae 02       		.byte	0x2
+ 414 00af E301     		.2byte	0x1e3
+ 415 00b1 B5000000 		.4byte	0xb5
+ 416 00b5 05       		.uleb128 0x5
+ 417 00b6 77000000 		.4byte	0x77
+ 418 00ba 02       		.uleb128 0x2
+ 419 00bb 04       		.byte	0x4
+ 420 00bc 07       		.byte	0x7
+ 421 00bd 07020000 		.4byte	.LASF16
+ 422 00c1 06       		.uleb128 0x6
+ 423 00c2 15000000 		.4byte	.LASF17
+ 424 00c6 01       		.byte	0x1
+ 425 00c7 C7       		.byte	0xc7
+ 426 00c8 00000000 		.4byte	.LFB2
+ 427 00cc 02000000 		.4byte	.LFE2-.LFB2
+ 428 00d0 01       		.uleb128 0x1
+ 429 00d1 9C       		.byte	0x9c
+ 430 00d2 06       		.uleb128 0x6
+ 431 00d3 0D010000 		.4byte	.LASF18
+ 432 00d7 01       		.byte	0x1
+ 433 00d8 E9       		.byte	0xe9
+ 434 00d9 00000000 		.4byte	.LFB3
+ 435 00dd 02000000 		.4byte	.LFE3-.LFB3
+ 436 00e1 01       		.uleb128 0x1
+ 437 00e2 9C       		.byte	0x9c
+ 438 00e3 07       		.uleb128 0x7
+ 439 00e4 C2000000 		.4byte	.LASF19
+ 440 00e8 01       		.byte	0x1
+ 441 00e9 9301     		.2byte	0x193
+ 442 00eb 00000000 		.4byte	.LFB4
+ 443 00ef 0C000000 		.4byte	.LFE4-.LFB4
+ 444 00f3 01       		.uleb128 0x1
+ 445 00f4 9C       		.byte	0x9c
+ 446 00f5 08010000 		.4byte	0x108
+ 447 00f9 08       		.uleb128 0x8
+ 448 00fa AC000000 		.4byte	.LASF21
+ 449 00fe 01       		.byte	0x1
+ 450 00ff 9301     		.2byte	0x193
+ 451 0101 77000000 		.4byte	0x77
+ 452 0105 01       		.uleb128 0x1
+ 453 0106 50       		.byte	0x50
+ 454 0107 00       		.byte	0
+ 455 0108 09       		.uleb128 0x9
+ 456 0109 27010000 		.4byte	.LASF27
+ 457 010d 01       		.byte	0x1
+ 458 010e A901     		.2byte	0x1a9
+ 459 0110 77000000 		.4byte	0x77
+ 460 0114 00000000 		.4byte	.LFB5
+ 461 0118 14000000 		.4byte	.LFE5-.LFB5
+ 462 011c 01       		.uleb128 0x1
+ 463 011d 9C       		.byte	0x9c
+ 464 011e 07       		.uleb128 0x7
+ 465 011f 51020000 		.4byte	.LASF20
+ 466 0123 01       		.byte	0x1
+ 467 0124 E201     		.2byte	0x1e2
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 25
+
+
+ 468 0126 00000000 		.4byte	.LFB6
+ 469 012a 0C000000 		.4byte	.LFE6-.LFB6
+ 470 012e 01       		.uleb128 0x1
+ 471 012f 9C       		.byte	0x9c
+ 472 0130 43010000 		.4byte	0x143
+ 473 0134 08       		.uleb128 0x8
+ 474 0135 0E000000 		.4byte	.LASF22
+ 475 0139 01       		.byte	0x1
+ 476 013a E201     		.2byte	0x1e2
+ 477 013c 77000000 		.4byte	0x77
+ 478 0140 01       		.uleb128 0x1
+ 479 0141 50       		.byte	0x50
+ 480 0142 00       		.byte	0
+ 481 0143 07       		.uleb128 0x7
+ 482 0144 B8020000 		.4byte	.LASF23
+ 483 0148 01       		.byte	0x1
+ 484 0149 0402     		.2byte	0x204
+ 485 014b 00000000 		.4byte	.LFB7
+ 486 014f 0C000000 		.4byte	.LFE7-.LFB7
+ 487 0153 01       		.uleb128 0x1
+ 488 0154 9C       		.byte	0x9c
+ 489 0155 68010000 		.4byte	0x168
+ 490 0159 08       		.uleb128 0x8
+ 491 015a 06000000 		.4byte	.LASF24
+ 492 015e 01       		.byte	0x1
+ 493 015f 0402     		.2byte	0x204
+ 494 0161 77000000 		.4byte	0x77
+ 495 0165 01       		.uleb128 0x1
+ 496 0166 50       		.byte	0x50
+ 497 0167 00       		.byte	0
+ 498 0168 0A       		.uleb128 0xa
+ 499 0169 FA000000 		.4byte	.LASF25
+ 500 016d 01       		.byte	0x1
+ 501 016e 54       		.byte	0x54
+ 502 016f 00000000 		.4byte	.LFB1
+ 503 0173 34000000 		.4byte	.LFE1-.LFB1
+ 504 0177 01       		.uleb128 0x1
+ 505 0178 9C       		.byte	0x9c
+ 506 0179 B9010000 		.4byte	0x1b9
+ 507 017d 0B       		.uleb128 0xb
+ 508 017e 1E000000 		.4byte	.LVL3
+ 509 0182 E3000000 		.4byte	0xe3
+ 510 0186 92010000 		.4byte	0x192
+ 511 018a 0C       		.uleb128 0xc
+ 512 018b 01       		.uleb128 0x1
+ 513 018c 50       		.byte	0x50
+ 514 018d 03       		.uleb128 0x3
+ 515 018e 0A       		.byte	0xa
+ 516 018f 204E     		.2byte	0x4e20
+ 517 0191 00       		.byte	0
+ 518 0192 0B       		.uleb128 0xb
+ 519 0193 26000000 		.4byte	.LVL4
+ 520 0197 1E010000 		.4byte	0x11e
+ 521 019b A7010000 		.4byte	0x1a7
+ 522 019f 0C       		.uleb128 0xc
+ 523 01a0 01       		.uleb128 0x1
+ 524 01a1 50       		.byte	0x50
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 26
+
+
+ 525 01a2 03       		.uleb128 0x3
+ 526 01a3 0A       		.byte	0xa
+ 527 01a4 204E     		.2byte	0x4e20
+ 528 01a6 00       		.byte	0
+ 529 01a7 0D       		.uleb128 0xd
+ 530 01a8 2E000000 		.4byte	.LVL5
+ 531 01ac 43010000 		.4byte	0x143
+ 532 01b0 0C       		.uleb128 0xc
+ 533 01b1 01       		.uleb128 0x1
+ 534 01b2 50       		.byte	0x50
+ 535 01b3 03       		.uleb128 0x3
+ 536 01b4 0A       		.byte	0xa
+ 537 01b5 DC05     		.2byte	0x5dc
+ 538 01b7 00       		.byte	0
+ 539 01b8 00       		.byte	0
+ 540 01b9 0A       		.uleb128 0xa
+ 541 01ba F3010000 		.4byte	.LASF26
+ 542 01be 01       		.byte	0x1
+ 543 01bf 37       		.byte	0x37
+ 544 01c0 00000000 		.4byte	.LFB0
+ 545 01c4 18000000 		.4byte	.LFE0-.LFB0
+ 546 01c8 01       		.uleb128 0x1
+ 547 01c9 9C       		.byte	0x9c
+ 548 01ca D8010000 		.4byte	0x1d8
+ 549 01ce 0E       		.uleb128 0xe
+ 550 01cf 0C000000 		.4byte	.LVL6
+ 551 01d3 68010000 		.4byte	0x168
+ 552 01d7 00       		.byte	0
+ 553 01d8 09       		.uleb128 0x9
+ 554 01d9 72000000 		.4byte	.LASF28
+ 555 01dd 01       		.byte	0x1
+ 556 01de 1603     		.2byte	0x316
+ 557 01e0 77000000 		.4byte	0x77
+ 558 01e4 00000000 		.4byte	.LFB8
+ 559 01e8 0C000000 		.4byte	.LFE8-.LFB8
+ 560 01ec 01       		.uleb128 0x1
+ 561 01ed 9C       		.byte	0x9c
+ 562 01ee 09       		.uleb128 0x9
+ 563 01ef 8C000000 		.4byte	.LASF29
+ 564 01f3 01       		.byte	0x1
+ 565 01f4 3003     		.2byte	0x330
+ 566 01f6 77000000 		.4byte	0x77
+ 567 01fa 00000000 		.4byte	.LFB9
+ 568 01fe 0C000000 		.4byte	.LFE9-.LFB9
+ 569 0202 01       		.uleb128 0x1
+ 570 0203 9C       		.byte	0x9c
+ 571 0204 09       		.uleb128 0x9
+ 572 0205 9F020000 		.4byte	.LASF30
+ 573 0209 01       		.byte	0x1
+ 574 020a 7403     		.2byte	0x374
+ 575 020c 77000000 		.4byte	0x77
+ 576 0210 00000000 		.4byte	.LFB10
+ 577 0214 0C000000 		.4byte	.LFE10-.LFB10
+ 578 0218 01       		.uleb128 0x1
+ 579 0219 9C       		.byte	0x9c
+ 580 021a 0F       		.uleb128 0xf
+ 581 021b 2A000000 		.4byte	.LASF34
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 27
+
+
+ 582 021f 01       		.byte	0x1
+ 583 0220 20       		.byte	0x20
+ 584 0221 6B000000 		.4byte	0x6b
+ 585 0225 05       		.uleb128 0x5
+ 586 0226 03       		.byte	0x3
+ 587 0227 00000000 		.4byte	Left_HB25_PWM_initVar
+ 588 022b 00       		.byte	0
+ 589              		.section	.debug_abbrev,"",%progbits
+ 590              	.Ldebug_abbrev0:
+ 591 0000 01       		.uleb128 0x1
+ 592 0001 11       		.uleb128 0x11
+ 593 0002 01       		.byte	0x1
+ 594 0003 25       		.uleb128 0x25
+ 595 0004 0E       		.uleb128 0xe
+ 596 0005 13       		.uleb128 0x13
+ 597 0006 0B       		.uleb128 0xb
+ 598 0007 03       		.uleb128 0x3
+ 599 0008 0E       		.uleb128 0xe
+ 600 0009 1B       		.uleb128 0x1b
+ 601 000a 0E       		.uleb128 0xe
+ 602 000b 55       		.uleb128 0x55
+ 603 000c 17       		.uleb128 0x17
+ 604 000d 11       		.uleb128 0x11
+ 605 000e 01       		.uleb128 0x1
+ 606 000f 10       		.uleb128 0x10
+ 607 0010 17       		.uleb128 0x17
+ 608 0011 00       		.byte	0
+ 609 0012 00       		.byte	0
+ 610 0013 02       		.uleb128 0x2
+ 611 0014 24       		.uleb128 0x24
+ 612 0015 00       		.byte	0
+ 613 0016 0B       		.uleb128 0xb
+ 614 0017 0B       		.uleb128 0xb
+ 615 0018 3E       		.uleb128 0x3e
+ 616 0019 0B       		.uleb128 0xb
+ 617 001a 03       		.uleb128 0x3
+ 618 001b 0E       		.uleb128 0xe
+ 619 001c 00       		.byte	0
+ 620 001d 00       		.byte	0
+ 621 001e 03       		.uleb128 0x3
+ 622 001f 24       		.uleb128 0x24
+ 623 0020 00       		.byte	0
+ 624 0021 0B       		.uleb128 0xb
+ 625 0022 0B       		.uleb128 0xb
+ 626 0023 3E       		.uleb128 0x3e
+ 627 0024 0B       		.uleb128 0xb
+ 628 0025 03       		.uleb128 0x3
+ 629 0026 08       		.uleb128 0x8
+ 630 0027 00       		.byte	0
+ 631 0028 00       		.byte	0
+ 632 0029 04       		.uleb128 0x4
+ 633 002a 16       		.uleb128 0x16
+ 634 002b 00       		.byte	0
+ 635 002c 03       		.uleb128 0x3
+ 636 002d 0E       		.uleb128 0xe
+ 637 002e 3A       		.uleb128 0x3a
+ 638 002f 0B       		.uleb128 0xb
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 28
+
+
+ 639 0030 3B       		.uleb128 0x3b
+ 640 0031 05       		.uleb128 0x5
+ 641 0032 49       		.uleb128 0x49
+ 642 0033 13       		.uleb128 0x13
+ 643 0034 00       		.byte	0
+ 644 0035 00       		.byte	0
+ 645 0036 05       		.uleb128 0x5
+ 646 0037 35       		.uleb128 0x35
+ 647 0038 00       		.byte	0
+ 648 0039 49       		.uleb128 0x49
+ 649 003a 13       		.uleb128 0x13
+ 650 003b 00       		.byte	0
+ 651 003c 00       		.byte	0
+ 652 003d 06       		.uleb128 0x6
+ 653 003e 2E       		.uleb128 0x2e
+ 654 003f 00       		.byte	0
+ 655 0040 3F       		.uleb128 0x3f
+ 656 0041 19       		.uleb128 0x19
+ 657 0042 03       		.uleb128 0x3
+ 658 0043 0E       		.uleb128 0xe
+ 659 0044 3A       		.uleb128 0x3a
+ 660 0045 0B       		.uleb128 0xb
+ 661 0046 3B       		.uleb128 0x3b
+ 662 0047 0B       		.uleb128 0xb
+ 663 0048 27       		.uleb128 0x27
+ 664 0049 19       		.uleb128 0x19
+ 665 004a 11       		.uleb128 0x11
+ 666 004b 01       		.uleb128 0x1
+ 667 004c 12       		.uleb128 0x12
+ 668 004d 06       		.uleb128 0x6
+ 669 004e 40       		.uleb128 0x40
+ 670 004f 18       		.uleb128 0x18
+ 671 0050 9742     		.uleb128 0x2117
+ 672 0052 19       		.uleb128 0x19
+ 673 0053 00       		.byte	0
+ 674 0054 00       		.byte	0
+ 675 0055 07       		.uleb128 0x7
+ 676 0056 2E       		.uleb128 0x2e
+ 677 0057 01       		.byte	0x1
+ 678 0058 3F       		.uleb128 0x3f
+ 679 0059 19       		.uleb128 0x19
+ 680 005a 03       		.uleb128 0x3
+ 681 005b 0E       		.uleb128 0xe
+ 682 005c 3A       		.uleb128 0x3a
+ 683 005d 0B       		.uleb128 0xb
+ 684 005e 3B       		.uleb128 0x3b
+ 685 005f 05       		.uleb128 0x5
+ 686 0060 27       		.uleb128 0x27
+ 687 0061 19       		.uleb128 0x19
+ 688 0062 11       		.uleb128 0x11
+ 689 0063 01       		.uleb128 0x1
+ 690 0064 12       		.uleb128 0x12
+ 691 0065 06       		.uleb128 0x6
+ 692 0066 40       		.uleb128 0x40
+ 693 0067 18       		.uleb128 0x18
+ 694 0068 9742     		.uleb128 0x2117
+ 695 006a 19       		.uleb128 0x19
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 29
+
+
+ 696 006b 01       		.uleb128 0x1
+ 697 006c 13       		.uleb128 0x13
+ 698 006d 00       		.byte	0
+ 699 006e 00       		.byte	0
+ 700 006f 08       		.uleb128 0x8
+ 701 0070 05       		.uleb128 0x5
+ 702 0071 00       		.byte	0
+ 703 0072 03       		.uleb128 0x3
+ 704 0073 0E       		.uleb128 0xe
+ 705 0074 3A       		.uleb128 0x3a
+ 706 0075 0B       		.uleb128 0xb
+ 707 0076 3B       		.uleb128 0x3b
+ 708 0077 05       		.uleb128 0x5
+ 709 0078 49       		.uleb128 0x49
+ 710 0079 13       		.uleb128 0x13
+ 711 007a 02       		.uleb128 0x2
+ 712 007b 18       		.uleb128 0x18
+ 713 007c 00       		.byte	0
+ 714 007d 00       		.byte	0
+ 715 007e 09       		.uleb128 0x9
+ 716 007f 2E       		.uleb128 0x2e
+ 717 0080 00       		.byte	0
+ 718 0081 3F       		.uleb128 0x3f
+ 719 0082 19       		.uleb128 0x19
+ 720 0083 03       		.uleb128 0x3
+ 721 0084 0E       		.uleb128 0xe
+ 722 0085 3A       		.uleb128 0x3a
+ 723 0086 0B       		.uleb128 0xb
+ 724 0087 3B       		.uleb128 0x3b
+ 725 0088 05       		.uleb128 0x5
+ 726 0089 27       		.uleb128 0x27
+ 727 008a 19       		.uleb128 0x19
+ 728 008b 49       		.uleb128 0x49
+ 729 008c 13       		.uleb128 0x13
+ 730 008d 11       		.uleb128 0x11
+ 731 008e 01       		.uleb128 0x1
+ 732 008f 12       		.uleb128 0x12
+ 733 0090 06       		.uleb128 0x6
+ 734 0091 40       		.uleb128 0x40
+ 735 0092 18       		.uleb128 0x18
+ 736 0093 9742     		.uleb128 0x2117
+ 737 0095 19       		.uleb128 0x19
+ 738 0096 00       		.byte	0
+ 739 0097 00       		.byte	0
+ 740 0098 0A       		.uleb128 0xa
+ 741 0099 2E       		.uleb128 0x2e
+ 742 009a 01       		.byte	0x1
+ 743 009b 3F       		.uleb128 0x3f
+ 744 009c 19       		.uleb128 0x19
+ 745 009d 03       		.uleb128 0x3
+ 746 009e 0E       		.uleb128 0xe
+ 747 009f 3A       		.uleb128 0x3a
+ 748 00a0 0B       		.uleb128 0xb
+ 749 00a1 3B       		.uleb128 0x3b
+ 750 00a2 0B       		.uleb128 0xb
+ 751 00a3 27       		.uleb128 0x27
+ 752 00a4 19       		.uleb128 0x19
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 30
+
+
+ 753 00a5 11       		.uleb128 0x11
+ 754 00a6 01       		.uleb128 0x1
+ 755 00a7 12       		.uleb128 0x12
+ 756 00a8 06       		.uleb128 0x6
+ 757 00a9 40       		.uleb128 0x40
+ 758 00aa 18       		.uleb128 0x18
+ 759 00ab 9742     		.uleb128 0x2117
+ 760 00ad 19       		.uleb128 0x19
+ 761 00ae 01       		.uleb128 0x1
+ 762 00af 13       		.uleb128 0x13
+ 763 00b0 00       		.byte	0
+ 764 00b1 00       		.byte	0
+ 765 00b2 0B       		.uleb128 0xb
+ 766 00b3 898201   		.uleb128 0x4109
+ 767 00b6 01       		.byte	0x1
+ 768 00b7 11       		.uleb128 0x11
+ 769 00b8 01       		.uleb128 0x1
+ 770 00b9 31       		.uleb128 0x31
+ 771 00ba 13       		.uleb128 0x13
+ 772 00bb 01       		.uleb128 0x1
+ 773 00bc 13       		.uleb128 0x13
+ 774 00bd 00       		.byte	0
+ 775 00be 00       		.byte	0
+ 776 00bf 0C       		.uleb128 0xc
+ 777 00c0 8A8201   		.uleb128 0x410a
+ 778 00c3 00       		.byte	0
+ 779 00c4 02       		.uleb128 0x2
+ 780 00c5 18       		.uleb128 0x18
+ 781 00c6 9142     		.uleb128 0x2111
+ 782 00c8 18       		.uleb128 0x18
+ 783 00c9 00       		.byte	0
+ 784 00ca 00       		.byte	0
+ 785 00cb 0D       		.uleb128 0xd
+ 786 00cc 898201   		.uleb128 0x4109
+ 787 00cf 01       		.byte	0x1
+ 788 00d0 11       		.uleb128 0x11
+ 789 00d1 01       		.uleb128 0x1
+ 790 00d2 31       		.uleb128 0x31
+ 791 00d3 13       		.uleb128 0x13
+ 792 00d4 00       		.byte	0
+ 793 00d5 00       		.byte	0
+ 794 00d6 0E       		.uleb128 0xe
+ 795 00d7 898201   		.uleb128 0x4109
+ 796 00da 00       		.byte	0
+ 797 00db 11       		.uleb128 0x11
+ 798 00dc 01       		.uleb128 0x1
+ 799 00dd 31       		.uleb128 0x31
+ 800 00de 13       		.uleb128 0x13
+ 801 00df 00       		.byte	0
+ 802 00e0 00       		.byte	0
+ 803 00e1 0F       		.uleb128 0xf
+ 804 00e2 34       		.uleb128 0x34
+ 805 00e3 00       		.byte	0
+ 806 00e4 03       		.uleb128 0x3
+ 807 00e5 0E       		.uleb128 0xe
+ 808 00e6 3A       		.uleb128 0x3a
+ 809 00e7 0B       		.uleb128 0xb
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 31
+
+
+ 810 00e8 3B       		.uleb128 0x3b
+ 811 00e9 0B       		.uleb128 0xb
+ 812 00ea 49       		.uleb128 0x49
+ 813 00eb 13       		.uleb128 0x13
+ 814 00ec 3F       		.uleb128 0x3f
+ 815 00ed 19       		.uleb128 0x19
+ 816 00ee 02       		.uleb128 0x2
+ 817 00ef 18       		.uleb128 0x18
+ 818 00f0 00       		.byte	0
+ 819 00f1 00       		.byte	0
+ 820 00f2 00       		.byte	0
+ 821              		.section	.debug_aranges,"",%progbits
+ 822 0000 6C000000 		.4byte	0x6c
+ 823 0004 0200     		.2byte	0x2
+ 824 0006 00000000 		.4byte	.Ldebug_info0
+ 825 000a 04       		.byte	0x4
+ 826 000b 00       		.byte	0
+ 827 000c 0000     		.2byte	0
+ 828 000e 0000     		.2byte	0
+ 829 0010 00000000 		.4byte	.LFB2
+ 830 0014 02000000 		.4byte	.LFE2-.LFB2
+ 831 0018 00000000 		.4byte	.LFB3
+ 832 001c 02000000 		.4byte	.LFE3-.LFB3
+ 833 0020 00000000 		.4byte	.LFB4
+ 834 0024 0C000000 		.4byte	.LFE4-.LFB4
+ 835 0028 00000000 		.4byte	.LFB5
+ 836 002c 14000000 		.4byte	.LFE5-.LFB5
+ 837 0030 00000000 		.4byte	.LFB6
+ 838 0034 0C000000 		.4byte	.LFE6-.LFB6
+ 839 0038 00000000 		.4byte	.LFB7
+ 840 003c 0C000000 		.4byte	.LFE7-.LFB7
+ 841 0040 00000000 		.4byte	.LFB1
+ 842 0044 34000000 		.4byte	.LFE1-.LFB1
+ 843 0048 00000000 		.4byte	.LFB0
+ 844 004c 18000000 		.4byte	.LFE0-.LFB0
+ 845 0050 00000000 		.4byte	.LFB8
+ 846 0054 0C000000 		.4byte	.LFE8-.LFB8
+ 847 0058 00000000 		.4byte	.LFB9
+ 848 005c 0C000000 		.4byte	.LFE9-.LFB9
+ 849 0060 00000000 		.4byte	.LFB10
+ 850 0064 0C000000 		.4byte	.LFE10-.LFB10
+ 851 0068 00000000 		.4byte	0
+ 852 006c 00000000 		.4byte	0
+ 853              		.section	.debug_ranges,"",%progbits
+ 854              	.Ldebug_ranges0:
+ 855 0000 00000000 		.4byte	.LFB2
+ 856 0004 02000000 		.4byte	.LFE2
+ 857 0008 00000000 		.4byte	.LFB3
+ 858 000c 02000000 		.4byte	.LFE3
+ 859 0010 00000000 		.4byte	.LFB4
+ 860 0014 0C000000 		.4byte	.LFE4
+ 861 0018 00000000 		.4byte	.LFB5
+ 862 001c 14000000 		.4byte	.LFE5
+ 863 0020 00000000 		.4byte	.LFB6
+ 864 0024 0C000000 		.4byte	.LFE6
+ 865 0028 00000000 		.4byte	.LFB7
+ 866 002c 0C000000 		.4byte	.LFE7
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 32
+
+
+ 867 0030 00000000 		.4byte	.LFB1
+ 868 0034 34000000 		.4byte	.LFE1
+ 869 0038 00000000 		.4byte	.LFB0
+ 870 003c 18000000 		.4byte	.LFE0
+ 871 0040 00000000 		.4byte	.LFB8
+ 872 0044 0C000000 		.4byte	.LFE8
+ 873 0048 00000000 		.4byte	.LFB9
+ 874 004c 0C000000 		.4byte	.LFE9
+ 875 0050 00000000 		.4byte	.LFB10
+ 876 0054 0C000000 		.4byte	.LFE10
+ 877 0058 00000000 		.4byte	0
+ 878 005c 00000000 		.4byte	0
+ 879              		.section	.debug_line,"",%progbits
+ 880              	.Ldebug_line0:
+ 881 0000 17010000 		.section	.debug_str,"MS",%progbits,1
+ 881      02004C00 
+ 881      00000201 
+ 881      FB0E0D00 
+ 881      01010101 
+ 882              	.LASF15:
+ 883 0000 72656731 		.ascii	"reg16\000"
+ 883      3600
+ 884              	.LASF24:
+ 885 0006 636F6D70 		.ascii	"compare\000"
+ 885      61726500 
+ 886              	.LASF22:
+ 887 000e 70657269 		.ascii	"period\000"
+ 887      6F6400
+ 888              	.LASF17:
+ 889 0015 4C656674 		.ascii	"Left_HB25_PWM_Enable\000"
+ 889      5F484232 
+ 889      355F5057 
+ 889      4D5F456E 
+ 889      61626C65 
+ 890              	.LASF34:
+ 891 002a 4C656674 		.ascii	"Left_HB25_PWM_initVar\000"
+ 891      5F484232 
+ 891      355F5057 
+ 891      4D5F696E 
+ 891      69745661 
+ 892              	.LASF33:
+ 893 0040 443A5C70 		.ascii	"D:\\projects\\ArloBot\\arlobot_freesoc\\freesoc.cyd"
+ 893      726F6A65 
+ 893      6374735C 
+ 893      41726C6F 
+ 893      426F745C 
+ 894 006f 736E00   		.ascii	"sn\000"
+ 895              	.LASF28:
+ 896 0072 4C656674 		.ascii	"Left_HB25_PWM_ReadCapture\000"
+ 896      5F484232 
+ 896      355F5057 
+ 896      4D5F5265 
+ 896      61644361 
+ 897              	.LASF29:
+ 898 008c 4C656674 		.ascii	"Left_HB25_PWM_ReadCompare\000"
+ 898      5F484232 
+ 898      355F5057 
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 33
+
+
+ 898      4D5F5265 
+ 898      6164436F 
+ 899              	.LASF11:
+ 900 00a6 666C6F61 		.ascii	"float\000"
+ 900      7400
+ 901              	.LASF21:
+ 902 00ac 636F756E 		.ascii	"counter\000"
+ 902      74657200 
+ 903              	.LASF1:
+ 904 00b4 756E7369 		.ascii	"unsigned char\000"
+ 904      676E6564 
+ 904      20636861 
+ 904      7200
+ 905              	.LASF19:
+ 906 00c2 4C656674 		.ascii	"Left_HB25_PWM_WriteCounter\000"
+ 906      5F484232 
+ 906      355F5057 
+ 906      4D5F5772 
+ 906      69746543 
+ 907              	.LASF14:
+ 908 00dd 72656738 		.ascii	"reg8\000"
+ 908      00
+ 909              	.LASF5:
+ 910 00e2 6C6F6E67 		.ascii	"long unsigned int\000"
+ 910      20756E73 
+ 910      69676E65 
+ 910      6420696E 
+ 910      7400
+ 911              	.LASF9:
+ 912 00f4 75696E74 		.ascii	"uint8\000"
+ 912      3800
+ 913              	.LASF25:
+ 914 00fa 4C656674 		.ascii	"Left_HB25_PWM_Init\000"
+ 914      5F484232 
+ 914      355F5057 
+ 914      4D5F496E 
+ 914      697400
+ 915              	.LASF18:
+ 916 010d 4C656674 		.ascii	"Left_HB25_PWM_Stop\000"
+ 916      5F484232 
+ 916      355F5057 
+ 916      4D5F5374 
+ 916      6F7000
+ 917              	.LASF10:
+ 918 0120 75696E74 		.ascii	"uint16\000"
+ 918      313600
+ 919              	.LASF27:
+ 920 0127 4C656674 		.ascii	"Left_HB25_PWM_ReadCounter\000"
+ 920      5F484232 
+ 920      355F5057 
+ 920      4D5F5265 
+ 920      6164436F 
+ 921              	.LASF8:
+ 922 0141 756E7369 		.ascii	"unsigned int\000"
+ 922      676E6564 
+ 922      20696E74 
+ 922      00
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 34
+
+
+ 923              	.LASF7:
+ 924 014e 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 924      206C6F6E 
+ 924      6720756E 
+ 924      7369676E 
+ 924      65642069 
+ 925              	.LASF31:
+ 926 0165 474E5520 		.ascii	"GNU C 4.9.3 20150303 (release) [ARM/embedded-4_9-br"
+ 926      4320342E 
+ 926      392E3320 
+ 926      32303135 
+ 926      30333033 
+ 927 0198 616E6368 		.ascii	"anch revision 221220] -mcpu=cortex-m3 -mthumb -g -O"
+ 927      20726576 
+ 927      6973696F 
+ 927      6E203232 
+ 927      31323230 
+ 928 01cb 67202D66 		.ascii	"g -ffunction-sections -ffat-lto-objects\000"
+ 928      66756E63 
+ 928      74696F6E 
+ 928      2D736563 
+ 928      74696F6E 
+ 929              	.LASF26:
+ 930 01f3 4C656674 		.ascii	"Left_HB25_PWM_Start\000"
+ 930      5F484232 
+ 930      355F5057 
+ 930      4D5F5374 
+ 930      61727400 
+ 931              	.LASF16:
+ 932 0207 73697A65 		.ascii	"sizetype\000"
+ 932      74797065 
+ 932      00
+ 933              	.LASF6:
+ 934 0210 6C6F6E67 		.ascii	"long long int\000"
+ 934      206C6F6E 
+ 934      6720696E 
+ 934      7400
+ 935              	.LASF32:
+ 936 021e 2E5C4765 		.ascii	".\\Generated_Source\\PSoC5\\Left_HB25_PWM.c\000"
+ 936      6E657261 
+ 936      7465645F 
+ 936      536F7572 
+ 936      63655C50 
+ 937              	.LASF2:
+ 938 0247 73686F72 		.ascii	"short int\000"
+ 938      7420696E 
+ 938      7400
+ 939              	.LASF20:
+ 940 0251 4C656674 		.ascii	"Left_HB25_PWM_WritePeriod\000"
+ 940      5F484232 
+ 940      355F5057 
+ 940      4D5F5772 
+ 940      69746550 
+ 941              	.LASF4:
+ 942 026b 6C6F6E67 		.ascii	"long int\000"
+ 942      20696E74 
+ 942      00
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc9723tY.s 			page 35
+
+
+ 943              	.LASF13:
+ 944 0274 63686172 		.ascii	"char\000"
+ 944      00
+ 945              	.LASF0:
+ 946 0279 7369676E 		.ascii	"signed char\000"
+ 946      65642063 
+ 946      68617200 
+ 947              	.LASF12:
+ 948 0285 646F7562 		.ascii	"double\000"
+ 948      6C6500
+ 949              	.LASF3:
+ 950 028c 73686F72 		.ascii	"short unsigned int\000"
+ 950      7420756E 
+ 950      7369676E 
+ 950      65642069 
+ 950      6E7400
+ 951              	.LASF30:
+ 952 029f 4C656674 		.ascii	"Left_HB25_PWM_ReadPeriod\000"
+ 952      5F484232 
+ 952      355F5057 
+ 952      4D5F5265 
+ 952      61645065 
+ 953              	.LASF23:
+ 954 02b8 4C656674 		.ascii	"Left_HB25_PWM_WriteCompare\000"
+ 954      5F484232 
+ 954      355F5057 
+ 954      4D5F5772 
+ 954      69746543 
+ 955              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 4.9.3 20150303 (release) [ARM/embedded-4_9-br

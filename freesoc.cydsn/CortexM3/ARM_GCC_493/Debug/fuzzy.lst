@@ -1,0 +1,4721 @@
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 1
+
+
+   1              		.syntax unified
+   2              		.cpu cortex-m3
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 1
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.thumb
+  14              		.file	"fuzzy.c"
+  15              		.text
+  16              	.Ltext0:
+  17              		.cfi_sections	.debug_frame
+  18              		.global	__aeabi_i2f
+  19              		.global	__aeabi_fsub
+  20              		.global	__aeabi_f2iz
+  21              		.global	__aeabi_fmul
+  22              		.global	__aeabi_fcmplt
+  23              		.global	__aeabi_fcmpgt
+  24              		.section	.text.compute_degree_of_membership,"ax",%progbits
+  25              		.align	2
+  26              		.thumb
+  27              		.thumb_func
+  28              		.type	compute_degree_of_membership, %function
+  29              	compute_degree_of_membership:
+  30              	.LFB64:
+  31              		.file 1 "..\\source\\fuzzy.c"
+   1:..\source/fuzzy.c **** /* ========================================
+   2:..\source/fuzzy.c ****  *
+   3:..\source/fuzzy.c ****  * Copyright YOUR COMPANY, THE YEAR
+   4:..\source/fuzzy.c ****  * All Rights Reserved
+   5:..\source/fuzzy.c ****  * UNPUBLISHED, LICENSED SOFTWARE.
+   6:..\source/fuzzy.c ****  *
+   7:..\source/fuzzy.c ****  * CONFIDENTIAL AND PROPRIETARY INFORMATION
+   8:..\source/fuzzy.c ****  * WHICH IS THE PROPERTY OF your company.
+   9:..\source/fuzzy.c ****  *
+  10:..\source/fuzzy.c ****  * ========================================
+  11:..\source/fuzzy.c **** */
+  12:..\source/fuzzy.c **** #include "fuzzy.h"
+  13:..\source/fuzzy.c **** #include "utils.h"
+  14:..\source/fuzzy.c **** #include "i2c.h"
+  15:..\source/fuzzy.c **** #include "encoder.h"
+  16:..\source/fuzzy.c **** #include "motor.h"
+  17:..\source/fuzzy.c **** 
+  18:..\source/fuzzy.c **** #define MAXNAME 10
+  19:..\source/fuzzy.c **** 
+  20:..\source/fuzzy.c **** #define INPUT_ERROR (0)
+  21:..\source/fuzzy.c **** #define INPUT_DERROR (1)
+  22:..\source/fuzzy.c **** 
+  23:..\source/fuzzy.c **** #define MAX_NUM_INPUTS (2)
+  24:..\source/fuzzy.c **** #define MAX_NUM_OUTPUTS (1)
+  25:..\source/fuzzy.c **** #define MAX_NUM_LEFT_INPUTS (MAX_NUM_INPUTS)
+  26:..\source/fuzzy.c **** #define MAX_NUM_RIGHT_INPUTS (MAX_NUM_INPUTS)
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 2
+
+
+  27:..\source/fuzzy.c **** #define MAX_NUM_LEFT_OUTPUTS (MAX_NUM_OUTPUTS)
+  28:..\source/fuzzy.c **** #define MAX_NUM_RIGHT_OUTPUTS (MAX_NUM_OUTPUTS)
+  29:..\source/fuzzy.c **** 
+  30:..\source/fuzzy.c **** #define MAX_NUM_MFS (7)
+  31:..\source/fuzzy.c **** #define MAX_NUM_INPUT_MFS (MAX_NUM_MFS)
+  32:..\source/fuzzy.c **** #define MAX_NUM_OUTPUT_MFS (MAX_NUM_MFS)
+  33:..\source/fuzzy.c **** #define MAX_NUM_RULES (MAX_NUM_INPUT_MFS * MAX_NUM_OUTPUT_MFS)
+  34:..\source/fuzzy.c **** 
+  35:..\source/fuzzy.c **** #define INPUT_ERROR     (0)
+  36:..\source/fuzzy.c **** #define INPUT_DERROR    (1)
+  37:..\source/fuzzy.c **** #define OUTPUT_PWM      (0)
+  38:..\source/fuzzy.c **** 
+  39:..\source/fuzzy.c **** #define MIN_MF_VALUE    (0.0)
+  40:..\source/fuzzy.c **** #define MAX_MF_VALUE    (1.0)
+  41:..\source/fuzzy.c **** 
+  42:..\source/fuzzy.c **** #define UPPER_LIMIT     (MAX_MF_VALUE)
+  43:..\source/fuzzy.c **** 
+  44:..\source/fuzzy.c **** 
+  45:..\source/fuzzy.c **** 
+  46:..\source/fuzzy.c **** /* Membership functions are associated with each system input and output. */
+  47:..\source/fuzzy.c **** typedef struct mf_type
+  48:..\source/fuzzy.c **** {
+  49:..\source/fuzzy.c ****     char name[MAXNAME]; /* name of membership function (fuzzy set)    */
+  50:..\source/fuzzy.c ****     float value;        /* degree of membership or output strength    */
+  51:..\source/fuzzy.c ****     float point1;       /* leftmost x-axis point of mem. function     */
+  52:..\source/fuzzy.c ****     float point2;       /* rightmost x-axis point of mem. function    */
+  53:..\source/fuzzy.c ****     float slope1;       /* slope of left side of membership function  */
+  54:..\source/fuzzy.c ****     float slope2;       /* slope of right side of membership function */
+  55:..\source/fuzzy.c **** } MF_TYPE;
+  56:..\source/fuzzy.c **** 
+  57:..\source/fuzzy.c **** 
+  58:..\source/fuzzy.c **** /* io_type structure builds a list of system inputs and a list of system
+  59:..\source/fuzzy.c **** outputs. After initialization, these lists are fixed, except for value field
+  60:..\source/fuzzy.c **** which is updated on every inference pass. 
+  61:..\source/fuzzy.c **** */
+  62:..\source/fuzzy.c **** typedef struct io_type
+  63:..\source/fuzzy.c **** {
+  64:..\source/fuzzy.c ****     char name[MAXNAME]; /*  name of system input/output       */
+  65:..\source/fuzzy.c ****     float value;        /*  value of system input/output      */
+  66:..\source/fuzzy.c ****     MF_TYPE membership_functions[MAX_NUM_MFS];
+  67:..\source/fuzzy.c **** } IO_TYPE;
+  68:..\source/fuzzy.c **** 
+  69:..\source/fuzzy.c **** typedef struct rule_type
+  70:..\source/fuzzy.c **** {
+  71:..\source/fuzzy.c ****     uint8 if_side[MAX_NUM_INPUTS];
+  72:..\source/fuzzy.c ****     uint8 then_side[MAX_NUM_OUTPUTS];
+  73:..\source/fuzzy.c **** } RULE_TYPE;
+  74:..\source/fuzzy.c **** 
+  75:..\source/fuzzy.c **** /* Membership Function Macros
+  76:..\source/fuzzy.c **** 
+  77:..\source/fuzzy.c ****     Note: For now, the left, right, output membership functions are all the same.  There isn't a co
+  78:..\source/fuzzy.c ****     this point for them to not be.  So, we're able to define a set of macros for calculating points
+  79:..\source/fuzzy.c ****     them for the input and output calculations.
+  80:..\source/fuzzy.c **** 
+  81:..\source/fuzzy.c **** */
+  82:..\source/fuzzy.c **** 
+  83:..\source/fuzzy.c **** 
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 3
+
+
+  84:..\source/fuzzy.c **** /* Given a start and end point calculate the mid point */
+  85:..\source/fuzzy.c **** #define CALC_MID_PT(pt1, pt2)   (pt1 + ((pt2 - pt1)/2))
+  86:..\source/fuzzy.c **** #define CALC_SLOPE(y1, y2, x1, x2) ((y2 - y1)/(x2 - x1))
+  87:..\source/fuzzy.c **** 
+  88:..\source/fuzzy.c **** #define NB_PT1  (-1.0)
+  89:..\source/fuzzy.c **** #define NB_PT2  (-0.67)
+  90:..\source/fuzzy.c **** #define NB_SLOPE1 (0)
+  91:..\source/fuzzy.c **** #define NB_SLOPE2 (CALC_SLOPE(0, UPPER_LIMIT, NB_PT2, NB_PT1))
+  92:..\source/fuzzy.c **** 
+  93:..\source/fuzzy.c **** #define NM_PT1  (-1.0)
+  94:..\source/fuzzy.c **** #define NM_PT2  (-0.33)
+  95:..\source/fuzzy.c **** #define NM_MID_PT (CALC_MID_PT(NM_PT1, NM_PT2))
+  96:..\source/fuzzy.c **** #define NM_SLOPE1 (CALC_SLOPE(0, UPPER_LIMIT, NM_PT1, NM_MID_PT))
+  97:..\source/fuzzy.c **** #define NM_SLOPE2 (CALC_SLOPE(0, UPPER_LIMIT, NM_PT2, NM_MID_PT))
+  98:..\source/fuzzy.c **** 
+  99:..\source/fuzzy.c **** #define NS_PT1  (-0.67)
+ 100:..\source/fuzzy.c **** #define NS_PT2  (0.0)
+ 101:..\source/fuzzy.c **** #define NS_MID_PT (CALC_MID_PT(NS_PT1, NS_PT2))
+ 102:..\source/fuzzy.c **** #define NS_SLOPE1 (CALC_SLOPE(0, UPPER_LIMIT, NS_PT1, NS_MID_PT))
+ 103:..\source/fuzzy.c **** #define NS_SLOPE2 (CALC_SLOPE(0, UPPER_LIMIT, NS_PT2, NS_MID_PT))
+ 104:..\source/fuzzy.c **** 
+ 105:..\source/fuzzy.c **** #define Z_PT1  (-0.33)
+ 106:..\source/fuzzy.c **** #define Z_PT2  (0.33)
+ 107:..\source/fuzzy.c **** #define Z_MID_PT (CALC_MID_PT(Z_PT1, Z_PT2))
+ 108:..\source/fuzzy.c **** #define Z_SLOPE1 (CALC_SLOPE(0, UPPER_LIMIT, Z_PT1, Z_MID_PT))
+ 109:..\source/fuzzy.c **** #define Z_SLOPE2 (CALC_SLOPE(0, UPPER_LIMIT, Z_PT2, Z_MID_PT))
+ 110:..\source/fuzzy.c **** 
+ 111:..\source/fuzzy.c **** #define PS_PT1  (0.0)
+ 112:..\source/fuzzy.c **** #define PS_PT2  (0.67)
+ 113:..\source/fuzzy.c **** #define PS_MID_PT (CALC_MID_PT(PS_PT1, PS_PT2))
+ 114:..\source/fuzzy.c **** #define PS_SLOPE1 (CALC_SLOPE(0, UPPER_LIMIT, PS_PT1, PS_MID_PT))
+ 115:..\source/fuzzy.c **** #define PS_SLOPE2 (CALC_SLOPE(0, UPPER_LIMIT, PS_PT2, PS_MID_PT))
+ 116:..\source/fuzzy.c **** 
+ 117:..\source/fuzzy.c **** #define PM_PT1  (0.33)
+ 118:..\source/fuzzy.c **** #define PM_PT2  (1.0)
+ 119:..\source/fuzzy.c **** #define PM_MID_PT (CALC_MID_PT(PM_PT1, PM_PT2))
+ 120:..\source/fuzzy.c **** #define PM_SLOPE1 (CALC_SLOPE(0, UPPER_LIMIT, PM_PT1, PM_MID_PT))
+ 121:..\source/fuzzy.c **** #define PM_SLOPE2 (CALC_SLOPE(0, UPPER_LIMIT, PM_PT2, PM_MID_PT))
+ 122:..\source/fuzzy.c **** 
+ 123:..\source/fuzzy.c **** #define PB_PT1  (0.67)
+ 124:..\source/fuzzy.c **** #define PB_PT2  (1.0)
+ 125:..\source/fuzzy.c **** #define PB_MID_PT (CALC_MID_PT(PB_PT1, PB_PT2))
+ 126:..\source/fuzzy.c **** #define PB_SLOPE1 (CALC_SLOPE(0, UPPER_LIMIT, PB_PT1, PB_MID_PT))
+ 127:..\source/fuzzy.c **** #define PB_SLOPE2 (0.0)
+ 128:..\source/fuzzy.c **** 
+ 129:..\source/fuzzy.c **** /* Input Error Membership Functions Definitions */
+ 130:..\source/fuzzy.c **** #define ERROR_NB_PT1    (NB_PT1)
+ 131:..\source/fuzzy.c **** #define ERROR_NB_PT2    (NB_PT2)
+ 132:..\source/fuzzy.c **** #define ERROR_NB_SLOPE1 (NB_SLOPE1)
+ 133:..\source/fuzzy.c **** #define ERROR_NB_SLOPE2 (NB_SLOPE2)
+ 134:..\source/fuzzy.c **** 
+ 135:..\source/fuzzy.c **** #define ERROR_NM_PT1    (NM_PT1)
+ 136:..\source/fuzzy.c **** #define ERROR_NM_PT2    (NM_PT2)
+ 137:..\source/fuzzy.c **** #define ERROR_NM_SLOPE1 (NM_SLOPE1)
+ 138:..\source/fuzzy.c **** #define ERROR_NM_SLOPE2 (NM_SLOPE2)
+ 139:..\source/fuzzy.c **** 
+ 140:..\source/fuzzy.c **** #define ERROR_NS_PT1    (NS_PT1)
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 4
+
+
+ 141:..\source/fuzzy.c **** #define ERROR_NS_PT2    (NS_PT2)
+ 142:..\source/fuzzy.c **** #define ERROR_NS_SLOPE1 (NS_SLOPE1)
+ 143:..\source/fuzzy.c **** #define ERROR_NS_SLOPE2 (NS_SLOPE2)
+ 144:..\source/fuzzy.c **** 
+ 145:..\source/fuzzy.c **** #define ERROR_Z_PT1    (Z_PT1)
+ 146:..\source/fuzzy.c **** #define ERROR_Z_PT2    (Z_PT2)
+ 147:..\source/fuzzy.c **** #define ERROR_Z_SLOPE1 (Z_SLOPE1)
+ 148:..\source/fuzzy.c **** #define ERROR_Z_SLOPE2 (Z_SLOPE2)
+ 149:..\source/fuzzy.c **** 
+ 150:..\source/fuzzy.c **** #define ERROR_PS_PT1    (PS_PT1)
+ 151:..\source/fuzzy.c **** #define ERROR_PS_PT2    (PS_PT1)
+ 152:..\source/fuzzy.c **** #define ERROR_PS_SLOPE1 (PS_SLOPE1)
+ 153:..\source/fuzzy.c **** #define ERROR_PS_SLOPE2 (PS_SLOPE2)
+ 154:..\source/fuzzy.c **** 
+ 155:..\source/fuzzy.c **** #define ERROR_PM_PT1    (PM_PT1)
+ 156:..\source/fuzzy.c **** #define ERROR_PM_PT2    (PM_PT1)
+ 157:..\source/fuzzy.c **** #define ERROR_PM_SLOPE1 (PM_SLOPE1)
+ 158:..\source/fuzzy.c **** #define ERROR_PM_SLOPE2 (PM_SLOPE2)
+ 159:..\source/fuzzy.c **** 
+ 160:..\source/fuzzy.c **** #define ERROR_PB_PT1    (PB_PT1)
+ 161:..\source/fuzzy.c **** #define ERROR_PB_PT2    (PB_PT1)
+ 162:..\source/fuzzy.c **** #define ERROR_PB_SLOPE1 (PB_SLOPE1)
+ 163:..\source/fuzzy.c **** #define ERROR_PB_SLOPE2 (PB_SLOPE2)
+ 164:..\source/fuzzy.c **** 
+ 165:..\source/fuzzy.c **** /* Input dError Membership Functions Definitions */
+ 166:..\source/fuzzy.c **** #define DERROR_NB_PT1    (NB_PT1)
+ 167:..\source/fuzzy.c **** #define DERROR_NB_PT2    (NB_PT2)
+ 168:..\source/fuzzy.c **** #define DERROR_NB_SLOPE1 (NB_SLOPE1)
+ 169:..\source/fuzzy.c **** #define DERROR_NB_SLOPE2 (NB_SLOPE2)
+ 170:..\source/fuzzy.c **** 
+ 171:..\source/fuzzy.c **** #define DERROR_NM_PT1    (NM_PT1)
+ 172:..\source/fuzzy.c **** #define DERROR_NM_PT2    (NM_PT2)
+ 173:..\source/fuzzy.c **** #define DERROR_NM_SLOPE1 (NM_SLOPE1)
+ 174:..\source/fuzzy.c **** #define DERROR_NM_SLOPE2 (NM_SLOPE2)
+ 175:..\source/fuzzy.c **** 
+ 176:..\source/fuzzy.c **** #define DERROR_NS_PT1    (NS_PT1)
+ 177:..\source/fuzzy.c **** #define DERROR_NS_PT2    (NS_PT2)
+ 178:..\source/fuzzy.c **** #define DERROR_NS_SLOPE1 (NS_SLOPE1)
+ 179:..\source/fuzzy.c **** #define DERROR_NS_SLOPE2 (NS_SLOPE2)
+ 180:..\source/fuzzy.c **** 
+ 181:..\source/fuzzy.c **** #define DERROR_Z_PT1    (Z_PT1)
+ 182:..\source/fuzzy.c **** #define DERROR_Z_PT2    (Z_PT2)
+ 183:..\source/fuzzy.c **** #define DERROR_Z_SLOPE1 (Z_SLOPE1)
+ 184:..\source/fuzzy.c **** #define DERROR_Z_SLOPE2 (Z_SLOPE2)
+ 185:..\source/fuzzy.c **** 
+ 186:..\source/fuzzy.c **** #define DERROR_PS_PT1    (PS_PT1)
+ 187:..\source/fuzzy.c **** #define DERROR_PS_PT2    (PS_PT1)
+ 188:..\source/fuzzy.c **** #define DERROR_PS_SLOPE1 (PS_SLOPE1)
+ 189:..\source/fuzzy.c **** #define DERROR_PS_SLOPE2 (PS_SLOPE2)
+ 190:..\source/fuzzy.c **** 
+ 191:..\source/fuzzy.c **** #define DERROR_PM_PT1    (PM_PT1)
+ 192:..\source/fuzzy.c **** #define DERROR_PM_PT2    (PM_PT1)
+ 193:..\source/fuzzy.c **** #define DERROR_PM_SLOPE1 (PM_SLOPE1)
+ 194:..\source/fuzzy.c **** #define DERROR_PM_SLOPE2 (PM_SLOPE2)
+ 195:..\source/fuzzy.c **** 
+ 196:..\source/fuzzy.c **** #define DERROR_PB_PT1    (PB_PT1)
+ 197:..\source/fuzzy.c **** #define DERROR_PB_PT2    (PB_PT1)
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 5
+
+
+ 198:..\source/fuzzy.c **** #define DERROR_PB_SLOPE1 (PB_SLOPE1)
+ 199:..\source/fuzzy.c **** #define DERROR_PB_SLOPE2 (PB_SLOPE2)
+ 200:..\source/fuzzy.c **** 
+ 201:..\source/fuzzy.c **** #define SYSTEM_INPUTS                   \
+ 202:..\source/fuzzy.c **** {                                       \
+ 203:..\source/fuzzy.c ****     {                                   \
+ 204:..\source/fuzzy.c ****         "Error",                        \
+ 205:..\source/fuzzy.c ****         0,                              \
+ 206:..\source/fuzzy.c ****         {                               \
+ 207:..\source/fuzzy.c ****             {"NB", 0, ERROR_NB_PT1, ERROR_NB_PT2, ERROR_NB_SLOPE1, ERROR_NB_SLOPE2},  \
+ 208:..\source/fuzzy.c ****             {"NM", 0, ERROR_NM_PT1, ERROR_NM_PT2, ERROR_NM_SLOPE1, ERROR_NM_SLOPE2},  \
+ 209:..\source/fuzzy.c ****             {"NS", 0, ERROR_NS_PT1, ERROR_NS_PT2, ERROR_NS_SLOPE1, ERROR_NS_SLOPE2},  \
+ 210:..\source/fuzzy.c ****             {"Z",  0, ERROR_Z_PT1,  ERROR_Z_PT2,  ERROR_Z_SLOPE1,  ERROR_Z_SLOPE2},   \
+ 211:..\source/fuzzy.c ****             {"PS", 0, ERROR_PS_PT1, ERROR_PS_PT2, ERROR_PS_SLOPE1, ERROR_PS_SLOPE2},  \
+ 212:..\source/fuzzy.c ****             {"PM", 0, ERROR_PM_PT1, ERROR_PM_PT2, ERROR_PM_SLOPE1, ERROR_PM_SLOPE2},  \
+ 213:..\source/fuzzy.c ****             {"PB", 0, ERROR_PB_PT1, ERROR_PB_PT2, ERROR_PB_SLOPE1, ERROR_PB_SLOPE2}   \
+ 214:..\source/fuzzy.c ****         }                               \
+ 215:..\source/fuzzy.c ****     },                                  \
+ 216:..\source/fuzzy.c ****     {                                   \
+ 217:..\source/fuzzy.c ****         "dError",                       \
+ 218:..\source/fuzzy.c ****         0,                              \
+ 219:..\source/fuzzy.c ****         {                               \
+ 220:..\source/fuzzy.c ****             {"NB", 0, DERROR_NB_PT1, DERROR_NB_PT2, DERROR_NB_SLOPE1, DERROR_NB_SLOPE2},  \
+ 221:..\source/fuzzy.c ****             {"NM", 0, DERROR_NM_PT1, DERROR_NM_PT2, DERROR_NM_SLOPE1, DERROR_NM_SLOPE2},  \
+ 222:..\source/fuzzy.c ****             {"NS", 0, DERROR_NS_PT1, DERROR_NS_PT2, DERROR_NS_SLOPE1, DERROR_NS_SLOPE2},  \
+ 223:..\source/fuzzy.c ****             {"Z",  0, DERROR_Z_PT1,  DERROR_Z_PT2,  DERROR_Z_SLOPE1,  DERROR_Z_SLOPE2},   \
+ 224:..\source/fuzzy.c ****             {"PS", 0, DERROR_PS_PT1, DERROR_PS_PT2, DERROR_PS_SLOPE1, DERROR_PS_SLOPE2},  \
+ 225:..\source/fuzzy.c ****             {"PM", 0, DERROR_PM_PT1, DERROR_PM_PT2, DERROR_PM_SLOPE1, DERROR_PM_SLOPE2},  \
+ 226:..\source/fuzzy.c ****             {"PB", 0, DERROR_PB_PT1, DERROR_PB_PT2, DERROR_PB_SLOPE1, DERROR_PB_SLOPE2}   \
+ 227:..\source/fuzzy.c ****         }                               \
+ 228:..\source/fuzzy.c ****     }                                   \
+ 229:..\source/fuzzy.c **** }
+ 230:..\source/fuzzy.c **** 
+ 231:..\source/fuzzy.c **** 
+ 232:..\source/fuzzy.c **** /*
+ 233:..\source/fuzzy.c ****   IO_TYPE - output
+ 234:..\source/fuzzy.c ****     { "PWM", i/o value, mfs}
+ 235:..\source/fuzzy.c ****         mfs
+ 236:..\source/fuzzy.c ****         { "NB", <value>, point1, point2, slope1, slope2},
+ 237:..\source/fuzzy.c ****         { "NS", <value>, point1, point2, slope1, slope2},
+ 238:..\source/fuzzy.c ****         { "ZE", <value>, point1, point2, slope1, slope2},
+ 239:..\source/fuzzy.c ****         { "PS", <value>, point1, point2, slope1, slope2},
+ 240:..\source/fuzzy.c ****         { "PB", <value>, point1, point2, slope1, slope2},
+ 241:..\source/fuzzy.c ****     }
+ 242:..\source/fuzzy.c **** 
+ 243:..\source/fuzzy.c **** System Outpus is an array of IO_TYPE
+ 244:..\source/fuzzy.c ****    Each IO_TYPE contains an array of MF_TYPE
+ 245:..\source/fuzzy.c **** 
+ 246:..\source/fuzzy.c **** */
+ 247:..\source/fuzzy.c **** /* Input PWM Membership Functions Definitions */
+ 248:..\source/fuzzy.c **** #define PWM_NB_PT1    (NB_PT1)
+ 249:..\source/fuzzy.c **** #define PWM_NB_PT2    (NB_PT2)
+ 250:..\source/fuzzy.c **** #define PWM_NB_SLOPE1 (NB_SLOPE1)
+ 251:..\source/fuzzy.c **** #define PWM_NB_SLOPE2 (NB_SLOPE2)
+ 252:..\source/fuzzy.c **** 
+ 253:..\source/fuzzy.c **** #define PWM_NM_PT1    (NM_PT1)
+ 254:..\source/fuzzy.c **** #define PWM_NM_PT2    (NM_PT2)
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 6
+
+
+ 255:..\source/fuzzy.c **** #define PWM_NM_SLOPE1 (NM_SLOPE1)
+ 256:..\source/fuzzy.c **** #define PWM_NM_SLOPE2 (NM_SLOPE2)
+ 257:..\source/fuzzy.c **** 
+ 258:..\source/fuzzy.c **** #define PWM_NS_PT1    (NS_PT1)
+ 259:..\source/fuzzy.c **** #define PWM_NS_PT2    (NS_PT2)
+ 260:..\source/fuzzy.c **** #define PWM_NS_SLOPE1 (NS_SLOPE1)
+ 261:..\source/fuzzy.c **** #define PWM_NS_SLOPE2 (NS_SLOPE2)
+ 262:..\source/fuzzy.c **** 
+ 263:..\source/fuzzy.c **** #define PWM_Z_PT1    (Z_PT1)
+ 264:..\source/fuzzy.c **** #define PWM_Z_PT2    (Z_PT2)
+ 265:..\source/fuzzy.c **** #define PWM_Z_SLOPE1 (Z_SLOPE1)
+ 266:..\source/fuzzy.c **** #define PWM_Z_SLOPE2 (Z_SLOPE2)
+ 267:..\source/fuzzy.c **** 
+ 268:..\source/fuzzy.c **** #define PWM_PS_PT1    (PS_PT1)
+ 269:..\source/fuzzy.c **** #define PWM_PS_PT2    (PS_PT1)
+ 270:..\source/fuzzy.c **** #define PWM_PS_SLOPE1 (PS_SLOPE1)
+ 271:..\source/fuzzy.c **** #define PWM_PS_SLOPE2 (PS_SLOPE2)
+ 272:..\source/fuzzy.c **** 
+ 273:..\source/fuzzy.c **** #define PWM_PM_PT1    (PM_PT1)
+ 274:..\source/fuzzy.c **** #define PWM_PM_PT2    (PM_PT1)
+ 275:..\source/fuzzy.c **** #define PWM_PM_SLOPE1 (PM_SLOPE1)
+ 276:..\source/fuzzy.c **** #define PWM_PM_SLOPE2 (PM_SLOPE2)
+ 277:..\source/fuzzy.c **** 
+ 278:..\source/fuzzy.c **** #define PWM_PB_PT1    (PB_PT1)
+ 279:..\source/fuzzy.c **** #define PWM_PB_PT2    (PB_PT1)
+ 280:..\source/fuzzy.c **** #define PWM_PB_SLOPE1 (PB_SLOPE1)
+ 281:..\source/fuzzy.c **** #define PWM_PB_SLOPE2 (PB_SLOPE2)
+ 282:..\source/fuzzy.c **** 
+ 283:..\source/fuzzy.c **** #define SYSTEM_OUTPUTS                  \
+ 284:..\source/fuzzy.c **** {                                       \
+ 285:..\source/fuzzy.c ****     {                                   \
+ 286:..\source/fuzzy.c ****         "PWM",                          \
+ 287:..\source/fuzzy.c ****         0,                              \
+ 288:..\source/fuzzy.c ****         {                               \
+ 289:..\source/fuzzy.c ****             {"NB", 0, PWM_NB_PT1, PWM_NB_PT2, PWM_NB_SLOPE1, PWM_NB_SLOPE2},  \
+ 290:..\source/fuzzy.c ****             {"NM", 0, PWM_NM_PT1, PWM_NM_PT2, PWM_NM_SLOPE1, PWM_NM_SLOPE2},  \
+ 291:..\source/fuzzy.c ****             {"NS", 0, PWM_NS_PT1, PWM_NS_PT2, PWM_NS_SLOPE1, PWM_NS_SLOPE2},  \
+ 292:..\source/fuzzy.c ****             {"Z",  0, PWM_Z_PT1,  PWM_Z_PT2,  PWM_Z_SLOPE1,  PWM_Z_SLOPE2},  \
+ 293:..\source/fuzzy.c ****             {"PS", 0, PWM_PS_PT1, PWM_PS_PT2, PWM_PS_SLOPE1, PWM_PS_SLOPE2},  \
+ 294:..\source/fuzzy.c ****             {"PM", 0, PWM_PM_PT1, PWM_PM_PT2, PWM_PM_SLOPE1, PWM_PM_SLOPE2},  \
+ 295:..\source/fuzzy.c ****             {"PB", 0, PWM_PB_PT1, PWM_PB_PT2, PWM_PB_SLOPE1, PWM_PB_SLOPE2}   \
+ 296:..\source/fuzzy.c ****         }                               \
+ 297:..\source/fuzzy.c ****     }                                   \
+ 298:..\source/fuzzy.c **** }
+ 299:..\source/fuzzy.c **** 
+ 300:..\source/fuzzy.c **** /*
+ 301:..\source/fuzzy.c ****   RULE BASE
+ 302:..\source/fuzzy.c ****     {
+ 303:..\source/fuzzy.c ****         Rule 1: if error is NB and derror is NB then PWM is NB
+ 304:..\source/fuzzy.c ****             ifside
+ 305:..\source/fuzzy.c ****                 value -> Error -> mfs -> "NB" : value,
+ 306:..\source/fuzzy.c ****                 value -> dError -> mfs -> "NB" : value,
+ 307:..\source/fuzzy.c **** 
+ 308:..\source/fuzzy.c ****             thenside
+ 309:..\source/fuzzy.c ****                 value -> PWM -> mfs -> "NB" : value
+ 310:..\source/fuzzy.c **** 
+ 311:..\source/fuzzy.c ****         Rule 2: if error is NS and derror is NB then PWM is NB
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 7
+
+
+ 312:..\source/fuzzy.c ****             ifside
+ 313:..\source/fuzzy.c ****                 value -> Error -> mfs -> "NS" : value,
+ 314:..\source/fuzzy.c ****                 value -> dError -> mfs -> "NB" : value,
+ 315:..\source/fuzzy.c **** 
+ 316:..\source/fuzzy.c ****             thenside
+ 317:..\source/fuzzy.c ****                 value -> PWM -> mfs -> "NB" : value
+ 318:..\source/fuzzy.c **** 
+ 319:..\source/fuzzy.c ****     }
+ 320:..\source/fuzzy.c **** 
+ 321:..\source/fuzzy.c **** Rule Base is an array of rule type
+ 322:..\source/fuzzy.c ****     rule type is a two field structure of if-side indeces and then-side indeces
+ 323:..\source/fuzzy.c **** 
+ 324:..\source/fuzzy.c ****  */
+ 325:..\source/fuzzy.c **** RULE_TYPE Rules[MAX_NUM_RULES] = 
+ 326:..\source/fuzzy.c **** {    
+ 327:..\source/fuzzy.c ****     {{0,0}, {0}},// if error is NB and derror is NB then PWM is NB    
+ 328:..\source/fuzzy.c ****     
+ 329:..\source/fuzzy.c ****     {{0,1}, {0}},// if error is NB and derror is NM then PWM is NB
+ 330:..\source/fuzzy.c ****     
+ 331:..\source/fuzzy.c ****     {{0,2}, {0}},// if error is NB and derror is NS then PWM is NB
+ 332:..\source/fuzzy.c ****     
+ 333:..\source/fuzzy.c ****     {{0,3}, {1}},// if error is NB and dError is Z then PWM is NM
+ 334:..\source/fuzzy.c ****     
+ 335:..\source/fuzzy.c ****     {{0,4}, {1}},// if error is NB and dError is PS then PWM is NM
+ 336:..\source/fuzzy.c ****     
+ 337:..\source/fuzzy.c ****     {{0,5}, {2}},// if error is NB and dError is PM then PWM is NS
+ 338:..\source/fuzzy.c ****     
+ 339:..\source/fuzzy.c ****     {{0,6}, {3}},// if error is NB and dError is PB then PWM is Z
+ 340:..\source/fuzzy.c ****     
+ 341:..\source/fuzzy.c ****     {{1,0}, {0}},// if error is NS and dError is NB then PWM is NB
+ 342:..\source/fuzzy.c ****     
+ 343:..\source/fuzzy.c ****     {{1,1}, {0}},// if error is NS and dError is NM then PWM is NB
+ 344:..\source/fuzzy.c ****     
+ 345:..\source/fuzzy.c ****     {{1,2}, {1}},// if error is NS and dError is NS then PWM is NM
+ 346:..\source/fuzzy.c ****     
+ 347:..\source/fuzzy.c ****     {{1,3}, {1}},// if error is NS and dError is Z then PWM is NM
+ 348:..\source/fuzzy.c ****     
+ 349:..\source/fuzzy.c ****     {{1,4}, {2}},// if error is NS and dError is PS then PWM is NS
+ 350:..\source/fuzzy.c ****     
+ 351:..\source/fuzzy.c ****     {{1,5}, {3}},// if error is NS and dError is PM then PWM is Z
+ 352:..\source/fuzzy.c ****     
+ 353:..\source/fuzzy.c ****     {{1,6}, {4}},// if error is NS and dError is PB then PWM is PS
+ 354:..\source/fuzzy.c ****     
+ 355:..\source/fuzzy.c ****     {{2,0}, {0}},// if error is ZE and dError is NB then PWM is NB
+ 356:..\source/fuzzy.c ****     
+ 357:..\source/fuzzy.c ****     {{2,1}, {1}},// if error is ZE and dError is NM then PWM is NM
+ 358:..\source/fuzzy.c ****     
+ 359:..\source/fuzzy.c ****     {{2,2}, {1}},// if error is ZE and dError is NS then PWM is NM
+ 360:..\source/fuzzy.c ****     
+ 361:..\source/fuzzy.c ****     {{2,3}, {2}},// if error is ZE and dError is Z then PWM is NS
+ 362:..\source/fuzzy.c ****     
+ 363:..\source/fuzzy.c ****     {{2,4}, {3}},// if error is ZE and dError is PS then PWM is Z
+ 364:..\source/fuzzy.c ****     
+ 365:..\source/fuzzy.c ****     {{2,5}, {4}},// if error is ZE and dError is PM then PWM is PS
+ 366:..\source/fuzzy.c ****     
+ 367:..\source/fuzzy.c ****     {{2,6}, {5}},// if error is ZE and dError is PB then PWM is PM
+ 368:..\source/fuzzy.c ****     
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 8
+
+
+ 369:..\source/fuzzy.c ****     {{3,0}, {1}},// if error is PS and dError is NB then PWM is PM
+ 370:..\source/fuzzy.c ****     
+ 371:..\source/fuzzy.c ****     {{3,1}, {1}},// if error is PS and dError is NM then PWM is PM
+ 372:..\source/fuzzy.c ****     
+ 373:..\source/fuzzy.c ****     {{3,2}, {2}},// if error is PS and dError is NS then PWM is PS
+ 374:..\source/fuzzy.c ****     
+ 375:..\source/fuzzy.c ****     {{3,3}, {3}},// if error is PS and dError is Z then PWM is Z
+ 376:..\source/fuzzy.c ****     
+ 377:..\source/fuzzy.c ****     {{3,4}, {4}},// if error is PS and dError is PS then PWM is PS
+ 378:..\source/fuzzy.c ****     
+ 379:..\source/fuzzy.c ****     {{3,5}, {5}},// if error is PS and dError is PM then PWM is PM
+ 380:..\source/fuzzy.c ****     
+ 381:..\source/fuzzy.c ****     {{3,6}, {5}},// if error is PS and dError is PB then PWM is PM
+ 382:..\source/fuzzy.c ****     
+ 383:..\source/fuzzy.c ****     {{4,0}, {1}},// if error is PB and dError is NB then PWM is NM
+ 384:..\source/fuzzy.c ****     
+ 385:..\source/fuzzy.c ****     {{4,1}, {2}},// if error is PB and dError is NM then PWM is NS
+ 386:..\source/fuzzy.c ****     
+ 387:..\source/fuzzy.c ****     {{4,2}, {3}},// if error is PB and dError is NS then PWM is Z
+ 388:..\source/fuzzy.c ****     
+ 389:..\source/fuzzy.c ****     {{4,3}, {4}},// if error is PB and dError is Z then PWM is PS
+ 390:..\source/fuzzy.c ****     
+ 391:..\source/fuzzy.c ****     {{4,4}, {5}},// if error is PB and dError is PS then PWM is PM
+ 392:..\source/fuzzy.c ****     
+ 393:..\source/fuzzy.c ****     {{4,5}, {6}},// if error is PB and dError is PM then PWM is PB
+ 394:..\source/fuzzy.c ****     
+ 395:..\source/fuzzy.c ****     {{4,6}, {6}},// if error is PB and dError is PB then PWM is PB
+ 396:..\source/fuzzy.c ****     
+ 397:..\source/fuzzy.c ****     {{5,0}, {2}},// if error is PB and dError is NB then PWM is NS
+ 398:..\source/fuzzy.c ****     
+ 399:..\source/fuzzy.c ****     {{5,1}, {3}},// if error is PB and dError is NM then PWM is Z
+ 400:..\source/fuzzy.c ****     
+ 401:..\source/fuzzy.c ****     {{5,2}, {4}},// if error is PB and dError is NS then PWM is PS
+ 402:..\source/fuzzy.c ****     
+ 403:..\source/fuzzy.c ****     {{5,3}, {5}},// if error is PB and dError is Z then PWM is PM
+ 404:..\source/fuzzy.c ****     
+ 405:..\source/fuzzy.c ****     {{5,4}, {5}},// if error is PB and dError is PS then PWM is PM
+ 406:..\source/fuzzy.c ****     
+ 407:..\source/fuzzy.c ****     {{5,5}, {6}},// if error is PB and dError is PM then PWM is PB
+ 408:..\source/fuzzy.c ****     
+ 409:..\source/fuzzy.c ****     {{5,6}, {6}},// if error is PB and dError is PB then PWM is PB
+ 410:..\source/fuzzy.c ****     
+ 411:..\source/fuzzy.c ****     {{6,0}, {3}},// if error is PB and dError is NB then PWM is Z
+ 412:..\source/fuzzy.c ****     
+ 413:..\source/fuzzy.c ****     {{6,1}, {4}},// if error is PB and dError is NM then PWM is PS
+ 414:..\source/fuzzy.c ****     
+ 415:..\source/fuzzy.c ****     {{6,2}, {5}},// if error is PB and dError is NS then PWM is PM
+ 416:..\source/fuzzy.c ****     
+ 417:..\source/fuzzy.c ****     {{6,3}, {5}},// if error is PB and dError is Z then PWM is PM
+ 418:..\source/fuzzy.c ****     
+ 419:..\source/fuzzy.c ****     {{6,4}, {6}},// if error is PB and dError is PS then PWM is PB
+ 420:..\source/fuzzy.c ****     
+ 421:..\source/fuzzy.c ****     {{6,5}, {6}},// if error is PB and dError is PM then PWM is PB
+ 422:..\source/fuzzy.c ****     
+ 423:..\source/fuzzy.c ****     {{6,6}, {6}}// if error is PB and dError is PB then PWM is PB
+ 424:..\source/fuzzy.c **** };
+ 425:..\source/fuzzy.c **** 
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 9
+
+
+ 426:..\source/fuzzy.c **** static IO_TYPE left_inputs[MAX_NUM_LEFT_INPUTS] = SYSTEM_INPUTS;
+ 427:..\source/fuzzy.c **** static IO_TYPE right_inputs[MAX_NUM_RIGHT_INPUTS] = SYSTEM_INPUTS;
+ 428:..\source/fuzzy.c **** static IO_TYPE left_output[MAX_NUM_LEFT_OUTPUTS] = SYSTEM_OUTPUTS;
+ 429:..\source/fuzzy.c **** static IO_TYPE right_output[MAX_NUM_RIGHT_OUTPUTS] = SYSTEM_OUTPUTS;
+ 430:..\source/fuzzy.c **** 
+ 431:..\source/fuzzy.c **** static int16 max_reverse_speed;
+ 432:..\source/fuzzy.c **** static int16 max_forward_speed;
+ 433:..\source/fuzzy.c **** 
+ 434:..\source/fuzzy.c **** static int16 left_actual_speed;
+ 435:..\source/fuzzy.c **** static int16 right_actual_speed;
+ 436:..\source/fuzzy.c **** 
+ 437:..\source/fuzzy.c **** static void get_inputs()
+ 438:..\source/fuzzy.c **** {
+ 439:..\source/fuzzy.c ****     /* 
+ 440:..\source/fuzzy.c ****         Read the left/right commanded speed
+ 441:..\source/fuzzy.c ****         Read the left/right speed from the motor
+ 442:..\source/fuzzy.c ****     
+ 443:..\source/fuzzy.c ****         Calculate left/right error
+ 444:..\source/fuzzy.c ****         Calculate left/right delta error
+ 445:..\source/fuzzy.c ****     
+ 446:..\source/fuzzy.c ****         Q: How to handle positive/negative speeds?
+ 447:..\source/fuzzy.c ****     
+ 448:..\source/fuzzy.c ****         The speed that comes from the encoder can be positive or negative.  Maybe it would be bette
+ 449:..\source/fuzzy.c ****         speeds before processing them, similar to the PID approach.  Still, how to handle negative 
+ 450:..\source/fuzzy.c ****     
+ 451:..\source/fuzzy.c ****         Can we change to absolute values, do the fuzzy processing, and convert back?
+ 452:..\source/fuzzy.c ****     
+ 453:..\source/fuzzy.c ****         How would that look?
+ 454:..\source/fuzzy.c ****     
+ 455:..\source/fuzzy.c ****             - commanded left speed is 200 mm/s
+ 456:..\source/fuzzy.c ****             - normalized speed is 200 / max speed = 200 / 565 = 0.35
+ 457:..\source/fuzzy.c ****             - measured left speed is 100 mm/s
+ 458:..\source/fuzzy.c ****             - normalized speed is 0.175 (roughly half)
+ 459:..\source/fuzzy.c ****             - error = 0.35 - 0.175 = 0.175
+ 460:..\source/fuzzy.c ****             - derror = 0
+ 461:..\source/fuzzy.c ****         
+ 462:..\source/fuzzy.c ****         Fuzzy processing would apply .175 (PS) and 0 (ZE) to the rule base and get back something l
+ 463:..\source/fuzzy.c ****         something like 0.3.
+ 464:..\source/fuzzy.c ****     
+ 465:..\source/fuzzy.c ****         Now, remember that this 0.3 is an adjustment to the current PWM setting not an actual PWM. 
+ 466:..\source/fuzzy.c ****     
+ 467:..\source/fuzzy.c ****         So, the actual output range from fuzzy processing needs to be -1.0 to 1.0 so that the PWM c
+ 468:..\source/fuzzy.c ****         down.
+ 469:..\source/fuzzy.c ****     
+ 470:..\source/fuzzy.c ****         Quick Summary:
+ 471:..\source/fuzzy.c ****             Inputs:
+ 472:..\source/fuzzy.c ****                 Error - range -1.0 to 1.0
+ 473:..\source/fuzzy.c ****                 dError - range -1.0 to 1.0
+ 474:..\source/fuzzy.c ****             Output:
+ 475:..\source/fuzzy.c ****                 PWM - range -1.0 to 1.0
+ 476:..\source/fuzzy.c ****     
+ 477:..\source/fuzzy.c ****         By normalizing, fuzzy processing deals only with relative input/output values and can be eq
+ 478:..\source/fuzzy.c ****         positive and negative speeds.
+ 479:..\source/fuzzy.c ****     
+ 480:..\source/fuzzy.c ****         Note: A positive output means the actual is less than the target and the actual needs to be
+ 481:..\source/fuzzy.c ****               A negative output means the actual is more than the target and the actual needs to be
+ 482:..\source/fuzzy.c ****     
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 10
+
+
+ 483:..\source/fuzzy.c ****         Note: There will still be need to handle the differences in arithmetic of the PWM for left/
+ 484:..\source/fuzzy.c ****     
+ 485:..\source/fuzzy.c ****         
+ 486:..\source/fuzzy.c ****     
+ 487:..\source/fuzzy.c ****     */
+ 488:..\source/fuzzy.c ****     int16 left_target_speed;
+ 489:..\source/fuzzy.c ****     int16 right_target_speed;
+ 490:..\source/fuzzy.c ****     static int16 last_left_input_error;
+ 491:..\source/fuzzy.c ****     static int16 last_right_input_error;
+ 492:..\source/fuzzy.c ****     
+ 493:..\source/fuzzy.c ****     /* Read crisp inputs and normalize */
+ 494:..\source/fuzzy.c ****     
+ 495:..\source/fuzzy.c ****     I2c_ReadLRCmdVelocity(&left_target_speed, &right_target_speed);
+ 496:..\source/fuzzy.c ****     Encoder_GetLRSpeed(&left_actual_speed, &right_actual_speed);
+ 497:..\source/fuzzy.c ****     
+ 498:..\source/fuzzy.c ****     int16 left_error_upper = left_target_speed >= 0 ? max_forward_speed : max_reverse_speed;
+ 499:..\source/fuzzy.c ****     int16 right_error_upper = right_target_speed >= 0 ? max_forward_speed : max_reverse_speed;
+ 500:..\source/fuzzy.c **** 
+ 501:..\source/fuzzy.c ****     /* Calculate Error */
+ 502:..\source/fuzzy.c ****     int16 left_input_error = left_target_speed - left_actual_speed;
+ 503:..\source/fuzzy.c ****     int16 right_input_error = right_target_speed - right_actual_speed;
+ 504:..\source/fuzzy.c **** 
+ 505:..\source/fuzzy.c ****     
+ 506:..\source/fuzzy.c ****     /* Calculate dError */
+ 507:..\source/fuzzy.c ****     int16 left_input_derror = last_left_input_error - left_input_error;
+ 508:..\source/fuzzy.c ****     last_left_input_error = left_input_error;
+ 509:..\source/fuzzy.c **** 
+ 510:..\source/fuzzy.c ****     int16 right_input_derror = last_right_input_error - right_input_error;
+ 511:..\source/fuzzy.c ****     last_right_input_error = right_input_error;
+ 512:..\source/fuzzy.c **** 
+ 513:..\source/fuzzy.c ****     int16 left_derror_upper = left_input_derror >= 0 ? max_forward_speed : max_reverse_speed;
+ 514:..\source/fuzzy.c ****     int16 right_derror_upper = right_input_derror >= 0 ? max_forward_speed : max_reverse_speed;
+ 515:..\source/fuzzy.c ****     
+ 516:..\source/fuzzy.c ****     /* Scale error and derror for Fuzzy processing */    
+ 517:..\source/fuzzy.c ****     left_inputs[INPUT_ERROR].value = normalize(left_input_error, 0.0, left_error_upper);
+ 518:..\source/fuzzy.c ****     left_inputs[INPUT_DERROR].value = normalize(left_input_derror, 0.0, left_derror_upper);
+ 519:..\source/fuzzy.c ****     
+ 520:..\source/fuzzy.c ****     right_inputs[INPUT_ERROR].value = normalize(right_input_error, 0.0, right_error_upper);
+ 521:..\source/fuzzy.c ****     right_inputs[INPUT_DERROR].value = normalize(right_input_derror, 0.0, right_derror_upper);
+ 522:..\source/fuzzy.c **** }
+ 523:..\source/fuzzy.c **** 
+ 524:..\source/fuzzy.c **** static void compute_degree_of_membership(MF_TYPE *mf, int input)
+ 525:..\source/fuzzy.c **** {
+  32              		.loc 1 525 0
+  33              		.cfi_startproc
+  34              		@ args = 0, pretend = 0, frame = 0
+  35              		@ frame_needed = 0, uses_anonymous_args = 0
+  36              	.LVL0:
+  37 0000 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+  38              		.cfi_def_cfa_offset 24
+  39              		.cfi_offset 3, -24
+  40              		.cfi_offset 4, -20
+  41              		.cfi_offset 5, -16
+  42              		.cfi_offset 6, -12
+  43              		.cfi_offset 7, -8
+  44              		.cfi_offset 14, -4
+  45 0002 0446     		mov	r4, r0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 11
+
+
+ 526:..\source/fuzzy.c ****     int delta_1;
+ 527:..\source/fuzzy.c ****     int delta_2;
+ 528:..\source/fuzzy.c ****     
+ 529:..\source/fuzzy.c ****     delta_1 = input - mf->point1;
+  46              		.loc 1 529 0
+  47 0004 0846     		mov	r0, r1
+  48              	.LVL1:
+  49 0006 FFF7FEFF 		bl	__aeabi_i2f
+  50              	.LVL2:
+  51 000a 0646     		mov	r6, r0
+  52 000c 2169     		ldr	r1, [r4, #16]	@ float
+  53 000e FFF7FEFF 		bl	__aeabi_fsub
+  54              	.LVL3:
+  55 0012 FFF7FEFF 		bl	__aeabi_f2iz
+  56              	.LVL4:
+  57 0016 0546     		mov	r5, r0
+  58              	.LVL5:
+ 530:..\source/fuzzy.c ****     delta_2 = mf->point2 - input;
+  59              		.loc 1 530 0
+  60 0018 6069     		ldr	r0, [r4, #20]	@ float
+  61              	.LVL6:
+  62 001a 3146     		mov	r1, r6
+  63 001c FFF7FEFF 		bl	__aeabi_fsub
+  64              	.LVL7:
+  65 0020 FFF7FEFF 		bl	__aeabi_f2iz
+  66              	.LVL8:
+ 531:..\source/fuzzy.c ****         
+ 532:..\source/fuzzy.c ****     /* If you want to support a trapezoid then it will be necessary to accommodate a slope of 1.  T
+ 533:..\source/fuzzy.c ****        right now.
+ 534:..\source/fuzzy.c ****      */
+ 535:..\source/fuzzy.c ****     
+ 536:..\source/fuzzy.c ****     /* If the input falls outside of the membership function then the degree of membership (DOM) is
+ 537:..\source/fuzzy.c ****        DOM is the minimum of input 1 and input 2
+ 538:..\source/fuzzy.c ****     */
+ 539:..\source/fuzzy.c ****     
+ 540:..\source/fuzzy.c ****     if ((delta_1 <= 0) || (delta_2 <= 0))
+  67              		.loc 1 540 0
+  68 0024 002D     		cmp	r5, #0
+  69 0026 02DD     		ble	.L2
+  70 0028 0646     		mov	r6, r0
+  71              	.LVL9:
+  72              		.loc 1 540 0 is_stmt 0 discriminator 1
+  73 002a 0028     		cmp	r0, #0
+  74 002c 02DC     		bgt	.L3
+  75              	.L2:
+ 541:..\source/fuzzy.c ****     {
+ 542:..\source/fuzzy.c ****         mf->value = 0;
+  76              		.loc 1 542 0 is_stmt 1
+  77 002e 0023     		movs	r3, #0
+  78 0030 E360     		str	r3, [r4, #12]	@ float
+  79 0032 18E0     		b	.L4
+  80              	.L3:
+ 543:..\source/fuzzy.c ****     }
+ 544:..\source/fuzzy.c ****     else
+ 545:..\source/fuzzy.c ****     {
+ 546:..\source/fuzzy.c ****         mf->value = min( (mf->slope1 * delta_1),(mf->slope2 * delta_2) );
+  81              		.loc 1 546 0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 12
+
+
+  82 0034 A769     		ldr	r7, [r4, #24]	@ float
+  83 0036 2846     		mov	r0, r5
+  84 0038 FFF7FEFF 		bl	__aeabi_i2f
+  85              	.LVL10:
+  86 003c 0146     		mov	r1, r0
+  87 003e 3846     		mov	r0, r7
+  88 0040 FFF7FEFF 		bl	__aeabi_fmul
+  89              	.LVL11:
+  90 0044 0746     		mov	r7, r0
+  91 0046 E569     		ldr	r5, [r4, #28]	@ float
+  92              	.LVL12:
+  93 0048 3046     		mov	r0, r6
+  94 004a FFF7FEFF 		bl	__aeabi_i2f
+  95              	.LVL13:
+  96 004e 0146     		mov	r1, r0
+  97 0050 2846     		mov	r0, r5
+  98 0052 FFF7FEFF 		bl	__aeabi_fmul
+  99              	.LVL14:
+ 100 0056 0546     		mov	r5, r0
+ 101 0058 3846     		mov	r0, r7
+ 102 005a 2946     		mov	r1, r5
+ 103 005c FFF7FEFF 		bl	__aeabi_fcmplt
+ 104              	.LVL15:
+ 105 0060 00B1     		cbz	r0, .L5
+ 106 0062 3D46     		mov	r5, r7
+ 107              	.L5:
+ 108              		.loc 1 546 0 is_stmt 0 discriminator 4
+ 109 0064 E560     		str	r5, [r4, #12]	@ float
+ 110              	.L4:
+ 547:..\source/fuzzy.c ****     }
+ 548:..\source/fuzzy.c ****     mf->value = constrain(mf->value, MIN_MF_VALUE, MAX_MF_VALUE);
+ 111              		.loc 1 548 0 is_stmt 1
+ 112 0066 E568     		ldr	r5, [r4, #12]	@ float
+ 113 0068 2846     		mov	r0, r5
+ 114 006a 0021     		movs	r1, #0
+ 115 006c FFF7FEFF 		bl	__aeabi_fcmpgt
+ 116              	.LVL16:
+ 117 0070 58B1     		cbz	r0, .L16
+ 118              		.loc 1 548 0 is_stmt 0 discriminator 1
+ 119 0072 4FF00106 		mov	r6, #1
+ 120 0076 2846     		mov	r0, r5
+ 121 0078 4FF07E51 		mov	r1, #1065353216
+ 122 007c FFF7FEFF 		bl	__aeabi_fcmplt
+ 123              	.LVL17:
+ 124 0080 08B9     		cbnz	r0, .L9
+ 125 0082 4FF00006 		mov	r6, #0
+ 126              	.L9:
+ 127 0086 F3B2     		uxtb	r3, r6
+ 128 0088 00E0     		b	.L7
+ 129              	.L16:
+ 130              		.loc 1 548 0
+ 131 008a 0123     		movs	r3, #1
+ 132              	.L7:
+ 133              		.loc 1 548 0 discriminator 4
+ 134 008c 33B1     		cbz	r3, .L13
+ 135              		.loc 1 548 0 discriminator 5
+ 136 008e 2846     		mov	r0, r5
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 13
+
+
+ 137 0090 0021     		movs	r1, #0
+ 138 0092 FFF7FEFF 		bl	__aeabi_fcmpgt
+ 139              	.LVL18:
+ 140 0096 18B9     		cbnz	r0, .L10
+ 141              		.loc 1 548 0
+ 142 0098 0025     		movs	r5, #0
+ 143 009a 01E0     		b	.L10
+ 144              	.L13:
+ 145 009c 4FF07E55 		mov	r5, #1065353216
+ 146              	.L10:
+ 147              		.loc 1 548 0 discriminator 12
+ 148 00a0 E560     		str	r5, [r4, #12]	@ float
+ 149 00a2 F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 150              		.cfi_endproc
+ 151              	.LFE64:
+ 152              		.size	compute_degree_of_membership, .-compute_degree_of_membership
+ 153              		.section	.text.fuzzification,"ax",%progbits
+ 154              		.align	2
+ 155              		.thumb
+ 156              		.thumb_func
+ 157              		.type	fuzzification, %function
+ 158              	fuzzification:
+ 159              	.LFB65:
+ 549:..\source/fuzzy.c **** }
+ 550:..\source/fuzzy.c **** 
+ 551:..\source/fuzzy.c **** static void fuzzification(IO_TYPE *inputs, uint8 num_inputs)
+ 552:..\source/fuzzy.c **** {
+ 160              		.loc 1 552 0 is_stmt 1
+ 161              		.cfi_startproc
+ 162              		@ args = 0, pretend = 0, frame = 0
+ 163              		@ frame_needed = 0, uses_anonymous_args = 0
+ 164              	.LVL19:
+ 165 0000 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+ 166              		.cfi_def_cfa_offset 24
+ 167              		.cfi_offset 4, -24
+ 168              		.cfi_offset 5, -20
+ 169              		.cfi_offset 6, -16
+ 170              		.cfi_offset 7, -12
+ 171              		.cfi_offset 8, -8
+ 172              		.cfi_offset 14, -4
+ 173 0004 0746     		mov	r7, r0
+ 174 0006 8846     		mov	r8, r1
+ 175              	.LVL20:
+ 553:..\source/fuzzy.c ****     MF_TYPE *mf;
+ 554:..\source/fuzzy.c ****     uint8 ii;
+ 555:..\source/fuzzy.c ****     uint8 jj;
+ 556:..\source/fuzzy.c ****     
+ 557:..\source/fuzzy.c ****     /* Loop over the membership functions of each intput and determine the degree of membership (DO
+ 558:..\source/fuzzy.c ****        applied to each membership function
+ 559:..\source/fuzzy.c ****      */
+ 560:..\source/fuzzy.c ****     
+ 561:..\source/fuzzy.c ****     for (ii = 0; ii < num_inputs; ++ii)
+ 176              		.loc 1 561 0
+ 177 0008 0026     		movs	r6, #0
+ 178 000a 15E0     		b	.L19
+ 179              	.LVL21:
+ 180              	.L20:
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 14
+
+
+ 181              	.LBB2:
+ 562:..\source/fuzzy.c ****     {
+ 563:..\source/fuzzy.c ****         for (jj = 0; jj < sizeof(inputs->membership_functions); ++jj)
+ 564:..\source/fuzzy.c ****         {
+ 565:..\source/fuzzy.c ****             mf = &inputs[ii].membership_functions[jj];
+ 182              		.loc 1 565 0 discriminator 3
+ 183 000c C6EB0613 		rsb	r3, r6, r6, lsl #4
+ 184 0010 1B01     		lsls	r3, r3, #4
+ 185 0012 3B44     		add	r3, r3, r7
+ 186 0014 03EB4415 		add	r5, r3, r4, lsl #5
+ 187 0018 1035     		adds	r5, r5, #16
+ 188              	.LVL22:
+ 566:..\source/fuzzy.c ****             int value = inputs[ii].value;
+ 189              		.loc 1 566 0 discriminator 3
+ 190 001a D868     		ldr	r0, [r3, #12]	@ float
+ 191 001c FFF7FEFF 		bl	__aeabi_f2iz
+ 192              	.LVL23:
+ 193 0020 0146     		mov	r1, r0
+ 194              	.LVL24:
+ 567:..\source/fuzzy.c ****             compute_degree_of_membership(mf, value);
+ 195              		.loc 1 567 0 discriminator 3
+ 196 0022 2846     		mov	r0, r5
+ 197              	.LVL25:
+ 198 0024 FFF7FEFF 		bl	compute_degree_of_membership
+ 199              	.LVL26:
+ 200              	.LBE2:
+ 563:..\source/fuzzy.c ****         {
+ 201              		.loc 1 563 0 discriminator 3
+ 202 0028 0134     		adds	r4, r4, #1
+ 203              	.LVL27:
+ 204 002a E4B2     		uxtb	r4, r4
+ 205              	.LVL28:
+ 206 002c 00E0     		b	.L21
+ 207              	.LVL29:
+ 208              	.L22:
+ 209 002e 0024     		movs	r4, #0
+ 210              	.L21:
+ 211              	.LVL30:
+ 563:..\source/fuzzy.c ****         {
+ 212              		.loc 1 563 0 is_stmt 0 discriminator 1
+ 213 0030 DF2C     		cmp	r4, #223
+ 214 0032 EBD9     		bls	.L20
+ 561:..\source/fuzzy.c ****     {
+ 215              		.loc 1 561 0 is_stmt 1 discriminator 2
+ 216 0034 0136     		adds	r6, r6, #1
+ 217              	.LVL31:
+ 218 0036 F6B2     		uxtb	r6, r6
+ 219              	.LVL32:
+ 220              	.L19:
+ 561:..\source/fuzzy.c ****     {
+ 221              		.loc 1 561 0 is_stmt 0 discriminator 1
+ 222 0038 4645     		cmp	r6, r8
+ 223 003a F8D3     		bcc	.L22
+ 568:..\source/fuzzy.c ****         }
+ 569:..\source/fuzzy.c ****     }
+ 570:..\source/fuzzy.c **** }
+ 224              		.loc 1 570 0 is_stmt 1
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 15
+
+
+ 225 003c BDE8F081 		pop	{r4, r5, r6, r7, r8, pc}
+ 226              		.cfi_endproc
+ 227              	.LFE65:
+ 228              		.size	fuzzification, .-fuzzification
+ 229              		.section	.text.rule_evaluation,"ax",%progbits
+ 230              		.align	2
+ 231              		.thumb
+ 232              		.thumb_func
+ 233              		.type	rule_evaluation, %function
+ 234              	rule_evaluation:
+ 235              	.LFB66:
+ 571:..\source/fuzzy.c **** 
+ 572:..\source/fuzzy.c **** static void rule_evaluation(IO_TYPE *inputs, IO_TYPE *outputs)
+ 573:..\source/fuzzy.c **** {
+ 236              		.loc 1 573 0
+ 237              		.cfi_startproc
+ 238              		@ args = 0, pretend = 0, frame = 0
+ 239              		@ frame_needed = 0, uses_anonymous_args = 0
+ 240              	.LVL33:
+ 241 0000 2DE9F843 		push	{r3, r4, r5, r6, r7, r8, r9, lr}
+ 242              		.cfi_def_cfa_offset 32
+ 243              		.cfi_offset 3, -32
+ 244              		.cfi_offset 4, -28
+ 245              		.cfi_offset 5, -24
+ 246              		.cfi_offset 6, -20
+ 247              		.cfi_offset 7, -16
+ 248              		.cfi_offset 8, -12
+ 249              		.cfi_offset 9, -8
+ 250              		.cfi_offset 14, -4
+ 251 0004 0646     		mov	r6, r0
+ 252 0006 8846     		mov	r8, r1
+ 253              	.LVL34:
+ 574:..\source/fuzzy.c ****     int strength;
+ 575:..\source/fuzzy.c ****     uint8 ii;
+ 576:..\source/fuzzy.c **** 
+ 577:..\source/fuzzy.c ****     /* Rules are global and non-specific to a particular instantiation of inputs or outputs.  The R
+ 578:..\source/fuzzy.c ****        contains indeces to the input and output structures but does not contain an specific input/o
+ 579:..\source/fuzzy.c ****      */
+ 580:..\source/fuzzy.c ****     
+ 581:..\source/fuzzy.c ****     for (ii = 0; ii < MAX_NUM_RULES; ++ii)
+ 254              		.loc 1 581 0
+ 255 0008 0025     		movs	r5, #0
+ 256 000a 2CE0     		b	.L25
+ 257              	.LVL35:
+ 258              	.L28:
+ 259              	.LBB3:
+ 582:..\source/fuzzy.c ****     {
+ 583:..\source/fuzzy.c ****         strength = UPPER_LIMIT;
+ 584:..\source/fuzzy.c ****         /* process if-side of rule to determine strength */
+ 585:..\source/fuzzy.c ****         uint8 error_index = Rules[ii].if_side[INPUT_ERROR];
+ 260              		.loc 1 585 0
+ 261 000c 184A     		ldr	r2, .L31
+ 262 000e 05EB4503 		add	r3, r5, r5, lsl #1
+ 263 0012 02EB0309 		add	r9, r2, r3
+ 264 0016 D35C     		ldrb	r3, [r2, r3]	@ zero_extendqisi2
+ 265              	.LVL36:
+ 586:..\source/fuzzy.c ****         uint8 derror_index = Rules[ii].if_side[INPUT_DERROR];
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 16
+
+
+ 266              		.loc 1 586 0
+ 267 0018 99F80140 		ldrb	r4, [r9, #1]	@ zero_extendqisi2
+ 268              	.LVL37:
+ 587:..\source/fuzzy.c ****         int term1 = inputs[error_index].value;
+ 269              		.loc 1 587 0
+ 270 001c C3EB0313 		rsb	r3, r3, r3, lsl #4
+ 271              	.LVL38:
+ 272 0020 1B01     		lsls	r3, r3, #4
+ 273 0022 3344     		add	r3, r3, r6
+ 274 0024 D868     		ldr	r0, [r3, #12]	@ float
+ 275 0026 FFF7FEFF 		bl	__aeabi_f2iz
+ 276              	.LVL39:
+ 277 002a 0746     		mov	r7, r0
+ 278              	.LVL40:
+ 588:..\source/fuzzy.c ****         int term2 = inputs[derror_index].value;
+ 279              		.loc 1 588 0
+ 280 002c C4EB0413 		rsb	r3, r4, r4, lsl #4
+ 281 0030 1B01     		lsls	r3, r3, #4
+ 282 0032 3344     		add	r3, r3, r6
+ 283 0034 D868     		ldr	r0, [r3, #12]	@ float
+ 284              	.LVL41:
+ 285 0036 FFF7FEFF 		bl	__aeabi_f2iz
+ 286              	.LVL42:
+ 589:..\source/fuzzy.c ****         
+ 590:..\source/fuzzy.c ****         strength = min( term1, term2 );
+ 591:..\source/fuzzy.c ****         
+ 592:..\source/fuzzy.c ****         /* process then-side of rule to apply strength */        
+ 593:..\source/fuzzy.c ****         float *out_value = &outputs[Rules[ii].then_side[OUTPUT_PWM]].value;
+ 287              		.loc 1 593 0
+ 288 003a 99F80230 		ldrb	r3, [r9, #2]	@ zero_extendqisi2
+ 289 003e C3EB0313 		rsb	r3, r3, r3, lsl #4
+ 290 0042 1B01     		lsls	r3, r3, #4
+ 291 0044 08EB0304 		add	r4, r8, r3
+ 292              	.LVL43:
+ 594:..\source/fuzzy.c ****         
+ 595:..\source/fuzzy.c ****         *out_value = max(strength, *out_value);        
+ 293              		.loc 1 595 0
+ 294 0048 B842     		cmp	r0, r7
+ 295 004a A8BF     		it	ge
+ 296 004c 3846     		movge	r0, r7
+ 297              	.LVL44:
+ 298 004e FFF7FEFF 		bl	__aeabi_i2f
+ 299              	.LVL45:
+ 300 0052 8146     		mov	r9, r0
+ 301 0054 E768     		ldr	r7, [r4, #12]	@ float
+ 302              	.LVL46:
+ 303 0056 3946     		mov	r1, r7
+ 304 0058 FFF7FEFF 		bl	__aeabi_fcmpgt
+ 305              	.LVL47:
+ 306 005c 00B1     		cbz	r0, .L26
+ 307 005e 4F46     		mov	r7, r9
+ 308              	.L26:
+ 309              		.loc 1 595 0 is_stmt 0 discriminator 4
+ 310 0060 E760     		str	r7, [r4, #12]	@ float
+ 311              	.LBE3:
+ 581:..\source/fuzzy.c ****     {
+ 312              		.loc 1 581 0 is_stmt 1 discriminator 4
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 17
+
+
+ 313 0062 0135     		adds	r5, r5, #1
+ 314              	.LVL48:
+ 315 0064 EDB2     		uxtb	r5, r5
+ 316              	.LVL49:
+ 317              	.L25:
+ 581:..\source/fuzzy.c ****     {
+ 318              		.loc 1 581 0 is_stmt 0 discriminator 2
+ 319 0066 302D     		cmp	r5, #48
+ 320 0068 D0D9     		bls	.L28
+ 596:..\source/fuzzy.c ****     }
+ 597:..\source/fuzzy.c **** }
+ 321              		.loc 1 597 0 is_stmt 1
+ 322 006a BDE8F883 		pop	{r3, r4, r5, r6, r7, r8, r9, pc}
+ 323              	.LVL50:
+ 324              	.L32:
+ 325 006e 00BF     		.align	2
+ 326              	.L31:
+ 327 0070 00000000 		.word	.LANCHOR0
+ 328              		.cfi_endproc
+ 329              	.LFE66:
+ 330              		.size	rule_evaluation, .-rule_evaluation
+ 331              		.section	.text.defuzzification,"ax",%progbits
+ 332              		.align	2
+ 333              		.thumb
+ 334              		.thumb_func
+ 335              		.type	defuzzification, %function
+ 336              	defuzzification:
+ 337              	.LFB68:
+ 598:..\source/fuzzy.c **** 
+ 599:..\source/fuzzy.c **** /* Compute Area of Trapezoid--Each inference pass produces a new set of output
+ 600:..\source/fuzzy.c **** strengths which affect the areas of trapezoidal membership functions used in
+ 601:..\source/fuzzy.c **** center-of-gravity defuzzification. Area values must be recalculated with each
+ 602:..\source/fuzzy.c **** pass. Area of trapezoid is h*(a+b)/2 where h=height=output_strength=mf->value
+ 603:..\source/fuzzy.c **** b=base=mf->point2-mf->point1 a=top= must be derived from h,b, and slopes1&2 */
+ 604:..\source/fuzzy.c **** static int compute_area_of_trapezoid(MF_TYPE *mf)
+ 605:..\source/fuzzy.c **** {
+ 606:..\source/fuzzy.c ****     int run_1;
+ 607:..\source/fuzzy.c ****     int run_2;
+ 608:..\source/fuzzy.c ****     int base;
+ 609:..\source/fuzzy.c ****     int top;
+ 610:..\source/fuzzy.c ****     int area;
+ 611:..\source/fuzzy.c ****     base = mf->point2 - mf->point1;
+ 612:..\source/fuzzy.c ****     run_1 = mf->value/mf->slope1;
+ 613:..\source/fuzzy.c ****     run_2 = mf->value/mf->slope2;
+ 614:..\source/fuzzy.c ****     top = base - run_1 - run_2;
+ 615:..\source/fuzzy.c ****     area = mf->value * ( base + top)/2;
+ 616:..\source/fuzzy.c ****     return (area);
+ 617:..\source/fuzzy.c **** }
+ 618:..\source/fuzzy.c **** 
+ 619:..\source/fuzzy.c **** static void defuzzification(IO_TYPE *outputs, uint8 num_outputs)
+ 620:..\source/fuzzy.c **** {
+ 338              		.loc 1 620 0
+ 339              		.cfi_startproc
+ 340              		@ args = 0, pretend = 0, frame = 0
+ 341              		@ frame_needed = 0, uses_anonymous_args = 0
+ 342              		@ link register save eliminated.
+ 343              	.LVL51:
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 18
+
+
+ 621:..\source/fuzzy.c ****     int sum_of_products;   /* sum of products of area & centroid */
+ 622:..\source/fuzzy.c ****     int sum_of_areas;     /* sum of shortend trapezoid area          */
+ 623:..\source/fuzzy.c ****     int area;
+ 624:..\source/fuzzy.c ****     int centroid;
+ 625:..\source/fuzzy.c ****     uint8 ii;
+ 626:..\source/fuzzy.c ****     uint8 jj;
+ 627:..\source/fuzzy.c ****     
+ 628:..\source/fuzzy.c ****     /* compute a defuzzified value for each system output */
+ 629:..\source/fuzzy.c ****     for (ii = 0; ii < num_outputs; ++ii)
+ 344              		.loc 1 629 0
+ 345 0000 01B1     		cbz	r1, .L33
+ 346              	.LVL52:
+ 347              	.L35:
+ 348 0002 FEE7     		b	.L35
+ 349              	.LVL53:
+ 350              	.L33:
+ 351 0004 7047     		bx	lr
+ 352              		.cfi_endproc
+ 353              	.LFE68:
+ 354              		.size	defuzzification, .-defuzzification
+ 355              		.global	__aeabi_i2d
+ 356              		.global	__aeabi_ddiv
+ 357              		.global	__aeabi_d2f
+ 358 0006 00BF     		.section	.text.get_inputs,"ax",%progbits
+ 359              		.align	2
+ 360              		.thumb
+ 361              		.thumb_func
+ 362              		.type	get_inputs, %function
+ 363              	get_inputs:
+ 364              	.LFB63:
+ 438:..\source/fuzzy.c ****     /* 
+ 365              		.loc 1 438 0
+ 366              		.cfi_startproc
+ 367              		@ args = 0, pretend = 0, frame = 16
+ 368              		@ frame_needed = 0, uses_anonymous_args = 0
+ 369 0000 2DE9F047 		push	{r4, r5, r6, r7, r8, r9, r10, lr}
+ 370              		.cfi_def_cfa_offset 32
+ 371              		.cfi_offset 4, -32
+ 372              		.cfi_offset 5, -28
+ 373              		.cfi_offset 6, -24
+ 374              		.cfi_offset 7, -20
+ 375              		.cfi_offset 8, -16
+ 376              		.cfi_offset 9, -12
+ 377              		.cfi_offset 10, -8
+ 378              		.cfi_offset 14, -4
+ 379 0004 84B0     		sub	sp, sp, #16
+ 380              		.cfi_def_cfa_offset 48
+ 495:..\source/fuzzy.c ****     Encoder_GetLRSpeed(&left_actual_speed, &right_actual_speed);
+ 381              		.loc 1 495 0
+ 382 0006 0DF10E00 		add	r0, sp, #14
+ 383 000a 03A9     		add	r1, sp, #12
+ 384 000c FFF7FEFF 		bl	I2c_ReadLRCmdVelocity
+ 385              	.LVL54:
+ 496:..\source/fuzzy.c ****     
+ 386              		.loc 1 496 0
+ 387 0010 4249     		ldr	r1, .L46
+ 388 0012 0846     		mov	r0, r1
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 19
+
+
+ 389 0014 0231     		adds	r1, r1, #2
+ 390 0016 FFF7FEFF 		bl	Encoder_GetLRSpeed
+ 391              	.LVL55:
+ 498:..\source/fuzzy.c ****     int16 right_error_upper = right_target_speed >= 0 ? max_forward_speed : max_reverse_speed;
+ 392              		.loc 1 498 0
+ 393 001a BDF80E20 		ldrh	r2, [sp, #14]
+ 394 001e 12F4004F 		tst	r2, #32768
+ 395 0022 02D1     		bne	.L37
+ 498:..\source/fuzzy.c ****     int16 right_error_upper = right_target_speed >= 0 ? max_forward_speed : max_reverse_speed;
+ 396              		.loc 1 498 0 is_stmt 0 discriminator 1
+ 397 0024 3D4B     		ldr	r3, .L46
+ 398 0026 9888     		ldrh	r0, [r3, #4]
+ 399 0028 01E0     		b	.L38
+ 400              	.L37:
+ 498:..\source/fuzzy.c ****     int16 right_error_upper = right_target_speed >= 0 ? max_forward_speed : max_reverse_speed;
+ 401              		.loc 1 498 0 discriminator 2
+ 402 002a 3C4B     		ldr	r3, .L46
+ 403 002c D888     		ldrh	r0, [r3, #6]
+ 404              	.L38:
+ 405              	.LVL56:
+ 499:..\source/fuzzy.c **** 
+ 406              		.loc 1 499 0 is_stmt 1 discriminator 4
+ 407 002e BDF80C30 		ldrh	r3, [sp, #12]
+ 408 0032 13F4004F 		tst	r3, #32768
+ 409 0036 03D1     		bne	.L39
+ 499:..\source/fuzzy.c **** 
+ 410              		.loc 1 499 0 is_stmt 0 discriminator 1
+ 411 0038 3849     		ldr	r1, .L46
+ 412 003a B1F80480 		ldrh	r8, [r1, #4]
+ 413 003e 02E0     		b	.L40
+ 414              	.L39:
+ 499:..\source/fuzzy.c **** 
+ 415              		.loc 1 499 0 discriminator 2
+ 416 0040 3649     		ldr	r1, .L46
+ 417 0042 B1F80680 		ldrh	r8, [r1, #6]
+ 418              	.L40:
+ 419              	.LVL57:
+ 502:..\source/fuzzy.c ****     int16 right_input_error = right_target_speed - right_actual_speed;
+ 420              		.loc 1 502 0 is_stmt 1 discriminator 4
+ 421 0046 3549     		ldr	r1, .L46
+ 422 0048 0D88     		ldrh	r5, [r1]
+ 423 004a 521B     		subs	r2, r2, r5
+ 424 004c 92B2     		uxth	r2, r2
+ 425 004e 97B2     		uxth	r7, r2
+ 426              	.LVL58:
+ 503:..\source/fuzzy.c **** 
+ 427              		.loc 1 503 0 discriminator 4
+ 428 0050 4C88     		ldrh	r4, [r1, #2]
+ 429 0052 1B1B     		subs	r3, r3, r4
+ 430 0054 9BB2     		uxth	r3, r3
+ 431 0056 9EB2     		uxth	r6, r3
+ 432              	.LVL59:
+ 507:..\source/fuzzy.c ****     last_left_input_error = left_input_error;
+ 433              		.loc 1 507 0 discriminator 4
+ 434 0058 0D89     		ldrh	r5, [r1, #8]
+ 435 005a AD1A     		subs	r5, r5, r2
+ 436 005c ADB2     		uxth	r5, r5
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 20
+
+
+ 437              	.LVL60:
+ 508:..\source/fuzzy.c **** 
+ 438              		.loc 1 508 0 discriminator 4
+ 439 005e 0F81     		strh	r7, [r1, #8]	@ movhi
+ 510:..\source/fuzzy.c ****     last_right_input_error = right_input_error;
+ 440              		.loc 1 510 0 discriminator 4
+ 441 0060 4C89     		ldrh	r4, [r1, #10]
+ 442 0062 E41A     		subs	r4, r4, r3
+ 443 0064 A4B2     		uxth	r4, r4
+ 444              	.LVL61:
+ 511:..\source/fuzzy.c **** 
+ 445              		.loc 1 511 0 discriminator 4
+ 446 0066 4E81     		strh	r6, [r1, #10]	@ movhi
+ 513:..\source/fuzzy.c ****     int16 right_derror_upper = right_input_derror >= 0 ? max_forward_speed : max_reverse_speed;
+ 447              		.loc 1 513 0 discriminator 4
+ 448 0068 15F4004F 		tst	r5, #32768
+ 449 006c 02D1     		bne	.L41
+ 513:..\source/fuzzy.c ****     int16 right_derror_upper = right_input_derror >= 0 ? max_forward_speed : max_reverse_speed;
+ 450              		.loc 1 513 0 is_stmt 0 discriminator 1
+ 451 006e B1F80490 		ldrh	r9, [r1, #4]
+ 452 0072 02E0     		b	.L42
+ 453              	.L41:
+ 513:..\source/fuzzy.c ****     int16 right_derror_upper = right_input_derror >= 0 ? max_forward_speed : max_reverse_speed;
+ 454              		.loc 1 513 0 discriminator 2
+ 455 0074 294B     		ldr	r3, .L46
+ 456 0076 B3F80690 		ldrh	r9, [r3, #6]
+ 457              	.L42:
+ 458              	.LVL62:
+ 514:..\source/fuzzy.c ****     
+ 459              		.loc 1 514 0 is_stmt 1 discriminator 4
+ 460 007a 14F4004F 		tst	r4, #32768
+ 461 007e 03D1     		bne	.L43
+ 514:..\source/fuzzy.c ****     
+ 462              		.loc 1 514 0 is_stmt 0 discriminator 1
+ 463 0080 264B     		ldr	r3, .L46
+ 464 0082 B3F804A0 		ldrh	r10, [r3, #4]
+ 465 0086 02E0     		b	.L44
+ 466              	.L43:
+ 514:..\source/fuzzy.c ****     
+ 467              		.loc 1 514 0 discriminator 2
+ 468 0088 244B     		ldr	r3, .L46
+ 469 008a B3F806A0 		ldrh	r10, [r3, #6]
+ 470              	.L44:
+ 471              	.LVL63:
+ 517:..\source/fuzzy.c ****     left_inputs[INPUT_DERROR].value = normalize(left_input_derror, 0.0, left_derror_upper);
+ 472              		.loc 1 517 0 is_stmt 1 discriminator 4
+ 473 008e 00B2     		sxth	r0, r0
+ 474 0090 FFF7FEFF 		bl	__aeabi_i2d
+ 475              	.LVL64:
+ 476 0094 CDE90001 		strd	r0, [sp]
+ 477 0098 38B2     		sxth	r0, r7
+ 478 009a FFF7FEFF 		bl	__aeabi_i2d
+ 479              	.LVL65:
+ 480 009e DDE90023 		ldrd	r2, [sp]
+ 481 00a2 FFF7FEFF 		bl	__aeabi_ddiv
+ 482              	.LVL66:
+ 483 00a6 1E4F     		ldr	r7, .L46+4
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 21
+
+
+ 484              	.LVL67:
+ 485 00a8 FFF7FEFF 		bl	__aeabi_d2f
+ 486              	.LVL68:
+ 487 00ac C7F8A000 		str	r0, [r7, #160]	@ float
+ 518:..\source/fuzzy.c ****     
+ 488              		.loc 1 518 0 discriminator 4
+ 489 00b0 0FFA89F0 		sxth	r0, r9
+ 490 00b4 FFF7FEFF 		bl	__aeabi_i2d
+ 491              	.LVL69:
+ 492 00b8 CDE90001 		strd	r0, [sp]
+ 493 00bc 28B2     		sxth	r0, r5
+ 494 00be FFF7FEFF 		bl	__aeabi_i2d
+ 495              	.LVL70:
+ 496 00c2 DDE90023 		ldrd	r2, [sp]
+ 497 00c6 FFF7FEFF 		bl	__aeabi_ddiv
+ 498              	.LVL71:
+ 499 00ca FFF7FEFF 		bl	__aeabi_d2f
+ 500              	.LVL72:
+ 501 00ce C7F89001 		str	r0, [r7, #400]	@ float
+ 520:..\source/fuzzy.c ****     right_inputs[INPUT_DERROR].value = normalize(right_input_derror, 0.0, right_derror_upper);
+ 502              		.loc 1 520 0 discriminator 4
+ 503 00d2 0FFA88F0 		sxth	r0, r8
+ 504 00d6 FFF7FEFF 		bl	__aeabi_i2d
+ 505              	.LVL73:
+ 506 00da 8046     		mov	r8, r0
+ 507              	.LVL74:
+ 508 00dc 8946     		mov	r9, r1
+ 509              	.LVL75:
+ 510 00de 30B2     		sxth	r0, r6
+ 511 00e0 FFF7FEFF 		bl	__aeabi_i2d
+ 512              	.LVL76:
+ 513 00e4 4246     		mov	r2, r8
+ 514 00e6 4B46     		mov	r3, r9
+ 515 00e8 FFF7FEFF 		bl	__aeabi_ddiv
+ 516              	.LVL77:
+ 517 00ec FFF7FEFF 		bl	__aeabi_d2f
+ 518              	.LVL78:
+ 519 00f0 C7F88002 		str	r0, [r7, #640]	@ float
+ 521:..\source/fuzzy.c **** }
+ 520              		.loc 1 521 0 discriminator 4
+ 521 00f4 0FFA8AF0 		sxth	r0, r10
+ 522 00f8 FFF7FEFF 		bl	__aeabi_i2d
+ 523              	.LVL79:
+ 524 00fc 8046     		mov	r8, r0
+ 525 00fe 8946     		mov	r9, r1
+ 526 0100 20B2     		sxth	r0, r4
+ 527 0102 FFF7FEFF 		bl	__aeabi_i2d
+ 528              	.LVL80:
+ 529 0106 4246     		mov	r2, r8
+ 530 0108 4B46     		mov	r3, r9
+ 531 010a FFF7FEFF 		bl	__aeabi_ddiv
+ 532              	.LVL81:
+ 533 010e FFF7FEFF 		bl	__aeabi_d2f
+ 534              	.LVL82:
+ 535 0112 C7F87003 		str	r0, [r7, #880]	@ float
+ 522:..\source/fuzzy.c **** 
+ 536              		.loc 1 522 0 discriminator 4
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 22
+
+
+ 537 0116 04B0     		add	sp, sp, #16
+ 538              		.cfi_def_cfa_offset 32
+ 539              		@ sp needed
+ 540 0118 BDE8F087 		pop	{r4, r5, r6, r7, r8, r9, r10, pc}
+ 541              	.LVL83:
+ 542              	.L47:
+ 543              		.align	2
+ 544              	.L46:
+ 545 011c 00000000 		.word	.LANCHOR1
+ 546 0120 00000000 		.word	.LANCHOR0
+ 547              		.cfi_endproc
+ 548              	.LFE63:
+ 549              		.size	get_inputs, .-get_inputs
+ 550              		.global	__aeabi_fadd
+ 551              		.global	__aeabi_f2d
+ 552              		.section	.text.set_output,"ax",%progbits
+ 553              		.align	2
+ 554              		.thumb
+ 555              		.thumb_func
+ 556              		.type	set_output, %function
+ 557              	set_output:
+ 558              	.LFB69:
+ 630:..\source/fuzzy.c ****     {
+ 631:..\source/fuzzy.c ****         sum_of_products = 0;
+ 632:..\source/fuzzy.c ****         sum_of_areas = 0;
+ 633:..\source/fuzzy.c ****         for (jj = 0; jj < sizeof(outputs[ii].membership_functions); ++ii)
+ 634:..\source/fuzzy.c ****         {
+ 635:..\source/fuzzy.c ****             MF_TYPE *mf = &outputs[ii].membership_functions[jj];
+ 636:..\source/fuzzy.c ****             area = compute_area_of_trapezoid(mf);
+ 637:..\source/fuzzy.c ****             centroid = mf->point1 + (mf->point2 - mf->point1)/2;
+ 638:..\source/fuzzy.c ****             sum_of_products += area * centroid;
+ 639:..\source/fuzzy.c ****             sum_of_areas += area;
+ 640:..\source/fuzzy.c ****         }
+ 641:..\source/fuzzy.c ****         outputs[ii].value = sum_of_products/sum_of_areas;
+ 642:..\source/fuzzy.c ****     }
+ 643:..\source/fuzzy.c **** }
+ 644:..\source/fuzzy.c **** 
+ 645:..\source/fuzzy.c **** static void set_output()
+ 646:..\source/fuzzy.c **** {
+ 559              		.loc 1 646 0
+ 560              		.cfi_startproc
+ 561              		@ args = 0, pretend = 0, frame = 0
+ 562              		@ frame_needed = 0, uses_anonymous_args = 0
+ 563 0000 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 564              		.cfi_def_cfa_offset 24
+ 565              		.cfi_offset 3, -24
+ 566              		.cfi_offset 4, -20
+ 567              		.cfi_offset 5, -16
+ 568              		.cfi_offset 6, -12
+ 569              		.cfi_offset 7, -8
+ 570              		.cfi_offset 14, -4
+ 647:..\source/fuzzy.c ****     /* Motor_SetOutput(left, right) */
+ 648:..\source/fuzzy.c ****     
+ 649:..\source/fuzzy.c ****     float left_speed = constrain(left_actual_speed + left_output[0].value, max_reverse_speed, max_f
+ 571              		.loc 1 649 0
+ 572 0002 2D4B     		ldr	r3, .L78
+ 573 0004 D3F86054 		ldr	r5, [r3, #1120]	@ float
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 23
+
+
+ 574 0008 2C4C     		ldr	r4, .L78+4
+ 575 000a B4F90000 		ldrsh	r0, [r4]
+ 576 000e FFF7FEFF 		bl	__aeabi_i2f
+ 577              	.LVL84:
+ 578 0012 2946     		mov	r1, r5
+ 579 0014 FFF7FEFF 		bl	__aeabi_fadd
+ 580              	.LVL85:
+ 581 0018 0546     		mov	r5, r0
+ 582 001a B4F90600 		ldrsh	r0, [r4, #6]
+ 583 001e FFF7FEFF 		bl	__aeabi_i2f
+ 584              	.LVL86:
+ 585 0022 0446     		mov	r4, r0
+ 586 0024 2846     		mov	r0, r5
+ 587 0026 2146     		mov	r1, r4
+ 588 0028 FFF7FEFF 		bl	__aeabi_fcmpgt
+ 589              	.LVL87:
+ 590 002c 08B1     		cbz	r0, .L72
+ 591 002e 2F46     		mov	r7, r5
+ 592 0030 00E0     		b	.L49
+ 593              	.L72:
+ 594 0032 2746     		mov	r7, r4
+ 595              	.L49:
+ 596              		.loc 1 649 0 is_stmt 0 discriminator 4
+ 597 0034 214B     		ldr	r3, .L78+4
+ 598 0036 B3F90400 		ldrsh	r0, [r3, #4]
+ 599 003a FFF7FEFF 		bl	__aeabi_i2f
+ 600              	.LVL88:
+ 601 003e 0646     		mov	r6, r0
+ 602 0040 3846     		mov	r0, r7
+ 603 0042 3146     		mov	r1, r6
+ 604 0044 FFF7FEFF 		bl	__aeabi_fcmplt
+ 605              	.LVL89:
+ 606 0048 30B1     		cbz	r0, .L73
+ 607              		.loc 1 649 0 discriminator 5
+ 608 004a 2846     		mov	r0, r5
+ 609 004c 2146     		mov	r1, r4
+ 610 004e FFF7FEFF 		bl	__aeabi_fcmpgt
+ 611              	.LVL90:
+ 612 0052 10B9     		cbnz	r0, .L51
+ 613              		.loc 1 649 0
+ 614 0054 2546     		mov	r5, r4
+ 615 0056 00E0     		b	.L51
+ 616              	.L73:
+ 617 0058 3546     		mov	r5, r6
+ 618              	.L51:
+ 619              	.LVL91:
+ 650:..\source/fuzzy.c ****     float right_speed = constrain(right_actual_speed + right_output[0].value, max_reverse_speed, ma
+ 620              		.loc 1 650 0 is_stmt 1 discriminator 12
+ 621 005a 174B     		ldr	r3, .L78
+ 622 005c D3F85075 		ldr	r7, [r3, #1360]	@ float
+ 623 0060 164B     		ldr	r3, .L78+4
+ 624 0062 B3F90200 		ldrsh	r0, [r3, #2]
+ 625 0066 FFF7FEFF 		bl	__aeabi_i2f
+ 626              	.LVL92:
+ 627 006a 3946     		mov	r1, r7
+ 628 006c FFF7FEFF 		bl	__aeabi_fadd
+ 629              	.LVL93:
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 24
+
+
+ 630 0070 0746     		mov	r7, r0
+ 631 0072 2046     		mov	r0, r4
+ 632 0074 3946     		mov	r1, r7
+ 633 0076 FFF7FEFF 		bl	__aeabi_fcmplt
+ 634              	.LVL94:
+ 635 007a 08B1     		cbz	r0, .L75
+ 636              		.loc 1 650 0 is_stmt 0
+ 637 007c 3846     		mov	r0, r7
+ 638 007e 00E0     		b	.L55
+ 639              	.L75:
+ 640 0080 2046     		mov	r0, r4
+ 641              	.L55:
+ 642              		.loc 1 650 0 discriminator 4
+ 643 0082 3146     		mov	r1, r6
+ 644 0084 FFF7FEFF 		bl	__aeabi_fcmplt
+ 645              	.LVL95:
+ 646 0088 38B1     		cbz	r0, .L57
+ 647              		.loc 1 650 0 discriminator 5
+ 648 008a 2046     		mov	r0, r4
+ 649 008c 3946     		mov	r1, r7
+ 650 008e FFF7FEFF 		bl	__aeabi_fcmplt
+ 651              	.LVL96:
+ 652 0092 08B1     		cbz	r0, .L76
+ 653              		.loc 1 650 0
+ 654 0094 3E46     		mov	r6, r7
+ 655 0096 00E0     		b	.L57
+ 656              	.L76:
+ 657 0098 2646     		mov	r6, r4
+ 658              	.L57:
+ 659              	.LVL97:
+ 651:..\source/fuzzy.c ****     
+ 652:..\source/fuzzy.c ****     Motor_SetOutput(left_speed, right_speed);
+ 660              		.loc 1 652 0 is_stmt 1 discriminator 12
+ 661 009a 2846     		mov	r0, r5
+ 662 009c FFF7FEFF 		bl	__aeabi_f2d
+ 663              	.LVL98:
+ 664 00a0 0446     		mov	r4, r0
+ 665 00a2 0D46     		mov	r5, r1
+ 666              	.LVL99:
+ 667 00a4 3046     		mov	r0, r6
+ 668 00a6 FFF7FEFF 		bl	__aeabi_f2d
+ 669              	.LVL100:
+ 670 00aa 0246     		mov	r2, r0
+ 671 00ac 0B46     		mov	r3, r1
+ 672 00ae 2046     		mov	r0, r4
+ 673 00b0 2946     		mov	r1, r5
+ 674 00b2 FFF7FEFF 		bl	Motor_SetOutput
+ 675              	.LVL101:
+ 676 00b6 F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 677              	.LVL102:
+ 678              	.L79:
+ 679              		.align	2
+ 680              	.L78:
+ 681 00b8 00000000 		.word	.LANCHOR0
+ 682 00bc 00000000 		.word	.LANCHOR1
+ 683              		.cfi_endproc
+ 684              	.LFE69:
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 25
+
+
+ 685              		.size	set_output, .-set_output
+ 686              		.section	.text.FUZZY_Init,"ax",%progbits
+ 687              		.align	2
+ 688              		.global	FUZZY_Init
+ 689              		.thumb
+ 690              		.thumb_func
+ 691              		.type	FUZZY_Init, %function
+ 692              	FUZZY_Init:
+ 693              	.LFB70:
+ 653:..\source/fuzzy.c **** }
+ 654:..\source/fuzzy.c **** 
+ 655:..\source/fuzzy.c **** void FUZZY_Init()
+ 656:..\source/fuzzy.c **** {
+ 694              		.loc 1 656 0
+ 695              		.cfi_startproc
+ 696              		@ args = 0, pretend = 0, frame = 0
+ 697              		@ frame_needed = 0, uses_anonymous_args = 0
+ 698 0000 38B5     		push	{r3, r4, r5, lr}
+ 699              		.cfi_def_cfa_offset 16
+ 700              		.cfi_offset 3, -16
+ 701              		.cfi_offset 4, -12
+ 702              		.cfi_offset 5, -8
+ 703              		.cfi_offset 14, -4
+ 657:..\source/fuzzy.c ****     memset(left_inputs, 0, sizeof(left_inputs));
+ 704              		.loc 1 657 0
+ 705 0002 114C     		ldr	r4, .L82
+ 706 0004 4FF4F075 		mov	r5, #480
+ 707 0008 04F19400 		add	r0, r4, #148
+ 708 000c 0021     		movs	r1, #0
+ 709 000e 2A46     		mov	r2, r5
+ 710 0010 FFF7FEFF 		bl	memset
+ 711              	.LVL103:
+ 658:..\source/fuzzy.c ****     memset(right_inputs, 0, sizeof(right_inputs));
+ 712              		.loc 1 658 0
+ 713 0014 04F51D70 		add	r0, r4, #628
+ 714 0018 0021     		movs	r1, #0
+ 715 001a 2A46     		mov	r2, r5
+ 716 001c FFF7FEFF 		bl	memset
+ 717              	.LVL104:
+ 659:..\source/fuzzy.c ****     memset(left_output, 0, sizeof(left_output));
+ 718              		.loc 1 659 0
+ 719 0020 F025     		movs	r5, #240
+ 720 0022 04F25440 		addw	r0, r4, #1108
+ 721 0026 0021     		movs	r1, #0
+ 722 0028 2A46     		mov	r2, r5
+ 723 002a FFF7FEFF 		bl	memset
+ 724              	.LVL105:
+ 660:..\source/fuzzy.c ****     memset(right_output, 0, sizeof(right_output));
+ 725              		.loc 1 660 0
+ 726 002e 04F24450 		addw	r0, r4, #1348
+ 727 0032 0021     		movs	r1, #0
+ 728 0034 2A46     		mov	r2, r5
+ 729 0036 FFF7FEFF 		bl	memset
+ 730              	.LVL106:
+ 661:..\source/fuzzy.c ****     Motor_GetSpeedRange(&max_reverse_speed, &max_forward_speed);
+ 731              		.loc 1 661 0
+ 732 003a 0449     		ldr	r1, .L82+4
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 26
+
+
+ 733 003c 881D     		adds	r0, r1, #6
+ 734 003e 0431     		adds	r1, r1, #4
+ 735 0040 FFF7FEFF 		bl	Motor_GetSpeedRange
+ 736              	.LVL107:
+ 737 0044 38BD     		pop	{r3, r4, r5, pc}
+ 738              	.L83:
+ 739 0046 00BF     		.align	2
+ 740              	.L82:
+ 741 0048 00000000 		.word	.LANCHOR0
+ 742 004c 00000000 		.word	.LANCHOR1
+ 743              		.cfi_endproc
+ 744              	.LFE70:
+ 745              		.size	FUZZY_Init, .-FUZZY_Init
+ 746              		.section	.text.FUZZY_Start,"ax",%progbits
+ 747              		.align	2
+ 748              		.global	FUZZY_Start
+ 749              		.thumb
+ 750              		.thumb_func
+ 751              		.type	FUZZY_Start, %function
+ 752              	FUZZY_Start:
+ 753              	.LFB71:
+ 662:..\source/fuzzy.c **** }
+ 663:..\source/fuzzy.c **** 
+ 664:..\source/fuzzy.c **** void FUZZY_Start()
+ 665:..\source/fuzzy.c **** {
+ 754              		.loc 1 665 0
+ 755              		.cfi_startproc
+ 756              		@ args = 0, pretend = 0, frame = 0
+ 757              		@ frame_needed = 0, uses_anonymous_args = 0
+ 758              		@ link register save eliminated.
+ 759 0000 7047     		bx	lr
+ 760              		.cfi_endproc
+ 761              	.LFE71:
+ 762              		.size	FUZZY_Start, .-FUZZY_Start
+ 763 0002 00BF     		.section	.text.FUZZY_Update,"ax",%progbits
+ 764              		.align	2
+ 765              		.global	FUZZY_Update
+ 766              		.thumb
+ 767              		.thumb_func
+ 768              		.type	FUZZY_Update, %function
+ 769              	FUZZY_Update:
+ 770              	.LFB72:
+ 666:..\source/fuzzy.c ****     /* Setup the Fuzzy rules */
+ 667:..\source/fuzzy.c **** }
+ 668:..\source/fuzzy.c **** 
+ 669:..\source/fuzzy.c **** void FUZZY_Update()
+ 670:..\source/fuzzy.c **** {
+ 771              		.loc 1 670 0
+ 772              		.cfi_startproc
+ 773              		@ args = 0, pretend = 0, frame = 0
+ 774              		@ frame_needed = 0, uses_anonymous_args = 0
+ 775              		.loc 1 670 0
+ 776 0000 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 777              		.cfi_def_cfa_offset 24
+ 778              		.cfi_offset 3, -24
+ 779              		.cfi_offset 4, -20
+ 780              		.cfi_offset 5, -16
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 27
+
+
+ 781              		.cfi_offset 6, -12
+ 782              		.cfi_offset 7, -8
+ 783              		.cfi_offset 14, -4
+ 671:..\source/fuzzy.c ****     get_inputs();
+ 784              		.loc 1 671 0
+ 785 0002 FFF7FEFF 		bl	get_inputs
+ 786              	.LVL108:
+ 672:..\source/fuzzy.c ****     fuzzification(left_inputs, MAX_NUM_LEFT_INPUTS);
+ 787              		.loc 1 672 0
+ 788 0006 124C     		ldr	r4, .L87
+ 789 0008 04F19407 		add	r7, r4, #148
+ 790 000c 3846     		mov	r0, r7
+ 791 000e 0221     		movs	r1, #2
+ 792 0010 FFF7FEFF 		bl	fuzzification
+ 793              	.LVL109:
+ 673:..\source/fuzzy.c ****     fuzzification(right_inputs, MAX_NUM_RIGHT_INPUTS);
+ 794              		.loc 1 673 0
+ 795 0014 04F51D76 		add	r6, r4, #628
+ 796 0018 3046     		mov	r0, r6
+ 797 001a 0221     		movs	r1, #2
+ 798 001c FFF7FEFF 		bl	fuzzification
+ 799              	.LVL110:
+ 674:..\source/fuzzy.c ****     rule_evaluation(left_inputs, left_output);
+ 800              		.loc 1 674 0
+ 801 0020 04F25445 		addw	r5, r4, #1108
+ 802 0024 3846     		mov	r0, r7
+ 803 0026 2946     		mov	r1, r5
+ 804 0028 FFF7FEFF 		bl	rule_evaluation
+ 805              	.LVL111:
+ 675:..\source/fuzzy.c ****     rule_evaluation(right_inputs, right_output);
+ 806              		.loc 1 675 0
+ 807 002c 04F24454 		addw	r4, r4, #1348
+ 808 0030 3046     		mov	r0, r6
+ 809 0032 2146     		mov	r1, r4
+ 810 0034 FFF7FEFF 		bl	rule_evaluation
+ 811              	.LVL112:
+ 676:..\source/fuzzy.c ****     defuzzification(left_output, MAX_NUM_LEFT_OUTPUTS);
+ 812              		.loc 1 676 0
+ 813 0038 2846     		mov	r0, r5
+ 814 003a 0121     		movs	r1, #1
+ 815 003c FFF7FEFF 		bl	defuzzification
+ 816              	.LVL113:
+ 677:..\source/fuzzy.c ****     defuzzification(right_output, MAX_NUM_RIGHT_OUTPUTS);
+ 817              		.loc 1 677 0
+ 818 0040 2046     		mov	r0, r4
+ 819 0042 0121     		movs	r1, #1
+ 820 0044 FFF7FEFF 		bl	defuzzification
+ 821              	.LVL114:
+ 678:..\source/fuzzy.c ****     set_output();
+ 822              		.loc 1 678 0
+ 823 0048 FFF7FEFF 		bl	set_output
+ 824              	.LVL115:
+ 825 004c F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 826              	.L88:
+ 827 004e 00BF     		.align	2
+ 828              	.L87:
+ 829 0050 00000000 		.word	.LANCHOR0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 28
+
+
+ 830              		.cfi_endproc
+ 831              	.LFE72:
+ 832              		.size	FUZZY_Update, .-FUZZY_Update
+ 833              		.global	Rules
+ 834              		.data
+ 835              		.align	2
+ 836              		.set	.LANCHOR0,. + 0
+ 837              		.type	Rules, %object
+ 838              		.size	Rules, 147
+ 839              	Rules:
+ 840 0000 00       		.byte	0
+ 841 0001 00       		.byte	0
+ 842 0002 00       		.byte	0
+ 843 0003 00       		.byte	0
+ 844 0004 01       		.byte	1
+ 845 0005 00       		.byte	0
+ 846 0006 00       		.byte	0
+ 847 0007 02       		.byte	2
+ 848 0008 00       		.byte	0
+ 849 0009 00       		.byte	0
+ 850 000a 03       		.byte	3
+ 851 000b 01       		.byte	1
+ 852 000c 00       		.byte	0
+ 853 000d 04       		.byte	4
+ 854 000e 01       		.byte	1
+ 855 000f 00       		.byte	0
+ 856 0010 05       		.byte	5
+ 857 0011 02       		.byte	2
+ 858 0012 00       		.byte	0
+ 859 0013 06       		.byte	6
+ 860 0014 03       		.byte	3
+ 861 0015 01       		.byte	1
+ 862 0016 00       		.byte	0
+ 863 0017 00       		.byte	0
+ 864 0018 01       		.byte	1
+ 865 0019 01       		.byte	1
+ 866 001a 00       		.byte	0
+ 867 001b 01       		.byte	1
+ 868 001c 02       		.byte	2
+ 869 001d 01       		.byte	1
+ 870 001e 01       		.byte	1
+ 871 001f 03       		.byte	3
+ 872 0020 01       		.byte	1
+ 873 0021 01       		.byte	1
+ 874 0022 04       		.byte	4
+ 875 0023 02       		.byte	2
+ 876 0024 01       		.byte	1
+ 877 0025 05       		.byte	5
+ 878 0026 03       		.byte	3
+ 879 0027 01       		.byte	1
+ 880 0028 06       		.byte	6
+ 881 0029 04       		.byte	4
+ 882 002a 02       		.byte	2
+ 883 002b 00       		.byte	0
+ 884 002c 00       		.byte	0
+ 885 002d 02       		.byte	2
+ 886 002e 01       		.byte	1
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 29
+
+
+ 887 002f 01       		.byte	1
+ 888 0030 02       		.byte	2
+ 889 0031 02       		.byte	2
+ 890 0032 01       		.byte	1
+ 891 0033 02       		.byte	2
+ 892 0034 03       		.byte	3
+ 893 0035 02       		.byte	2
+ 894 0036 02       		.byte	2
+ 895 0037 04       		.byte	4
+ 896 0038 03       		.byte	3
+ 897 0039 02       		.byte	2
+ 898 003a 05       		.byte	5
+ 899 003b 04       		.byte	4
+ 900 003c 02       		.byte	2
+ 901 003d 06       		.byte	6
+ 902 003e 05       		.byte	5
+ 903 003f 03       		.byte	3
+ 904 0040 00       		.byte	0
+ 905 0041 01       		.byte	1
+ 906 0042 03       		.byte	3
+ 907 0043 01       		.byte	1
+ 908 0044 01       		.byte	1
+ 909 0045 03       		.byte	3
+ 910 0046 02       		.byte	2
+ 911 0047 02       		.byte	2
+ 912 0048 03       		.byte	3
+ 913 0049 03       		.byte	3
+ 914 004a 03       		.byte	3
+ 915 004b 03       		.byte	3
+ 916 004c 04       		.byte	4
+ 917 004d 04       		.byte	4
+ 918 004e 03       		.byte	3
+ 919 004f 05       		.byte	5
+ 920 0050 05       		.byte	5
+ 921 0051 03       		.byte	3
+ 922 0052 06       		.byte	6
+ 923 0053 05       		.byte	5
+ 924 0054 04       		.byte	4
+ 925 0055 00       		.byte	0
+ 926 0056 01       		.byte	1
+ 927 0057 04       		.byte	4
+ 928 0058 01       		.byte	1
+ 929 0059 02       		.byte	2
+ 930 005a 04       		.byte	4
+ 931 005b 02       		.byte	2
+ 932 005c 03       		.byte	3
+ 933 005d 04       		.byte	4
+ 934 005e 03       		.byte	3
+ 935 005f 04       		.byte	4
+ 936 0060 04       		.byte	4
+ 937 0061 04       		.byte	4
+ 938 0062 05       		.byte	5
+ 939 0063 04       		.byte	4
+ 940 0064 05       		.byte	5
+ 941 0065 06       		.byte	6
+ 942 0066 04       		.byte	4
+ 943 0067 06       		.byte	6
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 30
+
+
+ 944 0068 06       		.byte	6
+ 945 0069 05       		.byte	5
+ 946 006a 00       		.byte	0
+ 947 006b 02       		.byte	2
+ 948 006c 05       		.byte	5
+ 949 006d 01       		.byte	1
+ 950 006e 03       		.byte	3
+ 951 006f 05       		.byte	5
+ 952 0070 02       		.byte	2
+ 953 0071 04       		.byte	4
+ 954 0072 05       		.byte	5
+ 955 0073 03       		.byte	3
+ 956 0074 05       		.byte	5
+ 957 0075 05       		.byte	5
+ 958 0076 04       		.byte	4
+ 959 0077 05       		.byte	5
+ 960 0078 05       		.byte	5
+ 961 0079 05       		.byte	5
+ 962 007a 06       		.byte	6
+ 963 007b 05       		.byte	5
+ 964 007c 06       		.byte	6
+ 965 007d 06       		.byte	6
+ 966 007e 06       		.byte	6
+ 967 007f 00       		.byte	0
+ 968 0080 03       		.byte	3
+ 969 0081 06       		.byte	6
+ 970 0082 01       		.byte	1
+ 971 0083 04       		.byte	4
+ 972 0084 06       		.byte	6
+ 973 0085 02       		.byte	2
+ 974 0086 05       		.byte	5
+ 975 0087 06       		.byte	6
+ 976 0088 03       		.byte	3
+ 977 0089 05       		.byte	5
+ 978 008a 06       		.byte	6
+ 979 008b 04       		.byte	4
+ 980 008c 06       		.byte	6
+ 981 008d 06       		.byte	6
+ 982 008e 05       		.byte	5
+ 983 008f 06       		.byte	6
+ 984 0090 06       		.byte	6
+ 985 0091 06       		.byte	6
+ 986 0092 06       		.byte	6
+ 987 0093 00       		.space	1
+ 988              		.type	left_inputs, %object
+ 989              		.size	left_inputs, 480
+ 990              	left_inputs:
+ 991 0094 4572726F 		.ascii	"Error\000"
+ 991      7200
+ 992 009a 00000000 		.space	4
+ 993 009e 0000     		.space	2
+ 994 00a0 00000000 		.word	0
+ 995 00a4 4E4200   		.ascii	"NB\000"
+ 996 00a7 00000000 		.space	7
+ 996      000000
+ 997 00ae 0000     		.space	2
+ 998 00b0 00000000 		.word	0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 31
+
+
+ 999 00b4 000080BF 		.word	-1082130432
+ 1000 00b8 1F852BBF 		.word	-1087666913
+ 1001 00bc 00000000 		.word	0
+ 1002 00c0 7CF041C0 		.word	-1069420420
+ 1003 00c4 4E4D00   		.ascii	"NM\000"
+ 1004 00c7 00000000 		.space	7
+ 1004      000000
+ 1005 00ce 0000     		.space	2
+ 1006 00d0 00000000 		.word	0
+ 1007 00d4 000080BF 		.word	-1082130432
+ 1008 00d8 C3F5A8BE 		.word	-1096223293
+ 1009 00dc 760B3F40 		.word	1077873526
+ 1010 00e0 760B3FC0 		.word	-1069610122
+ 1011 00e4 4E5300   		.ascii	"NS\000"
+ 1012 00e7 00000000 		.space	7
+ 1012      000000
+ 1013 00ee 0000     		.space	2
+ 1014 00f0 00000000 		.word	0
+ 1015 00f4 1F852BBF 		.word	-1087666913
+ 1016 00f8 00000000 		.word	0
+ 1017 00fc 760B3F40 		.word	1077873526
+ 1018 0100 760B3FC0 		.word	-1069610122
+ 1019 0104 5A00     		.ascii	"Z\000"
+ 1020 0106 00000000 		.space	8
+ 1020      00000000 
+ 1021 010e 0000     		.space	2
+ 1022 0110 00000000 		.word	0
+ 1023 0114 C3F5A8BE 		.word	-1096223293
+ 1024 0118 C3F5A83E 		.word	1051260355
+ 1025 011c 7CF04140 		.word	1078063228
+ 1026 0120 7CF041C0 		.word	-1069420420
+ 1027 0124 505300   		.ascii	"PS\000"
+ 1028 0127 00000000 		.space	7
+ 1028      000000
+ 1029 012e 0000     		.space	2
+ 1030 0130 00000000 		.word	0
+ 1031 0134 00000000 		.word	0
+ 1032 0138 00000000 		.word	0
+ 1033 013c 760B3F40 		.word	1077873526
+ 1034 0140 760B3FC0 		.word	-1069610122
+ 1035 0144 504D00   		.ascii	"PM\000"
+ 1036 0147 00000000 		.space	7
+ 1036      000000
+ 1037 014e 0000     		.space	2
+ 1038 0150 00000000 		.word	0
+ 1039 0154 C3F5A83E 		.word	1051260355
+ 1040 0158 C3F5A83E 		.word	1051260355
+ 1041 015c 760B3F40 		.word	1077873526
+ 1042 0160 760B3FC0 		.word	-1069610122
+ 1043 0164 504200   		.ascii	"PB\000"
+ 1044 0167 00000000 		.space	7
+ 1044      000000
+ 1045 016e 0000     		.space	2
+ 1046 0170 00000000 		.word	0
+ 1047 0174 1F852B3F 		.word	1059816735
+ 1048 0178 1F852B3F 		.word	1059816735
+ 1049 017c 7CF0C140 		.word	1086451836
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 32
+
+
+ 1050 0180 00000000 		.word	0
+ 1051 0184 64457272 		.ascii	"dError\000"
+ 1051      6F7200
+ 1052 018b 000000   		.space	3
+ 1053 018e 0000     		.space	2
+ 1054 0190 00000000 		.word	0
+ 1055 0194 4E4200   		.ascii	"NB\000"
+ 1056 0197 00000000 		.space	7
+ 1056      000000
+ 1057 019e 0000     		.space	2
+ 1058 01a0 00000000 		.word	0
+ 1059 01a4 000080BF 		.word	-1082130432
+ 1060 01a8 1F852BBF 		.word	-1087666913
+ 1061 01ac 00000000 		.word	0
+ 1062 01b0 7CF041C0 		.word	-1069420420
+ 1063 01b4 4E4D00   		.ascii	"NM\000"
+ 1064 01b7 00000000 		.space	7
+ 1064      000000
+ 1065 01be 0000     		.space	2
+ 1066 01c0 00000000 		.word	0
+ 1067 01c4 000080BF 		.word	-1082130432
+ 1068 01c8 C3F5A8BE 		.word	-1096223293
+ 1069 01cc 760B3F40 		.word	1077873526
+ 1070 01d0 760B3FC0 		.word	-1069610122
+ 1071 01d4 4E5300   		.ascii	"NS\000"
+ 1072 01d7 00000000 		.space	7
+ 1072      000000
+ 1073 01de 0000     		.space	2
+ 1074 01e0 00000000 		.word	0
+ 1075 01e4 1F852BBF 		.word	-1087666913
+ 1076 01e8 00000000 		.word	0
+ 1077 01ec 760B3F40 		.word	1077873526
+ 1078 01f0 760B3FC0 		.word	-1069610122
+ 1079 01f4 5A00     		.ascii	"Z\000"
+ 1080 01f6 00000000 		.space	8
+ 1080      00000000 
+ 1081 01fe 0000     		.space	2
+ 1082 0200 00000000 		.word	0
+ 1083 0204 C3F5A8BE 		.word	-1096223293
+ 1084 0208 C3F5A83E 		.word	1051260355
+ 1085 020c 7CF04140 		.word	1078063228
+ 1086 0210 7CF041C0 		.word	-1069420420
+ 1087 0214 505300   		.ascii	"PS\000"
+ 1088 0217 00000000 		.space	7
+ 1088      000000
+ 1089 021e 0000     		.space	2
+ 1090 0220 00000000 		.word	0
+ 1091 0224 00000000 		.word	0
+ 1092 0228 00000000 		.word	0
+ 1093 022c 760B3F40 		.word	1077873526
+ 1094 0230 760B3FC0 		.word	-1069610122
+ 1095 0234 504D00   		.ascii	"PM\000"
+ 1096 0237 00000000 		.space	7
+ 1096      000000
+ 1097 023e 0000     		.space	2
+ 1098 0240 00000000 		.word	0
+ 1099 0244 C3F5A83E 		.word	1051260355
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 33
+
+
+ 1100 0248 C3F5A83E 		.word	1051260355
+ 1101 024c 760B3F40 		.word	1077873526
+ 1102 0250 760B3FC0 		.word	-1069610122
+ 1103 0254 504200   		.ascii	"PB\000"
+ 1104 0257 00000000 		.space	7
+ 1104      000000
+ 1105 025e 0000     		.space	2
+ 1106 0260 00000000 		.word	0
+ 1107 0264 1F852B3F 		.word	1059816735
+ 1108 0268 1F852B3F 		.word	1059816735
+ 1109 026c 7CF0C140 		.word	1086451836
+ 1110 0270 00000000 		.word	0
+ 1111              		.type	right_inputs, %object
+ 1112              		.size	right_inputs, 480
+ 1113              	right_inputs:
+ 1114 0274 4572726F 		.ascii	"Error\000"
+ 1114      7200
+ 1115 027a 00000000 		.space	4
+ 1116 027e 0000     		.space	2
+ 1117 0280 00000000 		.word	0
+ 1118 0284 4E4200   		.ascii	"NB\000"
+ 1119 0287 00000000 		.space	7
+ 1119      000000
+ 1120 028e 0000     		.space	2
+ 1121 0290 00000000 		.word	0
+ 1122 0294 000080BF 		.word	-1082130432
+ 1123 0298 1F852BBF 		.word	-1087666913
+ 1124 029c 00000000 		.word	0
+ 1125 02a0 7CF041C0 		.word	-1069420420
+ 1126 02a4 4E4D00   		.ascii	"NM\000"
+ 1127 02a7 00000000 		.space	7
+ 1127      000000
+ 1128 02ae 0000     		.space	2
+ 1129 02b0 00000000 		.word	0
+ 1130 02b4 000080BF 		.word	-1082130432
+ 1131 02b8 C3F5A8BE 		.word	-1096223293
+ 1132 02bc 760B3F40 		.word	1077873526
+ 1133 02c0 760B3FC0 		.word	-1069610122
+ 1134 02c4 4E5300   		.ascii	"NS\000"
+ 1135 02c7 00000000 		.space	7
+ 1135      000000
+ 1136 02ce 0000     		.space	2
+ 1137 02d0 00000000 		.word	0
+ 1138 02d4 1F852BBF 		.word	-1087666913
+ 1139 02d8 00000000 		.word	0
+ 1140 02dc 760B3F40 		.word	1077873526
+ 1141 02e0 760B3FC0 		.word	-1069610122
+ 1142 02e4 5A00     		.ascii	"Z\000"
+ 1143 02e6 00000000 		.space	8
+ 1143      00000000 
+ 1144 02ee 0000     		.space	2
+ 1145 02f0 00000000 		.word	0
+ 1146 02f4 C3F5A8BE 		.word	-1096223293
+ 1147 02f8 C3F5A83E 		.word	1051260355
+ 1148 02fc 7CF04140 		.word	1078063228
+ 1149 0300 7CF041C0 		.word	-1069420420
+ 1150 0304 505300   		.ascii	"PS\000"
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 34
+
+
+ 1151 0307 00000000 		.space	7
+ 1151      000000
+ 1152 030e 0000     		.space	2
+ 1153 0310 00000000 		.word	0
+ 1154 0314 00000000 		.word	0
+ 1155 0318 00000000 		.word	0
+ 1156 031c 760B3F40 		.word	1077873526
+ 1157 0320 760B3FC0 		.word	-1069610122
+ 1158 0324 504D00   		.ascii	"PM\000"
+ 1159 0327 00000000 		.space	7
+ 1159      000000
+ 1160 032e 0000     		.space	2
+ 1161 0330 00000000 		.word	0
+ 1162 0334 C3F5A83E 		.word	1051260355
+ 1163 0338 C3F5A83E 		.word	1051260355
+ 1164 033c 760B3F40 		.word	1077873526
+ 1165 0340 760B3FC0 		.word	-1069610122
+ 1166 0344 504200   		.ascii	"PB\000"
+ 1167 0347 00000000 		.space	7
+ 1167      000000
+ 1168 034e 0000     		.space	2
+ 1169 0350 00000000 		.word	0
+ 1170 0354 1F852B3F 		.word	1059816735
+ 1171 0358 1F852B3F 		.word	1059816735
+ 1172 035c 7CF0C140 		.word	1086451836
+ 1173 0360 00000000 		.word	0
+ 1174 0364 64457272 		.ascii	"dError\000"
+ 1174      6F7200
+ 1175 036b 000000   		.space	3
+ 1176 036e 0000     		.space	2
+ 1177 0370 00000000 		.word	0
+ 1178 0374 4E4200   		.ascii	"NB\000"
+ 1179 0377 00000000 		.space	7
+ 1179      000000
+ 1180 037e 0000     		.space	2
+ 1181 0380 00000000 		.word	0
+ 1182 0384 000080BF 		.word	-1082130432
+ 1183 0388 1F852BBF 		.word	-1087666913
+ 1184 038c 00000000 		.word	0
+ 1185 0390 7CF041C0 		.word	-1069420420
+ 1186 0394 4E4D00   		.ascii	"NM\000"
+ 1187 0397 00000000 		.space	7
+ 1187      000000
+ 1188 039e 0000     		.space	2
+ 1189 03a0 00000000 		.word	0
+ 1190 03a4 000080BF 		.word	-1082130432
+ 1191 03a8 C3F5A8BE 		.word	-1096223293
+ 1192 03ac 760B3F40 		.word	1077873526
+ 1193 03b0 760B3FC0 		.word	-1069610122
+ 1194 03b4 4E5300   		.ascii	"NS\000"
+ 1195 03b7 00000000 		.space	7
+ 1195      000000
+ 1196 03be 0000     		.space	2
+ 1197 03c0 00000000 		.word	0
+ 1198 03c4 1F852BBF 		.word	-1087666913
+ 1199 03c8 00000000 		.word	0
+ 1200 03cc 760B3F40 		.word	1077873526
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 35
+
+
+ 1201 03d0 760B3FC0 		.word	-1069610122
+ 1202 03d4 5A00     		.ascii	"Z\000"
+ 1203 03d6 00000000 		.space	8
+ 1203      00000000 
+ 1204 03de 0000     		.space	2
+ 1205 03e0 00000000 		.word	0
+ 1206 03e4 C3F5A8BE 		.word	-1096223293
+ 1207 03e8 C3F5A83E 		.word	1051260355
+ 1208 03ec 7CF04140 		.word	1078063228
+ 1209 03f0 7CF041C0 		.word	-1069420420
+ 1210 03f4 505300   		.ascii	"PS\000"
+ 1211 03f7 00000000 		.space	7
+ 1211      000000
+ 1212 03fe 0000     		.space	2
+ 1213 0400 00000000 		.word	0
+ 1214 0404 00000000 		.word	0
+ 1215 0408 00000000 		.word	0
+ 1216 040c 760B3F40 		.word	1077873526
+ 1217 0410 760B3FC0 		.word	-1069610122
+ 1218 0414 504D00   		.ascii	"PM\000"
+ 1219 0417 00000000 		.space	7
+ 1219      000000
+ 1220 041e 0000     		.space	2
+ 1221 0420 00000000 		.word	0
+ 1222 0424 C3F5A83E 		.word	1051260355
+ 1223 0428 C3F5A83E 		.word	1051260355
+ 1224 042c 760B3F40 		.word	1077873526
+ 1225 0430 760B3FC0 		.word	-1069610122
+ 1226 0434 504200   		.ascii	"PB\000"
+ 1227 0437 00000000 		.space	7
+ 1227      000000
+ 1228 043e 0000     		.space	2
+ 1229 0440 00000000 		.word	0
+ 1230 0444 1F852B3F 		.word	1059816735
+ 1231 0448 1F852B3F 		.word	1059816735
+ 1232 044c 7CF0C140 		.word	1086451836
+ 1233 0450 00000000 		.word	0
+ 1234              		.type	left_output, %object
+ 1235              		.size	left_output, 240
+ 1236              	left_output:
+ 1237 0454 50574D00 		.ascii	"PWM\000"
+ 1238 0458 00000000 		.space	6
+ 1238      0000
+ 1239 045e 0000     		.space	2
+ 1240 0460 00000000 		.word	0
+ 1241 0464 4E4200   		.ascii	"NB\000"
+ 1242 0467 00000000 		.space	7
+ 1242      000000
+ 1243 046e 0000     		.space	2
+ 1244 0470 00000000 		.word	0
+ 1245 0474 000080BF 		.word	-1082130432
+ 1246 0478 1F852BBF 		.word	-1087666913
+ 1247 047c 00000000 		.word	0
+ 1248 0480 7CF041C0 		.word	-1069420420
+ 1249 0484 4E4D00   		.ascii	"NM\000"
+ 1250 0487 00000000 		.space	7
+ 1250      000000
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 36
+
+
+ 1251 048e 0000     		.space	2
+ 1252 0490 00000000 		.word	0
+ 1253 0494 000080BF 		.word	-1082130432
+ 1254 0498 C3F5A8BE 		.word	-1096223293
+ 1255 049c 760B3F40 		.word	1077873526
+ 1256 04a0 760B3FC0 		.word	-1069610122
+ 1257 04a4 4E5300   		.ascii	"NS\000"
+ 1258 04a7 00000000 		.space	7
+ 1258      000000
+ 1259 04ae 0000     		.space	2
+ 1260 04b0 00000000 		.word	0
+ 1261 04b4 1F852BBF 		.word	-1087666913
+ 1262 04b8 00000000 		.word	0
+ 1263 04bc 760B3F40 		.word	1077873526
+ 1264 04c0 760B3FC0 		.word	-1069610122
+ 1265 04c4 5A00     		.ascii	"Z\000"
+ 1266 04c6 00000000 		.space	8
+ 1266      00000000 
+ 1267 04ce 0000     		.space	2
+ 1268 04d0 00000000 		.word	0
+ 1269 04d4 C3F5A8BE 		.word	-1096223293
+ 1270 04d8 C3F5A83E 		.word	1051260355
+ 1271 04dc 7CF04140 		.word	1078063228
+ 1272 04e0 7CF041C0 		.word	-1069420420
+ 1273 04e4 505300   		.ascii	"PS\000"
+ 1274 04e7 00000000 		.space	7
+ 1274      000000
+ 1275 04ee 0000     		.space	2
+ 1276 04f0 00000000 		.word	0
+ 1277 04f4 00000000 		.word	0
+ 1278 04f8 00000000 		.word	0
+ 1279 04fc 760B3F40 		.word	1077873526
+ 1280 0500 760B3FC0 		.word	-1069610122
+ 1281 0504 504D00   		.ascii	"PM\000"
+ 1282 0507 00000000 		.space	7
+ 1282      000000
+ 1283 050e 0000     		.space	2
+ 1284 0510 00000000 		.word	0
+ 1285 0514 C3F5A83E 		.word	1051260355
+ 1286 0518 C3F5A83E 		.word	1051260355
+ 1287 051c 760B3F40 		.word	1077873526
+ 1288 0520 760B3FC0 		.word	-1069610122
+ 1289 0524 504200   		.ascii	"PB\000"
+ 1290 0527 00000000 		.space	7
+ 1290      000000
+ 1291 052e 0000     		.space	2
+ 1292 0530 00000000 		.word	0
+ 1293 0534 1F852B3F 		.word	1059816735
+ 1294 0538 1F852B3F 		.word	1059816735
+ 1295 053c 7CF0C140 		.word	1086451836
+ 1296 0540 00000000 		.word	0
+ 1297              		.type	right_output, %object
+ 1298              		.size	right_output, 240
+ 1299              	right_output:
+ 1300 0544 50574D00 		.ascii	"PWM\000"
+ 1301 0548 00000000 		.space	6
+ 1301      0000
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 37
+
+
+ 1302 054e 0000     		.space	2
+ 1303 0550 00000000 		.word	0
+ 1304 0554 4E4200   		.ascii	"NB\000"
+ 1305 0557 00000000 		.space	7
+ 1305      000000
+ 1306 055e 0000     		.space	2
+ 1307 0560 00000000 		.word	0
+ 1308 0564 000080BF 		.word	-1082130432
+ 1309 0568 1F852BBF 		.word	-1087666913
+ 1310 056c 00000000 		.word	0
+ 1311 0570 7CF041C0 		.word	-1069420420
+ 1312 0574 4E4D00   		.ascii	"NM\000"
+ 1313 0577 00000000 		.space	7
+ 1313      000000
+ 1314 057e 0000     		.space	2
+ 1315 0580 00000000 		.word	0
+ 1316 0584 000080BF 		.word	-1082130432
+ 1317 0588 C3F5A8BE 		.word	-1096223293
+ 1318 058c 760B3F40 		.word	1077873526
+ 1319 0590 760B3FC0 		.word	-1069610122
+ 1320 0594 4E5300   		.ascii	"NS\000"
+ 1321 0597 00000000 		.space	7
+ 1321      000000
+ 1322 059e 0000     		.space	2
+ 1323 05a0 00000000 		.word	0
+ 1324 05a4 1F852BBF 		.word	-1087666913
+ 1325 05a8 00000000 		.word	0
+ 1326 05ac 760B3F40 		.word	1077873526
+ 1327 05b0 760B3FC0 		.word	-1069610122
+ 1328 05b4 5A00     		.ascii	"Z\000"
+ 1329 05b6 00000000 		.space	8
+ 1329      00000000 
+ 1330 05be 0000     		.space	2
+ 1331 05c0 00000000 		.word	0
+ 1332 05c4 C3F5A8BE 		.word	-1096223293
+ 1333 05c8 C3F5A83E 		.word	1051260355
+ 1334 05cc 7CF04140 		.word	1078063228
+ 1335 05d0 7CF041C0 		.word	-1069420420
+ 1336 05d4 505300   		.ascii	"PS\000"
+ 1337 05d7 00000000 		.space	7
+ 1337      000000
+ 1338 05de 0000     		.space	2
+ 1339 05e0 00000000 		.word	0
+ 1340 05e4 00000000 		.word	0
+ 1341 05e8 00000000 		.word	0
+ 1342 05ec 760B3F40 		.word	1077873526
+ 1343 05f0 760B3FC0 		.word	-1069610122
+ 1344 05f4 504D00   		.ascii	"PM\000"
+ 1345 05f7 00000000 		.space	7
+ 1345      000000
+ 1346 05fe 0000     		.space	2
+ 1347 0600 00000000 		.word	0
+ 1348 0604 C3F5A83E 		.word	1051260355
+ 1349 0608 C3F5A83E 		.word	1051260355
+ 1350 060c 760B3F40 		.word	1077873526
+ 1351 0610 760B3FC0 		.word	-1069610122
+ 1352 0614 504200   		.ascii	"PB\000"
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 38
+
+
+ 1353 0617 00000000 		.space	7
+ 1353      000000
+ 1354 061e 0000     		.space	2
+ 1355 0620 00000000 		.word	0
+ 1356 0624 1F852B3F 		.word	1059816735
+ 1357 0628 1F852B3F 		.word	1059816735
+ 1358 062c 7CF0C140 		.word	1086451836
+ 1359 0630 00000000 		.word	0
+ 1360              		.bss
+ 1361              		.align	1
+ 1362              		.set	.LANCHOR1,. + 0
+ 1363              		.type	left_actual_speed, %object
+ 1364              		.size	left_actual_speed, 2
+ 1365              	left_actual_speed:
+ 1366 0000 0000     		.space	2
+ 1367              		.type	right_actual_speed, %object
+ 1368              		.size	right_actual_speed, 2
+ 1369              	right_actual_speed:
+ 1370 0002 0000     		.space	2
+ 1371              		.type	max_forward_speed, %object
+ 1372              		.size	max_forward_speed, 2
+ 1373              	max_forward_speed:
+ 1374 0004 0000     		.space	2
+ 1375              		.type	max_reverse_speed, %object
+ 1376              		.size	max_reverse_speed, 2
+ 1377              	max_reverse_speed:
+ 1378 0006 0000     		.space	2
+ 1379              		.type	last_left_input_error.7278, %object
+ 1380              		.size	last_left_input_error.7278, 2
+ 1381              	last_left_input_error.7278:
+ 1382 0008 0000     		.space	2
+ 1383              		.type	last_right_input_error.7279, %object
+ 1384              		.size	last_right_input_error.7279, 2
+ 1385              	last_right_input_error.7279:
+ 1386 000a 0000     		.space	2
+ 1387              		.text
+ 1388              	.Letext0:
+ 1389              		.file 2 "c:\\program files (x86)\\cypress\\psoc creator\\3.3\\psoc creator\\import\\gnu\\arm\\4.9.
+ 1390              		.file 3 "c:\\program files (x86)\\cypress\\psoc creator\\3.3\\psoc creator\\import\\gnu\\arm\\4.9.
+ 1391              		.file 4 "Generated_Source\\PSoC5/cytypes.h"
+ 1392              		.file 5 "Generated_Source\\PSoC5/core_cm3.h"
+ 1393              		.file 6 "..\\source\\i2c.h"
+ 1394              		.section	.debug_info,"",%progbits
+ 1395              	.Ldebug_info0:
+ 1396 0000 3C080000 		.4byte	0x83c
+ 1397 0004 0400     		.2byte	0x4
+ 1398 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 1399 000a 04       		.byte	0x4
+ 1400 000b 01       		.uleb128 0x1
+ 1401 000c D7030000 		.4byte	.LASF86
+ 1402 0010 01       		.byte	0x1
+ 1403 0011 D3000000 		.4byte	.LASF87
+ 1404 0015 1E010000 		.4byte	.LASF88
+ 1405 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 1406 001d 00000000 		.4byte	0
+ 1407 0021 00000000 		.4byte	.Ldebug_line0
+ 1408 0025 02       		.uleb128 0x2
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 39
+
+
+ 1409 0026 01       		.byte	0x1
+ 1410 0027 06       		.byte	0x6
+ 1411 0028 09020000 		.4byte	.LASF0
+ 1412 002c 02       		.uleb128 0x2
+ 1413 002d 01       		.byte	0x1
+ 1414 002e 08       		.byte	0x8
+ 1415 002f D5010000 		.4byte	.LASF1
+ 1416 0033 02       		.uleb128 0x2
+ 1417 0034 02       		.byte	0x2
+ 1418 0035 05       		.byte	0x5
+ 1419 0036 70000000 		.4byte	.LASF2
+ 1420 003a 02       		.uleb128 0x2
+ 1421 003b 02       		.byte	0x2
+ 1422 003c 07       		.byte	0x7
+ 1423 003d 04030000 		.4byte	.LASF3
+ 1424 0041 03       		.uleb128 0x3
+ 1425 0042 CD030000 		.4byte	.LASF9
+ 1426 0046 02       		.byte	0x2
+ 1427 0047 3F       		.byte	0x3f
+ 1428 0048 4C000000 		.4byte	0x4c
+ 1429 004c 02       		.uleb128 0x2
+ 1430 004d 04       		.byte	0x4
+ 1431 004e 05       		.byte	0x5
+ 1432 004f E6020000 		.4byte	.LASF4
+ 1433 0053 02       		.uleb128 0x2
+ 1434 0054 04       		.byte	0x4
+ 1435 0055 07       		.byte	0x7
+ 1436 0056 6F030000 		.4byte	.LASF5
+ 1437 005a 02       		.uleb128 0x2
+ 1438 005b 08       		.byte	0x8
+ 1439 005c 05       		.byte	0x5
+ 1440 005d 50010000 		.4byte	.LASF6
+ 1441 0061 02       		.uleb128 0x2
+ 1442 0062 08       		.byte	0x8
+ 1443 0063 07       		.byte	0x7
+ 1444 0064 1D020000 		.4byte	.LASF7
+ 1445 0068 04       		.uleb128 0x4
+ 1446 0069 04       		.byte	0x4
+ 1447 006a 05       		.byte	0x5
+ 1448 006b 696E7400 		.ascii	"int\000"
+ 1449 006f 02       		.uleb128 0x2
+ 1450 0070 04       		.byte	0x4
+ 1451 0071 07       		.byte	0x7
+ 1452 0072 63020000 		.4byte	.LASF8
+ 1453 0076 03       		.uleb128 0x3
+ 1454 0077 EF020000 		.4byte	.LASF10
+ 1455 007b 03       		.byte	0x3
+ 1456 007c 2C       		.byte	0x2c
+ 1457 007d 41000000 		.4byte	0x41
+ 1458 0081 05       		.uleb128 0x5
+ 1459 0082 F3000000 		.4byte	.LASF11
+ 1460 0086 04       		.byte	0x4
+ 1461 0087 3801     		.2byte	0x138
+ 1462 0089 2C000000 		.4byte	0x2c
+ 1463 008d 05       		.uleb128 0x5
+ 1464 008e ED000000 		.4byte	.LASF12
+ 1465 0092 04       		.byte	0x4
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 40
+
+
+ 1466 0093 3C01     		.2byte	0x13c
+ 1467 0095 33000000 		.4byte	0x33
+ 1468 0099 02       		.uleb128 0x2
+ 1469 009a 04       		.byte	0x4
+ 1470 009b 04       		.byte	0x4
+ 1471 009c 0C010000 		.4byte	.LASF13
+ 1472 00a0 02       		.uleb128 0x2
+ 1473 00a1 08       		.byte	0x8
+ 1474 00a2 04       		.byte	0x4
+ 1475 00a3 8B030000 		.4byte	.LASF14
+ 1476 00a7 02       		.uleb128 0x2
+ 1477 00a8 01       		.byte	0x1
+ 1478 00a9 08       		.byte	0x8
+ 1479 00aa E1020000 		.4byte	.LASF15
+ 1480 00ae 02       		.uleb128 0x2
+ 1481 00af 04       		.byte	0x4
+ 1482 00b0 07       		.byte	0x7
+ 1483 00b1 80000000 		.4byte	.LASF16
+ 1484 00b5 06       		.uleb128 0x6
+ 1485 00b6 04       		.byte	0x4
+ 1486 00b7 07       		.uleb128 0x7
+ 1487 00b8 D9020000 		.4byte	.LASF24
+ 1488 00bc 20       		.byte	0x20
+ 1489 00bd 01       		.byte	0x1
+ 1490 00be 2F       		.byte	0x2f
+ 1491 00bf 0C010000 		.4byte	0x10c
+ 1492 00c3 08       		.uleb128 0x8
+ 1493 00c4 AC010000 		.4byte	.LASF17
+ 1494 00c8 01       		.byte	0x1
+ 1495 00c9 31       		.byte	0x31
+ 1496 00ca 0C010000 		.4byte	0x10c
+ 1497 00ce 00       		.byte	0
+ 1498 00cf 08       		.uleb128 0x8
+ 1499 00d0 CD000000 		.4byte	.LASF18
+ 1500 00d4 01       		.byte	0x1
+ 1501 00d5 32       		.byte	0x32
+ 1502 00d6 99000000 		.4byte	0x99
+ 1503 00da 0C       		.byte	0xc
+ 1504 00db 08       		.uleb128 0x8
+ 1505 00dc 96000000 		.4byte	.LASF19
+ 1506 00e0 01       		.byte	0x1
+ 1507 00e1 33       		.byte	0x33
+ 1508 00e2 99000000 		.4byte	0x99
+ 1509 00e6 10       		.byte	0x10
+ 1510 00e7 08       		.uleb128 0x8
+ 1511 00e8 9D000000 		.4byte	.LASF20
+ 1512 00ec 01       		.byte	0x1
+ 1513 00ed 34       		.byte	0x34
+ 1514 00ee 99000000 		.4byte	0x99
+ 1515 00f2 14       		.byte	0x14
+ 1516 00f3 08       		.uleb128 0x8
+ 1517 00f4 75010000 		.4byte	.LASF21
+ 1518 00f8 01       		.byte	0x1
+ 1519 00f9 35       		.byte	0x35
+ 1520 00fa 99000000 		.4byte	0x99
+ 1521 00fe 18       		.byte	0x18
+ 1522 00ff 08       		.uleb128 0x8
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 41
+
+
+ 1523 0100 7C010000 		.4byte	.LASF22
+ 1524 0104 01       		.byte	0x1
+ 1525 0105 36       		.byte	0x36
+ 1526 0106 99000000 		.4byte	0x99
+ 1527 010a 1C       		.byte	0x1c
+ 1528 010b 00       		.byte	0
+ 1529 010c 09       		.uleb128 0x9
+ 1530 010d A7000000 		.4byte	0xa7
+ 1531 0111 1C010000 		.4byte	0x11c
+ 1532 0115 0A       		.uleb128 0xa
+ 1533 0116 AE000000 		.4byte	0xae
+ 1534 011a 09       		.byte	0x9
+ 1535 011b 00       		.byte	0
+ 1536 011c 03       		.uleb128 0x3
+ 1537 011d E5000000 		.4byte	.LASF23
+ 1538 0121 01       		.byte	0x1
+ 1539 0122 37       		.byte	0x37
+ 1540 0123 B7000000 		.4byte	0xb7
+ 1541 0127 07       		.uleb128 0x7
+ 1542 0128 B3040000 		.4byte	.LASF25
+ 1543 012c F0       		.byte	0xf0
+ 1544 012d 01       		.byte	0x1
+ 1545 012e 3E       		.byte	0x3e
+ 1546 012f 58010000 		.4byte	0x158
+ 1547 0133 08       		.uleb128 0x8
+ 1548 0134 AC010000 		.4byte	.LASF17
+ 1549 0138 01       		.byte	0x1
+ 1550 0139 40       		.byte	0x40
+ 1551 013a 0C010000 		.4byte	0x10c
+ 1552 013e 00       		.byte	0
+ 1553 013f 08       		.uleb128 0x8
+ 1554 0140 CD000000 		.4byte	.LASF18
+ 1555 0144 01       		.byte	0x1
+ 1556 0145 41       		.byte	0x41
+ 1557 0146 99000000 		.4byte	0x99
+ 1558 014a 0C       		.byte	0xc
+ 1559 014b 08       		.uleb128 0x8
+ 1560 014c C0010000 		.4byte	.LASF26
+ 1561 0150 01       		.byte	0x1
+ 1562 0151 42       		.byte	0x42
+ 1563 0152 58010000 		.4byte	0x158
+ 1564 0156 10       		.byte	0x10
+ 1565 0157 00       		.byte	0
+ 1566 0158 09       		.uleb128 0x9
+ 1567 0159 1C010000 		.4byte	0x11c
+ 1568 015d 68010000 		.4byte	0x168
+ 1569 0161 0A       		.uleb128 0xa
+ 1570 0162 AE000000 		.4byte	0xae
+ 1571 0166 06       		.byte	0x6
+ 1572 0167 00       		.byte	0
+ 1573 0168 03       		.uleb128 0x3
+ 1574 0169 E3010000 		.4byte	.LASF27
+ 1575 016d 01       		.byte	0x1
+ 1576 016e 43       		.byte	0x43
+ 1577 016f 27010000 		.4byte	0x127
+ 1578 0173 07       		.uleb128 0x7
+ 1579 0174 00000000 		.4byte	.LASF28
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 42
+
+
+ 1580 0178 03       		.byte	0x3
+ 1581 0179 01       		.byte	0x1
+ 1582 017a 45       		.byte	0x45
+ 1583 017b 98010000 		.4byte	0x198
+ 1584 017f 08       		.uleb128 0x8
+ 1585 0180 5E010000 		.4byte	.LASF29
+ 1586 0184 01       		.byte	0x1
+ 1587 0185 47       		.byte	0x47
+ 1588 0186 98010000 		.4byte	0x198
+ 1589 018a 00       		.byte	0
+ 1590 018b 08       		.uleb128 0x8
+ 1591 018c A4000000 		.4byte	.LASF30
+ 1592 0190 01       		.byte	0x1
+ 1593 0191 48       		.byte	0x48
+ 1594 0192 A8010000 		.4byte	0x1a8
+ 1595 0196 02       		.byte	0x2
+ 1596 0197 00       		.byte	0
+ 1597 0198 09       		.uleb128 0x9
+ 1598 0199 81000000 		.4byte	0x81
+ 1599 019d A8010000 		.4byte	0x1a8
+ 1600 01a1 0A       		.uleb128 0xa
+ 1601 01a2 AE000000 		.4byte	0xae
+ 1602 01a6 01       		.byte	0x1
+ 1603 01a7 00       		.byte	0
+ 1604 01a8 09       		.uleb128 0x9
+ 1605 01a9 81000000 		.4byte	0x81
+ 1606 01ad B8010000 		.4byte	0x1b8
+ 1607 01b1 0A       		.uleb128 0xa
+ 1608 01b2 AE000000 		.4byte	0xae
+ 1609 01b6 00       		.byte	0
+ 1610 01b7 00       		.byte	0
+ 1611 01b8 03       		.uleb128 0x3
+ 1612 01b9 B6010000 		.4byte	.LASF31
+ 1613 01bd 01       		.byte	0x1
+ 1614 01be 49       		.byte	0x49
+ 1615 01bf 73010000 		.4byte	0x173
+ 1616 01c3 0B       		.uleb128 0xb
+ 1617 01c4 29030000 		.4byte	.LASF35
+ 1618 01c8 01       		.byte	0x1
+ 1619 01c9 0C02     		.2byte	0x20c
+ 1620 01cb 00000000 		.4byte	.LFB64
+ 1621 01cf A4000000 		.4byte	.LFE64-.LFB64
+ 1622 01d3 01       		.uleb128 0x1
+ 1623 01d4 9C       		.byte	0x9c
+ 1624 01d5 19020000 		.4byte	0x219
+ 1625 01d9 0C       		.uleb128 0xc
+ 1626 01da 6D6600   		.ascii	"mf\000"
+ 1627 01dd 01       		.byte	0x1
+ 1628 01de 0C02     		.2byte	0x20c
+ 1629 01e0 19020000 		.4byte	0x219
+ 1630 01e4 00000000 		.4byte	.LLST0
+ 1631 01e8 0D       		.uleb128 0xd
+ 1632 01e9 7A000000 		.4byte	.LASF32
+ 1633 01ed 01       		.byte	0x1
+ 1634 01ee 0C02     		.2byte	0x20c
+ 1635 01f0 68000000 		.4byte	0x68
+ 1636 01f4 1E000000 		.4byte	.LLST1
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 43
+
+
+ 1637 01f8 0E       		.uleb128 0xe
+ 1638 01f9 E6040000 		.4byte	.LASF33
+ 1639 01fd 01       		.byte	0x1
+ 1640 01fe 0E02     		.2byte	0x20e
+ 1641 0200 68000000 		.4byte	0x68
+ 1642 0204 3F000000 		.4byte	.LLST2
+ 1643 0208 0E       		.uleb128 0xe
+ 1644 0209 66010000 		.4byte	.LASF34
+ 1645 020d 01       		.byte	0x1
+ 1646 020e 0F02     		.2byte	0x20f
+ 1647 0210 68000000 		.4byte	0x68
+ 1648 0214 5D000000 		.4byte	.LLST3
+ 1649 0218 00       		.byte	0
+ 1650 0219 0F       		.uleb128 0xf
+ 1651 021a 04       		.byte	0x4
+ 1652 021b 1C010000 		.4byte	0x11c
+ 1653 021f 0B       		.uleb128 0xb
+ 1654 0220 46030000 		.4byte	.LASF36
+ 1655 0224 01       		.byte	0x1
+ 1656 0225 2702     		.2byte	0x227
+ 1657 0227 00000000 		.4byte	.LFB65
+ 1658 022b 40000000 		.4byte	.LFE65-.LFB65
+ 1659 022f 01       		.uleb128 0x1
+ 1660 0230 9C       		.byte	0x9c
+ 1661 0231 AD020000 		.4byte	0x2ad
+ 1662 0235 0D       		.uleb128 0xd
+ 1663 0236 9E020000 		.4byte	.LASF37
+ 1664 023a 01       		.byte	0x1
+ 1665 023b 2702     		.2byte	0x227
+ 1666 023d AD020000 		.4byte	0x2ad
+ 1667 0241 70000000 		.4byte	.LLST4
+ 1668 0245 0D       		.uleb128 0xd
+ 1669 0246 A8040000 		.4byte	.LASF38
+ 1670 024a 01       		.byte	0x1
+ 1671 024b 2702     		.2byte	0x227
+ 1672 024d 81000000 		.4byte	0x81
+ 1673 0251 8E000000 		.4byte	.LLST5
+ 1674 0255 10       		.uleb128 0x10
+ 1675 0256 6D6600   		.ascii	"mf\000"
+ 1676 0259 01       		.byte	0x1
+ 1677 025a 2902     		.2byte	0x229
+ 1678 025c 19020000 		.4byte	0x219
+ 1679 0260 AF000000 		.4byte	.LLST6
+ 1680 0264 10       		.uleb128 0x10
+ 1681 0265 696900   		.ascii	"ii\000"
+ 1682 0268 01       		.byte	0x1
+ 1683 0269 2A02     		.2byte	0x22a
+ 1684 026b 81000000 		.4byte	0x81
+ 1685 026f C2000000 		.4byte	.LLST7
+ 1686 0273 10       		.uleb128 0x10
+ 1687 0274 6A6A00   		.ascii	"jj\000"
+ 1688 0277 01       		.byte	0x1
+ 1689 0278 2B02     		.2byte	0x22b
+ 1690 027a 81000000 		.4byte	0x81
+ 1691 027e EC000000 		.4byte	.LLST8
+ 1692 0282 11       		.uleb128 0x11
+ 1693 0283 0C000000 		.4byte	.LBB2
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 44
+
+
+ 1694 0287 1C000000 		.4byte	.LBE2-.LBB2
+ 1695 028b 0E       		.uleb128 0xe
+ 1696 028c CD000000 		.4byte	.LASF18
+ 1697 0290 01       		.byte	0x1
+ 1698 0291 3602     		.2byte	0x236
+ 1699 0293 68000000 		.4byte	0x68
+ 1700 0297 15010000 		.4byte	.LLST9
+ 1701 029b 12       		.uleb128 0x12
+ 1702 029c 28000000 		.4byte	.LVL26
+ 1703 02a0 C3010000 		.4byte	0x1c3
+ 1704 02a4 13       		.uleb128 0x13
+ 1705 02a5 01       		.uleb128 0x1
+ 1706 02a6 50       		.byte	0x50
+ 1707 02a7 02       		.uleb128 0x2
+ 1708 02a8 75       		.byte	0x75
+ 1709 02a9 00       		.sleb128 0
+ 1710 02aa 00       		.byte	0
+ 1711 02ab 00       		.byte	0
+ 1712 02ac 00       		.byte	0
+ 1713 02ad 0F       		.uleb128 0xf
+ 1714 02ae 04       		.byte	0x4
+ 1715 02af 68010000 		.4byte	0x168
+ 1716 02b3 0B       		.uleb128 0xb
+ 1717 02b4 54000000 		.4byte	.LASF39
+ 1718 02b8 01       		.byte	0x1
+ 1719 02b9 3C02     		.2byte	0x23c
+ 1720 02bb 00000000 		.4byte	.LFB66
+ 1721 02bf 74000000 		.4byte	.LFE66-.LFB66
+ 1722 02c3 01       		.uleb128 0x1
+ 1723 02c4 9C       		.byte	0x9c
+ 1724 02c5 63030000 		.4byte	0x363
+ 1725 02c9 0D       		.uleb128 0xd
+ 1726 02ca 9E020000 		.4byte	.LASF37
+ 1727 02ce 01       		.byte	0x1
+ 1728 02cf 3C02     		.2byte	0x23c
+ 1729 02d1 AD020000 		.4byte	0x2ad
+ 1730 02d5 33010000 		.4byte	.LLST10
+ 1731 02d9 0D       		.uleb128 0xd
+ 1732 02da 15020000 		.4byte	.LASF40
+ 1733 02de 01       		.byte	0x1
+ 1734 02df 3C02     		.2byte	0x23c
+ 1735 02e1 AD020000 		.4byte	0x2ad
+ 1736 02e5 5F010000 		.4byte	.LLST11
+ 1737 02e9 0E       		.uleb128 0xe
+ 1738 02ea 54030000 		.4byte	.LASF41
+ 1739 02ee 01       		.byte	0x1
+ 1740 02ef 3E02     		.2byte	0x23e
+ 1741 02f1 68000000 		.4byte	0x68
+ 1742 02f5 8B010000 		.4byte	.LLST12
+ 1743 02f9 10       		.uleb128 0x10
+ 1744 02fa 696900   		.ascii	"ii\000"
+ 1745 02fd 01       		.byte	0x1
+ 1746 02fe 3F02     		.2byte	0x23f
+ 1747 0300 81000000 		.4byte	0x81
+ 1748 0304 B7010000 		.4byte	.LLST13
+ 1749 0308 11       		.uleb128 0x11
+ 1750 0309 0C000000 		.4byte	.LBB3
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 45
+
+
+ 1751 030d 56000000 		.4byte	.LBE3-.LBB3
+ 1752 0311 0E       		.uleb128 0xe
+ 1753 0312 12010000 		.4byte	.LASF42
+ 1754 0316 01       		.byte	0x1
+ 1755 0317 4902     		.2byte	0x249
+ 1756 0319 81000000 		.4byte	0x81
+ 1757 031d E1010000 		.4byte	.LLST14
+ 1758 0321 0E       		.uleb128 0xe
+ 1759 0322 9B040000 		.4byte	.LASF43
+ 1760 0326 01       		.byte	0x1
+ 1761 0327 4A02     		.2byte	0x24a
+ 1762 0329 81000000 		.4byte	0x81
+ 1763 032d 00020000 		.4byte	.LLST15
+ 1764 0331 0E       		.uleb128 0xe
+ 1765 0332 FD010000 		.4byte	.LASF44
+ 1766 0336 01       		.byte	0x1
+ 1767 0337 4B02     		.2byte	0x24b
+ 1768 0339 68000000 		.4byte	0x68
+ 1769 033d 13020000 		.4byte	.LLST16
+ 1770 0341 0E       		.uleb128 0xe
+ 1771 0342 03020000 		.4byte	.LASF45
+ 1772 0346 01       		.byte	0x1
+ 1773 0347 4C02     		.2byte	0x24c
+ 1774 0349 68000000 		.4byte	0x68
+ 1775 034d 31020000 		.4byte	.LLST17
+ 1776 0351 0E       		.uleb128 0xe
+ 1777 0352 81030000 		.4byte	.LASF46
+ 1778 0356 01       		.byte	0x1
+ 1779 0357 5102     		.2byte	0x251
+ 1780 0359 63030000 		.4byte	0x363
+ 1781 035d 44020000 		.4byte	.LLST18
+ 1782 0361 00       		.byte	0
+ 1783 0362 00       		.byte	0
+ 1784 0363 0F       		.uleb128 0xf
+ 1785 0364 04       		.byte	0x4
+ 1786 0365 99000000 		.4byte	0x99
+ 1787 0369 14       		.uleb128 0x14
+ 1788 036a B0020000 		.4byte	.LASF47
+ 1789 036e 01       		.byte	0x1
+ 1790 036f 6B02     		.2byte	0x26b
+ 1791 0371 00000000 		.4byte	.LFB68
+ 1792 0375 06000000 		.4byte	.LFE68-.LFB68
+ 1793 0379 01       		.uleb128 0x1
+ 1794 037a 9C       		.byte	0x9c
+ 1795 037b E6030000 		.4byte	0x3e6
+ 1796 037f 15       		.uleb128 0x15
+ 1797 0380 15020000 		.4byte	.LASF40
+ 1798 0384 01       		.byte	0x1
+ 1799 0385 6B02     		.2byte	0x26b
+ 1800 0387 AD020000 		.4byte	0x2ad
+ 1801 038b 01       		.uleb128 0x1
+ 1802 038c 50       		.byte	0x50
+ 1803 038d 15       		.uleb128 0x15
+ 1804 038e 64000000 		.4byte	.LASF48
+ 1805 0392 01       		.byte	0x1
+ 1806 0393 6B02     		.2byte	0x26b
+ 1807 0395 81000000 		.4byte	0x81
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 46
+
+
+ 1808 0399 01       		.uleb128 0x1
+ 1809 039a 51       		.byte	0x51
+ 1810 039b 16       		.uleb128 0x16
+ 1811 039c EE040000 		.4byte	.LASF49
+ 1812 03a0 01       		.byte	0x1
+ 1813 03a1 6D02     		.2byte	0x26d
+ 1814 03a3 68000000 		.4byte	0x68
+ 1815 03a7 16       		.uleb128 0x16
+ 1816 03a8 F7020000 		.4byte	.LASF50
+ 1817 03ac 01       		.byte	0x1
+ 1818 03ad 6E02     		.2byte	0x26e
+ 1819 03af 68000000 		.4byte	0x68
+ 1820 03b3 16       		.uleb128 0x16
+ 1821 03b4 B1010000 		.4byte	.LASF51
+ 1822 03b8 01       		.byte	0x1
+ 1823 03b9 6F02     		.2byte	0x26f
+ 1824 03bb 68000000 		.4byte	0x68
+ 1825 03bf 16       		.uleb128 0x16
+ 1826 03c0 5A020000 		.4byte	.LASF52
+ 1827 03c4 01       		.byte	0x1
+ 1828 03c5 7002     		.2byte	0x270
+ 1829 03c7 68000000 		.4byte	0x68
+ 1830 03cb 10       		.uleb128 0x10
+ 1831 03cc 696900   		.ascii	"ii\000"
+ 1832 03cf 01       		.byte	0x1
+ 1833 03d0 7102     		.2byte	0x271
+ 1834 03d2 81000000 		.4byte	0x81
+ 1835 03d6 59020000 		.4byte	.LLST19
+ 1836 03da 17       		.uleb128 0x17
+ 1837 03db 6A6A00   		.ascii	"jj\000"
+ 1838 03de 01       		.byte	0x1
+ 1839 03df 7202     		.2byte	0x272
+ 1840 03e1 81000000 		.4byte	0x81
+ 1841 03e5 00       		.byte	0
+ 1842 03e6 18       		.uleb128 0x18
+ 1843 03e7 90010000 		.4byte	.LASF65
+ 1844 03eb 01       		.byte	0x1
+ 1845 03ec B501     		.2byte	0x1b5
+ 1846 03ee 00000000 		.4byte	.LFB63
+ 1847 03f2 24010000 		.4byte	.LFE63-.LFB63
+ 1848 03f6 01       		.uleb128 0x1
+ 1849 03f7 9C       		.byte	0x9c
+ 1850 03f8 07050000 		.4byte	0x507
+ 1851 03fc 19       		.uleb128 0x19
+ 1852 03fd 48020000 		.4byte	.LASF53
+ 1853 0401 01       		.byte	0x1
+ 1854 0402 E801     		.2byte	0x1e8
+ 1855 0404 8D000000 		.4byte	0x8d
+ 1856 0408 02       		.uleb128 0x2
+ 1857 0409 91       		.byte	0x91
+ 1858 040a 5E       		.sleb128 -34
+ 1859 040b 19       		.uleb128 0x19
+ 1860 040c 92030000 		.4byte	.LASF54
+ 1861 0410 01       		.byte	0x1
+ 1862 0411 E901     		.2byte	0x1e9
+ 1863 0413 8D000000 		.4byte	0x8d
+ 1864 0417 02       		.uleb128 0x2
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 47
+
+
+ 1865 0418 91       		.byte	0x91
+ 1866 0419 5C       		.sleb128 -36
+ 1867 041a 19       		.uleb128 0x19
+ 1868 041b 28000000 		.4byte	.LASF55
+ 1869 041f 01       		.byte	0x1
+ 1870 0420 EA01     		.2byte	0x1ea
+ 1871 0422 8D000000 		.4byte	0x8d
+ 1872 0426 05       		.uleb128 0x5
+ 1873 0427 03       		.byte	0x3
+ 1874 0428 08000000 		.4byte	last_left_input_error.7278
+ 1875 042c 19       		.uleb128 0x19
+ 1876 042d 87020000 		.4byte	.LASF56
+ 1877 0431 01       		.byte	0x1
+ 1878 0432 EB01     		.2byte	0x1eb
+ 1879 0434 8D000000 		.4byte	0x8d
+ 1880 0438 05       		.uleb128 0x5
+ 1881 0439 03       		.byte	0x3
+ 1882 043a 0A000000 		.4byte	last_right_input_error.7279
+ 1883 043e 1A       		.uleb128 0x1a
+ 1884 043f 0A000000 		.4byte	.LASF69
+ 1885 0443 01       		.byte	0x1
+ 1886 0444 F001     		.2byte	0x1f0
+ 1887 0446 68000000 		.4byte	0x68
+ 1888 044a 50040000 		.4byte	0x450
+ 1889 044e 1B       		.uleb128 0x1b
+ 1890 044f 00       		.byte	0
+ 1891 0450 0E       		.uleb128 0xe
+ 1892 0451 9B010000 		.4byte	.LASF57
+ 1893 0455 01       		.byte	0x1
+ 1894 0456 F201     		.2byte	0x1f2
+ 1895 0458 8D000000 		.4byte	0x8d
+ 1896 045c 79020000 		.4byte	.LLST20
+ 1897 0460 0E       		.uleb128 0xe
+ 1898 0461 BB040000 		.4byte	.LASF58
+ 1899 0465 01       		.byte	0x1
+ 1900 0466 F301     		.2byte	0x1f3
+ 1901 0468 8D000000 		.4byte	0x8d
+ 1902 046c 8C020000 		.4byte	.LLST21
+ 1903 0470 0E       		.uleb128 0xe
+ 1904 0471 65040000 		.4byte	.LASF59
+ 1905 0475 01       		.byte	0x1
+ 1906 0476 F601     		.2byte	0x1f6
+ 1907 0478 8D000000 		.4byte	0x8d
+ 1908 047c 9F020000 		.4byte	.LLST22
+ 1909 0480 0E       		.uleb128 0xe
+ 1910 0481 EB010000 		.4byte	.LASF60
+ 1911 0485 01       		.byte	0x1
+ 1912 0486 F701     		.2byte	0x1f7
+ 1913 0488 8D000000 		.4byte	0x8d
+ 1914 048c B2020000 		.4byte	.LLST23
+ 1915 0490 0E       		.uleb128 0xe
+ 1916 0491 17030000 		.4byte	.LASF61
+ 1917 0495 01       		.byte	0x1
+ 1918 0496 FB01     		.2byte	0x1fb
+ 1919 0498 8D000000 		.4byte	0x8d
+ 1920 049c C5020000 		.4byte	.LLST24
+ 1921 04a0 0E       		.uleb128 0xe
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 48
+
+
+ 1922 04a1 BA000000 		.4byte	.LASF62
+ 1923 04a5 01       		.byte	0x1
+ 1924 04a6 FE01     		.2byte	0x1fe
+ 1925 04a8 8D000000 		.4byte	0x8d
+ 1926 04ac D8020000 		.4byte	.LLST25
+ 1927 04b0 0E       		.uleb128 0xe
+ 1928 04b1 FE040000 		.4byte	.LASF63
+ 1929 04b5 01       		.byte	0x1
+ 1930 04b6 0102     		.2byte	0x201
+ 1931 04b8 8D000000 		.4byte	0x8d
+ 1932 04bc EB020000 		.4byte	.LLST26
+ 1933 04c0 0E       		.uleb128 0xe
+ 1934 04c1 88040000 		.4byte	.LASF64
+ 1935 04c5 01       		.byte	0x1
+ 1936 04c6 0202     		.2byte	0x202
+ 1937 04c8 8D000000 		.4byte	0x8d
+ 1938 04cc FE020000 		.4byte	.LLST27
+ 1939 04d0 1C       		.uleb128 0x1c
+ 1940 04d1 10000000 		.4byte	.LVL54
+ 1941 04d5 D4070000 		.4byte	0x7d4
+ 1942 04d9 EA040000 		.4byte	0x4ea
+ 1943 04dd 13       		.uleb128 0x13
+ 1944 04de 01       		.uleb128 0x1
+ 1945 04df 51       		.byte	0x51
+ 1946 04e0 02       		.uleb128 0x2
+ 1947 04e1 91       		.byte	0x91
+ 1948 04e2 5C       		.sleb128 -36
+ 1949 04e3 13       		.uleb128 0x13
+ 1950 04e4 01       		.uleb128 0x1
+ 1951 04e5 50       		.byte	0x50
+ 1952 04e6 02       		.uleb128 0x2
+ 1953 04e7 91       		.byte	0x91
+ 1954 04e8 5E       		.sleb128 -34
+ 1955 04e9 00       		.byte	0
+ 1956 04ea 12       		.uleb128 0x12
+ 1957 04eb 1A000000 		.4byte	.LVL55
+ 1958 04ef F0070000 		.4byte	0x7f0
+ 1959 04f3 13       		.uleb128 0x13
+ 1960 04f4 01       		.uleb128 0x1
+ 1961 04f5 51       		.byte	0x51
+ 1962 04f6 05       		.uleb128 0x5
+ 1963 04f7 03       		.byte	0x3
+ 1964 04f8 02000000 		.4byte	.LANCHOR1+2
+ 1965 04fc 13       		.uleb128 0x13
+ 1966 04fd 01       		.uleb128 0x1
+ 1967 04fe 50       		.byte	0x50
+ 1968 04ff 05       		.uleb128 0x5
+ 1969 0500 03       		.byte	0x3
+ 1970 0501 00000000 		.4byte	.LANCHOR1
+ 1971 0505 00       		.byte	0
+ 1972 0506 00       		.byte	0
+ 1973 0507 18       		.uleb128 0x18
+ 1974 0508 1D000000 		.4byte	.LASF66
+ 1975 050c 01       		.byte	0x1
+ 1976 050d 8502     		.2byte	0x285
+ 1977 050f 00000000 		.4byte	.LFB69
+ 1978 0513 C0000000 		.4byte	.LFE69-.LFB69
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 49
+
+
+ 1979 0517 01       		.uleb128 0x1
+ 1980 0518 9C       		.byte	0x9c
+ 1981 0519 59050000 		.4byte	0x559
+ 1982 051d 0E       		.uleb128 0xe
+ 1983 051e A5020000 		.4byte	.LASF67
+ 1984 0522 01       		.byte	0x1
+ 1985 0523 8902     		.2byte	0x289
+ 1986 0525 99000000 		.4byte	0x99
+ 1987 0529 11030000 		.4byte	.LLST28
+ 1988 052d 0E       		.uleb128 0xe
+ 1989 052e 7B020000 		.4byte	.LASF68
+ 1990 0532 01       		.byte	0x1
+ 1991 0533 8A02     		.2byte	0x28a
+ 1992 0535 99000000 		.4byte	0x99
+ 1993 0539 24030000 		.4byte	.LLST29
+ 1994 053d 1A       		.uleb128 0x1a
+ 1995 053e 44000000 		.4byte	.LASF70
+ 1996 0542 01       		.byte	0x1
+ 1997 0543 8C02     		.2byte	0x28c
+ 1998 0545 68000000 		.4byte	0x68
+ 1999 0549 4F050000 		.4byte	0x54f
+ 2000 054d 1B       		.uleb128 0x1b
+ 2001 054e 00       		.byte	0
+ 2002 054f 1D       		.uleb128 0x1d
+ 2003 0550 B6000000 		.4byte	.LVL101
+ 2004 0554 02080000 		.4byte	0x802
+ 2005 0558 00       		.byte	0
+ 2006 0559 1E       		.uleb128 0x1e
+ 2007 055a 70020000 		.4byte	.LASF72
+ 2008 055e 01       		.byte	0x1
+ 2009 055f 8F02     		.2byte	0x28f
+ 2010 0561 00000000 		.4byte	.LFB70
+ 2011 0565 50000000 		.4byte	.LFE70-.LFB70
+ 2012 0569 01       		.uleb128 0x1
+ 2013 056a 9C       		.byte	0x9c
+ 2014 056b 1E060000 		.4byte	0x61e
+ 2015 056f 1A       		.uleb128 0x1a
+ 2016 0570 34020000 		.4byte	.LASF71
+ 2017 0574 01       		.byte	0x1
+ 2018 0575 9502     		.2byte	0x295
+ 2019 0577 68000000 		.4byte	0x68
+ 2020 057b 81050000 		.4byte	0x581
+ 2021 057f 1B       		.uleb128 0x1b
+ 2022 0580 00       		.byte	0
+ 2023 0581 1C       		.uleb128 0x1c
+ 2024 0582 14000000 		.4byte	.LVL103
+ 2025 0586 14080000 		.4byte	0x814
+ 2026 058a A1050000 		.4byte	0x5a1
+ 2027 058e 13       		.uleb128 0x13
+ 2028 058f 01       		.uleb128 0x1
+ 2029 0590 52       		.byte	0x52
+ 2030 0591 02       		.uleb128 0x2
+ 2031 0592 75       		.byte	0x75
+ 2032 0593 00       		.sleb128 0
+ 2033 0594 13       		.uleb128 0x13
+ 2034 0595 01       		.uleb128 0x1
+ 2035 0596 51       		.byte	0x51
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 50
+
+
+ 2036 0597 01       		.uleb128 0x1
+ 2037 0598 30       		.byte	0x30
+ 2038 0599 13       		.uleb128 0x13
+ 2039 059a 01       		.uleb128 0x1
+ 2040 059b 50       		.byte	0x50
+ 2041 059c 03       		.uleb128 0x3
+ 2042 059d 74       		.byte	0x74
+ 2043 059e 9401     		.sleb128 148
+ 2044 05a0 00       		.byte	0
+ 2045 05a1 1C       		.uleb128 0x1c
+ 2046 05a2 20000000 		.4byte	.LVL104
+ 2047 05a6 14080000 		.4byte	0x814
+ 2048 05aa C1050000 		.4byte	0x5c1
+ 2049 05ae 13       		.uleb128 0x13
+ 2050 05af 01       		.uleb128 0x1
+ 2051 05b0 52       		.byte	0x52
+ 2052 05b1 02       		.uleb128 0x2
+ 2053 05b2 75       		.byte	0x75
+ 2054 05b3 00       		.sleb128 0
+ 2055 05b4 13       		.uleb128 0x13
+ 2056 05b5 01       		.uleb128 0x1
+ 2057 05b6 51       		.byte	0x51
+ 2058 05b7 01       		.uleb128 0x1
+ 2059 05b8 30       		.byte	0x30
+ 2060 05b9 13       		.uleb128 0x13
+ 2061 05ba 01       		.uleb128 0x1
+ 2062 05bb 50       		.byte	0x50
+ 2063 05bc 03       		.uleb128 0x3
+ 2064 05bd 74       		.byte	0x74
+ 2065 05be F404     		.sleb128 628
+ 2066 05c0 00       		.byte	0
+ 2067 05c1 1C       		.uleb128 0x1c
+ 2068 05c2 2E000000 		.4byte	.LVL105
+ 2069 05c6 14080000 		.4byte	0x814
+ 2070 05ca E1050000 		.4byte	0x5e1
+ 2071 05ce 13       		.uleb128 0x13
+ 2072 05cf 01       		.uleb128 0x1
+ 2073 05d0 52       		.byte	0x52
+ 2074 05d1 02       		.uleb128 0x2
+ 2075 05d2 75       		.byte	0x75
+ 2076 05d3 00       		.sleb128 0
+ 2077 05d4 13       		.uleb128 0x13
+ 2078 05d5 01       		.uleb128 0x1
+ 2079 05d6 51       		.byte	0x51
+ 2080 05d7 01       		.uleb128 0x1
+ 2081 05d8 30       		.byte	0x30
+ 2082 05d9 13       		.uleb128 0x13
+ 2083 05da 01       		.uleb128 0x1
+ 2084 05db 50       		.byte	0x50
+ 2085 05dc 03       		.uleb128 0x3
+ 2086 05dd 74       		.byte	0x74
+ 2087 05de D408     		.sleb128 1108
+ 2088 05e0 00       		.byte	0
+ 2089 05e1 1C       		.uleb128 0x1c
+ 2090 05e2 3A000000 		.4byte	.LVL106
+ 2091 05e6 14080000 		.4byte	0x814
+ 2092 05ea 01060000 		.4byte	0x601
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 51
+
+
+ 2093 05ee 13       		.uleb128 0x13
+ 2094 05ef 01       		.uleb128 0x1
+ 2095 05f0 52       		.byte	0x52
+ 2096 05f1 02       		.uleb128 0x2
+ 2097 05f2 75       		.byte	0x75
+ 2098 05f3 00       		.sleb128 0
+ 2099 05f4 13       		.uleb128 0x13
+ 2100 05f5 01       		.uleb128 0x1
+ 2101 05f6 51       		.byte	0x51
+ 2102 05f7 01       		.uleb128 0x1
+ 2103 05f8 30       		.byte	0x30
+ 2104 05f9 13       		.uleb128 0x13
+ 2105 05fa 01       		.uleb128 0x1
+ 2106 05fb 50       		.byte	0x50
+ 2107 05fc 03       		.uleb128 0x3
+ 2108 05fd 74       		.byte	0x74
+ 2109 05fe C40A     		.sleb128 1348
+ 2110 0600 00       		.byte	0
+ 2111 0601 12       		.uleb128 0x12
+ 2112 0602 44000000 		.4byte	.LVL107
+ 2113 0606 31080000 		.4byte	0x831
+ 2114 060a 13       		.uleb128 0x13
+ 2115 060b 01       		.uleb128 0x1
+ 2116 060c 51       		.byte	0x51
+ 2117 060d 05       		.uleb128 0x5
+ 2118 060e 03       		.byte	0x3
+ 2119 060f 04000000 		.4byte	.LANCHOR1+4
+ 2120 0613 13       		.uleb128 0x13
+ 2121 0614 01       		.uleb128 0x1
+ 2122 0615 50       		.byte	0x50
+ 2123 0616 05       		.uleb128 0x5
+ 2124 0617 03       		.byte	0x3
+ 2125 0618 06000000 		.4byte	.LANCHOR1+6
+ 2126 061c 00       		.byte	0
+ 2127 061d 00       		.byte	0
+ 2128 061e 1F       		.uleb128 0x1f
+ 2129 061f AE000000 		.4byte	.LASF89
+ 2130 0623 01       		.byte	0x1
+ 2131 0624 9802     		.2byte	0x298
+ 2132 0626 00000000 		.4byte	.LFB71
+ 2133 062a 02000000 		.4byte	.LFE71-.LFB71
+ 2134 062e 01       		.uleb128 0x1
+ 2135 062f 9C       		.byte	0x9c
+ 2136 0630 1E       		.uleb128 0x1e
+ 2137 0631 C0020000 		.4byte	.LASF73
+ 2138 0635 01       		.byte	0x1
+ 2139 0636 9D02     		.2byte	0x29d
+ 2140 0638 00000000 		.4byte	.LFB72
+ 2141 063c 54000000 		.4byte	.LFE72-.LFB72
+ 2142 0640 01       		.uleb128 0x1
+ 2143 0641 9C       		.byte	0x9c
+ 2144 0642 F1060000 		.4byte	0x6f1
+ 2145 0646 1D       		.uleb128 0x1d
+ 2146 0647 06000000 		.4byte	.LVL108
+ 2147 064b E6030000 		.4byte	0x3e6
+ 2148 064f 1C       		.uleb128 0x1c
+ 2149 0650 14000000 		.4byte	.LVL109
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 52
+
+
+ 2150 0654 1F020000 		.4byte	0x21f
+ 2151 0658 68060000 		.4byte	0x668
+ 2152 065c 13       		.uleb128 0x13
+ 2153 065d 01       		.uleb128 0x1
+ 2154 065e 51       		.byte	0x51
+ 2155 065f 01       		.uleb128 0x1
+ 2156 0660 32       		.byte	0x32
+ 2157 0661 13       		.uleb128 0x13
+ 2158 0662 01       		.uleb128 0x1
+ 2159 0663 50       		.byte	0x50
+ 2160 0664 02       		.uleb128 0x2
+ 2161 0665 77       		.byte	0x77
+ 2162 0666 00       		.sleb128 0
+ 2163 0667 00       		.byte	0
+ 2164 0668 1C       		.uleb128 0x1c
+ 2165 0669 20000000 		.4byte	.LVL110
+ 2166 066d 1F020000 		.4byte	0x21f
+ 2167 0671 81060000 		.4byte	0x681
+ 2168 0675 13       		.uleb128 0x13
+ 2169 0676 01       		.uleb128 0x1
+ 2170 0677 51       		.byte	0x51
+ 2171 0678 01       		.uleb128 0x1
+ 2172 0679 32       		.byte	0x32
+ 2173 067a 13       		.uleb128 0x13
+ 2174 067b 01       		.uleb128 0x1
+ 2175 067c 50       		.byte	0x50
+ 2176 067d 02       		.uleb128 0x2
+ 2177 067e 76       		.byte	0x76
+ 2178 067f 00       		.sleb128 0
+ 2179 0680 00       		.byte	0
+ 2180 0681 1C       		.uleb128 0x1c
+ 2181 0682 2C000000 		.4byte	.LVL111
+ 2182 0686 B3020000 		.4byte	0x2b3
+ 2183 068a 9B060000 		.4byte	0x69b
+ 2184 068e 13       		.uleb128 0x13
+ 2185 068f 01       		.uleb128 0x1
+ 2186 0690 51       		.byte	0x51
+ 2187 0691 02       		.uleb128 0x2
+ 2188 0692 75       		.byte	0x75
+ 2189 0693 00       		.sleb128 0
+ 2190 0694 13       		.uleb128 0x13
+ 2191 0695 01       		.uleb128 0x1
+ 2192 0696 50       		.byte	0x50
+ 2193 0697 02       		.uleb128 0x2
+ 2194 0698 77       		.byte	0x77
+ 2195 0699 00       		.sleb128 0
+ 2196 069a 00       		.byte	0
+ 2197 069b 1C       		.uleb128 0x1c
+ 2198 069c 38000000 		.4byte	.LVL112
+ 2199 06a0 B3020000 		.4byte	0x2b3
+ 2200 06a4 B5060000 		.4byte	0x6b5
+ 2201 06a8 13       		.uleb128 0x13
+ 2202 06a9 01       		.uleb128 0x1
+ 2203 06aa 51       		.byte	0x51
+ 2204 06ab 02       		.uleb128 0x2
+ 2205 06ac 74       		.byte	0x74
+ 2206 06ad 00       		.sleb128 0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 53
+
+
+ 2207 06ae 13       		.uleb128 0x13
+ 2208 06af 01       		.uleb128 0x1
+ 2209 06b0 50       		.byte	0x50
+ 2210 06b1 02       		.uleb128 0x2
+ 2211 06b2 76       		.byte	0x76
+ 2212 06b3 00       		.sleb128 0
+ 2213 06b4 00       		.byte	0
+ 2214 06b5 1C       		.uleb128 0x1c
+ 2215 06b6 40000000 		.4byte	.LVL113
+ 2216 06ba 69030000 		.4byte	0x369
+ 2217 06be CE060000 		.4byte	0x6ce
+ 2218 06c2 13       		.uleb128 0x13
+ 2219 06c3 01       		.uleb128 0x1
+ 2220 06c4 51       		.byte	0x51
+ 2221 06c5 01       		.uleb128 0x1
+ 2222 06c6 31       		.byte	0x31
+ 2223 06c7 13       		.uleb128 0x13
+ 2224 06c8 01       		.uleb128 0x1
+ 2225 06c9 50       		.byte	0x50
+ 2226 06ca 02       		.uleb128 0x2
+ 2227 06cb 75       		.byte	0x75
+ 2228 06cc 00       		.sleb128 0
+ 2229 06cd 00       		.byte	0
+ 2230 06ce 1C       		.uleb128 0x1c
+ 2231 06cf 48000000 		.4byte	.LVL114
+ 2232 06d3 69030000 		.4byte	0x369
+ 2233 06d7 E7060000 		.4byte	0x6e7
+ 2234 06db 13       		.uleb128 0x13
+ 2235 06dc 01       		.uleb128 0x1
+ 2236 06dd 51       		.byte	0x51
+ 2237 06de 01       		.uleb128 0x1
+ 2238 06df 31       		.byte	0x31
+ 2239 06e0 13       		.uleb128 0x13
+ 2240 06e1 01       		.uleb128 0x1
+ 2241 06e2 50       		.byte	0x50
+ 2242 06e3 02       		.uleb128 0x2
+ 2243 06e4 74       		.byte	0x74
+ 2244 06e5 00       		.sleb128 0
+ 2245 06e6 00       		.byte	0
+ 2246 06e7 1D       		.uleb128 0x1d
+ 2247 06e8 4C000000 		.4byte	.LVL115
+ 2248 06ec 07050000 		.4byte	0x507
+ 2249 06f0 00       		.byte	0
+ 2250 06f1 09       		.uleb128 0x9
+ 2251 06f2 68010000 		.4byte	0x168
+ 2252 06f6 01070000 		.4byte	0x701
+ 2253 06fa 0A       		.uleb128 0xa
+ 2254 06fb AE000000 		.4byte	0xae
+ 2255 06ff 01       		.byte	0x1
+ 2256 0700 00       		.byte	0
+ 2257 0701 19       		.uleb128 0x19
+ 2258 0702 CD020000 		.4byte	.LASF74
+ 2259 0706 01       		.byte	0x1
+ 2260 0707 AA01     		.2byte	0x1aa
+ 2261 0709 F1060000 		.4byte	0x6f1
+ 2262 070d 05       		.uleb128 0x5
+ 2263 070e 03       		.byte	0x3
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 54
+
+
+ 2264 070f 94000000 		.4byte	left_inputs
+ 2265 0713 19       		.uleb128 0x19
+ 2266 0714 83010000 		.4byte	.LASF75
+ 2267 0718 01       		.byte	0x1
+ 2268 0719 AB01     		.2byte	0x1ab
+ 2269 071b F1060000 		.4byte	0x6f1
+ 2270 071f 05       		.uleb128 0x5
+ 2271 0720 03       		.byte	0x3
+ 2272 0721 74020000 		.4byte	right_inputs
+ 2273 0725 09       		.uleb128 0x9
+ 2274 0726 68010000 		.4byte	0x168
+ 2275 072a 35070000 		.4byte	0x735
+ 2276 072e 0A       		.uleb128 0xa
+ 2277 072f AE000000 		.4byte	0xae
+ 2278 0733 00       		.byte	0
+ 2279 0734 00       		.byte	0
+ 2280 0735 19       		.uleb128 0x19
+ 2281 0736 CD040000 		.4byte	.LASF76
+ 2282 073a 01       		.byte	0x1
+ 2283 073b AC01     		.2byte	0x1ac
+ 2284 073d 25070000 		.4byte	0x725
+ 2285 0741 05       		.uleb128 0x5
+ 2286 0742 03       		.byte	0x3
+ 2287 0743 54040000 		.4byte	left_output
+ 2288 0747 19       		.uleb128 0x19
+ 2289 0748 89000000 		.4byte	.LASF77
+ 2290 074c 01       		.byte	0x1
+ 2291 074d AD01     		.2byte	0x1ad
+ 2292 074f 25070000 		.4byte	0x725
+ 2293 0753 05       		.uleb128 0x5
+ 2294 0754 03       		.byte	0x3
+ 2295 0755 44050000 		.4byte	right_output
+ 2296 0759 19       		.uleb128 0x19
+ 2297 075a 5D030000 		.4byte	.LASF78
+ 2298 075e 01       		.byte	0x1
+ 2299 075f AF01     		.2byte	0x1af
+ 2300 0761 8D000000 		.4byte	0x8d
+ 2301 0765 05       		.uleb128 0x5
+ 2302 0766 03       		.byte	0x3
+ 2303 0767 06000000 		.4byte	max_reverse_speed
+ 2304 076b 19       		.uleb128 0x19
+ 2305 076c 76040000 		.4byte	.LASF79
+ 2306 0770 01       		.byte	0x1
+ 2307 0771 B001     		.2byte	0x1b0
+ 2308 0773 8D000000 		.4byte	0x8d
+ 2309 0777 05       		.uleb128 0x5
+ 2310 0778 03       		.byte	0x3
+ 2311 0779 04000000 		.4byte	max_forward_speed
+ 2312 077d 19       		.uleb128 0x19
+ 2313 077e A5030000 		.4byte	.LASF80
+ 2314 0782 01       		.byte	0x1
+ 2315 0783 B201     		.2byte	0x1b2
+ 2316 0785 8D000000 		.4byte	0x8d
+ 2317 0789 05       		.uleb128 0x5
+ 2318 078a 03       		.byte	0x3
+ 2319 078b 00000000 		.4byte	left_actual_speed
+ 2320 078f 19       		.uleb128 0x19
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 55
+
+
+ 2321 0790 F9000000 		.4byte	.LASF81
+ 2322 0794 01       		.byte	0x1
+ 2323 0795 B301     		.2byte	0x1b3
+ 2324 0797 8D000000 		.4byte	0x8d
+ 2325 079b 05       		.uleb128 0x5
+ 2326 079c 03       		.byte	0x3
+ 2327 079d 02000000 		.4byte	right_actual_speed
+ 2328 07a1 20       		.uleb128 0x20
+ 2329 07a2 D9040000 		.4byte	.LASF82
+ 2330 07a6 05       		.byte	0x5
+ 2331 07a7 5506     		.2byte	0x655
+ 2332 07a9 AD070000 		.4byte	0x7ad
+ 2333 07ad 21       		.uleb128 0x21
+ 2334 07ae 76000000 		.4byte	0x76
+ 2335 07b2 09       		.uleb128 0x9
+ 2336 07b3 B8010000 		.4byte	0x1b8
+ 2337 07b7 C2070000 		.4byte	0x7c2
+ 2338 07bb 0A       		.uleb128 0xa
+ 2339 07bc AE000000 		.4byte	0xae
+ 2340 07c0 30       		.byte	0x30
+ 2341 07c1 00       		.byte	0
+ 2342 07c2 22       		.uleb128 0x22
+ 2343 07c3 3E000000 		.4byte	.LASF83
+ 2344 07c7 01       		.byte	0x1
+ 2345 07c8 4501     		.2byte	0x145
+ 2346 07ca B2070000 		.4byte	0x7b2
+ 2347 07ce 05       		.uleb128 0x5
+ 2348 07cf 03       		.byte	0x3
+ 2349 07d0 00000000 		.4byte	Rules
+ 2350 07d4 23       		.uleb128 0x23
+ 2351 07d5 B7030000 		.4byte	.LASF84
+ 2352 07d9 06       		.byte	0x6
+ 2353 07da 24       		.byte	0x24
+ 2354 07db EA070000 		.4byte	0x7ea
+ 2355 07df 24       		.uleb128 0x24
+ 2356 07e0 EA070000 		.4byte	0x7ea
+ 2357 07e4 24       		.uleb128 0x24
+ 2358 07e5 EA070000 		.4byte	0x7ea
+ 2359 07e9 00       		.byte	0
+ 2360 07ea 0F       		.uleb128 0xf
+ 2361 07eb 04       		.byte	0x4
+ 2362 07ec 8D000000 		.4byte	0x8d
+ 2363 07f0 1A       		.uleb128 0x1a
+ 2364 07f1 0A000000 		.4byte	.LASF69
+ 2365 07f5 01       		.byte	0x1
+ 2366 07f6 F001     		.2byte	0x1f0
+ 2367 07f8 68000000 		.4byte	0x68
+ 2368 07fc 02080000 		.4byte	0x802
+ 2369 0800 1B       		.uleb128 0x1b
+ 2370 0801 00       		.byte	0
+ 2371 0802 1A       		.uleb128 0x1a
+ 2372 0803 44000000 		.4byte	.LASF70
+ 2373 0807 01       		.byte	0x1
+ 2374 0808 8C02     		.2byte	0x28c
+ 2375 080a 68000000 		.4byte	0x68
+ 2376 080e 14080000 		.4byte	0x814
+ 2377 0812 1B       		.uleb128 0x1b
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 56
+
+
+ 2378 0813 00       		.byte	0
+ 2379 0814 25       		.uleb128 0x25
+ 2380 0815 6E010000 		.4byte	.LASF85
+ 2381 0819 B5000000 		.4byte	0xb5
+ 2382 081d 31080000 		.4byte	0x831
+ 2383 0821 24       		.uleb128 0x24
+ 2384 0822 B5000000 		.4byte	0xb5
+ 2385 0826 24       		.uleb128 0x24
+ 2386 0827 68000000 		.4byte	0x68
+ 2387 082b 24       		.uleb128 0x24
+ 2388 082c AE000000 		.4byte	0xae
+ 2389 0830 00       		.byte	0
+ 2390 0831 26       		.uleb128 0x26
+ 2391 0832 34020000 		.4byte	.LASF71
+ 2392 0836 01       		.byte	0x1
+ 2393 0837 9502     		.2byte	0x295
+ 2394 0839 68000000 		.4byte	0x68
+ 2395 083d 1B       		.uleb128 0x1b
+ 2396 083e 00       		.byte	0
+ 2397 083f 00       		.byte	0
+ 2398              		.section	.debug_abbrev,"",%progbits
+ 2399              	.Ldebug_abbrev0:
+ 2400 0000 01       		.uleb128 0x1
+ 2401 0001 11       		.uleb128 0x11
+ 2402 0002 01       		.byte	0x1
+ 2403 0003 25       		.uleb128 0x25
+ 2404 0004 0E       		.uleb128 0xe
+ 2405 0005 13       		.uleb128 0x13
+ 2406 0006 0B       		.uleb128 0xb
+ 2407 0007 03       		.uleb128 0x3
+ 2408 0008 0E       		.uleb128 0xe
+ 2409 0009 1B       		.uleb128 0x1b
+ 2410 000a 0E       		.uleb128 0xe
+ 2411 000b 55       		.uleb128 0x55
+ 2412 000c 17       		.uleb128 0x17
+ 2413 000d 11       		.uleb128 0x11
+ 2414 000e 01       		.uleb128 0x1
+ 2415 000f 10       		.uleb128 0x10
+ 2416 0010 17       		.uleb128 0x17
+ 2417 0011 00       		.byte	0
+ 2418 0012 00       		.byte	0
+ 2419 0013 02       		.uleb128 0x2
+ 2420 0014 24       		.uleb128 0x24
+ 2421 0015 00       		.byte	0
+ 2422 0016 0B       		.uleb128 0xb
+ 2423 0017 0B       		.uleb128 0xb
+ 2424 0018 3E       		.uleb128 0x3e
+ 2425 0019 0B       		.uleb128 0xb
+ 2426 001a 03       		.uleb128 0x3
+ 2427 001b 0E       		.uleb128 0xe
+ 2428 001c 00       		.byte	0
+ 2429 001d 00       		.byte	0
+ 2430 001e 03       		.uleb128 0x3
+ 2431 001f 16       		.uleb128 0x16
+ 2432 0020 00       		.byte	0
+ 2433 0021 03       		.uleb128 0x3
+ 2434 0022 0E       		.uleb128 0xe
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 57
+
+
+ 2435 0023 3A       		.uleb128 0x3a
+ 2436 0024 0B       		.uleb128 0xb
+ 2437 0025 3B       		.uleb128 0x3b
+ 2438 0026 0B       		.uleb128 0xb
+ 2439 0027 49       		.uleb128 0x49
+ 2440 0028 13       		.uleb128 0x13
+ 2441 0029 00       		.byte	0
+ 2442 002a 00       		.byte	0
+ 2443 002b 04       		.uleb128 0x4
+ 2444 002c 24       		.uleb128 0x24
+ 2445 002d 00       		.byte	0
+ 2446 002e 0B       		.uleb128 0xb
+ 2447 002f 0B       		.uleb128 0xb
+ 2448 0030 3E       		.uleb128 0x3e
+ 2449 0031 0B       		.uleb128 0xb
+ 2450 0032 03       		.uleb128 0x3
+ 2451 0033 08       		.uleb128 0x8
+ 2452 0034 00       		.byte	0
+ 2453 0035 00       		.byte	0
+ 2454 0036 05       		.uleb128 0x5
+ 2455 0037 16       		.uleb128 0x16
+ 2456 0038 00       		.byte	0
+ 2457 0039 03       		.uleb128 0x3
+ 2458 003a 0E       		.uleb128 0xe
+ 2459 003b 3A       		.uleb128 0x3a
+ 2460 003c 0B       		.uleb128 0xb
+ 2461 003d 3B       		.uleb128 0x3b
+ 2462 003e 05       		.uleb128 0x5
+ 2463 003f 49       		.uleb128 0x49
+ 2464 0040 13       		.uleb128 0x13
+ 2465 0041 00       		.byte	0
+ 2466 0042 00       		.byte	0
+ 2467 0043 06       		.uleb128 0x6
+ 2468 0044 0F       		.uleb128 0xf
+ 2469 0045 00       		.byte	0
+ 2470 0046 0B       		.uleb128 0xb
+ 2471 0047 0B       		.uleb128 0xb
+ 2472 0048 00       		.byte	0
+ 2473 0049 00       		.byte	0
+ 2474 004a 07       		.uleb128 0x7
+ 2475 004b 13       		.uleb128 0x13
+ 2476 004c 01       		.byte	0x1
+ 2477 004d 03       		.uleb128 0x3
+ 2478 004e 0E       		.uleb128 0xe
+ 2479 004f 0B       		.uleb128 0xb
+ 2480 0050 0B       		.uleb128 0xb
+ 2481 0051 3A       		.uleb128 0x3a
+ 2482 0052 0B       		.uleb128 0xb
+ 2483 0053 3B       		.uleb128 0x3b
+ 2484 0054 0B       		.uleb128 0xb
+ 2485 0055 01       		.uleb128 0x1
+ 2486 0056 13       		.uleb128 0x13
+ 2487 0057 00       		.byte	0
+ 2488 0058 00       		.byte	0
+ 2489 0059 08       		.uleb128 0x8
+ 2490 005a 0D       		.uleb128 0xd
+ 2491 005b 00       		.byte	0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 58
+
+
+ 2492 005c 03       		.uleb128 0x3
+ 2493 005d 0E       		.uleb128 0xe
+ 2494 005e 3A       		.uleb128 0x3a
+ 2495 005f 0B       		.uleb128 0xb
+ 2496 0060 3B       		.uleb128 0x3b
+ 2497 0061 0B       		.uleb128 0xb
+ 2498 0062 49       		.uleb128 0x49
+ 2499 0063 13       		.uleb128 0x13
+ 2500 0064 38       		.uleb128 0x38
+ 2501 0065 0B       		.uleb128 0xb
+ 2502 0066 00       		.byte	0
+ 2503 0067 00       		.byte	0
+ 2504 0068 09       		.uleb128 0x9
+ 2505 0069 01       		.uleb128 0x1
+ 2506 006a 01       		.byte	0x1
+ 2507 006b 49       		.uleb128 0x49
+ 2508 006c 13       		.uleb128 0x13
+ 2509 006d 01       		.uleb128 0x1
+ 2510 006e 13       		.uleb128 0x13
+ 2511 006f 00       		.byte	0
+ 2512 0070 00       		.byte	0
+ 2513 0071 0A       		.uleb128 0xa
+ 2514 0072 21       		.uleb128 0x21
+ 2515 0073 00       		.byte	0
+ 2516 0074 49       		.uleb128 0x49
+ 2517 0075 13       		.uleb128 0x13
+ 2518 0076 2F       		.uleb128 0x2f
+ 2519 0077 0B       		.uleb128 0xb
+ 2520 0078 00       		.byte	0
+ 2521 0079 00       		.byte	0
+ 2522 007a 0B       		.uleb128 0xb
+ 2523 007b 2E       		.uleb128 0x2e
+ 2524 007c 01       		.byte	0x1
+ 2525 007d 03       		.uleb128 0x3
+ 2526 007e 0E       		.uleb128 0xe
+ 2527 007f 3A       		.uleb128 0x3a
+ 2528 0080 0B       		.uleb128 0xb
+ 2529 0081 3B       		.uleb128 0x3b
+ 2530 0082 05       		.uleb128 0x5
+ 2531 0083 27       		.uleb128 0x27
+ 2532 0084 19       		.uleb128 0x19
+ 2533 0085 11       		.uleb128 0x11
+ 2534 0086 01       		.uleb128 0x1
+ 2535 0087 12       		.uleb128 0x12
+ 2536 0088 06       		.uleb128 0x6
+ 2537 0089 40       		.uleb128 0x40
+ 2538 008a 18       		.uleb128 0x18
+ 2539 008b 9642     		.uleb128 0x2116
+ 2540 008d 19       		.uleb128 0x19
+ 2541 008e 01       		.uleb128 0x1
+ 2542 008f 13       		.uleb128 0x13
+ 2543 0090 00       		.byte	0
+ 2544 0091 00       		.byte	0
+ 2545 0092 0C       		.uleb128 0xc
+ 2546 0093 05       		.uleb128 0x5
+ 2547 0094 00       		.byte	0
+ 2548 0095 03       		.uleb128 0x3
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 59
+
+
+ 2549 0096 08       		.uleb128 0x8
+ 2550 0097 3A       		.uleb128 0x3a
+ 2551 0098 0B       		.uleb128 0xb
+ 2552 0099 3B       		.uleb128 0x3b
+ 2553 009a 05       		.uleb128 0x5
+ 2554 009b 49       		.uleb128 0x49
+ 2555 009c 13       		.uleb128 0x13
+ 2556 009d 02       		.uleb128 0x2
+ 2557 009e 17       		.uleb128 0x17
+ 2558 009f 00       		.byte	0
+ 2559 00a0 00       		.byte	0
+ 2560 00a1 0D       		.uleb128 0xd
+ 2561 00a2 05       		.uleb128 0x5
+ 2562 00a3 00       		.byte	0
+ 2563 00a4 03       		.uleb128 0x3
+ 2564 00a5 0E       		.uleb128 0xe
+ 2565 00a6 3A       		.uleb128 0x3a
+ 2566 00a7 0B       		.uleb128 0xb
+ 2567 00a8 3B       		.uleb128 0x3b
+ 2568 00a9 05       		.uleb128 0x5
+ 2569 00aa 49       		.uleb128 0x49
+ 2570 00ab 13       		.uleb128 0x13
+ 2571 00ac 02       		.uleb128 0x2
+ 2572 00ad 17       		.uleb128 0x17
+ 2573 00ae 00       		.byte	0
+ 2574 00af 00       		.byte	0
+ 2575 00b0 0E       		.uleb128 0xe
+ 2576 00b1 34       		.uleb128 0x34
+ 2577 00b2 00       		.byte	0
+ 2578 00b3 03       		.uleb128 0x3
+ 2579 00b4 0E       		.uleb128 0xe
+ 2580 00b5 3A       		.uleb128 0x3a
+ 2581 00b6 0B       		.uleb128 0xb
+ 2582 00b7 3B       		.uleb128 0x3b
+ 2583 00b8 05       		.uleb128 0x5
+ 2584 00b9 49       		.uleb128 0x49
+ 2585 00ba 13       		.uleb128 0x13
+ 2586 00bb 02       		.uleb128 0x2
+ 2587 00bc 17       		.uleb128 0x17
+ 2588 00bd 00       		.byte	0
+ 2589 00be 00       		.byte	0
+ 2590 00bf 0F       		.uleb128 0xf
+ 2591 00c0 0F       		.uleb128 0xf
+ 2592 00c1 00       		.byte	0
+ 2593 00c2 0B       		.uleb128 0xb
+ 2594 00c3 0B       		.uleb128 0xb
+ 2595 00c4 49       		.uleb128 0x49
+ 2596 00c5 13       		.uleb128 0x13
+ 2597 00c6 00       		.byte	0
+ 2598 00c7 00       		.byte	0
+ 2599 00c8 10       		.uleb128 0x10
+ 2600 00c9 34       		.uleb128 0x34
+ 2601 00ca 00       		.byte	0
+ 2602 00cb 03       		.uleb128 0x3
+ 2603 00cc 08       		.uleb128 0x8
+ 2604 00cd 3A       		.uleb128 0x3a
+ 2605 00ce 0B       		.uleb128 0xb
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 60
+
+
+ 2606 00cf 3B       		.uleb128 0x3b
+ 2607 00d0 05       		.uleb128 0x5
+ 2608 00d1 49       		.uleb128 0x49
+ 2609 00d2 13       		.uleb128 0x13
+ 2610 00d3 02       		.uleb128 0x2
+ 2611 00d4 17       		.uleb128 0x17
+ 2612 00d5 00       		.byte	0
+ 2613 00d6 00       		.byte	0
+ 2614 00d7 11       		.uleb128 0x11
+ 2615 00d8 0B       		.uleb128 0xb
+ 2616 00d9 01       		.byte	0x1
+ 2617 00da 11       		.uleb128 0x11
+ 2618 00db 01       		.uleb128 0x1
+ 2619 00dc 12       		.uleb128 0x12
+ 2620 00dd 06       		.uleb128 0x6
+ 2621 00de 00       		.byte	0
+ 2622 00df 00       		.byte	0
+ 2623 00e0 12       		.uleb128 0x12
+ 2624 00e1 898201   		.uleb128 0x4109
+ 2625 00e4 01       		.byte	0x1
+ 2626 00e5 11       		.uleb128 0x11
+ 2627 00e6 01       		.uleb128 0x1
+ 2628 00e7 31       		.uleb128 0x31
+ 2629 00e8 13       		.uleb128 0x13
+ 2630 00e9 00       		.byte	0
+ 2631 00ea 00       		.byte	0
+ 2632 00eb 13       		.uleb128 0x13
+ 2633 00ec 8A8201   		.uleb128 0x410a
+ 2634 00ef 00       		.byte	0
+ 2635 00f0 02       		.uleb128 0x2
+ 2636 00f1 18       		.uleb128 0x18
+ 2637 00f2 9142     		.uleb128 0x2111
+ 2638 00f4 18       		.uleb128 0x18
+ 2639 00f5 00       		.byte	0
+ 2640 00f6 00       		.byte	0
+ 2641 00f7 14       		.uleb128 0x14
+ 2642 00f8 2E       		.uleb128 0x2e
+ 2643 00f9 01       		.byte	0x1
+ 2644 00fa 03       		.uleb128 0x3
+ 2645 00fb 0E       		.uleb128 0xe
+ 2646 00fc 3A       		.uleb128 0x3a
+ 2647 00fd 0B       		.uleb128 0xb
+ 2648 00fe 3B       		.uleb128 0x3b
+ 2649 00ff 05       		.uleb128 0x5
+ 2650 0100 27       		.uleb128 0x27
+ 2651 0101 19       		.uleb128 0x19
+ 2652 0102 11       		.uleb128 0x11
+ 2653 0103 01       		.uleb128 0x1
+ 2654 0104 12       		.uleb128 0x12
+ 2655 0105 06       		.uleb128 0x6
+ 2656 0106 40       		.uleb128 0x40
+ 2657 0107 18       		.uleb128 0x18
+ 2658 0108 9742     		.uleb128 0x2117
+ 2659 010a 19       		.uleb128 0x19
+ 2660 010b 01       		.uleb128 0x1
+ 2661 010c 13       		.uleb128 0x13
+ 2662 010d 00       		.byte	0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 61
+
+
+ 2663 010e 00       		.byte	0
+ 2664 010f 15       		.uleb128 0x15
+ 2665 0110 05       		.uleb128 0x5
+ 2666 0111 00       		.byte	0
+ 2667 0112 03       		.uleb128 0x3
+ 2668 0113 0E       		.uleb128 0xe
+ 2669 0114 3A       		.uleb128 0x3a
+ 2670 0115 0B       		.uleb128 0xb
+ 2671 0116 3B       		.uleb128 0x3b
+ 2672 0117 05       		.uleb128 0x5
+ 2673 0118 49       		.uleb128 0x49
+ 2674 0119 13       		.uleb128 0x13
+ 2675 011a 02       		.uleb128 0x2
+ 2676 011b 18       		.uleb128 0x18
+ 2677 011c 00       		.byte	0
+ 2678 011d 00       		.byte	0
+ 2679 011e 16       		.uleb128 0x16
+ 2680 011f 34       		.uleb128 0x34
+ 2681 0120 00       		.byte	0
+ 2682 0121 03       		.uleb128 0x3
+ 2683 0122 0E       		.uleb128 0xe
+ 2684 0123 3A       		.uleb128 0x3a
+ 2685 0124 0B       		.uleb128 0xb
+ 2686 0125 3B       		.uleb128 0x3b
+ 2687 0126 05       		.uleb128 0x5
+ 2688 0127 49       		.uleb128 0x49
+ 2689 0128 13       		.uleb128 0x13
+ 2690 0129 00       		.byte	0
+ 2691 012a 00       		.byte	0
+ 2692 012b 17       		.uleb128 0x17
+ 2693 012c 34       		.uleb128 0x34
+ 2694 012d 00       		.byte	0
+ 2695 012e 03       		.uleb128 0x3
+ 2696 012f 08       		.uleb128 0x8
+ 2697 0130 3A       		.uleb128 0x3a
+ 2698 0131 0B       		.uleb128 0xb
+ 2699 0132 3B       		.uleb128 0x3b
+ 2700 0133 05       		.uleb128 0x5
+ 2701 0134 49       		.uleb128 0x49
+ 2702 0135 13       		.uleb128 0x13
+ 2703 0136 00       		.byte	0
+ 2704 0137 00       		.byte	0
+ 2705 0138 18       		.uleb128 0x18
+ 2706 0139 2E       		.uleb128 0x2e
+ 2707 013a 01       		.byte	0x1
+ 2708 013b 03       		.uleb128 0x3
+ 2709 013c 0E       		.uleb128 0xe
+ 2710 013d 3A       		.uleb128 0x3a
+ 2711 013e 0B       		.uleb128 0xb
+ 2712 013f 3B       		.uleb128 0x3b
+ 2713 0140 05       		.uleb128 0x5
+ 2714 0141 11       		.uleb128 0x11
+ 2715 0142 01       		.uleb128 0x1
+ 2716 0143 12       		.uleb128 0x12
+ 2717 0144 06       		.uleb128 0x6
+ 2718 0145 40       		.uleb128 0x40
+ 2719 0146 18       		.uleb128 0x18
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 62
+
+
+ 2720 0147 9642     		.uleb128 0x2116
+ 2721 0149 19       		.uleb128 0x19
+ 2722 014a 01       		.uleb128 0x1
+ 2723 014b 13       		.uleb128 0x13
+ 2724 014c 00       		.byte	0
+ 2725 014d 00       		.byte	0
+ 2726 014e 19       		.uleb128 0x19
+ 2727 014f 34       		.uleb128 0x34
+ 2728 0150 00       		.byte	0
+ 2729 0151 03       		.uleb128 0x3
+ 2730 0152 0E       		.uleb128 0xe
+ 2731 0153 3A       		.uleb128 0x3a
+ 2732 0154 0B       		.uleb128 0xb
+ 2733 0155 3B       		.uleb128 0x3b
+ 2734 0156 05       		.uleb128 0x5
+ 2735 0157 49       		.uleb128 0x49
+ 2736 0158 13       		.uleb128 0x13
+ 2737 0159 02       		.uleb128 0x2
+ 2738 015a 18       		.uleb128 0x18
+ 2739 015b 00       		.byte	0
+ 2740 015c 00       		.byte	0
+ 2741 015d 1A       		.uleb128 0x1a
+ 2742 015e 2E       		.uleb128 0x2e
+ 2743 015f 01       		.byte	0x1
+ 2744 0160 3F       		.uleb128 0x3f
+ 2745 0161 19       		.uleb128 0x19
+ 2746 0162 03       		.uleb128 0x3
+ 2747 0163 0E       		.uleb128 0xe
+ 2748 0164 3A       		.uleb128 0x3a
+ 2749 0165 0B       		.uleb128 0xb
+ 2750 0166 3B       		.uleb128 0x3b
+ 2751 0167 05       		.uleb128 0x5
+ 2752 0168 49       		.uleb128 0x49
+ 2753 0169 13       		.uleb128 0x13
+ 2754 016a 3C       		.uleb128 0x3c
+ 2755 016b 19       		.uleb128 0x19
+ 2756 016c 01       		.uleb128 0x1
+ 2757 016d 13       		.uleb128 0x13
+ 2758 016e 00       		.byte	0
+ 2759 016f 00       		.byte	0
+ 2760 0170 1B       		.uleb128 0x1b
+ 2761 0171 18       		.uleb128 0x18
+ 2762 0172 00       		.byte	0
+ 2763 0173 00       		.byte	0
+ 2764 0174 00       		.byte	0
+ 2765 0175 1C       		.uleb128 0x1c
+ 2766 0176 898201   		.uleb128 0x4109
+ 2767 0179 01       		.byte	0x1
+ 2768 017a 11       		.uleb128 0x11
+ 2769 017b 01       		.uleb128 0x1
+ 2770 017c 31       		.uleb128 0x31
+ 2771 017d 13       		.uleb128 0x13
+ 2772 017e 01       		.uleb128 0x1
+ 2773 017f 13       		.uleb128 0x13
+ 2774 0180 00       		.byte	0
+ 2775 0181 00       		.byte	0
+ 2776 0182 1D       		.uleb128 0x1d
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 63
+
+
+ 2777 0183 898201   		.uleb128 0x4109
+ 2778 0186 00       		.byte	0
+ 2779 0187 11       		.uleb128 0x11
+ 2780 0188 01       		.uleb128 0x1
+ 2781 0189 31       		.uleb128 0x31
+ 2782 018a 13       		.uleb128 0x13
+ 2783 018b 00       		.byte	0
+ 2784 018c 00       		.byte	0
+ 2785 018d 1E       		.uleb128 0x1e
+ 2786 018e 2E       		.uleb128 0x2e
+ 2787 018f 01       		.byte	0x1
+ 2788 0190 3F       		.uleb128 0x3f
+ 2789 0191 19       		.uleb128 0x19
+ 2790 0192 03       		.uleb128 0x3
+ 2791 0193 0E       		.uleb128 0xe
+ 2792 0194 3A       		.uleb128 0x3a
+ 2793 0195 0B       		.uleb128 0xb
+ 2794 0196 3B       		.uleb128 0x3b
+ 2795 0197 05       		.uleb128 0x5
+ 2796 0198 11       		.uleb128 0x11
+ 2797 0199 01       		.uleb128 0x1
+ 2798 019a 12       		.uleb128 0x12
+ 2799 019b 06       		.uleb128 0x6
+ 2800 019c 40       		.uleb128 0x40
+ 2801 019d 18       		.uleb128 0x18
+ 2802 019e 9742     		.uleb128 0x2117
+ 2803 01a0 19       		.uleb128 0x19
+ 2804 01a1 01       		.uleb128 0x1
+ 2805 01a2 13       		.uleb128 0x13
+ 2806 01a3 00       		.byte	0
+ 2807 01a4 00       		.byte	0
+ 2808 01a5 1F       		.uleb128 0x1f
+ 2809 01a6 2E       		.uleb128 0x2e
+ 2810 01a7 00       		.byte	0
+ 2811 01a8 3F       		.uleb128 0x3f
+ 2812 01a9 19       		.uleb128 0x19
+ 2813 01aa 03       		.uleb128 0x3
+ 2814 01ab 0E       		.uleb128 0xe
+ 2815 01ac 3A       		.uleb128 0x3a
+ 2816 01ad 0B       		.uleb128 0xb
+ 2817 01ae 3B       		.uleb128 0x3b
+ 2818 01af 05       		.uleb128 0x5
+ 2819 01b0 11       		.uleb128 0x11
+ 2820 01b1 01       		.uleb128 0x1
+ 2821 01b2 12       		.uleb128 0x12
+ 2822 01b3 06       		.uleb128 0x6
+ 2823 01b4 40       		.uleb128 0x40
+ 2824 01b5 18       		.uleb128 0x18
+ 2825 01b6 9742     		.uleb128 0x2117
+ 2826 01b8 19       		.uleb128 0x19
+ 2827 01b9 00       		.byte	0
+ 2828 01ba 00       		.byte	0
+ 2829 01bb 20       		.uleb128 0x20
+ 2830 01bc 34       		.uleb128 0x34
+ 2831 01bd 00       		.byte	0
+ 2832 01be 03       		.uleb128 0x3
+ 2833 01bf 0E       		.uleb128 0xe
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 64
+
+
+ 2834 01c0 3A       		.uleb128 0x3a
+ 2835 01c1 0B       		.uleb128 0xb
+ 2836 01c2 3B       		.uleb128 0x3b
+ 2837 01c3 05       		.uleb128 0x5
+ 2838 01c4 49       		.uleb128 0x49
+ 2839 01c5 13       		.uleb128 0x13
+ 2840 01c6 3F       		.uleb128 0x3f
+ 2841 01c7 19       		.uleb128 0x19
+ 2842 01c8 3C       		.uleb128 0x3c
+ 2843 01c9 19       		.uleb128 0x19
+ 2844 01ca 00       		.byte	0
+ 2845 01cb 00       		.byte	0
+ 2846 01cc 21       		.uleb128 0x21
+ 2847 01cd 35       		.uleb128 0x35
+ 2848 01ce 00       		.byte	0
+ 2849 01cf 49       		.uleb128 0x49
+ 2850 01d0 13       		.uleb128 0x13
+ 2851 01d1 00       		.byte	0
+ 2852 01d2 00       		.byte	0
+ 2853 01d3 22       		.uleb128 0x22
+ 2854 01d4 34       		.uleb128 0x34
+ 2855 01d5 00       		.byte	0
+ 2856 01d6 03       		.uleb128 0x3
+ 2857 01d7 0E       		.uleb128 0xe
+ 2858 01d8 3A       		.uleb128 0x3a
+ 2859 01d9 0B       		.uleb128 0xb
+ 2860 01da 3B       		.uleb128 0x3b
+ 2861 01db 05       		.uleb128 0x5
+ 2862 01dc 49       		.uleb128 0x49
+ 2863 01dd 13       		.uleb128 0x13
+ 2864 01de 3F       		.uleb128 0x3f
+ 2865 01df 19       		.uleb128 0x19
+ 2866 01e0 02       		.uleb128 0x2
+ 2867 01e1 18       		.uleb128 0x18
+ 2868 01e2 00       		.byte	0
+ 2869 01e3 00       		.byte	0
+ 2870 01e4 23       		.uleb128 0x23
+ 2871 01e5 2E       		.uleb128 0x2e
+ 2872 01e6 01       		.byte	0x1
+ 2873 01e7 3F       		.uleb128 0x3f
+ 2874 01e8 19       		.uleb128 0x19
+ 2875 01e9 03       		.uleb128 0x3
+ 2876 01ea 0E       		.uleb128 0xe
+ 2877 01eb 3A       		.uleb128 0x3a
+ 2878 01ec 0B       		.uleb128 0xb
+ 2879 01ed 3B       		.uleb128 0x3b
+ 2880 01ee 0B       		.uleb128 0xb
+ 2881 01ef 27       		.uleb128 0x27
+ 2882 01f0 19       		.uleb128 0x19
+ 2883 01f1 3C       		.uleb128 0x3c
+ 2884 01f2 19       		.uleb128 0x19
+ 2885 01f3 01       		.uleb128 0x1
+ 2886 01f4 13       		.uleb128 0x13
+ 2887 01f5 00       		.byte	0
+ 2888 01f6 00       		.byte	0
+ 2889 01f7 24       		.uleb128 0x24
+ 2890 01f8 05       		.uleb128 0x5
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 65
+
+
+ 2891 01f9 00       		.byte	0
+ 2892 01fa 49       		.uleb128 0x49
+ 2893 01fb 13       		.uleb128 0x13
+ 2894 01fc 00       		.byte	0
+ 2895 01fd 00       		.byte	0
+ 2896 01fe 25       		.uleb128 0x25
+ 2897 01ff 2E       		.uleb128 0x2e
+ 2898 0200 01       		.byte	0x1
+ 2899 0201 3F       		.uleb128 0x3f
+ 2900 0202 19       		.uleb128 0x19
+ 2901 0203 03       		.uleb128 0x3
+ 2902 0204 0E       		.uleb128 0xe
+ 2903 0205 27       		.uleb128 0x27
+ 2904 0206 19       		.uleb128 0x19
+ 2905 0207 49       		.uleb128 0x49
+ 2906 0208 13       		.uleb128 0x13
+ 2907 0209 34       		.uleb128 0x34
+ 2908 020a 19       		.uleb128 0x19
+ 2909 020b 3C       		.uleb128 0x3c
+ 2910 020c 19       		.uleb128 0x19
+ 2911 020d 01       		.uleb128 0x1
+ 2912 020e 13       		.uleb128 0x13
+ 2913 020f 00       		.byte	0
+ 2914 0210 00       		.byte	0
+ 2915 0211 26       		.uleb128 0x26
+ 2916 0212 2E       		.uleb128 0x2e
+ 2917 0213 01       		.byte	0x1
+ 2918 0214 3F       		.uleb128 0x3f
+ 2919 0215 19       		.uleb128 0x19
+ 2920 0216 03       		.uleb128 0x3
+ 2921 0217 0E       		.uleb128 0xe
+ 2922 0218 3A       		.uleb128 0x3a
+ 2923 0219 0B       		.uleb128 0xb
+ 2924 021a 3B       		.uleb128 0x3b
+ 2925 021b 05       		.uleb128 0x5
+ 2926 021c 49       		.uleb128 0x49
+ 2927 021d 13       		.uleb128 0x13
+ 2928 021e 3C       		.uleb128 0x3c
+ 2929 021f 19       		.uleb128 0x19
+ 2930 0220 00       		.byte	0
+ 2931 0221 00       		.byte	0
+ 2932 0222 00       		.byte	0
+ 2933              		.section	.debug_loc,"",%progbits
+ 2934              	.Ldebug_loc0:
+ 2935              	.LLST0:
+ 2936 0000 00000000 		.4byte	.LVL0
+ 2937 0004 06000000 		.4byte	.LVL1
+ 2938 0008 0100     		.2byte	0x1
+ 2939 000a 50       		.byte	0x50
+ 2940 000b 06000000 		.4byte	.LVL1
+ 2941 000f A4000000 		.4byte	.LFE64
+ 2942 0013 0100     		.2byte	0x1
+ 2943 0015 54       		.byte	0x54
+ 2944 0016 00000000 		.4byte	0
+ 2945 001a 00000000 		.4byte	0
+ 2946              	.LLST1:
+ 2947 001e 00000000 		.4byte	.LVL0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 66
+
+
+ 2948 0022 09000000 		.4byte	.LVL2-1
+ 2949 0026 0100     		.2byte	0x1
+ 2950 0028 51       		.byte	0x51
+ 2951 0029 09000000 		.4byte	.LVL2-1
+ 2952 002d A4000000 		.4byte	.LFE64
+ 2953 0031 0400     		.2byte	0x4
+ 2954 0033 F3       		.byte	0xf3
+ 2955 0034 01       		.uleb128 0x1
+ 2956 0035 51       		.byte	0x51
+ 2957 0036 9F       		.byte	0x9f
+ 2958 0037 00000000 		.4byte	0
+ 2959 003b 00000000 		.4byte	0
+ 2960              	.LLST2:
+ 2961 003f 18000000 		.4byte	.LVL5
+ 2962 0043 1A000000 		.4byte	.LVL6
+ 2963 0047 0100     		.2byte	0x1
+ 2964 0049 50       		.byte	0x50
+ 2965 004a 1A000000 		.4byte	.LVL6
+ 2966 004e 48000000 		.4byte	.LVL12
+ 2967 0052 0100     		.2byte	0x1
+ 2968 0054 55       		.byte	0x55
+ 2969 0055 00000000 		.4byte	0
+ 2970 0059 00000000 		.4byte	0
+ 2971              	.LLST3:
+ 2972 005d 24000000 		.4byte	.LVL8
+ 2973 0061 2A000000 		.4byte	.LVL9
+ 2974 0065 0100     		.2byte	0x1
+ 2975 0067 56       		.byte	0x56
+ 2976 0068 00000000 		.4byte	0
+ 2977 006c 00000000 		.4byte	0
+ 2978              	.LLST4:
+ 2979 0070 00000000 		.4byte	.LVL19
+ 2980 0074 0C000000 		.4byte	.LVL21
+ 2981 0078 0100     		.2byte	0x1
+ 2982 007a 50       		.byte	0x50
+ 2983 007b 0C000000 		.4byte	.LVL21
+ 2984 007f 40000000 		.4byte	.LFE65
+ 2985 0083 0100     		.2byte	0x1
+ 2986 0085 57       		.byte	0x57
+ 2987 0086 00000000 		.4byte	0
+ 2988 008a 00000000 		.4byte	0
+ 2989              	.LLST5:
+ 2990 008e 00000000 		.4byte	.LVL19
+ 2991 0092 0C000000 		.4byte	.LVL21
+ 2992 0096 0100     		.2byte	0x1
+ 2993 0098 51       		.byte	0x51
+ 2994 0099 0C000000 		.4byte	.LVL21
+ 2995 009d 40000000 		.4byte	.LFE65
+ 2996 00a1 0400     		.2byte	0x4
+ 2997 00a3 F3       		.byte	0xf3
+ 2998 00a4 01       		.uleb128 0x1
+ 2999 00a5 51       		.byte	0x51
+ 3000 00a6 9F       		.byte	0x9f
+ 3001 00a7 00000000 		.4byte	0
+ 3002 00ab 00000000 		.4byte	0
+ 3003              	.LLST6:
+ 3004 00af 1A000000 		.4byte	.LVL22
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 67
+
+
+ 3005 00b3 2E000000 		.4byte	.LVL29
+ 3006 00b7 0100     		.2byte	0x1
+ 3007 00b9 55       		.byte	0x55
+ 3008 00ba 00000000 		.4byte	0
+ 3009 00be 00000000 		.4byte	0
+ 3010              	.LLST7:
+ 3011 00c2 08000000 		.4byte	.LVL20
+ 3012 00c6 0C000000 		.4byte	.LVL21
+ 3013 00ca 0200     		.2byte	0x2
+ 3014 00cc 30       		.byte	0x30
+ 3015 00cd 9F       		.byte	0x9f
+ 3016 00ce 0C000000 		.4byte	.LVL21
+ 3017 00d2 36000000 		.4byte	.LVL31
+ 3018 00d6 0100     		.2byte	0x1
+ 3019 00d8 56       		.byte	0x56
+ 3020 00d9 38000000 		.4byte	.LVL32
+ 3021 00dd 40000000 		.4byte	.LFE65
+ 3022 00e1 0100     		.2byte	0x1
+ 3023 00e3 56       		.byte	0x56
+ 3024 00e4 00000000 		.4byte	0
+ 3025 00e8 00000000 		.4byte	0
+ 3026              	.LLST8:
+ 3027 00ec 0C000000 		.4byte	.LVL21
+ 3028 00f0 2A000000 		.4byte	.LVL27
+ 3029 00f4 0100     		.2byte	0x1
+ 3030 00f6 54       		.byte	0x54
+ 3031 00f7 2C000000 		.4byte	.LVL28
+ 3032 00fb 2E000000 		.4byte	.LVL29
+ 3033 00ff 0100     		.2byte	0x1
+ 3034 0101 54       		.byte	0x54
+ 3035 0102 30000000 		.4byte	.LVL30
+ 3036 0106 38000000 		.4byte	.LVL32
+ 3037 010a 0100     		.2byte	0x1
+ 3038 010c 54       		.byte	0x54
+ 3039 010d 00000000 		.4byte	0
+ 3040 0111 00000000 		.4byte	0
+ 3041              	.LLST9:
+ 3042 0115 22000000 		.4byte	.LVL24
+ 3043 0119 24000000 		.4byte	.LVL25
+ 3044 011d 0100     		.2byte	0x1
+ 3045 011f 50       		.byte	0x50
+ 3046 0120 24000000 		.4byte	.LVL25
+ 3047 0124 27000000 		.4byte	.LVL26-1
+ 3048 0128 0100     		.2byte	0x1
+ 3049 012a 51       		.byte	0x51
+ 3050 012b 00000000 		.4byte	0
+ 3051 012f 00000000 		.4byte	0
+ 3052              	.LLST10:
+ 3053 0133 00000000 		.4byte	.LVL33
+ 3054 0137 0C000000 		.4byte	.LVL35
+ 3055 013b 0100     		.2byte	0x1
+ 3056 013d 50       		.byte	0x50
+ 3057 013e 0C000000 		.4byte	.LVL35
+ 3058 0142 6E000000 		.4byte	.LVL50
+ 3059 0146 0100     		.2byte	0x1
+ 3060 0148 56       		.byte	0x56
+ 3061 0149 6E000000 		.4byte	.LVL50
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 68
+
+
+ 3062 014d 74000000 		.4byte	.LFE66
+ 3063 0151 0400     		.2byte	0x4
+ 3064 0153 F3       		.byte	0xf3
+ 3065 0154 01       		.uleb128 0x1
+ 3066 0155 50       		.byte	0x50
+ 3067 0156 9F       		.byte	0x9f
+ 3068 0157 00000000 		.4byte	0
+ 3069 015b 00000000 		.4byte	0
+ 3070              	.LLST11:
+ 3071 015f 00000000 		.4byte	.LVL33
+ 3072 0163 0C000000 		.4byte	.LVL35
+ 3073 0167 0100     		.2byte	0x1
+ 3074 0169 51       		.byte	0x51
+ 3075 016a 0C000000 		.4byte	.LVL35
+ 3076 016e 6E000000 		.4byte	.LVL50
+ 3077 0172 0100     		.2byte	0x1
+ 3078 0174 58       		.byte	0x58
+ 3079 0175 6E000000 		.4byte	.LVL50
+ 3080 0179 74000000 		.4byte	.LFE66
+ 3081 017d 0400     		.2byte	0x4
+ 3082 017f F3       		.byte	0xf3
+ 3083 0180 01       		.uleb128 0x1
+ 3084 0181 51       		.byte	0x51
+ 3085 0182 9F       		.byte	0x9f
+ 3086 0183 00000000 		.4byte	0
+ 3087 0187 00000000 		.4byte	0
+ 3088              	.LLST12:
+ 3089 018b 0C000000 		.4byte	.LVL35
+ 3090 018f 3A000000 		.4byte	.LVL42
+ 3091 0193 0200     		.2byte	0x2
+ 3092 0195 31       		.byte	0x31
+ 3093 0196 9F       		.byte	0x9f
+ 3094 0197 3A000000 		.4byte	.LVL42
+ 3095 019b 4E000000 		.4byte	.LVL44
+ 3096 019f 0E00     		.2byte	0xe
+ 3097 01a1 70       		.byte	0x70
+ 3098 01a2 00       		.sleb128 0
+ 3099 01a3 12       		.byte	0x12
+ 3100 01a4 77       		.byte	0x77
+ 3101 01a5 00       		.sleb128 0
+ 3102 01a6 16       		.byte	0x16
+ 3103 01a7 14       		.byte	0x14
+ 3104 01a8 2D       		.byte	0x2d
+ 3105 01a9 28       		.byte	0x28
+ 3106 01aa 0100     		.2byte	0x1
+ 3107 01ac 16       		.byte	0x16
+ 3108 01ad 13       		.byte	0x13
+ 3109 01ae 9F       		.byte	0x9f
+ 3110 01af 00000000 		.4byte	0
+ 3111 01b3 00000000 		.4byte	0
+ 3112              	.LLST13:
+ 3113 01b7 08000000 		.4byte	.LVL34
+ 3114 01bb 0C000000 		.4byte	.LVL35
+ 3115 01bf 0200     		.2byte	0x2
+ 3116 01c1 30       		.byte	0x30
+ 3117 01c2 9F       		.byte	0x9f
+ 3118 01c3 0C000000 		.4byte	.LVL35
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 69
+
+
+ 3119 01c7 64000000 		.4byte	.LVL48
+ 3120 01cb 0100     		.2byte	0x1
+ 3121 01cd 55       		.byte	0x55
+ 3122 01ce 66000000 		.4byte	.LVL49
+ 3123 01d2 6E000000 		.4byte	.LVL50
+ 3124 01d6 0100     		.2byte	0x1
+ 3125 01d8 55       		.byte	0x55
+ 3126 01d9 00000000 		.4byte	0
+ 3127 01dd 00000000 		.4byte	0
+ 3128              	.LLST14:
+ 3129 01e1 18000000 		.4byte	.LVL36
+ 3130 01e5 20000000 		.4byte	.LVL38
+ 3131 01e9 0100     		.2byte	0x1
+ 3132 01eb 53       		.byte	0x53
+ 3133 01ec 20000000 		.4byte	.LVL38
+ 3134 01f0 29000000 		.4byte	.LVL39-1
+ 3135 01f4 0200     		.2byte	0x2
+ 3136 01f6 79       		.byte	0x79
+ 3137 01f7 00       		.sleb128 0
+ 3138 01f8 00000000 		.4byte	0
+ 3139 01fc 00000000 		.4byte	0
+ 3140              	.LLST15:
+ 3141 0200 1C000000 		.4byte	.LVL37
+ 3142 0204 48000000 		.4byte	.LVL43
+ 3143 0208 0100     		.2byte	0x1
+ 3144 020a 54       		.byte	0x54
+ 3145 020b 00000000 		.4byte	0
+ 3146 020f 00000000 		.4byte	0
+ 3147              	.LLST16:
+ 3148 0213 2C000000 		.4byte	.LVL40
+ 3149 0217 36000000 		.4byte	.LVL41
+ 3150 021b 0100     		.2byte	0x1
+ 3151 021d 50       		.byte	0x50
+ 3152 021e 36000000 		.4byte	.LVL41
+ 3153 0222 56000000 		.4byte	.LVL46
+ 3154 0226 0100     		.2byte	0x1
+ 3155 0228 57       		.byte	0x57
+ 3156 0229 00000000 		.4byte	0
+ 3157 022d 00000000 		.4byte	0
+ 3158              	.LLST17:
+ 3159 0231 3A000000 		.4byte	.LVL42
+ 3160 0235 4E000000 		.4byte	.LVL44
+ 3161 0239 0100     		.2byte	0x1
+ 3162 023b 50       		.byte	0x50
+ 3163 023c 00000000 		.4byte	0
+ 3164 0240 00000000 		.4byte	0
+ 3165              	.LLST18:
+ 3166 0244 48000000 		.4byte	.LVL43
+ 3167 0248 66000000 		.4byte	.LVL49
+ 3168 024c 0300     		.2byte	0x3
+ 3169 024e 74       		.byte	0x74
+ 3170 024f 0C       		.sleb128 12
+ 3171 0250 9F       		.byte	0x9f
+ 3172 0251 00000000 		.4byte	0
+ 3173 0255 00000000 		.4byte	0
+ 3174              	.LLST19:
+ 3175 0259 00000000 		.4byte	.LVL51
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 70
+
+
+ 3176 025d 02000000 		.4byte	.LVL52
+ 3177 0261 0200     		.2byte	0x2
+ 3178 0263 30       		.byte	0x30
+ 3179 0264 9F       		.byte	0x9f
+ 3180 0265 04000000 		.4byte	.LVL53
+ 3181 0269 06000000 		.4byte	.LFE68
+ 3182 026d 0200     		.2byte	0x2
+ 3183 026f 30       		.byte	0x30
+ 3184 0270 9F       		.byte	0x9f
+ 3185 0271 00000000 		.4byte	0
+ 3186 0275 00000000 		.4byte	0
+ 3187              	.LLST20:
+ 3188 0279 2E000000 		.4byte	.LVL56
+ 3189 027d 93000000 		.4byte	.LVL64-1
+ 3190 0281 0100     		.2byte	0x1
+ 3191 0283 50       		.byte	0x50
+ 3192 0284 00000000 		.4byte	0
+ 3193 0288 00000000 		.4byte	0
+ 3194              	.LLST21:
+ 3195 028c 46000000 		.4byte	.LVL57
+ 3196 0290 DC000000 		.4byte	.LVL74
+ 3197 0294 0100     		.2byte	0x1
+ 3198 0296 58       		.byte	0x58
+ 3199 0297 00000000 		.4byte	0
+ 3200 029b 00000000 		.4byte	0
+ 3201              	.LLST22:
+ 3202 029f 50000000 		.4byte	.LVL58
+ 3203 02a3 A8000000 		.4byte	.LVL67
+ 3204 02a7 0100     		.2byte	0x1
+ 3205 02a9 57       		.byte	0x57
+ 3206 02aa 00000000 		.4byte	0
+ 3207 02ae 00000000 		.4byte	0
+ 3208              	.LLST23:
+ 3209 02b2 58000000 		.4byte	.LVL59
+ 3210 02b6 1C010000 		.4byte	.LVL83
+ 3211 02ba 0100     		.2byte	0x1
+ 3212 02bc 56       		.byte	0x56
+ 3213 02bd 00000000 		.4byte	0
+ 3214 02c1 00000000 		.4byte	0
+ 3215              	.LLST24:
+ 3216 02c5 5E000000 		.4byte	.LVL60
+ 3217 02c9 1C010000 		.4byte	.LVL83
+ 3218 02cd 0100     		.2byte	0x1
+ 3219 02cf 55       		.byte	0x55
+ 3220 02d0 00000000 		.4byte	0
+ 3221 02d4 00000000 		.4byte	0
+ 3222              	.LLST25:
+ 3223 02d8 66000000 		.4byte	.LVL61
+ 3224 02dc 1C010000 		.4byte	.LVL83
+ 3225 02e0 0100     		.2byte	0x1
+ 3226 02e2 54       		.byte	0x54
+ 3227 02e3 00000000 		.4byte	0
+ 3228 02e7 00000000 		.4byte	0
+ 3229              	.LLST26:
+ 3230 02eb 7A000000 		.4byte	.LVL62
+ 3231 02ef DE000000 		.4byte	.LVL75
+ 3232 02f3 0100     		.2byte	0x1
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 71
+
+
+ 3233 02f5 59       		.byte	0x59
+ 3234 02f6 00000000 		.4byte	0
+ 3235 02fa 00000000 		.4byte	0
+ 3236              	.LLST27:
+ 3237 02fe 8E000000 		.4byte	.LVL63
+ 3238 0302 1C010000 		.4byte	.LVL83
+ 3239 0306 0100     		.2byte	0x1
+ 3240 0308 5A       		.byte	0x5a
+ 3241 0309 00000000 		.4byte	0
+ 3242 030d 00000000 		.4byte	0
+ 3243              	.LLST28:
+ 3244 0311 5A000000 		.4byte	.LVL91
+ 3245 0315 A4000000 		.4byte	.LVL99
+ 3246 0319 0100     		.2byte	0x1
+ 3247 031b 55       		.byte	0x55
+ 3248 031c 00000000 		.4byte	0
+ 3249 0320 00000000 		.4byte	0
+ 3250              	.LLST29:
+ 3251 0324 9A000000 		.4byte	.LVL97
+ 3252 0328 B8000000 		.4byte	.LVL102
+ 3253 032c 0100     		.2byte	0x1
+ 3254 032e 56       		.byte	0x56
+ 3255 032f 00000000 		.4byte	0
+ 3256 0333 00000000 		.4byte	0
+ 3257              		.section	.debug_aranges,"",%progbits
+ 3258 0000 5C000000 		.4byte	0x5c
+ 3259 0004 0200     		.2byte	0x2
+ 3260 0006 00000000 		.4byte	.Ldebug_info0
+ 3261 000a 04       		.byte	0x4
+ 3262 000b 00       		.byte	0
+ 3263 000c 0000     		.2byte	0
+ 3264 000e 0000     		.2byte	0
+ 3265 0010 00000000 		.4byte	.LFB64
+ 3266 0014 A4000000 		.4byte	.LFE64-.LFB64
+ 3267 0018 00000000 		.4byte	.LFB65
+ 3268 001c 40000000 		.4byte	.LFE65-.LFB65
+ 3269 0020 00000000 		.4byte	.LFB66
+ 3270 0024 74000000 		.4byte	.LFE66-.LFB66
+ 3271 0028 00000000 		.4byte	.LFB68
+ 3272 002c 06000000 		.4byte	.LFE68-.LFB68
+ 3273 0030 00000000 		.4byte	.LFB63
+ 3274 0034 24010000 		.4byte	.LFE63-.LFB63
+ 3275 0038 00000000 		.4byte	.LFB69
+ 3276 003c C0000000 		.4byte	.LFE69-.LFB69
+ 3277 0040 00000000 		.4byte	.LFB70
+ 3278 0044 50000000 		.4byte	.LFE70-.LFB70
+ 3279 0048 00000000 		.4byte	.LFB71
+ 3280 004c 02000000 		.4byte	.LFE71-.LFB71
+ 3281 0050 00000000 		.4byte	.LFB72
+ 3282 0054 54000000 		.4byte	.LFE72-.LFB72
+ 3283 0058 00000000 		.4byte	0
+ 3284 005c 00000000 		.4byte	0
+ 3285              		.section	.debug_ranges,"",%progbits
+ 3286              	.Ldebug_ranges0:
+ 3287 0000 00000000 		.4byte	.LFB64
+ 3288 0004 A4000000 		.4byte	.LFE64
+ 3289 0008 00000000 		.4byte	.LFB65
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 72
+
+
+ 3290 000c 40000000 		.4byte	.LFE65
+ 3291 0010 00000000 		.4byte	.LFB66
+ 3292 0014 74000000 		.4byte	.LFE66
+ 3293 0018 00000000 		.4byte	.LFB68
+ 3294 001c 06000000 		.4byte	.LFE68
+ 3295 0020 00000000 		.4byte	.LFB63
+ 3296 0024 24010000 		.4byte	.LFE63
+ 3297 0028 00000000 		.4byte	.LFB69
+ 3298 002c C0000000 		.4byte	.LFE69
+ 3299 0030 00000000 		.4byte	.LFB70
+ 3300 0034 50000000 		.4byte	.LFE70
+ 3301 0038 00000000 		.4byte	.LFB71
+ 3302 003c 02000000 		.4byte	.LFE71
+ 3303 0040 00000000 		.4byte	.LFB72
+ 3304 0044 54000000 		.4byte	.LFE72
+ 3305 0048 00000000 		.4byte	0
+ 3306 004c 00000000 		.4byte	0
+ 3307              		.section	.debug_line,"",%progbits
+ 3308              	.Ldebug_line0:
+ 3309 0000 23030000 		.section	.debug_str,"MS",%progbits,1
+ 3309      02005B01 
+ 3309      00000201 
+ 3309      FB0E0D00 
+ 3309      01010101 
+ 3310              	.LASF28:
+ 3311 0000 72756C65 		.ascii	"rule_type\000"
+ 3311      5F747970 
+ 3311      6500
+ 3312              	.LASF69:
+ 3313 000a 456E636F 		.ascii	"Encoder_GetLRSpeed\000"
+ 3313      6465725F 
+ 3313      4765744C 
+ 3313      52537065 
+ 3313      656400
+ 3314              	.LASF66:
+ 3315 001d 7365745F 		.ascii	"set_output\000"
+ 3315      6F757470 
+ 3315      757400
+ 3316              	.LASF55:
+ 3317 0028 6C617374 		.ascii	"last_left_input_error\000"
+ 3317      5F6C6566 
+ 3317      745F696E 
+ 3317      7075745F 
+ 3317      6572726F 
+ 3318              	.LASF83:
+ 3319 003e 52756C65 		.ascii	"Rules\000"
+ 3319      7300
+ 3320              	.LASF70:
+ 3321 0044 4D6F746F 		.ascii	"Motor_SetOutput\000"
+ 3321      725F5365 
+ 3321      744F7574 
+ 3321      70757400 
+ 3322              	.LASF39:
+ 3323 0054 72756C65 		.ascii	"rule_evaluation\000"
+ 3323      5F657661 
+ 3323      6C756174 
+ 3323      696F6E00 
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 73
+
+
+ 3324              	.LASF48:
+ 3325 0064 6E756D5F 		.ascii	"num_outputs\000"
+ 3325      6F757470 
+ 3325      75747300 
+ 3326              	.LASF2:
+ 3327 0070 73686F72 		.ascii	"short int\000"
+ 3327      7420696E 
+ 3327      7400
+ 3328              	.LASF32:
+ 3329 007a 696E7075 		.ascii	"input\000"
+ 3329      7400
+ 3330              	.LASF16:
+ 3331 0080 73697A65 		.ascii	"sizetype\000"
+ 3331      74797065 
+ 3331      00
+ 3332              	.LASF77:
+ 3333 0089 72696768 		.ascii	"right_output\000"
+ 3333      745F6F75 
+ 3333      74707574 
+ 3333      00
+ 3334              	.LASF19:
+ 3335 0096 706F696E 		.ascii	"point1\000"
+ 3335      743100
+ 3336              	.LASF20:
+ 3337 009d 706F696E 		.ascii	"point2\000"
+ 3337      743200
+ 3338              	.LASF30:
+ 3339 00a4 7468656E 		.ascii	"then_side\000"
+ 3339      5F736964 
+ 3339      6500
+ 3340              	.LASF89:
+ 3341 00ae 46555A5A 		.ascii	"FUZZY_Start\000"
+ 3341      595F5374 
+ 3341      61727400 
+ 3342              	.LASF62:
+ 3343 00ba 72696768 		.ascii	"right_input_derror\000"
+ 3343      745F696E 
+ 3343      7075745F 
+ 3343      64657272 
+ 3343      6F7200
+ 3344              	.LASF18:
+ 3345 00cd 76616C75 		.ascii	"value\000"
+ 3345      6500
+ 3346              	.LASF87:
+ 3347 00d3 2E2E5C73 		.ascii	"..\\source\\fuzzy.c\000"
+ 3347      6F757263 
+ 3347      655C6675 
+ 3347      7A7A792E 
+ 3347      6300
+ 3348              	.LASF23:
+ 3349 00e5 4D465F54 		.ascii	"MF_TYPE\000"
+ 3349      59504500 
+ 3350              	.LASF12:
+ 3351 00ed 696E7431 		.ascii	"int16\000"
+ 3351      3600
+ 3352              	.LASF11:
+ 3353 00f3 75696E74 		.ascii	"uint8\000"
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 74
+
+
+ 3353      3800
+ 3354              	.LASF81:
+ 3355 00f9 72696768 		.ascii	"right_actual_speed\000"
+ 3355      745F6163 
+ 3355      7475616C 
+ 3355      5F737065 
+ 3355      656400
+ 3356              	.LASF13:
+ 3357 010c 666C6F61 		.ascii	"float\000"
+ 3357      7400
+ 3358              	.LASF42:
+ 3359 0112 6572726F 		.ascii	"error_index\000"
+ 3359      725F696E 
+ 3359      64657800 
+ 3360              	.LASF88:
+ 3361 011e 443A5C70 		.ascii	"D:\\projects\\ArloBot\\arlobot_freesoc\\freesoc.cyd"
+ 3361      726F6A65 
+ 3361      6374735C 
+ 3361      41726C6F 
+ 3361      426F745C 
+ 3362 014d 736E00   		.ascii	"sn\000"
+ 3363              	.LASF6:
+ 3364 0150 6C6F6E67 		.ascii	"long long int\000"
+ 3364      206C6F6E 
+ 3364      6720696E 
+ 3364      7400
+ 3365              	.LASF29:
+ 3366 015e 69665F73 		.ascii	"if_side\000"
+ 3366      69646500 
+ 3367              	.LASF34:
+ 3368 0166 64656C74 		.ascii	"delta_2\000"
+ 3368      615F3200 
+ 3369              	.LASF85:
+ 3370 016e 6D656D73 		.ascii	"memset\000"
+ 3370      657400
+ 3371              	.LASF21:
+ 3372 0175 736C6F70 		.ascii	"slope1\000"
+ 3372      653100
+ 3373              	.LASF22:
+ 3374 017c 736C6F70 		.ascii	"slope2\000"
+ 3374      653200
+ 3375              	.LASF75:
+ 3376 0183 72696768 		.ascii	"right_inputs\000"
+ 3376      745F696E 
+ 3376      70757473 
+ 3376      00
+ 3377              	.LASF65:
+ 3378 0190 6765745F 		.ascii	"get_inputs\000"
+ 3378      696E7075 
+ 3378      747300
+ 3379              	.LASF57:
+ 3380 019b 6C656674 		.ascii	"left_error_upper\000"
+ 3380      5F657272 
+ 3380      6F725F75 
+ 3380      70706572 
+ 3380      00
+ 3381              	.LASF17:
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 75
+
+
+ 3382 01ac 6E616D65 		.ascii	"name\000"
+ 3382      00
+ 3383              	.LASF51:
+ 3384 01b1 61726561 		.ascii	"area\000"
+ 3384      00
+ 3385              	.LASF31:
+ 3386 01b6 52554C45 		.ascii	"RULE_TYPE\000"
+ 3386      5F545950 
+ 3386      4500
+ 3387              	.LASF26:
+ 3388 01c0 6D656D62 		.ascii	"membership_functions\000"
+ 3388      65727368 
+ 3388      69705F66 
+ 3388      756E6374 
+ 3388      696F6E73 
+ 3389              	.LASF1:
+ 3390 01d5 756E7369 		.ascii	"unsigned char\000"
+ 3390      676E6564 
+ 3390      20636861 
+ 3390      7200
+ 3391              	.LASF27:
+ 3392 01e3 494F5F54 		.ascii	"IO_TYPE\000"
+ 3392      59504500 
+ 3393              	.LASF60:
+ 3394 01eb 72696768 		.ascii	"right_input_error\000"
+ 3394      745F696E 
+ 3394      7075745F 
+ 3394      6572726F 
+ 3394      7200
+ 3395              	.LASF44:
+ 3396 01fd 7465726D 		.ascii	"term1\000"
+ 3396      3100
+ 3397              	.LASF45:
+ 3398 0203 7465726D 		.ascii	"term2\000"
+ 3398      3200
+ 3399              	.LASF0:
+ 3400 0209 7369676E 		.ascii	"signed char\000"
+ 3400      65642063 
+ 3400      68617200 
+ 3401              	.LASF40:
+ 3402 0215 6F757470 		.ascii	"outputs\000"
+ 3402      75747300 
+ 3403              	.LASF7:
+ 3404 021d 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 3404      206C6F6E 
+ 3404      6720756E 
+ 3404      7369676E 
+ 3404      65642069 
+ 3405              	.LASF71:
+ 3406 0234 4D6F746F 		.ascii	"Motor_GetSpeedRange\000"
+ 3406      725F4765 
+ 3406      74537065 
+ 3406      65645261 
+ 3406      6E676500 
+ 3407              	.LASF53:
+ 3408 0248 6C656674 		.ascii	"left_target_speed\000"
+ 3408      5F746172 
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 76
+
+
+ 3408      6765745F 
+ 3408      73706565 
+ 3408      6400
+ 3409              	.LASF52:
+ 3410 025a 63656E74 		.ascii	"centroid\000"
+ 3410      726F6964 
+ 3410      00
+ 3411              	.LASF8:
+ 3412 0263 756E7369 		.ascii	"unsigned int\000"
+ 3412      676E6564 
+ 3412      20696E74 
+ 3412      00
+ 3413              	.LASF72:
+ 3414 0270 46555A5A 		.ascii	"FUZZY_Init\000"
+ 3414      595F496E 
+ 3414      697400
+ 3415              	.LASF68:
+ 3416 027b 72696768 		.ascii	"right_speed\000"
+ 3416      745F7370 
+ 3416      65656400 
+ 3417              	.LASF56:
+ 3418 0287 6C617374 		.ascii	"last_right_input_error\000"
+ 3418      5F726967 
+ 3418      68745F69 
+ 3418      6E707574 
+ 3418      5F657272 
+ 3419              	.LASF37:
+ 3420 029e 696E7075 		.ascii	"inputs\000"
+ 3420      747300
+ 3421              	.LASF67:
+ 3422 02a5 6C656674 		.ascii	"left_speed\000"
+ 3422      5F737065 
+ 3422      656400
+ 3423              	.LASF47:
+ 3424 02b0 64656675 		.ascii	"defuzzification\000"
+ 3424      7A7A6966 
+ 3424      69636174 
+ 3424      696F6E00 
+ 3425              	.LASF73:
+ 3426 02c0 46555A5A 		.ascii	"FUZZY_Update\000"
+ 3426      595F5570 
+ 3426      64617465 
+ 3426      00
+ 3427              	.LASF74:
+ 3428 02cd 6C656674 		.ascii	"left_inputs\000"
+ 3428      5F696E70 
+ 3428      75747300 
+ 3429              	.LASF24:
+ 3430 02d9 6D665F74 		.ascii	"mf_type\000"
+ 3430      79706500 
+ 3431              	.LASF15:
+ 3432 02e1 63686172 		.ascii	"char\000"
+ 3432      00
+ 3433              	.LASF4:
+ 3434 02e6 6C6F6E67 		.ascii	"long int\000"
+ 3434      20696E74 
+ 3434      00
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 77
+
+
+ 3435              	.LASF10:
+ 3436 02ef 696E7433 		.ascii	"int32_t\000"
+ 3436      325F7400 
+ 3437              	.LASF50:
+ 3438 02f7 73756D5F 		.ascii	"sum_of_areas\000"
+ 3438      6F665F61 
+ 3438      72656173 
+ 3438      00
+ 3439              	.LASF3:
+ 3440 0304 73686F72 		.ascii	"short unsigned int\000"
+ 3440      7420756E 
+ 3440      7369676E 
+ 3440      65642069 
+ 3440      6E7400
+ 3441              	.LASF61:
+ 3442 0317 6C656674 		.ascii	"left_input_derror\000"
+ 3442      5F696E70 
+ 3442      75745F64 
+ 3442      6572726F 
+ 3442      7200
+ 3443              	.LASF35:
+ 3444 0329 636F6D70 		.ascii	"compute_degree_of_membership\000"
+ 3444      7574655F 
+ 3444      64656772 
+ 3444      65655F6F 
+ 3444      665F6D65 
+ 3445              	.LASF36:
+ 3446 0346 66757A7A 		.ascii	"fuzzification\000"
+ 3446      69666963 
+ 3446      6174696F 
+ 3446      6E00
+ 3447              	.LASF41:
+ 3448 0354 73747265 		.ascii	"strength\000"
+ 3448      6E677468 
+ 3448      00
+ 3449              	.LASF78:
+ 3450 035d 6D61785F 		.ascii	"max_reverse_speed\000"
+ 3450      72657665 
+ 3450      7273655F 
+ 3450      73706565 
+ 3450      6400
+ 3451              	.LASF5:
+ 3452 036f 6C6F6E67 		.ascii	"long unsigned int\000"
+ 3452      20756E73 
+ 3452      69676E65 
+ 3452      6420696E 
+ 3452      7400
+ 3453              	.LASF46:
+ 3454 0381 6F75745F 		.ascii	"out_value\000"
+ 3454      76616C75 
+ 3454      6500
+ 3455              	.LASF14:
+ 3456 038b 646F7562 		.ascii	"double\000"
+ 3456      6C6500
+ 3457              	.LASF54:
+ 3458 0392 72696768 		.ascii	"right_target_speed\000"
+ 3458      745F7461 
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 78
+
+
+ 3458      72676574 
+ 3458      5F737065 
+ 3458      656400
+ 3459              	.LASF80:
+ 3460 03a5 6C656674 		.ascii	"left_actual_speed\000"
+ 3460      5F616374 
+ 3460      75616C5F 
+ 3460      73706565 
+ 3460      6400
+ 3461              	.LASF84:
+ 3462 03b7 4932635F 		.ascii	"I2c_ReadLRCmdVelocity\000"
+ 3462      52656164 
+ 3462      4C52436D 
+ 3462      6456656C 
+ 3462      6F636974 
+ 3463              	.LASF9:
+ 3464 03cd 5F5F696E 		.ascii	"__int32_t\000"
+ 3464      7433325F 
+ 3464      7400
+ 3465              	.LASF86:
+ 3466 03d7 474E5520 		.ascii	"GNU C 4.9.3 20150303 (release) [ARM/embedded-4_9-br"
+ 3466      4320342E 
+ 3466      392E3320 
+ 3466      32303135 
+ 3466      30333033 
+ 3467 040a 616E6368 		.ascii	"anch revision 221220] -mcpu=cortex-m3 -mthumb -g -O"
+ 3467      20726576 
+ 3467      6973696F 
+ 3467      6E203232 
+ 3467      31323230 
+ 3468 043d 67202D66 		.ascii	"g -ffunction-sections -ffat-lto-objects\000"
+ 3468      66756E63 
+ 3468      74696F6E 
+ 3468      2D736563 
+ 3468      74696F6E 
+ 3469              	.LASF59:
+ 3470 0465 6C656674 		.ascii	"left_input_error\000"
+ 3470      5F696E70 
+ 3470      75745F65 
+ 3470      72726F72 
+ 3470      00
+ 3471              	.LASF79:
+ 3472 0476 6D61785F 		.ascii	"max_forward_speed\000"
+ 3472      666F7277 
+ 3472      6172645F 
+ 3472      73706565 
+ 3472      6400
+ 3473              	.LASF64:
+ 3474 0488 72696768 		.ascii	"right_derror_upper\000"
+ 3474      745F6465 
+ 3474      72726F72 
+ 3474      5F757070 
+ 3474      657200
+ 3475              	.LASF43:
+ 3476 049b 64657272 		.ascii	"derror_index\000"
+ 3476      6F725F69 
+ 3476      6E646578 
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccyb4S0f.s 			page 79
+
+
+ 3476      00
+ 3477              	.LASF38:
+ 3478 04a8 6E756D5F 		.ascii	"num_inputs\000"
+ 3478      696E7075 
+ 3478      747300
+ 3479              	.LASF25:
+ 3480 04b3 696F5F74 		.ascii	"io_type\000"
+ 3480      79706500 
+ 3481              	.LASF58:
+ 3482 04bb 72696768 		.ascii	"right_error_upper\000"
+ 3482      745F6572 
+ 3482      726F725F 
+ 3482      75707065 
+ 3482      7200
+ 3483              	.LASF76:
+ 3484 04cd 6C656674 		.ascii	"left_output\000"
+ 3484      5F6F7574 
+ 3484      70757400 
+ 3485              	.LASF82:
+ 3486 04d9 49544D5F 		.ascii	"ITM_RxBuffer\000"
+ 3486      52784275 
+ 3486      66666572 
+ 3486      00
+ 3487              	.LASF33:
+ 3488 04e6 64656C74 		.ascii	"delta_1\000"
+ 3488      615F3100 
+ 3489              	.LASF49:
+ 3490 04ee 73756D5F 		.ascii	"sum_of_products\000"
+ 3490      6F665F70 
+ 3490      726F6475 
+ 3490      63747300 
+ 3491              	.LASF63:
+ 3492 04fe 6C656674 		.ascii	"left_derror_upper\000"
+ 3492      5F646572 
+ 3492      726F725F 
+ 3492      75707065 
+ 3492      7200
+ 3493              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 4.9.3 20150303 (release) [ARM/embedded-4_9-br

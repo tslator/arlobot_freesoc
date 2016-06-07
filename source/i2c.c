@@ -1,0 +1,312 @@
+/* ========================================
+ *
+ * Copyright YOUR COMPANY, THE YEAR
+ * All Rights Reserved
+ * UNPUBLISHED, LICENSED SOFTWARE.
+ *
+ * CONFIDENTIAL AND PROPRIETARY INFORMATION
+ * WHICH IS THE PROPERTY OF your company.
+ *
+ * ========================================
+*/
+
+#include "i2c.h"
+#include "time.h"
+#include "config.h"
+#include "utils.h"
+
+/*
+    I2C Communication Data Layout
+
+    offset     num bytes     name                           description
+      00           2         [control register]             the control register supports 
+                                                                - Bit 0: enable the HB25 motors
+                                                                - Bit 1: clear encoder count
+                                                                - Bit 2: calibrate - requests the Psoc to start calibrating
+                                                                - Bit 3: upload calibration
+                                                                - Bit 4: download calibration
+                                                                - Bit 5: validate calibration
+      02           2         [left commanded velocity]      commanded velocity is in units of millimeters/second
+      04           2         [right commanded velocity]     commanded velocity is in units of millimeters/second
+      06           2         [left commanded accel]         commanded velocity in in units of millimeters/second^2
+      08           2         [right commanded accel]        commanded velocity in in units of millimeters/second^2
+      10           2         [calibration port]             the register through which calibration is passed to the Psoc
+                                                            when loading calibration from the Raspberry Pi and also how
+                                                            calibration data is passed from the Psoc to the Raspberry Pi
+                                                            for storage in a file
+    ------------------------------ Read/Write Boundary --------------------------------------------
+      12           2         [device status]                contains bits that represent the status of the Psoc device
+                                                               - Bit 0: HB25 Motor Controller Initialized
+                                                               - Bit 1: Calibrated - indicates whether the calibration
+                                                                        values have been loaded; 0 - no, 1 - yes
+                                                               - Bit 2: Calibrating - indicates when the Psoc is in
+                                                                        calibration; 0 - no, 1 - yes
+        <---- Left/Right Velocity ---->
+      14           2         [left wheel velocity]
+      16           2         [right wheel velocity]
+      18           2         [left count per second]
+      20           2         [right count per second]
+           <------ Odometry ------>
+      22           4         [x distance]                   measured x distance
+      26           4         [y distance]                   measured y distance
+      30           4         [heading]                      measured heading
+      34           4         [linear velocity]              measured linear velocity
+      38           4         [angular velocity]             measured angular velocity
+          <------ Ultrasonic ------>
+      42           8         [front ultrasonic distance]    ultrasonic distance is an array of 
+                                                            distances from the ultrasonic sensors in 
+                                                            centimeters, range 2 to 500
+      50           8         [rear ultrasonic distance]     ultrasonic distance is an array of 
+                                                            distances from the ultrasonic sensors in 
+                                                            centimeters, range 2 to 500
+           <------ Infrared ------>
+      58           8         [infrared distance]            infrared distance is an array of distances 
+                                                            from the infrared sensors in centimeters, 
+                                                            range 10 to 80
+      66           8         [infrared distance]            infrared distance is an array of distances 
+                                                            from the infrared sensors in centimeters, 
+                                                            range 10 to 80
+      74           4         [heartbeat]                    used for testing the i2c communication
+ */
+
+/* Define the portion of the I2C Slave that Read/Write */
+typedef struct
+{
+    uint16 control;
+    int16  left_cmd_velocity;
+    int16  right_cmd_velocity;
+    int16  left_cmd_acceleration;
+    int16  right_cmd_acceleration;
+    uint16 calibration_port;
+} __attribute__ ((packed)) READWRITE_TYPE;
+
+/* Define the odometry structure for communicating the position, heading and velocity of the wheel 
+   Note: Each Psoc board controls a single wheel, but calculates and reports odometry for the robot
+ */
+typedef struct
+{
+    float x_dist;
+    float y_dist;
+    float heading;
+    float linear_velocity;
+    float angular_velocity;
+} __attribute__ ((packed)) ODOMETRY;
+
+/* Define the structure for ultrasonic sensors */
+typedef struct
+{
+    uint16 front[NUM_FRONT_ULTRASONIC_SENSORS];
+    uint16 rear[NUM_REAR_ULTRASONIC_SENSORS];
+} __attribute__ ((packed)) ULTRASONIC;
+
+/* Define the structure for infrared sensors */
+typedef struct
+{
+    uint8 front[NUM_FRONT_INFRARED_SENSORS];
+    uint8 rear[NUM_REAR_INFRARED_SENSORS];
+} __attribute__((packed)) INFRARED;
+
+/* Define the I2C Slave that Read Only */
+typedef struct
+{
+    uint16     status;
+    int16      left_wheel_velocity;
+    int16      right_wheel_velocity;
+    uint16     left_count_per_sec;
+    uint16     right_count_per_sec;
+    ODOMETRY   odom;
+    ULTRASONIC us;
+    INFRARED   ir;
+    uint32     heartbeat;
+} __attribute__ ((packed)) READONLY_TYPE;
+
+/* Define the I2C Slave data interface */
+typedef struct
+{
+    READWRITE_TYPE read_write;
+    /*---------R/W Boundary -----------*/
+    READONLY_TYPE read_only;
+} __attribute__ ((packed)) I2C_DATASTRUCT;
+
+
+/* The following structure was created to allow the encoder count to be read from the other board.  The API doesn't
+   provide for reading at an offset on the slave.  So, unfortunately, we need to read from offset 0 through the encoder
+   count.
+
+   Note: It is possible to move the encoder count to the read/write section of the slave.  Something to think about.
+ */
+typedef struct
+{
+    int32  count;
+} __attribute__((packed)) SLAVE_DATA_TYPE;
+
+/* Define the I2C Slave buffer (as seen by the slave on this Psoc) */
+static I2C_DATASTRUCT i2c_buf;
+/* Define the I2C Slave buffer (as seen by the master on this Psoc) */
+static SLAVE_DATA_TYPE i2c_slave_data;
+/* Define a persistant status that can be set and cleared */
+static uint16 i2c_status;
+
+
+/*----------------------------------------------------------------------------------------------------------------------
+
+  Static Functions
+
+ ---------------------------------------------------------------------------------------------------------------------*/
+
+
+/*----------------------------------------------------------------------------------------------------------------------
+
+  Public Functions
+
+ ---------------------------------------------------------------------------------------------------------------------*/
+
+void I2c_Init()
+{
+    memset( &i2c_buf, 0, sizeof(i2c_buf));
+    memset( &i2c_slave_data, 0, sizeof(i2c_slave_data));
+    i2c_status = 0;
+}
+
+void I2c_Start()
+{
+    EZI2C_Slave_SetBuffer1(sizeof(i2c_buf), sizeof(i2c_buf.read_only), (volatile uint8 *) &i2c_buf);
+    EZI2C_Slave_Start();
+}
+
+uint16 I2c_ReadControl()
+{
+    uint16 value;
+    
+    value = i2c_buf.read_write.control;
+    i2c_buf.read_write.control = 0;
+    
+    //value |= CONTROL_ENABLE_CALIBRATION_BIT;
+    //value |= CONTROL_VALIDATE_CALIBRATION_BIT;
+    return value;
+}
+
+void I2c_ReadLRCmdVelocity(int16 *left_velocity, int16 *right_velocity)
+{
+    *left_velocity = i2c_buf.read_write.left_cmd_velocity;
+    *right_velocity = i2c_buf.read_write.right_cmd_velocity;
+    *left_velocity = 300;
+    *right_velocity = 300;
+}
+
+void I2c_ReadLRCmdAcceleration(int16 *left_accel, int16 *right_accel)
+{
+    *left_accel = i2c_buf.read_write.left_cmd_acceleration;
+    *right_accel = i2c_buf.read_write.right_cmd_acceleration;
+}
+
+void I2c_WriteCalReg(uint16 value)
+{
+    i2c_buf.read_write.calibration_port = value;
+}
+
+uint16 I2c_ReadCalReg()
+{
+    return i2c_buf.read_write.calibration_port;
+}
+
+void I2c_SetStatusBit(uint8 bit)
+{
+    i2c_status |= bit;
+    i2c_buf.read_only.status = i2c_status;
+}
+
+void I2c_ClearStatusBit(uint8 bit)
+{
+    i2c_status &= ~bit;
+    i2c_buf.read_only.status = i2c_status;
+}
+
+void I2c_WriteLRWheelVelocity(int16 left_velocity, int16 right_velocity)
+{
+    i2c_buf.read_only.left_wheel_velocity = left_velocity;
+    i2c_buf.read_only.right_wheel_velocity = right_velocity;
+}
+
+void I2c_WriteLRCountPerSecond(int16 left_cps, int16 right_cps)
+{
+    i2c_buf.read_only.left_count_per_sec = left_cps;
+    i2c_buf.read_only.right_count_per_sec = right_cps;
+}
+
+void I2c_WriteOdom(float x_dist, float y_dist, float heading, float linear_speed, float angular_speed)
+{
+    i2c_buf.read_only.odom.x_dist = x_dist;
+    i2c_buf.read_only.odom.y_dist = y_dist;
+    i2c_buf.read_only.odom.heading = heading;
+    i2c_buf.read_only.odom.linear_velocity = linear_speed;
+    i2c_buf.read_only.odom.angular_velocity = angular_speed;
+}
+
+void I2c_WriteFrontUltrasonicDistance(uint8 offset, uint16 distance)
+{
+    if (offset >= FIRST_FRONT_ULTRASONIC_SENSOR && offset <= LAST_FRONT_ULTRASONIC_SENSOR)
+    {
+        i2c_buf.read_only.us.front[offset] = distance;
+    }
+}
+
+void I2c_WriteRearUltrasonicDistance(uint8 offset, uint16 distance)
+{
+    if (offset >= FIRST_REAR_ULTRASONIC_SENSOR && offset <= LAST_REAR_ULTRASONIC_SENSOR)
+    {
+        i2c_buf.read_only.us.rear[offset] = distance;
+    }            
+}
+
+void I2c_WriteFrontInfraredDistance(uint8 offset, uint8 distance)
+{
+    if (offset >= FIRST_REAR_INFRARED_SENSOR && offset <= LAST_REAR_INFRARED_SENSOR)
+    {
+        i2c_buf.read_only.ir.front[offset] = distance;
+    }
+}
+
+void I2c_WriteRearInfraredDistance(uint8 offset, uint8 distance)
+{
+    if (offset >= FIRST_REAR_INFRARED_SENSOR && offset <= LAST_REAR_INFRARED_SENSOR)
+    {
+        i2c_buf.read_only.ir.rear[offset] = distance;
+    }            
+}
+
+void I2c_WriteHeartbeat(uint32 value)
+{
+    i2c_buf.read_only.heartbeat = value;
+}
+
+#define STEP_INPUT (700)
+
+int16 I2c_LeftReadCmdVelocity()
+{
+    static int16 velocity = 0;
+    //return i2c_buf.read_write.left_cmd_velocity;
+    return velocity;
+}
+
+int16 I2c_RightReadCmdVelocity()
+{
+    static int16 velocity = 0;
+    //return i2c_buf.read_write.right_cmd_velocity;
+    return velocity;
+}
+
+void I2c_LeftWriteOutput(float cps, int16 mmps)
+{
+    i2c_buf.read_only.left_count_per_sec = cps;
+    i2c_buf.read_only.left_wheel_velocity = mmps;
+}
+
+void I2c_RightWriteOutput(float cps, int16 mmps)
+{
+    i2c_buf.read_only.right_count_per_sec = cps;
+    i2c_buf.read_only.right_wheel_velocity = mmps;
+}
+
+
+/* [] END OF FILE */
