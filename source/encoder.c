@@ -17,6 +17,7 @@
 #include "utils.h"
 #include "time.h"
 #include "i2c.h"
+#include "diag.h"
 
 #ifdef  LEFT_ENC_DUMP_ENABLED
 #define LEFT_DUMP_ENC(enc)  DumpEncoder(enc)
@@ -30,6 +31,11 @@
 #define RIGHT_DUMP_ENC(enc)
 #endif
 
+#ifdef ENC_UPDATE_DELTA_ENABLED
+#define ENC_DEBUG_DELTA(delta) DEBUG_DELTA_TIME("enc", delta)
+#else
+#define ENC_DEBUG_DELTA(delta)
+#endif    
 
 #define ENC_SAMPLE_TIME_MS  SAMPLE_TIME_MS(ENC_SAMPLE_RATE)
 #define ENC_SAMPLE_TIME_SEC SAMPLE_TIME_SEC(ENC_SAMPLE_RATE)
@@ -37,7 +43,7 @@
 
 typedef int32 (*READ_ENCODER_COUNTER_TYPE)();
 typedef void (*WRITE_ENCODER_COUNTER_TYPE)(int32);
-typedef void (*WRITE_OUTPUT_TYPE)(float cps, int16 mmps);
+typedef void (*WRITE_OUTPUT_TYPE)(int16 mmps);
 
 typedef struct _encoder_tag
 {
@@ -90,7 +96,7 @@ static void DumpEncoder(ENCODER_TYPE *enc)
     sprintf(output, "%s enc: %s %s %s %ld %ld %ld \r\n", enc->name, avg_cps_str, avg_delta_count_str, avg_mmps_str, enc->count, enc->last_count, enc->delta_count);
     UART_Debug_PutString(output);
 
-    enc->write_output(enc->avg_cps, enc->avg_mmps);
+    enc->write_output(enc->avg_mmps);
 }
 #endif
 
@@ -111,7 +117,6 @@ static void Encoder_Sample(ENCODER_TYPE *enc, uint32 delta_time)
 
 void Encoder_Init()
 {
-    left_enc.write_counter(0);
     left_enc.count = 0;
     left_enc.last_count = 0;
     left_enc.delta_count = 0;
@@ -123,7 +128,6 @@ void Encoder_Init()
     left_enc.avg_cps = 0;
     left_enc.avg_mmps = 0;
     
-    right_enc.write_counter(0);
     right_enc.count = 0;
     right_enc.last_count = 0;
     right_enc.delta_count = 0;
@@ -152,6 +156,7 @@ void Encoder_Update()
     static uint8 enc_sched_offset_applied = 0;
     
     delta_time = millis() - last_update_time;
+    ENC_DEBUG_DELTA(delta_time);
     if (delta_time >= ENC_SAMPLE_TIME_MS)
     {
         last_update_time = millis();

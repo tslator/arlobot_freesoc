@@ -63,7 +63,7 @@ int main()
     Odom_Start();
     Ultrasonic_Start();
     Infrared_Start();
-    
+
     UART_Debug_PutString("Hello, my name is ArloSoc!  I am the microcontroller for Arlobot.\r\n");
     
     /* Read calibration data from the Raspberry Pi */
@@ -73,9 +73,6 @@ int main()
     
     UART_Debug_PutString("I'm entering my main loop now!\r\n");
 
-    Mainloop_Pin_Write(0);
-    Motor_LeftSetMmPerSec(0);
-    Motor_RightSetMmPerSec(0);
     
     //Cal_Update();
     

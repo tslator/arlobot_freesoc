@@ -17,6 +17,13 @@
 #include "time.h"
 #include "i2c.h"
 #include "utils.h"
+#include "diag.h"
+
+#ifdef ODOM_UPDATE_DELTA_ENABLED
+#define ODOM_DEBUG_DELTA(delta) DEBUG_DELTA_TIME("odom", delta)
+#else
+#define ODOM_DEBUG_DELTA(delta)
+#endif    
 
 #define ODOM_SAMPLE_TIME_MS  SAMPLE_TIME_MS(ODOM_SAMPLE_RATE)
 
@@ -109,6 +116,7 @@ void Odom_Update()
     uint32 delta_time;
         
     delta_time = millis() - last_odom_time;
+    ODOM_DEBUG_DELTA(delta_time);
     if (delta_time > ODOM_SAMPLE_TIME_MS)
     {
         last_odom_time = millis();

@@ -33,21 +33,15 @@ void I2c_Init();
 void I2c_Start();
 
 uint16 I2c_ReadControl();
-void I2c_ReadLRCmdVelocity(int16 *left_velocity, int16 *right_velocity);
 int16 I2c_LeftReadCmdVelocity();
 int16 I2c_RightReadCmdVelocity();
-void I2c_ReadLRCmdAcceleration(int16 *left_accel, int16 *right_accel);
 void I2c_WriteCalReg(uint16 value);
 uint16 I2c_ReadCalReg();
 
 void I2c_SetStatusBit(uint8 bit);
 void I2c_ClearStatusBit(uint8 bit);
-void I2c_WriteLRCountPerSecond(int16 left_count_per_second, int16 right_count_per_second);
-void I2c_LeftWriteOutput(float cps, int16 mmps);
-void I2c_RightWriteOutput(float cps, int16 mmps);
-void I2c_WriteLRWheelVelocity(int16 left_wheel_velocity, int16 right_wheel_velocity);
-void I2c_WriteCountPerSecond(int16 count);
-void I2c_WriteWheelVelocity(int16 velocity);
+void I2c_LeftWriteOutput(int16 mmps);
+void I2c_RightWriteOutput(int16 mmps);
 
 void I2c_WriteFrontUltrasonicDistance(uint8 offset, uint16 distance);
 void I2c_WriteRearUltrasonicDistance(uint8 offset, uint16 distance);

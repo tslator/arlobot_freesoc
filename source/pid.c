@@ -18,6 +18,7 @@
 #include "encoder.h"
 #include "motor.h"
 #include "pid_controller.h"
+#include "diag.h"
 
 #ifdef LEFT_PID_DUMP_ENABLED
 #define LEFT_DUMP_PID(pid)  DumpPid(pid)
@@ -30,6 +31,14 @@
 #else
 #define RIGHT_DUMP_PID(pid)
 #endif
+
+#ifdef PID_UPDATE_DELTA_ENABLED
+#define PID_DEBUG_DELTA(delta)  DEBUG_DELTA_TIME("pid", delta)
+#else
+#define PID_DEBUG_DELTA(delta)
+#endif
+
+
 
 #define PID_SAMPLE_TIME_MS  SAMPLE_TIME_MS(PID_SAMPLE_RATE)
 #define PID_SAMPLE_TIME_SEC SAMPLE_TIME_SEC(PID_SAMPLE_RATE)
@@ -145,8 +154,6 @@ static void ProcessPid(PID_TYPE *pid)
     if (PIDCompute(&pid->pid))
     {
         pid->set_motor(pid->pid.output * dir);
-        //WriteValue(pid);
-        //pid->set_motor(pid->pid.setpoint);
     }
 }
 
@@ -154,8 +161,11 @@ void Pid_Update()
 {
     static uint32 last_update_time = 0;
     static uint8 pid_sched_offset_applied = 0;
+    uint32 delta_time;
     
-    if (millis() - last_update_time >= PID_SAMPLE_TIME_MS)
+    delta_time = millis() - last_update_time;
+    PID_DEBUG_DELTA(delta_time);
+    if (delta_time >= PID_SAMPLE_TIME_MS)
     {    
         last_update_time = millis();
         

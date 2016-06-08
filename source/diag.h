@@ -11,10 +11,17 @@
 */
 
 #include <project.h>
+#include <stdio.h>
 
 #define LOOP_START()    Mainloop_Pin_Write( 1 )
 #define LOOP_END()      Mainloop_Pin_Write( 0 )
 
+#define DEBUG_DELTA_TIME(name, delta) do                                                \
+                                      {                                                 \
+                                          char buf[100];                                \
+                                          sprintf(buf, "%s: %ld \r\n", name, delta);    \
+                                          UART_Debug_PutString(buf);                    \
+                                      } while (0);
 
 void Diag_Init();
 void Diag_Start();

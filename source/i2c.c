@@ -28,45 +28,41 @@
                                                                 - Bit 5: validate calibration
       02           2         [left commanded velocity]      commanded velocity is in units of millimeters/second
       04           2         [right commanded velocity]     commanded velocity is in units of millimeters/second
-      06           2         [left commanded accel]         commanded velocity in in units of millimeters/second^2
-      08           2         [right commanded accel]        commanded velocity in in units of millimeters/second^2
-      10           2         [calibration port]             the register through which calibration is passed to the Psoc
+      06           2         [calibration port]             the register through which calibration is passed to the Psoc
                                                             when loading calibration from the Raspberry Pi and also how
                                                             calibration data is passed from the Psoc to the Raspberry Pi
                                                             for storage in a file
     ------------------------------ Read/Write Boundary --------------------------------------------
-      12           2         [device status]                contains bits that represent the status of the Psoc device
+      08           2         [device status]                contains bits that represent the status of the Psoc device
                                                                - Bit 0: HB25 Motor Controller Initialized
                                                                - Bit 1: Calibrated - indicates whether the calibration
                                                                         values have been loaded; 0 - no, 1 - yes
                                                                - Bit 2: Calibrating - indicates when the Psoc is in
                                                                         calibration; 0 - no, 1 - yes
         <---- Left/Right Velocity ---->
-      14           2         [left wheel velocity]
-      16           2         [right wheel velocity]
-      18           2         [left count per second]
-      20           2         [right count per second]
+      10           2         [left wheel velocity]
+      12           2         [right wheel velocity]
            <------ Odometry ------>
-      22           4         [x distance]                   measured x distance
-      26           4         [y distance]                   measured y distance
-      30           4         [heading]                      measured heading
-      34           4         [linear velocity]              measured linear velocity
-      38           4         [angular velocity]             measured angular velocity
+      14           4         [x distance]                   measured x distance
+      18           4         [y distance]                   measured y distance
+      22           4         [heading]                      measured heading
+      26           4         [linear velocity]              measured linear velocity
+      30           4         [angular velocity]             measured angular velocity
           <------ Ultrasonic ------>
-      42           8         [front ultrasonic distance]    ultrasonic distance is an array of 
+      34           8         [front ultrasonic distance]    ultrasonic distance is an array of 
                                                             distances from the ultrasonic sensors in 
                                                             centimeters, range 2 to 500
-      50           8         [rear ultrasonic distance]     ultrasonic distance is an array of 
+      42           8         [rear ultrasonic distance]     ultrasonic distance is an array of 
                                                             distances from the ultrasonic sensors in 
                                                             centimeters, range 2 to 500
            <------ Infrared ------>
+      50           8         [infrared distance]            infrared distance is an array of distances 
+                                                            from the infrared sensors in centimeters, 
+                                                            range 10 to 80
       58           8         [infrared distance]            infrared distance is an array of distances 
                                                             from the infrared sensors in centimeters, 
                                                             range 10 to 80
-      66           8         [infrared distance]            infrared distance is an array of distances 
-                                                            from the infrared sensors in centimeters, 
-                                                            range 10 to 80
-      74           4         [heartbeat]                    used for testing the i2c communication
+      66           4         [heartbeat]                    used for testing the i2c communication
  */
 
 /* Define the portion of the I2C Slave that Read/Write */
@@ -75,8 +71,6 @@ typedef struct
     uint16 control;
     int16  left_cmd_velocity;
     int16  right_cmd_velocity;
-    int16  left_cmd_acceleration;
-    int16  right_cmd_acceleration;
     uint16 calibration_port;
 } __attribute__ ((packed)) READWRITE_TYPE;
 
@@ -112,8 +106,6 @@ typedef struct
     uint16     status;
     int16      left_wheel_velocity;
     int16      right_wheel_velocity;
-    uint16     left_count_per_sec;
-    uint16     right_count_per_sec;
     ODOMETRY   odom;
     ULTRASONIC us;
     INFRARED   ir;
@@ -186,18 +178,20 @@ uint16 I2c_ReadControl()
     return value;
 }
 
-void I2c_ReadLRCmdVelocity(int16 *left_velocity, int16 *right_velocity)
+#define STEP_INPUT (700)
+
+int16 I2c_LeftReadCmdVelocity()
 {
-    *left_velocity = i2c_buf.read_write.left_cmd_velocity;
-    *right_velocity = i2c_buf.read_write.right_cmd_velocity;
-    *left_velocity = 300;
-    *right_velocity = 300;
+    static int16 velocity = -250;
+    //return i2c_buf.read_write.left_cmd_velocity;
+    return velocity;
 }
 
-void I2c_ReadLRCmdAcceleration(int16 *left_accel, int16 *right_accel)
+int16 I2c_RightReadCmdVelocity()
 {
-    *left_accel = i2c_buf.read_write.left_cmd_acceleration;
-    *right_accel = i2c_buf.read_write.right_cmd_acceleration;
+    static int16 velocity = 250;
+    //return i2c_buf.read_write.right_cmd_velocity;
+    return velocity;
 }
 
 void I2c_WriteCalReg(uint16 value)
@@ -222,16 +216,14 @@ void I2c_ClearStatusBit(uint8 bit)
     i2c_buf.read_only.status = i2c_status;
 }
 
-void I2c_WriteLRWheelVelocity(int16 left_velocity, int16 right_velocity)
+void I2c_LeftWriteOutput(int16 mmps)
 {
-    i2c_buf.read_only.left_wheel_velocity = left_velocity;
-    i2c_buf.read_only.right_wheel_velocity = right_velocity;
+    i2c_buf.read_only.left_wheel_velocity = mmps;
 }
 
-void I2c_WriteLRCountPerSecond(int16 left_cps, int16 right_cps)
+void I2c_RightWriteOutput(int16 mmps)
 {
-    i2c_buf.read_only.left_count_per_sec = left_cps;
-    i2c_buf.read_only.right_count_per_sec = right_cps;
+    i2c_buf.read_only.right_wheel_velocity = mmps;
 }
 
 void I2c_WriteOdom(float x_dist, float y_dist, float heading, float linear_speed, float angular_speed)
@@ -279,34 +271,5 @@ void I2c_WriteHeartbeat(uint32 value)
 {
     i2c_buf.read_only.heartbeat = value;
 }
-
-#define STEP_INPUT (700)
-
-int16 I2c_LeftReadCmdVelocity()
-{
-    static int16 velocity = 0;
-    //return i2c_buf.read_write.left_cmd_velocity;
-    return velocity;
-}
-
-int16 I2c_RightReadCmdVelocity()
-{
-    static int16 velocity = 0;
-    //return i2c_buf.read_write.right_cmd_velocity;
-    return velocity;
-}
-
-void I2c_LeftWriteOutput(float cps, int16 mmps)
-{
-    i2c_buf.read_only.left_count_per_sec = cps;
-    i2c_buf.read_only.left_wheel_velocity = mmps;
-}
-
-void I2c_RightWriteOutput(float cps, int16 mmps)
-{
-    i2c_buf.read_only.right_count_per_sec = cps;
-    i2c_buf.read_only.right_wheel_velocity = mmps;
-}
-
 
 /* [] END OF FILE */

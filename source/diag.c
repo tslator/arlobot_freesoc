@@ -21,7 +21,7 @@ static uint32 heartbeat;
 
 void Diag_Init()
 {
-
+    Mainloop_Pin_Write(0);
 }
 
 void Diag_Start()

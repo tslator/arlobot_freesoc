@@ -40,6 +40,10 @@ typedef enum {FORWARD_DIR, BACKWARD_DIR} DIR_TYPE;
 
 #define MOTOR_DUMP_ENABLED
 
+#define ENC_UPDATE_DELTA_ENABLED
+#define PID_UPDATE_DELTA_ENABLED
+#define ODOM_UPDATE_DELTA_ENABLED
+
 /*---------------------------------------------------------------------------------------------------------------------- 
     Sensors
 ----------------------------------------------------------------------------------------------------------------------*/
