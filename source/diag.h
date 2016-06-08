@@ -21,7 +21,6 @@
                                       {                                                 \
                                           char buf[100];                                \
                                           sprintf(buf, "%s: %ld \r\n", name, delta);    \
-                                          /*UART_Debug_PutString(buf);*/                \
                                           Ser_PutString(buf);                           \
                                       } while (0);
 

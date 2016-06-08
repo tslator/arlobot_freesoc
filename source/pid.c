@@ -111,8 +111,6 @@ static void DumpPid(PID_TYPE *pid)
     ftoa(pid->pid.output, output_str, 6);
 
     DEBUG_PRINT("%s pid: %s %s %s %s %s %s %d \r\n", pid->name, set_point_str, input_str, error_str, last_input_str, iterm_str, output_str, pid->get_pwm());
-    //sprintf(output, "%s pid: %s %s %s %s %s %s %d \r\n", pid->name, set_point_str, input_str, error_str, last_input_str, iterm_str, output_str, pid->get_pwm());
-    //UART_Debug_PutString(output);
 }
 #endif
 
@@ -127,16 +125,6 @@ void Pid_Init(GET_TARGET_TYPE left_target, GET_TARGET_TYPE right_target)
     
 void Pid_Start()
 {
-}
-
-static void WriteValue(PID_TYPE *pid)
-{
-    char output_str[10];
-    char buf[30];
-    
-    ftoa(pid->pid.output, output_str, 3);
-    sprintf(buf, "%s output: %s \r\n", pid->name, output_str);
-    UART_Debug_PutString(buf);
 }
 
 static void ProcessPid(PID_TYPE *pid)

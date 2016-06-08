@@ -1,6 +1,6 @@
 // ======================================================================
 // freesoc.v generated from TopDesign.cysch
-// 06/08/2016 at 11:26
+// 06/08/2016 at 13:20
 // This file is auto generated. ANY EDITS YOU MAKE MAY BE LOST WHEN THIS FILE IS REGENERATED!!!
 // ======================================================================
 
@@ -1907,19 +1907,6 @@ module top ;
           wire  Net_8117;
           wire  Net_8116;
           wire  Net_8115;
-          wire  Net_628;
-          wire  Net_627;
-          wire  Net_626;
-          wire  Net_625;
-          wire  Net_624;
-          wire  Net_623;
-          wire  Net_589;
-          wire  Net_622;
-          wire  Net_621;
-          wire  Net_620;
-          wire  Net_619;
-          wire  Net_584;
-          wire  Net_618;
           wire  Net_8522;
           wire  Net_8521;
           wire  Net_450;

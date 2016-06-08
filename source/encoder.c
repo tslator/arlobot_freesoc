@@ -95,8 +95,6 @@ static void DumpEncoder(ENCODER_TYPE *enc)
     ftoa(enc->avg_mmps, avg_mmps_str, 3);
     
     DEBUG_PRINT("%s enc: %s %s %s %ld %ld %ld \r\n", enc->name, avg_cps_str, avg_delta_count_str, avg_mmps_str, enc->count, enc->last_count, enc->delta_count);
-    //sprintf(output, "%s enc: %s %s %s %ld %ld %ld \r\n", enc->name, avg_cps_str, avg_delta_count_str, avg_mmps_str, enc->count, enc->last_count, enc->delta_count);
-    //UART_Debug_PutString(output);
 }
 #endif
 

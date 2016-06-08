@@ -249,14 +249,6 @@ void Cal_Start()
     I2c_SetStatusBit(STATUS_CALIBRATED_BIT);
 }
 
-static void WriteValue(int32 value)
-{
-    char buf[20];
-    
-    sprintf(buf, "%ld \r\n", value);
-    UART_Debug_PutString(buf);
-}
-
 void Cal_Update()
 {   
     /* Write to the serial that we are calibrating: CALIBRATING !!!! */

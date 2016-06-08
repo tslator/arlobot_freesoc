@@ -58,17 +58,13 @@ int main()
     Infrared_Start();
 
     Ser_PutString("Hello, my name is ArloSoc!  I am the microcontroller for Arlobot.\r\n");
-    //UART_Debug_PutString("Hello, my name is ArloSoc!  I am the microcontroller for Arlobot.\r\n");
     
     /* Read calibration data from the Raspberry Pi */
     Ser_PutString("Please wait while I upload calibration data ...\r\n");
-    //UART_Debug_PutString("Please wait while I upload calibration data ...\r\n");
     
     Ser_PutString("Calibration complete!\r\n");
-    //UART_Debug_PutString("Calibration complete!\r\n");
     
     Ser_PutString("I'm entering my main loop now!\r\n");
-    //UART_Debug_PutString("I'm entering my main loop now!\r\n");
 
     
     //Cal_Update();
