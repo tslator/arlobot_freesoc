@@ -20,6 +20,7 @@
 #include "utils.h"
 #include "pwm.h"
 #include "cal.h"
+#include "debug.h"
 
 #ifdef MOTOR_DUMP_ENABLED
 #define MOTOR_DUMP(motor)   DumpMotor(motor)
@@ -225,12 +226,13 @@ static MOTOR_TYPE right_motor = {
 static void DumpMotor(MOTOR_TYPE *motor)
 {
     char cps_str[10];
-    char buf[100];
+    //char buf[100];
     
     ftoa(motor->cps, cps_str, 3);
     
-    sprintf(buf, "%s %d \r\n", cps_str, motor->pwm);
-    UART_Debug_PutString(buf);
+    DEBUG_PRINT("%s %d \r\n", cps_str, motor->pwm);
+    //sprintf(buf, "%s %d \r\n", cps_str, motor->pwm);
+    //UART_Debug_PutString(buf);
 }
 #endif
 
@@ -315,7 +317,8 @@ static void PrintFormatDataInt32(char *label, uint8 data_size, int32 *data)
     char label_str[20];
     
     sprintf(label_str, "%s\r\n", label);
-    UART_Debug_PutString(label_str);
+    //UART_Debug_PutString(label_str);
+    Ser_PutString(label_str);
     for ( ii = 0; ii < data_size - 1; ++ii)
     {
         if ((ii > 0) && (ii % 10 == 0))
@@ -326,10 +329,12 @@ static void PrintFormatDataInt32(char *label, uint8 data_size, int32 *data)
         {            
             sprintf(buf, "%ld,", data[ii]);
         }
-        UART_Debug_PutString(buf);
+        //UART_Debug_PutString(buf);
+        Ser_PutString(buf);
     }
     sprintf(buf, "%ld\r\n", data[ii]);
-    UART_Debug_PutString(buf);
+    //UART_Debug_PutString(buf);
+    Ser_PutString(buf);
 }
 
 static void PrintFormatDataUint16(char *label, uint8 data_size, uint16 *data)
@@ -339,7 +344,8 @@ static void PrintFormatDataUint16(char *label, uint8 data_size, uint16 *data)
     char label_str[20];
     
     sprintf(label_str, "%s\r\n", label);
-    UART_Debug_PutString(label_str);
+    //UART_Debug_PutString(label_str);
+    Ser_PutString(label_str);
     for ( ii = 0; ii < data_size - 1; ++ii)
     {
         if ((ii > 0) && (ii % 10 == 0))
@@ -350,16 +356,19 @@ static void PrintFormatDataUint16(char *label, uint8 data_size, uint16 *data)
         {            
             sprintf(buf, "%d,", data[ii]);
         }
-        UART_Debug_PutString(buf);
+        //UART_Debug_PutString(buf);
+        Ser_PutString(buf);
     }
     sprintf(buf, "%d\r\n", data[ii]);
-    UART_Debug_PutString(buf);
+    //UART_Debug_PutString(buf);
+    Ser_PutString(buf);
 }
 
 static void DumpMotorCal(char *name, MOTOR_TYPE *motor)
 {
 
-    UART_Debug_PutString(name);
+    //UART_Debug_PutString(name);
+    Ser_PutString(name);
     
     PrintFormatDataInt32("Forward CPS", CAL_DATA_SIZE, motor->fwd_cal_data.cps_data);
     PrintFormatDataUint16("Forward PWM\r\n", CAL_DATA_SIZE, motor->fwd_cal_data.pwm_data);
@@ -457,11 +466,13 @@ void Motor_Stop()
 static void WriteTwoValues(uint16 pwm, float cps)
 {
     char cps_str[10];
-    char buf[100];
+    //char buf[100];
     
     ftoa(cps, cps_str, 3);
-    sprintf(buf, "%d %s \r\n", pwm, cps_str);
-    UART_Debug_PutString(buf);
+    
+    DEBUG_PRINT("%d %s \r\n", pwm, cps_str);
+    //sprintf(buf, "%d %s \r\n", pwm, cps_str);
+    //UART_Debug_PutString(buf);
 }
     
 static int32 CollectCpsPwmSamples(MOTOR_TYPE *motor, GET_ENCODER_TYPE encoder, uint8 num_avg_iter)

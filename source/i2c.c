@@ -162,7 +162,7 @@ void I2c_Init()
 
 void I2c_Start()
 {
-    EZI2C_Slave_SetBuffer1(sizeof(i2c_buf), sizeof(i2c_buf.read_only), (volatile uint8 *) &i2c_buf);
+    EZI2C_Slave_SetBuffer1(sizeof(i2c_buf), sizeof(i2c_buf.read_write), (volatile uint8 *) &i2c_buf);
     EZI2C_Slave_Start();
 }
 
@@ -182,16 +182,14 @@ uint16 I2c_ReadControl()
 
 int16 I2c_LeftReadCmdVelocity()
 {
-    static int16 velocity = -250;
     //return i2c_buf.read_write.left_cmd_velocity;
-    return velocity;
+    return 300;
 }
 
 int16 I2c_RightReadCmdVelocity()
 {
-    static int16 velocity = 250;
     //return i2c_buf.read_write.right_cmd_velocity;
-    return velocity;
+    return 300;
 }
 
 void I2c_WriteCalReg(uint16 value)

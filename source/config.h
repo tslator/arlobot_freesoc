@@ -30,6 +30,8 @@ typedef enum {FORWARD_DIR, BACKWARD_DIR} DIR_TYPE;
     Communication
 ----------------------------------------------------------------------------------------------------------------------*/
 #define COMMS_DEBUG_ENABLED
+
+#define COMMS_DEBUG_ENABLED
 #define I2C_ADDRESS (0x08)
 
 #define LEFT_PID_DUMP_ENABLED
@@ -108,30 +110,6 @@ PID Tuning
 
 ----------------------------------------------------------------------------------------------------------------------*/
 
-#define PID_BYPASS
-//#define PID_TUNE
-//#define STEP_RESPONSE
-//#define PID_ITERATION
-
-#ifdef PID_TUNE
-
-#define DATA_COLLECT
-
-#ifdef STEP_RESPONSE
-#define STEP_SAMPLE_RATE (20)    
-#define STEP_SAMPLE_PERIOD (1000/STEP_SAMPLE_RATE)
-#define NUM_COLLECT_SAMPLES (STEP_SAMPLE_RATE * 6)
-#define STEP_VELOCITY (508)
-#endif
-
-#ifdef PID_ITERATION
-#define ITER_SAMPLE_RATE (20)    
-#define ITER_SAMPLE_PERIOD (1000/ITER_SAMPLE_RATE)
-#define NUM_COLLECT_SAMPLES (ITER_SAMPLE_RATE * 15)
-#define ITER_VELOCITY (508)
-#endif
-
-#endif
 
 
 #endif

@@ -19,6 +19,7 @@
 #include "motor.h"
 #include "pid_controller.h"
 #include "diag.h"
+#include "debug.h"
 
 #ifdef LEFT_PID_DUMP_ENABLED
 #define LEFT_DUMP_PID(pid)  DumpPid(pid)
@@ -109,8 +110,9 @@ static void DumpPid(PID_TYPE *pid)
     ftoa(pid->pid.iTerm, iterm_str, 6);
     ftoa(pid->pid.output, output_str, 6);
 
-    sprintf(output, "%s pid: %s %s %s %s %s %s %d \r\n", pid->name, set_point_str, input_str, error_str, last_input_str, iterm_str, output_str, pid->get_pwm());
-    UART_Debug_PutString(output);
+    DEBUG_PRINT("%s pid: %s %s %s %s %s %s %d \r\n", pid->name, set_point_str, input_str, error_str, last_input_str, iterm_str, output_str, pid->get_pwm());
+    //sprintf(output, "%s pid: %s %s %s %s %s %s %d \r\n", pid->name, set_point_str, input_str, error_str, last_input_str, iterm_str, output_str, pid->get_pwm());
+    //UART_Debug_PutString(output);
 }
 #endif
 

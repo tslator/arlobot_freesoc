@@ -21,7 +21,7 @@ void Debug_Init()
 void Debug_Start()
 {
 #ifdef COMMS_DEBUG_ENABLED
-    UART_Debug_Start();
+    //UART_Debug_Start();
 #endif
 }
 

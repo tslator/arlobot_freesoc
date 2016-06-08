@@ -16,6 +16,7 @@
 #include <project.h>
 #include <stdio.h>
 #include "config.h"
+#include "serial.h"
 
 char formatted_string[256];
 
@@ -32,14 +33,15 @@ char formatted_string[256];
 #define WHEREARG __FILE__,__func__,__LINE__
 #define INSIDE_DEBUG(...)  do { \
                                 snprintf(formatted_string, sizeof(formatted_string), __VA_ARGS__); \
-                                UARTCOMMS_UartPutString(formatted_string); \
+                                Ser_PutString(formatted_string);            \
                            } while (0)
                                 
 #ifdef COMMS_DEBUG_ENABLED
-#define COMMS_DEBUG_PRINT(X, _fmt, ...)  if((DEBUG_LEVEL & X) == X) \
-                                      INSIDE_DEBUG(WHERESTR _fmt, WHEREARG,__VA_ARGS__)
+#define DEBUG_PRINT(_fmt, ...)  INSIDE_DEBUG(WHERESTR _fmt, WHEREARG,__VA_ARGS__)
+#define DEBUG_PRINT_LEVEL(X, _fmt, ...)  if((DEBUG_LEVEL & X) == X) \
+                                            INSIDE_DEBUG(WHERESTR _fmt, WHEREARG,__VA_ARGS__)
 #else
-#define COMMS_DEBUG_PRINT(X, _fmt, ...)
+#define DEBUG_PRINT(X, _fmt, ...)
 #endif
     
 

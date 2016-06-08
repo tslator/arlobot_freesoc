@@ -12,6 +12,7 @@
 
 #include <project.h>
 #include <stdio.h>
+#include "serial.h"
 
 #define LOOP_START()    Mainloop_Pin_Write( 1 )
 #define LOOP_END()      Mainloop_Pin_Write( 0 )
@@ -20,7 +21,8 @@
                                       {                                                 \
                                           char buf[100];                                \
                                           sprintf(buf, "%s: %ld \r\n", name, delta);    \
-                                          UART_Debug_PutString(buf);                    \
+                                          /*UART_Debug_PutString(buf);*/                \
+                                          Ser_PutString(buf);                           \
                                       } while (0);
 
 void Diag_Init();

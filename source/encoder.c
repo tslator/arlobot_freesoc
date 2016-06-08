@@ -18,6 +18,7 @@
 #include "time.h"
 #include "i2c.h"
 #include "diag.h"
+#include "debug.h"
 
 #ifdef  LEFT_ENC_DUMP_ENABLED
 #define LEFT_DUMP_ENC(enc)  DumpEncoder(enc)
@@ -87,16 +88,15 @@ static void DumpEncoder(ENCODER_TYPE *enc)
     char avg_cps_str[10];
     char avg_delta_count_str[10];
     char avg_mmps_str[10];
-    char output[64];
+    //char output[64];
     
     ftoa(enc->avg_cps, avg_cps_str, 3);
     ftoa(enc->avg_delta_count, avg_delta_count_str, 3);
     ftoa(enc->avg_mmps, avg_mmps_str, 3);
     
-    sprintf(output, "%s enc: %s %s %s %ld %ld %ld \r\n", enc->name, avg_cps_str, avg_delta_count_str, avg_mmps_str, enc->count, enc->last_count, enc->delta_count);
-    UART_Debug_PutString(output);
-
-    enc->write_output(enc->avg_mmps);
+    DEBUG_PRINT("%s enc: %s %s %s %ld %ld %ld \r\n", enc->name, avg_cps_str, avg_delta_count_str, avg_mmps_str, enc->count, enc->last_count, enc->delta_count);
+    //sprintf(output, "%s enc: %s %s %s %ld %ld %ld \r\n", enc->name, avg_cps_str, avg_delta_count_str, avg_mmps_str, enc->count, enc->last_count, enc->delta_count);
+    //UART_Debug_PutString(output);
 }
 #endif
 
@@ -113,6 +113,8 @@ static void Encoder_Sample(ENCODER_TYPE *enc, uint32 delta_time)
     enc->avg_cps = MovingAverageFloat(&enc->avg_cps_ma, cps);
     
     enc->avg_mmps = enc->avg_cps * MILLIMETER_PER_COUNT;
+
+    enc->write_output(enc->avg_mmps);
 }
 
 void Encoder_Init()
