@@ -14,6 +14,7 @@
 #include "time.h"
 #include "config.h"
 #include "utils.h"
+#include "debug.h"
 
 /*
     I2C Communication Data Layout
@@ -217,11 +218,13 @@ void I2c_ClearStatusBit(uint8 bit)
 void I2c_LeftWriteOutput(int16 mmps)
 {
     i2c_buf.read_only.left_wheel_velocity = mmps;
+    DEBUG_PRINT("I2C Left: %d\r\n", mmps);
 }
 
 void I2c_RightWriteOutput(int16 mmps)
 {
     i2c_buf.read_only.right_wheel_velocity = mmps;
+    DEBUG_PRINT("I2C Right: %d\r\n", mmps);
 }
 
 void I2c_WriteOdom(float x_dist, float y_dist, float heading, float linear_speed, float angular_speed)
