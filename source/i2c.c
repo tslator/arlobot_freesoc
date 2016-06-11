@@ -165,7 +165,7 @@ void I2c_Start()
 {
     /* Note: The start routine must be called before the set buffer routine.  Start applies the customizations settings
        to the component including initializing the buffer pointers, so calling start after setting the buffer effectively
-       re-initializes the component buffer pointers wiping out the previously set buffer setting.
+       re-initializes the component buffer pointers wiping out the set buffer setting.
      */
     EZI2C_Slave_Start();
     EZI2C_Slave_SetBuffer1(sizeof(i2c_buf), sizeof(i2c_buf.read_write), (volatile uint8 *) &i2c_buf);
