@@ -37,6 +37,7 @@ int main()
     Diag_Start();
         
     Control_Init();
+    Cal_Init();
     Time_Init();
     I2c_Init();
     Encoder_Init();
@@ -48,6 +49,7 @@ int main()
 
     Ser_Start();
     Control_Start();
+    Cal_Start();
     Time_Start();
     I2c_Start();
     Encoder_Start();
@@ -57,17 +59,9 @@ int main()
     Ultrasonic_Start();
     Infrared_Start();
 
-    Ser_PutString("Hello, my name is ArloSoc!  I am the microcontroller for Arlobot.\r\n");
-    
-    /* Read calibration data from the Raspberry Pi */
-    Ser_PutString("Please wait while I upload calibration data ...\r\n");
-    
-    Ser_PutString("Calibration complete!\r\n");
-    
+    Ser_PutString("Hello, my name is ArloSoc!\r\n");
+    Ser_PutString("I am the microcontroller for Arlobot.\r\n");
     Ser_PutString("I'm entering my main loop now!\r\n");
-
-    
-    //Cal_Update();
     
     for(;;)
     {

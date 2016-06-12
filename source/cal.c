@@ -16,52 +16,55 @@
 #include "pwm.h"
 #include "encoder.h"
 #include "utils.h"
+#include "serial.h"
 
-/* An explanation for how calibration can work:
-        1. Calibration data will be stored in a file on the Raspberry Pi
-            Note: That eliminates the need for any type of NVRAM or additional peripheral hardware
-        2. A calibration program will be run from the Raspberry Pi.  It will communicate with the Psoc
-           boards over the I2C bus using the control register to invoke calibration and another address
-            (2 bytes) to read each value from the Psoc.
-            Note: There will be a known number of entries (150) in the calibration array
-        3. To start calibration, the calibration program will set the calibration bit in the control
-           register
-        4. The Psoc will then set the calibration bit in the status register and start calibration
-             a. Psoc with run the motor from full forward to stop
-             b. Measure motor speed and calculate an average count/sec and capture min/max pwm values
-             c. Store the pwm min/max values for each count/sec calulation
-             d. Calculate an average pwm from the min/max values
-             e. Interpolate between each sampled count/sec to fill out the PWM array
-        5. The calibration program will poll the calibration bit in the status register waiting for it to
-           be cleared
-        6. The Psoc will clear the calibration bit in the status register when calibration is complete
-            Note: It may be better to write the first calibration value into the calibration register before
-                  clearing the calibration bit in the status register
-        7. Now, how to handshake and transfer the data?
-            a. After clearing the calibration bit of the status register, the Psoc will write a value from
-                calibration array to the I2C calibration register and poll waiting for the value to be 
-                cleared by the calibration program
-            b. The calibration program will poll the calibration register waiting for its value to become
-                non-zero.  After reading the calibration value, the calibration program will clear the 
-                calibration register
-            c. Steps a. and b. will repeat until all the values have been written
-            d. After Psoc writes the last calibration value to the calibration register, it will write the
-                value 0xFFFF signifying the end of the transmission.
+/*
+    Explantation of Calibration:
+
+    Calibration involves mapping count/sec values to PWM values.  Each motor is run (forward and backward) collecting
+    an average count/sec for each PWM sample.  The results are stored in an structure (CAL_DATA_TYPE) that holds the
+    count/sec averages, PWM samples, min/max count/sec and a scale factor.  There are four CAL_DATA_TYPE instances: one
+    for left motor forward, left motor backward, right motor forward and right motor backward.  The calibration data is
+    stored in NVRAM on the Psoc and pointers to the calibration data are passed to the motor module.
+    
+    Upon startup, the calibration data is made available to the motors via pointers to NVRAM (Note: the EEPROM component
+    maps NVRAM to memory so there is no appreciable overhead in reading from NVRAM (or so I believe until proven otherwise)
+
  */
 
-#define CAL_START_TRANSFER (0xFF00)
-#define CAL_END_TRANSFER   (0xFFFF)
-#define CAL_ACK_TRANSFER   (0x0000)
+#define MAX_CPS_SAMPLE (2147483647)
+#define MIN_CPS_SAMPLE (-2147483648)
 
-static int32 left_fwd_cps_samples[CAL_NUM_SAMPLES];
-static int32 left_bwd_cps_samples[CAL_NUM_SAMPLES];
-static uint16 left_fwd_pwm_samples[CAL_NUM_SAMPLES];
-static uint16 left_bwd_pwm_samples[CAL_NUM_SAMPLES];
+#define CAL_DATA_ROW_START (16)
+#define CAL_DATA_CPS_SAMPLES_SIZE (CAL_NUM_SAMPLES * sizeof(int32))
+#define CAL_DATA_PWM_SAMPLES_SIZE (CAL_NUM_SAMPLES * sizeof(uint16))
+#define BYTES_IN_ROW (16)
+#define CAL_DATA_SIZE_IN_ROWS ( 1 + ((2 * sizeof(int32) + 1 * sizeof(int) + 1 * CAL_DATA_CPS_SAMPLES_SIZE  + 1 * CAL_DATA_PWM_SAMPLES_SIZE) / BYTES_IN_ROW))
 
-static int32 right_fwd_cps_samples[CAL_NUM_SAMPLES];
-static int32 right_bwd_cps_samples[CAL_NUM_SAMPLES];
-static uint16 right_fwd_pwm_samples[CAL_NUM_SAMPLES];
-static uint16 right_bwd_pwm_samples[CAL_NUM_SAMPLES];
+#define CAL_DATA_LEFT_FWD_OFFSET    (CAL_DATA_ROW_START)
+#define CAL_DATA_LEFT_BWD_OFFSET    (CAL_DATA_ROW_START + (1*CAL_DATA_SIZE_IN_ROWS))
+#define CAL_DATA_RIGHT_FWD_OFFSET   (CAL_DATA_ROW_START + (2*CAL_DATA_SIZE_IN_ROWS))
+#define CAL_DATA_RIGHT_BWD_OFFSET   (CAL_DATA_ROW_START + (3*CAL_DATA_SIZE_IN_ROWS))
+
+typedef struct _eeprom_tag
+{
+    uint16 status;
+    uint16 checksum;
+    uint8  reserved[12];
+    CAL_DATA_TYPE left_motor_fwd;
+    CAL_DATA_TYPE left_motor_bwd;
+    CAL_DATA_TYPE right_motor_fwd;
+    CAL_DATA_TYPE right_motor_bwd;
+} __attribute__ ((packed)) EEPROM_TYPE;
+
+static volatile EEPROM_TYPE *p_eeprom;
+
+static uint16 CAL_DATA_ROW_OFFSET[2][2] = { {CAL_DATA_LEFT_FWD_OFFSET, CAL_DATA_LEFT_BWD_OFFSET}, {CAL_DATA_RIGHT_FWD_OFFSET, CAL_DATA_RIGHT_BWD_OFFSET}};
+
+static int32 cps_samples[CAL_NUM_SAMPLES];
+static uint16 pwm_samples[CAL_NUM_SAMPLES];
+static int32 cps_sum[CAL_NUM_SAMPLES];
+static CAL_DATA_TYPE cal_data;
 
 static void CalculatePwmSamples(WHEEL_TYPE wheel, DIR_TYPE dir, uint16 *pwm_samples, uint8 *reverse_pwm)
 {
@@ -158,159 +161,208 @@ static void CalculateAvgCpsSamples(int32 *cps_sum, uint8 num_runs, int32 *avg_cp
     }
 }
 
-static void CalibrateWheelSpeed(WHEEL_TYPE wheel, uint8 num_runs, int32 *fwd_cps_samples, uint16 *fwd_pwm_samples, int32 *bwd_cps_samples, uint16 *bwd_pwm_samples)
+static void CalculateMinMaxCpsSample(int32 *samples, uint8 num_samples, int32 *min, int32 *max)
 {
-    /*
-        CalculatePwmSamples(LEFT, FORWARD, num_samples, pwm_samples)
+    uint8 ii;
+    *min = MAX_CPS_SAMPLE;
+    *max = MIN_CPS_SAMPLE;
+    
+    for (ii = 0; ii < num_samples; ++ii)
+    {
+        if (samples[ii] > *max)
+        {
+            *max = samples[ii];
+        }
+        if (samples[ii] < *min)
+        {
+            *min = samples[ii];
+        }
+    }
+}
 
-        for run in num_runs:
-            CollectCpsPwmSamples(num_samples, pwm_samples, cps_samples)
-            AddCpsSamples(cps_samples, cps_sum)
+static void CalibrateWheelSpeed(WHEEL_TYPE wheel, DIR_TYPE dir, uint8 num_runs, int32 *cps_samples, uint16 *pwm_samples)
+/*
+    calculate the PWM samples
+        Note: the pwm samples depend on the wheel and direction
+    for the number of runs
+        collect cps-to-pwm samples
+        add the samples to the sum (for averaging)
 
-        CalculateAvgCpsSamples(cps_sum, num_runs, cps_avg)
-    */
+    calculate the average cps for each pwm
+*/
+{
     uint8 run;
     uint8 num_avg_iter = 10;
-    int32 cps_sum[CAL_NUM_SAMPLES];
     uint8 reverse_pwm;
     
     
-    CalculatePwmSamples(wheel, FORWARD_DIR, fwd_pwm_samples, &reverse_pwm);
+    CalculatePwmSamples(wheel, dir, pwm_samples, &reverse_pwm);
 
     memset(cps_sum, 0, CAL_NUM_SAMPLES * sizeof(int32));
     
     for (run = 0; run < num_runs; ++run)
     {
-        Motor_CollectPwmCpsSamples(wheel, reverse_pwm, num_avg_iter, fwd_pwm_samples, fwd_cps_samples);
-        AddSamplesToSum(fwd_cps_samples, cps_sum);
+        Motor_CollectPwmCpsSamples(wheel, reverse_pwm, num_avg_iter, pwm_samples, cps_samples);
+        AddSamplesToSum(cps_samples, cps_sum);
     }
     
-    CalculateAvgCpsSamples(cps_sum, num_runs, fwd_cps_samples);
-    
-    memset(cps_sum, 0, CAL_NUM_SAMPLES * sizeof(int32));
-    
-    CalculatePwmSamples(wheel, BACKWARD_DIR, bwd_pwm_samples, &reverse_pwm);
-    
-    for (run = 0; run < num_runs; ++run)
-    {
-        Motor_CollectPwmCpsSamples(wheel, reverse_pwm, num_avg_iter, bwd_pwm_samples, bwd_cps_samples);
-        AddSamplesToSum(bwd_cps_samples, cps_sum);
-    }
-    
-    CalculateAvgCpsSamples(cps_sum, num_runs, bwd_cps_samples);
+    CalculateAvgCpsSamples(cps_sum, num_runs, cps_samples);
 }
 
-static void SendData(uint16 *cal_values, uint16 num_entries)
+static void StoreWheelSpeed(WHEEL_TYPE wheel, DIR_TYPE dir, int32 *cps_samples, uint16 *pwm_samples)
 {
-    int ii;
+    /* Create a CAL_DATA_TYPE and store the values into EEPROM at the appropriate offset 
     
-    I2c_WriteCalReg(CAL_START_TRANSFER);
-    
-    while (I2c_ReadCalReg() != CAL_ACK_TRANSFER);
-    
-    for (ii = 0; ii < num_entries; ++ii)
-    {
-        I2c_WriteCalReg(cal_values[ii]);
-        while (I2c_ReadCalReg() != CAL_ACK_TRANSFER);
-    }
-    
-    I2c_WriteCalReg(CAL_END_TRANSFER);    
-    while (I2c_ReadCalReg() != CAL_ACK_TRANSFER);
-}
+        cystatus EEPROM_Write(const uint8 *rowData, uint8 rowNumber)
+        cystatus EEPROM_WriteByte(uint8 dataByte, uint16 address)
 
-static void RecvData(uint16 *cal_values, uint16 *num_entries)
-{
-    uint16 value;
-    uint16 index;
+                    -----------------
+                    |    status 1   | 0
+                    |    status 0   | 1
+                    |   checksum 0  | 2
+                    |   checksum 1  | 3
+                    |    reserved   | 4
+        left fwd    |     min (0:3) | 16
+                    |     max (0:3) | 20
+                    |    scale (0:3)| 24
+                    |    cps(0:203) | 228
+                    |    pwm(0:101) | 330
+                    |    reserved   | 334
+        left bwd    |     min (0:3) | 336
+                    |     max (0:3) | 340
+                    |    scale (0:3)| 344
+                    |    cps(0:203) | 348
+                    |    pwm(0:101) | 552
+                    |    reserved   | 654
+        right fwd   |     min (0:3) | 656
+                    |     max (0:3) | 660
+                    |    scale (0:3)| 664
+                    |    cps(0:203) | 668
+                    |    pwm(0:101) | 872
+                    |    reserved   | 974
+        right bwd   |     min (0:3) | 976
+                    |     max (0:3) | 980
+                    |    scale (0:3)| 984
+                    |    cps(0:203) | 988
+                    |    pwm(0:101) | 1192
+                    |    reserved   | 1294
+                    |               | 1296
     
-    index = 0;
     
-    while (I2c_ReadCalReg() != CAL_START_TRANSFER) ;
+    */
     
-    while ( (value = I2c_ReadCalReg()) != CAL_END_TRANSFER)
+    uint8 ii;
+    uint8 eeprom_row[16];
+    uint16 row_start = CAL_DATA_ROW_OFFSET[wheel][dir];    
+
+    CalculateMinMaxCpsSample(cps_samples, CAL_NUM_SAMPLES, &cal_data.cps_min, &cal_data.cps_max);
+    cal_data.cps_scale = CAL_SCALE_FACTOR;
+    memcpy(cal_data.cps_data, cps_samples, CAL_NUM_SAMPLES);
+    memcpy(cal_data.pwm_data, pwm_samples, CAL_NUM_SAMPLES);
+    
+    for ( ii = 0; ii < CAL_DATA_SIZE_IN_ROWS; ++ii)
     {
-        // Acknowledge the transfer and store the value
-        I2c_WriteCalReg(0);
-        cal_values[index] = value;
+        memset(eeprom_row, 0, BYTES_IN_ROW);
+        memcpy((void *) eeprom_row, (void *)((&cal_data) + (ii * CAL_DATA_SIZE_IN_ROWS)), CAL_DATA_SIZE_IN_ROWS);
+        EEPROM_Write(eeprom_row, row_start + ii);
     }
-    I2c_WriteCalReg(0);
-    *num_entries = index + 1;
 }
 
 void Cal_Init()
 {
+    p_eeprom = (volatile EEPROM_TYPE *) CYDEV_EE_BASE;
 }
+
 
 void Cal_Start()
 {
-    /* Note: The Psoc code contains defaults for all configurable parameters, so by definition it is calibrated with
-       defaults and the calibrated bit is set.    
-     */
-    I2c_SetStatusBit(STATUS_CALIBRATED_BIT);
+    EEPROM_Start();
+    
+    /* 
+        Set the calibration status as un-calibrated
+        Check for calibration data stored in EEPROM (may need a status word at the start of EEPROM to indicate
+        the contents and validity of contents in EEPROM, in case, there is the need to store other data, future
+        capability support.)
+        If calibration data not available or not valid, 
+            Indicate uncalibrated state
+        If calibration data available and valid, then
+            The EEPROM is mirrored in memory so we need only to set the pointer to the proper address
+            CYDEV_EE_BASE is the base address in the memory
+            Calibration data will be at some offset from CYDEV_EE_BASE
+            Indicate calibrated state
+    */
+    
+    if (p_eeprom->status & STATUS_CALIBRATED_BIT)
+    {
+        /* Calculate the check to validate the data 
+           if data is not valid then
+                clear the calibrated bit        
+        */
+        
+        I2c_SetStatusBit(STATUS_CALIBRATED_BIT);
+    }
+    else
+    {
+        I2c_ClearStatusBit(STATUS_CALIBRATED_BIT);
+    }
+}
+
+static void StartCalibration()
+{
+    EEPROM_WriteByte(0x00, (uint16) (&p_eeprom->status));
+    I2c_ClearStatusBit(STATUS_CALIBRATED_BIT);
+    I2c_SetStatusBit(STATUS_CALIBRATING_BIT);
+    Ser_PutString("Starting calibration ...\r\n");
+}
+
+static void EndCalibration(uint8 success)
+{
+    if (success)
+    {
+        EEPROM_WriteByte(0x01, (uint16) (&p_eeprom->status));
+        I2c_SetStatusBit(STATUS_CALIBRATED_BIT);
+        Ser_PutString("Calibration successful\r\n");
+    }
+    else
+    {
+        Ser_PutString("Calibration failed\r\n");
+    }
+    
+    I2c_ClearStatusBit(STATUS_CALIBRATING_BIT);
 }
 
 void Cal_Update()
 {   
-    /* Write to the serial that we are calibrating: CALIBRATING !!!! */
+    StartCalibration();
     
-    //I2c_ClearStatusBit(STATUS_CALIBRATED_BIT);
-    //I2c_SetStatusBit(STATUS_CALIBRATING_BIT);
-    
-    //Motor_Calibrate();
-    //Motor_ValidateCalibration();
-    
-    //I2c_ClearStatusBit(STATUS_CALIBRATING_BIT);
-    //I2c_SetStatusBit(STATUS_CALIBRATED_BIT);
+    CalibrateWheelSpeed(LEFT_WHEEL, FORWARD_DIR, 5, cps_samples, pwm_samples);
+    StoreWheelSpeed(LEFT_WHEEL, FORWARD_DIR, cps_samples, pwm_samples);
 
-    /* Write to the serial that we are done: CALIBRATION COMPLETE !!!! */
+    CalibrateWheelSpeed(LEFT_WHEEL, BACKWARD_DIR, 5, cps_samples, pwm_samples);
+    StoreWheelSpeed(LEFT_WHEEL, BACKWARD_DIR, cps_samples, pwm_samples);
+
+    CalibrateWheelSpeed(RIGHT_WHEEL, FORWARD_DIR, 5, cps_samples, pwm_samples);
+    StoreWheelSpeed(RIGHT_WHEEL, FORWARD_DIR, cps_samples, pwm_samples);
+
+    CalibrateWheelSpeed(RIGHT_WHEEL, BACKWARD_DIR, 5, cps_samples, pwm_samples);
+    StoreWheelSpeed(RIGHT_WHEEL, BACKWARD_DIR, cps_samples, pwm_samples);
+
+    Motor_LeftSetCalibration((CAL_DATA_TYPE *) &p_eeprom->left_motor_fwd, (CAL_DATA_TYPE *) &p_eeprom->left_motor_bwd);
+    Motor_RightSetCalibration((CAL_DATA_TYPE *) &p_eeprom->right_motor_fwd, (CAL_DATA_TYPE *) &p_eeprom->right_motor_bwd);
     
-    CalibrateWheelSpeed(LEFT_WHEEL, 5, left_fwd_cps_samples, left_fwd_pwm_samples, left_bwd_cps_samples, left_bwd_pwm_samples);
-    CalibrateWheelSpeed(RIGHT_WHEEL, 5, right_fwd_cps_samples, right_fwd_pwm_samples, right_bwd_cps_samples, right_bwd_pwm_samples);
-    
-    Motor_LeftSetCalibration(left_fwd_cps_samples, left_fwd_pwm_samples, left_bwd_cps_samples, left_bwd_pwm_samples);
-    Motor_RightSetCalibration(right_fwd_cps_samples, right_fwd_pwm_samples, right_bwd_cps_samples, right_bwd_pwm_samples);
+    EndCalibration(1);
 }
 
-void Cal_Download()
+void Cal_LeftGetCalData(CAL_DATA_TYPE *fwd_cal_data, CAL_DATA_TYPE *bwd_cal_data)
 {
-    uint16 *cal_values;
-    uint16 num_entries;
-    
-    /* Write to the serial that we are loading calibration: LOADING CALIBRATION !!!! */
-    
-    //Motor_GetCalValues((int16**) &cal_values, &num_entries);
-
-    //SendData(cal_values, num_entries);
-    
-    /* Write to the serial that we are done: LOAD COMPLETE !!!! */
+    fwd_cal_data = (CAL_DATA_TYPE *) &(p_eeprom->left_motor_fwd);
+    bwd_cal_data = (CAL_DATA_TYPE *) &(p_eeprom->left_motor_bwd);
 }
 
-void Cal_Upload()
-/* Upload program will:
-    1. send command to upload calibration data
-    2. poll on status calibrated/calibrating bits (see above)
-    3. send start transfer value
-    4. send calibration values
-        a. Psoc will read the value and set the calibration register to 0 to acknowledge the transfer
-    5. send end transfer value    
- */
+void Cal_RightGetCalData(CAL_DATA_TYPE *fwd_cal_data, CAL_DATA_TYPE *bwd_cal_data)
 {
-    uint16 *cal_values;
-    uint16 num_entries;
-    
-    /* Write to the serial that we are loading calibration: LOADING CALIBRATION !!!! */
-    
-    //I2c_ClearStatusBit(STATUS_CALIBRATED_BIT);
-    //I2c_SetStatusBit(STATUS_CALIBRATING_BIT);
-    
-    //Motor_GetCalValues((int16**) &cal_values, &num_entries);
-    
-    //RecvData(cal_values, &num_entries);
-    
-    //I2c_ClearStatusBit(STATUS_CALIBRATING_BIT);
-    //I2c_SetStatusBit(STATUS_CALIBRATED_BIT);
-    
-    /* Write to the serial that we are done: LOAD COMPLETE !!!! */
+    fwd_cal_data = (CAL_DATA_TYPE *) &(p_eeprom->right_motor_fwd);
+    bwd_cal_data = (CAL_DATA_TYPE *) &(p_eeprom->right_motor_bwd);
 }
 
 void Cal_Validate()

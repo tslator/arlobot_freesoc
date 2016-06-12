@@ -176,7 +176,7 @@ uint16 I2c_ReadControl()
     uint16 value;
     
     value = i2c_buf.read_write.control;
-    i2c_buf.read_write.control = 0;
+    //i2c_buf.read_write.control = 0;
     
     //value |= CONTROL_ENABLE_CALIBRATION_BIT;
     //value |= CONTROL_VALIDATE_CALIBRATION_BIT;
@@ -187,14 +187,14 @@ uint16 I2c_ReadControl()
 
 int16 I2c_LeftReadCmdVelocity()
 {
-    //return i2c_buf.read_write.left_cmd_velocity;
-    return 300;
+    //i2c_buf.read_write.left_cmd_velocity = 300;
+    return i2c_buf.read_write.left_cmd_velocity;
 }
 
 int16 I2c_RightReadCmdVelocity()
 {
-    //return i2c_buf.read_write.right_cmd_velocity;
-    return 300;
+    //i2c_buf.read_write.right_cmd_velocity = 300;
+    return i2c_buf.read_write.right_cmd_velocity;
 }
 
 void I2c_WriteCalReg(uint16 value)
@@ -272,9 +272,9 @@ void I2c_WriteRearInfraredDistance(uint8 offset, uint8 distance)
     }            
 }
 
-void I2c_WriteHeartbeat(uint32 value)
+void I2c_UpdateHeartbeat()
 {
-    i2c_buf.read_only.heartbeat = value;
+    i2c_buf.read_only.heartbeat++;
 }
 
 /* [] END OF FILE */

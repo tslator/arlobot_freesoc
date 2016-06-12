@@ -18,9 +18,7 @@
 #define CONTROL_POWER_ON_MOTOR_BIT       (0x0001)
 #define CONTROL_CLEAR_ENCODER_COUNT_BIT  (0x0002)
 #define CONTROL_ENABLE_CALIBRATION_BIT   (0x0004)
-#define CONTROL_UPLOAD_CALIBRATION_BIT   (0x0008)
-#define CONTROL_DOWNLOAD_CALIBRATION_BIT (0x0010)
-#define CONTROL_VALIDATE_CALIBRATION_BIT (0x0020)
+#define CONTROL_VALIDATE_CALIBRATION_BIT (0x0008)
     
 
 #define STATUS_HB25_CNTRL_INIT_BIT (0x0001)
@@ -49,7 +47,7 @@ void I2c_WriteFrontInfraredDistance(uint8 offset, uint8 distance);
 void I2c_WriteRearInfraredDistance(uint8 offset, uint8 distance);
 void I2c_WriteOdom(float x_dist, float y_dist, float heading, float linear_speed, float angular_speed);
 
-void I2c_WriteHeartbeat();
+void I2c_UpdateHeartbeat();
 
 
 

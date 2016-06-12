@@ -13,15 +13,17 @@
 #include "diag.h"
 #include "time.h"
 #include "i2c.h"
+#include "utils.h"
+#include "config.h"
 
-#define HEARTBEAT_PERIOD (1000)
+#define DIAG_HEARTBEAT_MS SAMPLE_TIME_MS(HEARTBEAT_RATE)
 
 static uint32 last_heartbeat_time;
-static uint32 heartbeat;
 
 void Diag_Init()
 {
     Mainloop_Pin_Write(0);
+    last_heartbeat_time = millis();
 }
 
 void Diag_Start()
@@ -31,16 +33,15 @@ void Diag_Start()
 
 void Diag_Update()
 {
-    uint32 now;
+    static uint32 delta_time;
     
-    now = millis();
-    
+    delta_time = millis() - last_heartbeat_time;
     // Increment a counter that can be read over I2C
-    //if ((now - last_heartbeat_time) > HEARTBEAT_PERIOD)
-    //{
-    //    heartbeat++;
-    //    I2c_WriteHeartbeat(heartbeat);
-    //}
+    if (delta_time > DIAG_HEARTBEAT_MS)
+    {
+        last_heartbeat_time = millis();
+        I2c_UpdateHeartbeat();
+    }
 }
 
 /* [] END OF FILE */

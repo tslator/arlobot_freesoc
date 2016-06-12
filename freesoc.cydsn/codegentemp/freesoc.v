@@ -1,6 +1,6 @@
 // ======================================================================
 // freesoc.v generated from TopDesign.cysch
-// 06/09/2016 at 11:22
+// 06/12/2016 at 13:02
 // This file is auto generated. ANY EDITS YOU MAKE MAY BE LOST WHEN THIS FILE IS REGENERATED!!!
 // ======================================================================
 
@@ -1890,7 +1890,7 @@ module top ;
           wire  Net_8130;
           wire  Net_8131;
           wire  Net_8147;
-          wire  Net_8153;
+          wire  Net_8676;
           wire  Net_8022;
           wire  Net_8023;
           wire  Net_8024;
@@ -1909,13 +1909,11 @@ module top ;
           wire  Net_8115;
           wire  Net_8522;
           wire  Net_8521;
-          wire  Net_450;
+          wire  Net_8675;
           wire  Net_96;
           wire  Net_95;
           wire  Net_8520;
           wire  Net_8519;
-          wire  Net_414;
-          wire  Net_8493;
           wire  Net_3174;
           wire  Net_3173;
           wire  Net_7948;
@@ -1933,7 +1931,7 @@ module top ;
     electrical  Net_167;
     electrical  Net_166;
     electrical  Net_165;
-          wire  Net_191;
+          wire  Net_8674;
           wire  Net_7937;
           wire  Net_7936;
           wire  Net_7935;
@@ -1949,15 +1947,17 @@ module top ;
     electrical  Net_4;
     electrical  Net_3;
     electrical  Net_2;
-          wire  Net_17;
+          wire  Net_6336;
+          wire  Net_6268;
+          wire  Net_8613;
+          wire  Net_8580;
+          wire  Net_7952;
           wire  Net_7860;
           wire  Net_7792;
     electrical  Net_5169;
     electrical  Net_4398;
-          wire  Net_106;
           wire  Net_8114;
           wire  Net_8008;
-          wire  Net_7952;
           wire  Net_8007;
           wire  Net_8113;
           wire  Net_7954;
@@ -1966,9 +1966,6 @@ module top ;
           wire [2:0] Net_7964;
           wire [2:0] Net_7990;
           wire  Net_7989;
-          wire  Net_6336;
-          wire  Net_6268;
-          wire  Net_28;
     electrical  Net_42;
           wire  Net_39;
           wire  Net_50;
@@ -1978,7 +1975,6 @@ module top ;
     electrical  Net_46;
     electrical  Net_48;
     electrical  Net_49;
-          wire  Net_1586;
           wire  Net_1537;
           wire  Net_946;
           wire  Net_1584;
@@ -1988,18 +1984,6 @@ module top ;
     electrical  Net_1303;
     electrical  Net_146;
     electrical  Net_144;
-
-
-	cy_clock_v1_0
-		#(.id("8350eb28-6f99-420f-96df-b347b4efae34"),
-		  .source_clock_id(""),
-		  .divisor(0),
-		  .period("1000000000"),
-		  .is_direct(0),
-		  .is_digital(1))
-		Left_PWM_1MHz
-		 (.clock_out(Net_1586));
-
 
 	wire [0:0] tmpOE__Left_HB25_PWM_Pin_net;
 	wire [0:0] tmpFB_0__Left_HB25_PWM_Pin_net;
@@ -2211,7 +2195,7 @@ module top ;
 
     PWM_v3_30_0 Left_HB25_PWM (
         .reset(1'b0),
-        .clock(Net_1586),
+        .clock(Net_8613),
         .tc(Net_7928),
         .pwm1(Net_7929),
         .pwm2(Net_7930),
@@ -2228,14 +2212,14 @@ module top ;
 
 
 	cy_clock_v1_0
-		#(.id("d0bca0a4-aeab-4a27-8ab3-8d4b2e18dc33"),
-		  .source_clock_id(""),
+		#(.id("889d33ae-a321-4ecf-8f11-a21fd4007fd2"),
+		  .source_clock_id("35097f33-2624-4881-924b-731442ae2afa"),
 		  .divisor(0),
-		  .period("1000000000"),
-		  .is_direct(0),
+		  .period("0"),
+		  .is_direct(1),
 		  .is_digital(1))
-		Right_PWM_1MHz
-		 (.clock_out(Net_28));
+		PWM_Clock
+		 (.clock_out(Net_8613));
 
 
 	wire [0:0] tmpOE__Right_HB25_PWM_Pin_net;
@@ -2448,7 +2432,7 @@ module top ;
 
     PWM_v3_30_1 Right_HB25_PWM (
         .reset(1'b0),
-        .clock(Net_28),
+        .clock(Net_8613),
         .tc(Net_7939),
         .pwm1(Net_7940),
         .pwm2(Net_7941),
@@ -2611,23 +2595,11 @@ module top ;
 
 	assign tmpOE__Left_Encoder_B_net = (`CYDEV_CHIP_MEMBER_USED == `CYDEV_CHIP_MEMBER_3A && `CYDEV_CHIP_REVISION_USED < `CYDEV_CHIP_REVISION_3A_ES3) ? ~{1'b1} : {1'b1};
 
-
-	cy_clock_v1_0
-		#(.id("3eaeb377-a99d-46f3-99f5-d7d192cf9960"),
-		  .source_clock_id(""),
-		  .divisor(0),
-		  .period("83333333.3333333"),
-		  .is_direct(0),
-		  .is_digital(1))
-		Left_Encoder_Clock
-		 (.clock_out(Net_8493));
-
-
     QuadDec_v3_0_3 Left_QuadDec (
         .quad_A(Net_3173),
         .quad_B(Net_3174),
         .index(1'b0),
-        .clock(Net_8493),
+        .clock(Net_8580),
         .interrupt(Net_8520));
     defparam Left_QuadDec.CounterResolution = 4;
     defparam Left_QuadDec.UsingGlitchFiltering = 1;
@@ -2783,21 +2755,21 @@ module top ;
 
 
 	cy_clock_v1_0
-		#(.id("0e66fe50-af58-487d-8f52-0ec1004d8d0c"),
-		  .source_clock_id(""),
+		#(.id("c6755923-c513-44a4-8b34-b466d8980ed8"),
+		  .source_clock_id("35097f33-2624-4881-924b-731442ae2afa"),
 		  .divisor(0),
-		  .period("83333333.3333333"),
-		  .is_direct(0),
+		  .period("0"),
+		  .is_direct(1),
 		  .is_digital(1))
-		Right_Encoder_Clock
-		 (.clock_out(Net_106));
+		Encoder_Clock
+		 (.clock_out(Net_8580));
 
 
     QuadDec_v3_0_5 Right_QuadDec (
         .quad_A(Net_95),
         .quad_B(Net_96),
         .index(1'b0),
-        .clock(Net_106),
+        .clock(Net_8580),
         .interrupt(Net_8522));
     defparam Right_QuadDec.CounterResolution = 4;
     defparam Right_QuadDec.UsingGlitchFiltering = 1;
@@ -3148,11 +3120,11 @@ module top ;
 
 
 	cy_clock_v1_0
-		#(.id("7ee43657-7b69-42ac-8f8d-ffc57406534f"),
-		  .source_clock_id(""),
+		#(.id("090b7f13-7340-4265-b2ef-c1c1aabadcfb"),
+		  .source_clock_id("35097f33-2624-4881-924b-731442ae2afa"),
 		  .divisor(0),
-		  .period("1000000000"),
-		  .is_direct(0),
+		  .period("0"),
+		  .is_direct(1),
 		  .is_digital(1))
 		Echo_Clock
 		 (.clock_out(Net_7952));

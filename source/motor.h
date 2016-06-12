@@ -15,6 +15,7 @@
 
 #include <project.h>
 #include "config.h"
+#include "cal.h"
 
 void Motor_Init();
 void Motor_Start();
@@ -31,8 +32,8 @@ uint16 Motor_LeftGetPwm();
 uint16 Motor_RightGetPwm();
 
 void Motor_CollectPwmCpsSamples(WHEEL_TYPE wheel, uint8 reverse_pwm, uint8 num_avg_iter, uint16 *pwm_samples, int32 *cps_samples);
-void Motor_LeftSetCalibration(int32 *fwd_cps_samples, uint16 *fwd_pwm_samples, int32 *bwd_cps_samples, uint16 *bwd_pwm_samples);
-void Motor_RightSetCalibration(int32 *fwd_cps_samples, uint16 *fwd_pwm_samples, int32 *bwd_cps_samples, uint16 *bwd_pwm_samples);
+void Motor_LeftSetCalibration(CAL_DATA_TYPE *fwd_cal_data, CAL_DATA_TYPE *bwd_cal_data);
+void Motor_RightSetCalibration(CAL_DATA_TYPE *fwd_cal_data, CAL_DATA_TYPE *bwd_cal_data);
 
 #endif
 

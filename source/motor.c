@@ -38,18 +38,8 @@
 #define HB25_DISABLE    (1)
 
 
-typedef struct _CAL_DATA_TYPE
-{
-    int32 cps_data[CAL_DATA_SIZE];
-    int32 cps_min;
-    int32 cps_max;
-    int   cps_scale;
-    uint16 pwm_data[CAL_DATA_SIZE];
-} CAL_DATA_TYPE;
-
 typedef void (*HB25_ENABLE_TYPE)(uint8);
 typedef void (*START_PWM_TYPE)();
-//typedef void (*SET_PWM_TYPE)(uint32);
 typedef void (*SET_PWM_TYPE)(uint16);
 typedef void (*STOP_PWM_TYPE)();
 
@@ -57,8 +47,8 @@ typedef struct _motor_tag
 {
     uint16 pwm;
     float cps;
-    CAL_DATA_TYPE fwd_cal_data;
-    CAL_DATA_TYPE bwd_cal_data;
+    CAL_DATA_TYPE *p_fwd_cal_data;
+    CAL_DATA_TYPE *p_bwd_cal_data;
     HB25_ENABLE_TYPE enable;
     START_PWM_TYPE   start;
     STOP_PWM_TYPE    stop;
@@ -97,7 +87,13 @@ Backward PWM
 static MOTOR_TYPE left_motor = {
     LEFT_PWM_STOP,
     0,
+    0,
+    0,
+#ifdef OLD        
     {
+        0,
+        28006,
+        CAL_SCALE_FACTOR,
         { /*  1     2     3     4     5     6      7    8     9     10  */
                 0,    0,    0,   95,  605, 1270, 1922, 2580, 3251, 3917,
              4504, 5040, 5629, 6395, 7064, 7591, 8220, 8890, 9404,10080,
@@ -106,9 +102,6 @@ static MOTOR_TYPE left_motor = {
             22157,22660,23174,23684,24175,24667,25173,26212,27496,27940,
             28006
         },
-        0,
-        28006,
-        CAL_SCALE_FACTOR,
         {1500, 1510, 1520, 1530, 1540, 1550, 1560, 1570, 1580, 1590, 
          1600, 1610, 1620, 1630, 1640, 1650, 1660, 1670, 1680, 1690, 
          1700, 1710, 1720, 1730, 1740, 1750, 1760, 1770, 1780, 1790,  
@@ -133,6 +126,7 @@ static MOTOR_TYPE left_motor = {
          1300,1310,1320,1330,1340,1350,1360,1370,1380,1390,
          1400,1410,1420,1430,1440,1450,1460,1470,1480,1490,1500}
     },
+#endif
     Left_HB25_Enable_Pin_Write,
     Left_HB25_PWM_Start,
     Left_HB25_PWM_Stop,
@@ -174,6 +168,9 @@ Backward PWM
 static MOTOR_TYPE right_motor = {
     RIGHT_PWM_STOP,
     0,
+    0,
+    0,
+#ifdef OLD        
     {
         { /*  1     2     3     4     5     6     7     8     9     10  */
                 0,    0,    0,    0,    0,  132,  679, 1344, 1990, 2558,
@@ -216,6 +213,7 @@ static MOTOR_TYPE right_motor = {
             1500
         }
     },
+#endif    
     Right_HB25_Enable_Pin_Write,
     Right_HB25_PWM_Start,
     Right_HB25_PWM_Stop,
@@ -226,7 +224,6 @@ static MOTOR_TYPE right_motor = {
 static void DumpMotor(MOTOR_TYPE *motor)
 {
     char cps_str[10];
-    //char buf[100];
     
     ftoa(motor->cps, cps_str, 3);
     
@@ -289,14 +286,14 @@ static void calc_motor_output_from_cps(float cps, MOTOR_TYPE *motor)
 
     if (cps > 0)
     {
-        tgt_cps = constrain((int32)(cps * motor->fwd_cal_data.cps_scale), motor->fwd_cal_data.cps_min, motor->fwd_cal_data.cps_max);
-        motor->pwm = calculate_pwm(tgt_cps, &motor->fwd_cal_data.cps_data[0], &motor->fwd_cal_data.pwm_data[0], CAL_DATA_SIZE);
+        tgt_cps = constrain((int32)(cps * motor->p_fwd_cal_data->cps_scale), motor->p_fwd_cal_data->cps_min, motor->p_fwd_cal_data->cps_max);
+        motor->pwm = calculate_pwm(tgt_cps, &motor->p_fwd_cal_data->cps_data[0], &motor->p_fwd_cal_data->pwm_data[0], CAL_DATA_SIZE);
         motor->cps = tgt_cps;
     }
     else if (cps < 0)
     {   
-        tgt_cps = constrain((int32)(cps * motor->bwd_cal_data.cps_scale), motor->bwd_cal_data.cps_min, motor->bwd_cal_data.cps_max);
-        motor->pwm = calculate_pwm(tgt_cps, &motor->bwd_cal_data.cps_data[0], &motor->bwd_cal_data.pwm_data[0], CAL_DATA_SIZE);
+        tgt_cps = constrain((int32)(cps * motor->p_bwd_cal_data->cps_scale), motor->p_bwd_cal_data->cps_min, motor->p_bwd_cal_data->cps_max);
+        motor->pwm = calculate_pwm(tgt_cps, &motor->p_bwd_cal_data->cps_data[0], &motor->p_bwd_cal_data->pwm_data[0], CAL_DATA_SIZE);
         motor->cps = tgt_cps;
     }
     else
@@ -361,11 +358,11 @@ static void DumpMotorCal(char *name, MOTOR_TYPE *motor)
 
     Ser_PutString(name);
     
-    PrintFormatDataInt32("Forward CPS", CAL_DATA_SIZE, motor->fwd_cal_data.cps_data);
-    PrintFormatDataUint16("Forward PWM\r\n", CAL_DATA_SIZE, motor->fwd_cal_data.pwm_data);
+    PrintFormatDataInt32("Forward CPS", CAL_DATA_SIZE, motor->p_bwd_cal_data->cps_data);
+    PrintFormatDataUint16("Forward PWM\r\n", CAL_DATA_SIZE, motor->p_fwd_cal_data->pwm_data);
   
-    PrintFormatDataInt32("Backward CPS", CAL_DATA_SIZE, motor->bwd_cal_data.cps_data);
-    PrintFormatDataUint16("Backward PWM\r\n", CAL_DATA_SIZE, motor->bwd_cal_data.pwm_data);
+    PrintFormatDataInt32("Backward CPS", CAL_DATA_SIZE, motor->p_bwd_cal_data->cps_data);
+    PrintFormatDataUint16("Backward PWM\r\n", CAL_DATA_SIZE, motor->p_bwd_cal_data->pwm_data);
     
 }
 
@@ -377,6 +374,11 @@ void Motor_Init()
 
 void Motor_Start()
 {
+    Cal_LeftGetCalData(left_motor.p_fwd_cal_data, left_motor.p_bwd_cal_data);
+    Cal_RightGetCalData(right_motor.p_fwd_cal_data, right_motor.p_bwd_cal_data);
+    
+    
+    
     /* Enable the power on the HB-25 motor 
        Note: The HB-25 has a specific initialization sequence that is handled in hardware (see HB-25 reference).  
        All that is necessary in software is to enable power to the HB-25 motor controller and start the PWM.  
@@ -550,62 +552,18 @@ void Motor_CollectPwmCpsSamples(WHEEL_TYPE wheel, uint8 reverse_pwm, uint8 num_a
     motor->set_pwm(motor->pwm);
 }
 
-void Motor_LeftSetCalibration(int32 *fwd_cps_samples, uint16 *fwd_pwm_samples, int32 *bwd_cps_samples, uint16 *bwd_pwm_samples)
+void Motor_LeftSetCalibration(CAL_DATA_TYPE *fwd_cal_data, CAL_DATA_TYPE *bwd_cal_data)
 {
-    uint8 ii;
-    
-    int32 max_fwd_cps = 0;
-    int32 min_fwd_cps = 0x7fffffff;
-    int32 max_bwd_cps = 0;
-    int32 min_bwd_cps = 0x7fffffff;
-
-    for (ii = 0; ii < CAL_NUM_SAMPLES; ++ii)
-{
-        max_fwd_cps = max(max_fwd_cps, fwd_cps_samples[ii]);
-        min_fwd_cps = min(min_fwd_cps, fwd_cps_samples[ii]);
-        max_bwd_cps = max(max_bwd_cps, bwd_cps_samples[ii]);
-        min_bwd_cps = min(min_bwd_cps, bwd_cps_samples[ii]);
-        
-        left_motor.fwd_cal_data.cps_data[ii] = fwd_cps_samples[ii];
-        left_motor.fwd_cal_data.pwm_data[ii] = fwd_pwm_samples[ii];
-        left_motor.bwd_cal_data.cps_data[ii] = bwd_cps_samples[ii];
-        left_motor.bwd_cal_data.pwm_data[ii] = bwd_pwm_samples[ii];
-    }
-
-    left_motor.fwd_cal_data.cps_min = min_fwd_cps;
-    left_motor.fwd_cal_data.cps_max = max_fwd_cps;
-    left_motor.bwd_cal_data.cps_min = min_bwd_cps;
-    left_motor.bwd_cal_data.cps_max = max_bwd_cps;
+    left_motor.p_fwd_cal_data = fwd_cal_data;
+    left_motor.p_bwd_cal_data = bwd_cal_data;
     
     DumpMotorCal("Left\r\n", &left_motor);
 }
 
-void Motor_RightSetCalibration(int32 *fwd_cps_samples, uint16 *fwd_pwm_samples, int32 *bwd_cps_samples, uint16 *bwd_pwm_samples)
+void Motor_RightSetCalibration(CAL_DATA_TYPE *fwd_cal_data, CAL_DATA_TYPE *bwd_cal_data)
 {
-    uint8 ii;
-    
-    int32 max_fwd_cps = 0;
-    int32 min_fwd_cps = 0x7fffffff;
-    int32 max_bwd_cps = 0;
-    int32 min_bwd_cps = 0x7fffffff;
-    
-    for (ii = 0; ii < CAL_NUM_SAMPLES; ++ii)
-    {
-        max_fwd_cps = max(max_fwd_cps, fwd_cps_samples[ii]);
-        min_fwd_cps = min(min_fwd_cps, fwd_cps_samples[ii]);
-        max_bwd_cps = max(max_bwd_cps, bwd_cps_samples[ii]);
-        min_bwd_cps = min(min_bwd_cps, bwd_cps_samples[ii]);
-        
-        right_motor.fwd_cal_data.cps_data[ii] = fwd_cps_samples[ii];
-        right_motor.fwd_cal_data.pwm_data[ii] = fwd_pwm_samples[ii];
-        right_motor.bwd_cal_data.cps_data[ii] = bwd_cps_samples[ii];
-        right_motor.bwd_cal_data.pwm_data[ii] = bwd_pwm_samples[ii];
-    }
-    
-    right_motor.fwd_cal_data.cps_min = min_fwd_cps;
-    right_motor.fwd_cal_data.cps_max = max_fwd_cps;
-    right_motor.bwd_cal_data.cps_min = min_bwd_cps;
-    right_motor.bwd_cal_data.cps_max = max_bwd_cps;
+    right_motor.p_fwd_cal_data = fwd_cal_data;
+    right_motor.p_bwd_cal_data = bwd_cal_data;
     
     DumpMotorCal("Right\r\n", &right_motor);
 }

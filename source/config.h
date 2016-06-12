@@ -88,6 +88,7 @@ Sample Rates
 #define ENC_SAMPLE_RATE     (20) /* Hz */
 #define PID_SAMPLE_RATE     (20) /* Hz */
 #define ODOM_SAMPLE_RATE    (10) /* Hz */
+#define HEARTBEAT_RATE      (2)  /* Hz */
 
 /* The following defines and macro provide a mechanism to distribute the sampling across the main loop, i.e., keep the
    sampling from happening all of the same time, by introducing a one-time initial delay or sampling offset.

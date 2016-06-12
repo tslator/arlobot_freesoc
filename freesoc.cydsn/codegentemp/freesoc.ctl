@@ -1,6 +1,6 @@
 -- ======================================================================
 -- freesoc.ctl generated from freesoc
--- 06/09/2016 at 11:22
+-- 06/12/2016 at 13:02
 -- This file is auto generated. ANY EDITS YOU MAKE MAY BE LOST WHEN THIS FILE IS REGENERATED!!!
 -- ======================================================================
 

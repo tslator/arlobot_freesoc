@@ -2,7 +2,7 @@
 --	Conversion of freesoc.v to vh2:
 --
 --	Cypress Semiconductor - WARP Version 6.3 IR 41
---	Thu Jun 09 11:22:48 2016
+--	Sun Jun 12 13:03:00 2016
 --
 
 USE cypress.cypress.all;
@@ -12,7 +12,6 @@ ATTRIBUTE part_name of top_RTL:TYPE IS "cpsoc3";
 END top_RTL;
 --------------------------------------------------------
 ARCHITECTURE R_T_L OF top_RTL IS
-SIGNAL Net_1586 : bit;
 SIGNAL tmpOE__Left_HB25_PWM_Pin_net_0 : bit;
 SIGNAL zero : bit;
 SIGNAL tmpFB_0__Left_HB25_PWM_Pin_net_0 : bit;
@@ -41,6 +40,7 @@ SIGNAL cydff_1 : bit;
 SIGNAL Net_1582 : bit;
 SIGNAL \Left_HB25_PWM:PWMUDB:km_run\ : bit;
 SIGNAL \Left_HB25_PWM:PWMUDB:min_kill_reg\ : bit;
+SIGNAL Net_8613 : bit;
 SIGNAL \Left_HB25_PWM:PWMUDB:ClockOutFromEnBlock\ : bit;
 SIGNAL \Left_HB25_PWM:PWMUDB:ctrl_enable\ : bit;
 SIGNAL \Left_HB25_PWM:PWMUDB:control_7\ : bit;
@@ -441,7 +441,6 @@ SIGNAL Net_7928 : bit;
 SIGNAL \Left_HB25_PWM:Net_113\ : bit;
 SIGNAL \Left_HB25_PWM:Net_107\ : bit;
 SIGNAL \Left_HB25_PWM:Net_114\ : bit;
-SIGNAL Net_28 : bit;
 SIGNAL tmpOE__Right_HB25_PWM_Pin_net_0 : bit;
 SIGNAL tmpFB_0__Right_HB25_PWM_Pin_net_0 : bit;
 SIGNAL Net_41 : bit;
@@ -878,7 +877,6 @@ SIGNAL Net_3174 : bit;
 SIGNAL tmpIO_0__Left_Encoder_B_net_0 : bit;
 TERMINAL tmpSIOVREF__Left_Encoder_B_net_0 : bit;
 SIGNAL tmpINTERRUPT_0__Left_Encoder_B_net_0 : bit;
-SIGNAL Net_8493 : bit;
 SIGNAL Net_8520 : bit;
 SIGNAL \Left_QuadDec:Net_1129\ : bit;
 SIGNAL \Left_QuadDec:Cnt16:Net_43\ : bit;
@@ -890,6 +888,7 @@ SIGNAL \Left_QuadDec:Net_1251\ : bit;
 SIGNAL \Left_QuadDec:Cnt16:Net_95\ : bit;
 SIGNAL \Left_QuadDec:Cnt16:Net_91\ : bit;
 SIGNAL \Left_QuadDec:Cnt16:Net_102\ : bit;
+SIGNAL Net_8580 : bit;
 SIGNAL \Left_QuadDec:Cnt16:CounterUDB:ClockOutFromEnBlock\ : bit;
 SIGNAL \Left_QuadDec:Cnt16:CounterUDB:ctrl_cmod_2\ : bit;
 SIGNAL \Left_QuadDec:Cnt16:CounterUDB:ctrl_cmod_1\ : bit;
@@ -1115,7 +1114,6 @@ SIGNAL Net_96 : bit;
 SIGNAL tmpIO_0__Right_Encoder_B_net_0 : bit;
 TERMINAL tmpSIOVREF__Right_Encoder_B_net_0 : bit;
 SIGNAL tmpINTERRUPT_0__Right_Encoder_B_net_0 : bit;
-SIGNAL Net_106 : bit;
 SIGNAL Net_8522 : bit;
 SIGNAL \Right_QuadDec:Net_1129\ : bit;
 SIGNAL \Right_QuadDec:Cnt16:Net_43\ : bit;
@@ -2702,16 +2700,6 @@ Net_7988 <= ((Net_7990_2 and Net_7990_1 and Net_7990_0 and Net_7989));
 
 \Front_Echo_Timer:TimerUDB:trig_reg\ <= ((\Front_Echo_Timer:TimerUDB:timer_enable\ and \Front_Echo_Timer:TimerUDB:trig_rise_detected\));
 
-Left_PWM_1MHz:cy_clock_v1_0
-	GENERIC MAP(cy_registers=>"",
-		id=>"8350eb28-6f99-420f-96df-b347b4efae34",
-		source_clock_id=>"",
-		divisor=>0,
-		period=>"1000000000",
-		is_direct=>'0',
-		is_digital=>'1')
-	PORT MAP(clock_out=>Net_1586,
-		dig_domain_out=>open);
 Left_HB25_PWM_Pin:cy_psoc3_pins_v1_10
 	GENERIC MAP(id=>"5eb4675e-8b87-47b4-99fa-b644dfb4cbba",
 		drive_mode=>"010",
@@ -2875,7 +2863,7 @@ bufoe_1:cy_bufoe
 		yfb=>Net_1584);
 \Left_HB25_PWM:PWMUDB:clock_enable_block\:cy_psoc3_udb_clock_enable_v1_0
 	GENERIC MAP(sync_mode=>'1')
-	PORT MAP(clock_in=>Net_1586,
+	PORT MAP(clock_in=>Net_8613,
 		enable=>tmpOE__Left_HB25_PWM_Pin_net_0,
 		clock_out=>\Left_HB25_PWM:PWMUDB:ClockOutFromEnBlock\);
 \Left_HB25_PWM:PWMUDB:sP16:pwmdp:u0\:cy_psoc3_dp
@@ -3059,15 +3047,15 @@ bufoe_1:cy_bufoe
 \Left_HB25_PWM:PWMUDB:MODULE_1:g2:a0:g1:z1:s0:g1:u0:gs(8):g2:g3:ub\:cy_buf
 	PORT MAP(x=>zero,
 		y=>\Left_HB25_PWM:PWMUDB:MODULE_1:g2:a0:g1:z1:s0:g1:u0:c_8\);
-Right_PWM_1MHz:cy_clock_v1_0
+PWM_Clock:cy_clock_v1_0
 	GENERIC MAP(cy_registers=>"",
-		id=>"d0bca0a4-aeab-4a27-8ab3-8d4b2e18dc33",
-		source_clock_id=>"",
+		id=>"889d33ae-a321-4ecf-8f11-a21fd4007fd2",
+		source_clock_id=>"35097f33-2624-4881-924b-731442ae2afa",
 		divisor=>0,
-		period=>"1000000000",
-		is_direct=>'0',
+		period=>"0",
+		is_direct=>'1',
 		is_digital=>'1')
-	PORT MAP(clock_out=>Net_28,
+	PORT MAP(clock_out=>Net_8613,
 		dig_domain_out=>open);
 Right_HB25_PWM_Pin:cy_psoc3_pins_v1_10
 	GENERIC MAP(id=>"f8308eb2-91f6-4f55-939e-4cce05d79af9",
@@ -3232,7 +3220,7 @@ bufoe_2:cy_bufoe
 		yfb=>Net_51);
 \Right_HB25_PWM:PWMUDB:clock_enable_block\:cy_psoc3_udb_clock_enable_v1_0
 	GENERIC MAP(sync_mode=>'1')
-	PORT MAP(clock_in=>Net_28,
+	PORT MAP(clock_in=>Net_8613,
 		enable=>tmpOE__Left_HB25_PWM_Pin_net_0,
 		clock_out=>\Right_HB25_PWM:PWMUDB:ClockOutFromEnBlock\);
 \Right_HB25_PWM:PWMUDB:sP16:pwmdp:u0\:cy_psoc3_dp
@@ -3556,27 +3544,17 @@ Left_Encoder_B:cy_psoc3_pins_v1_10
 		out_clock_en=>tmpOE__Left_HB25_PWM_Pin_net_0,
 		out_reset=>zero,
 		interrupt=>tmpINTERRUPT_0__Left_Encoder_B_net_0);
-Left_Encoder_Clock:cy_clock_v1_0
-	GENERIC MAP(cy_registers=>"",
-		id=>"3eaeb377-a99d-46f3-99f5-d7d192cf9960",
-		source_clock_id=>"",
-		divisor=>0,
-		period=>"83333333.3333333",
-		is_direct=>'0',
-		is_digital=>'1')
-	PORT MAP(clock_out=>Net_8493,
-		dig_domain_out=>open);
 \Left_QuadDec:isr\:cy_isr_v1_0
 	GENERIC MAP(int_type=>"10")
 	PORT MAP(int_signal=>Net_8520);
 \Left_QuadDec:Cnt16:CounterUDB:clock_enable_block\:cy_psoc3_udb_clock_enable_v1_0
 	GENERIC MAP(sync_mode=>'1')
-	PORT MAP(clock_in=>Net_8493,
+	PORT MAP(clock_in=>Net_8580,
 		enable=>tmpOE__Left_HB25_PWM_Pin_net_0,
 		clock_out=>\Left_QuadDec:Cnt16:CounterUDB:ClockOutFromEnBlock\);
 \Left_QuadDec:Cnt16:CounterUDB:sCTRLReg:cy_psoc3_udb_Ctl_Clk_Sync\:cy_psoc3_udb_clock_enable_v1_0
 	GENERIC MAP(sync_mode=>'1')
-	PORT MAP(clock_in=>Net_8493,
+	PORT MAP(clock_in=>Net_8580,
 		enable=>tmpOE__Left_HB25_PWM_Pin_net_0,
 		clock_out=>\Left_QuadDec:Cnt16:CounterUDB:Clk_Ctl_i\);
 \Left_QuadDec:Cnt16:CounterUDB:sCTRLReg:ctrlreg\:cy_psoc3_control
@@ -3772,7 +3750,7 @@ Left_Encoder_Clock:cy_clock_v1_0
 		po=>open);
 \Left_QuadDec:bQuadDec:CtrlClkEn\:cy_psoc3_udb_clock_enable_v1_0
 	GENERIC MAP(sync_mode=>'1')
-	PORT MAP(clock_in=>Net_8493,
+	PORT MAP(clock_in=>Net_8580,
 		enable=>tmpOE__Left_HB25_PWM_Pin_net_0,
 		clock_out=>\Left_QuadDec:bQuadDec:sync_clock\);
 \Left_QuadDec:bQuadDec:genblk1:DelayA1\:cy_dff
@@ -3948,27 +3926,27 @@ Right_Encoder_B:cy_psoc3_pins_v1_10
 		out_clock_en=>tmpOE__Left_HB25_PWM_Pin_net_0,
 		out_reset=>zero,
 		interrupt=>tmpINTERRUPT_0__Right_Encoder_B_net_0);
-Right_Encoder_Clock:cy_clock_v1_0
+Encoder_Clock:cy_clock_v1_0
 	GENERIC MAP(cy_registers=>"",
-		id=>"0e66fe50-af58-487d-8f52-0ec1004d8d0c",
-		source_clock_id=>"",
+		id=>"c6755923-c513-44a4-8b34-b466d8980ed8",
+		source_clock_id=>"35097f33-2624-4881-924b-731442ae2afa",
 		divisor=>0,
-		period=>"83333333.3333333",
-		is_direct=>'0',
+		period=>"0",
+		is_direct=>'1',
 		is_digital=>'1')
-	PORT MAP(clock_out=>Net_106,
+	PORT MAP(clock_out=>Net_8580,
 		dig_domain_out=>open);
 \Right_QuadDec:isr\:cy_isr_v1_0
 	GENERIC MAP(int_type=>"10")
 	PORT MAP(int_signal=>Net_8522);
 \Right_QuadDec:Cnt16:CounterUDB:clock_enable_block\:cy_psoc3_udb_clock_enable_v1_0
 	GENERIC MAP(sync_mode=>'1')
-	PORT MAP(clock_in=>Net_106,
+	PORT MAP(clock_in=>Net_8580,
 		enable=>tmpOE__Left_HB25_PWM_Pin_net_0,
 		clock_out=>\Right_QuadDec:Cnt16:CounterUDB:ClockOutFromEnBlock\);
 \Right_QuadDec:Cnt16:CounterUDB:sCTRLReg:cy_psoc3_udb_Ctl_Clk_Sync\:cy_psoc3_udb_clock_enable_v1_0
 	GENERIC MAP(sync_mode=>'1')
-	PORT MAP(clock_in=>Net_106,
+	PORT MAP(clock_in=>Net_8580,
 		enable=>tmpOE__Left_HB25_PWM_Pin_net_0,
 		clock_out=>\Right_QuadDec:Cnt16:CounterUDB:Clk_Ctl_i\);
 \Right_QuadDec:Cnt16:CounterUDB:sCTRLReg:ctrlreg\:cy_psoc3_control
@@ -4164,7 +4142,7 @@ Right_Encoder_Clock:cy_clock_v1_0
 		po=>open);
 \Right_QuadDec:bQuadDec:CtrlClkEn\:cy_psoc3_udb_clock_enable_v1_0
 	GENERIC MAP(sync_mode=>'1')
-	PORT MAP(clock_in=>Net_106,
+	PORT MAP(clock_in=>Net_8580,
 		enable=>tmpOE__Left_HB25_PWM_Pin_net_0,
 		clock_out=>\Right_QuadDec:bQuadDec:sync_clock\);
 \Right_QuadDec:bQuadDec:genblk1:DelayA1\:cy_dff
@@ -4504,11 +4482,11 @@ Front_Echo_Pin_0:cy_psoc3_pins_v1_10
 		interrupt=>tmpINTERRUPT_0__Front_Echo_Pin_0_net_0);
 Echo_Clock:cy_clock_v1_0
 	GENERIC MAP(cy_registers=>"",
-		id=>"7ee43657-7b69-42ac-8f8d-ffc57406534f",
-		source_clock_id=>"",
+		id=>"090b7f13-7340-4265-b2ef-c1c1aabadcfb",
+		source_clock_id=>"35097f33-2624-4881-924b-731442ae2afa",
 		divisor=>0,
-		period=>"1000000000",
-		is_direct=>'0',
+		period=>"0",
+		is_direct=>'1',
 		is_digital=>'1')
 	PORT MAP(clock_out=>Net_7952,
 		dig_domain_out=>open);

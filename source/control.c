@@ -45,17 +45,6 @@ void Control_Update()
         Cal_Update();
     }
     
-    /* Upload calibration values */
-    if (control & CONTROL_UPLOAD_CALIBRATION_BIT)
-    {
-        Cal_Upload();
-    }
-
-    if (control & CONTROL_DOWNLOAD_CALIBRATION_BIT)
-    {
-        Cal_Download();
-    }
-    
     if (control & CONTROL_VALIDATE_CALIBRATION_BIT)
     {
         Cal_Validate();

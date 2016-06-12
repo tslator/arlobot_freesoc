@@ -101,7 +101,6 @@ static void DumpPid(PID_TYPE *pid)
     char last_input_str[10];
     char iterm_str[10];
     char output_str[10];
-    char output[100];
 
     ftoa(pid->pid.setpoint, set_point_str, 3);
     ftoa(pid->pid.input, input_str, 3);

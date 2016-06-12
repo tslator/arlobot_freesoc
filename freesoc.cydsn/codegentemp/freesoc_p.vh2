@@ -1,5 +1,5 @@
 -- Project:   freesoc
--- Generated: 06/09/2016 11:22:58
+-- Generated: 06/12/2016 13:03:10
 -- PSoC Creator  3.3 CP2
 
 ENTITY freesoc IS
@@ -70,6 +70,10 @@ ARCHITECTURE __DEFAULT__ OF freesoc IS
     SIGNAL ClockBlock_PLL_OUT : bit;
     SIGNAL ClockBlock_XTAL : bit;
     SIGNAL ClockBlock_XTAL_32KHZ : bit;
+    SIGNAL ClockBlock_arlobot_sys_clock : bit;
+    ATTRIBUTE udbclken_assigned OF ClockBlock_arlobot_sys_clock : SIGNAL IS "True";
+    ATTRIBUTE global_signal OF ClockBlock_arlobot_sys_clock : SIGNAL IS true;
+    SIGNAL ClockBlock_arlobot_sys_clock_local : bit;
     SIGNAL Front_Echo_Pin_0(0)__PA : bit;
     SIGNAL Front_Echo_Pin_1(0)__PA : bit;
     SIGNAL Front_Echo_Pin_2(0)__PA : bit;
@@ -111,30 +115,14 @@ ARCHITECTURE __DEFAULT__ OF freesoc IS
     SIGNAL MODIN3_0 : bit;
     SIGNAL MODIN3_1 : bit;
     SIGNAL Mainloop_Pin(0)__PA : bit;
-    SIGNAL Net_106 : bit;
-    ATTRIBUTE udbclken_assigned OF Net_106 : SIGNAL IS "True";
-    ATTRIBUTE global_signal OF Net_106 : SIGNAL IS true;
-    SIGNAL Net_106_local : bit;
     SIGNAL Net_1537 : bit;
     SIGNAL Net_1584 : bit;
-    SIGNAL Net_1586 : bit;
-    ATTRIBUTE udbclken_assigned OF Net_1586 : SIGNAL IS "True";
-    ATTRIBUTE global_signal OF Net_1586 : SIGNAL IS true;
-    SIGNAL Net_1586_local : bit;
-    SIGNAL Net_28 : bit;
-    ATTRIBUTE udbclken_assigned OF Net_28 : SIGNAL IS "True";
-    ATTRIBUTE global_signal OF Net_28 : SIGNAL IS true;
-    SIGNAL Net_28_local : bit;
     SIGNAL Net_3173 : bit;
     SIGNAL Net_3174 : bit;
     SIGNAL Net_39 : bit;
     SIGNAL Net_51 : bit;
     SIGNAL Net_7792 : bit;
     SIGNAL Net_7860 : bit;
-    SIGNAL Net_7952 : bit;
-    ATTRIBUTE udbclken_assigned OF Net_7952 : SIGNAL IS "True";
-    ATTRIBUTE global_signal OF Net_7952 : SIGNAL IS true;
-    SIGNAL Net_7952_local : bit;
     SIGNAL Net_7954 : bit;
     SIGNAL Net_7963 : bit;
     SIGNAL Net_7964_0 : bit;
@@ -183,10 +171,6 @@ ARCHITECTURE __DEFAULT__ OF freesoc IS
     SIGNAL Net_8130 : bit;
     SIGNAL Net_8131 : bit;
     SIGNAL Net_8147 : bit;
-    SIGNAL Net_8493 : bit;
-    ATTRIBUTE udbclken_assigned OF Net_8493 : SIGNAL IS "True";
-    ATTRIBUTE global_signal OF Net_8493 : SIGNAL IS true;
-    SIGNAL Net_8493_local : bit;
     SIGNAL Net_8520 : bit;
     SIGNAL Net_8522 : bit;
     SIGNAL Net_8525 : bit;
@@ -515,9 +499,9 @@ ARCHITECTURE __DEFAULT__ OF freesoc IS
     ATTRIBUTE lib_model OF Right_Encoder_B(0) : LABEL IS "iocell8";
     ATTRIBUTE Location OF Right_Encoder_B(0) : LABEL IS "P2[7]";
     ATTRIBUTE lib_model OF I2C_SDA(0) : LABEL IS "iocell9";
-    ATTRIBUTE Location OF I2C_SDA(0) : LABEL IS "P12[5]";
+    ATTRIBUTE Location OF I2C_SDA(0) : LABEL IS "P12[1]";
     ATTRIBUTE lib_model OF I2C_SCL(0) : LABEL IS "iocell10";
-    ATTRIBUTE Location OF I2C_SCL(0) : LABEL IS "P12[4]";
+    ATTRIBUTE Location OF I2C_SCL(0) : LABEL IS "P12[0]";
     ATTRIBUTE lib_model OF Mainloop_Pin(0) : LABEL IS "iocell11";
     ATTRIBUTE Location OF Mainloop_Pin(0) : LABEL IS "P12[2]";
     ATTRIBUTE lib_model OF Front_Echo_Pin_0(0) : LABEL IS "iocell12";
@@ -530,95 +514,91 @@ ARCHITECTURE __DEFAULT__ OF freesoc IS
     ATTRIBUTE Location OF Front_Trigger_2(0) : LABEL IS "P15[2]";
     ATTRIBUTE lib_model OF Front_Trigger_3(0) : LABEL IS "iocell16";
     ATTRIBUTE Location OF Front_Trigger_3(0) : LABEL IS "P15[3]";
-    ATTRIBUTE lib_model OF Front_Trigger_4(0) : LABEL IS "iocell17";
-    ATTRIBUTE Location OF Front_Trigger_4(0) : LABEL IS "P12[0]";
-    ATTRIBUTE lib_model OF Front_Trigger_5(0) : LABEL IS "iocell18";
-    ATTRIBUTE Location OF Front_Trigger_5(0) : LABEL IS "P12[1]";
-    ATTRIBUTE lib_model OF Front_Trigger_6(0) : LABEL IS "iocell19";
+    ATTRIBUTE lib_model OF Front_Trigger_6(0) : LABEL IS "iocell17";
     ATTRIBUTE Location OF Front_Trigger_6(0) : LABEL IS "P1[6]";
-    ATTRIBUTE lib_model OF Front_Trigger_7(0) : LABEL IS "iocell20";
+    ATTRIBUTE lib_model OF Front_Trigger_7(0) : LABEL IS "iocell18";
     ATTRIBUTE Location OF Front_Trigger_7(0) : LABEL IS "P1[7]";
-    ATTRIBUTE lib_model OF Rear_Trigger_0(0) : LABEL IS "iocell21";
+    ATTRIBUTE lib_model OF Rear_Trigger_0(0) : LABEL IS "iocell19";
     ATTRIBUTE Location OF Rear_Trigger_0(0) : LABEL IS "P4[0]";
-    ATTRIBUTE lib_model OF Rear_Trigger_1(0) : LABEL IS "iocell22";
+    ATTRIBUTE lib_model OF Rear_Trigger_1(0) : LABEL IS "iocell20";
     ATTRIBUTE Location OF Rear_Trigger_1(0) : LABEL IS "P4[1]";
-    ATTRIBUTE lib_model OF Rear_Trigger_2(0) : LABEL IS "iocell23";
+    ATTRIBUTE lib_model OF Rear_Trigger_2(0) : LABEL IS "iocell21";
     ATTRIBUTE Location OF Rear_Trigger_2(0) : LABEL IS "P4[2]";
-    ATTRIBUTE lib_model OF Rear_Trigger_3(0) : LABEL IS "iocell24";
+    ATTRIBUTE lib_model OF Rear_Trigger_3(0) : LABEL IS "iocell22";
     ATTRIBUTE Location OF Rear_Trigger_3(0) : LABEL IS "P4[3]";
-    ATTRIBUTE lib_model OF Rear_Trigger_4(0) : LABEL IS "iocell25";
+    ATTRIBUTE lib_model OF Rear_Trigger_4(0) : LABEL IS "iocell23";
     ATTRIBUTE Location OF Rear_Trigger_4(0) : LABEL IS "P4[4]";
-    ATTRIBUTE lib_model OF Rear_Trigger_5(0) : LABEL IS "iocell26";
+    ATTRIBUTE lib_model OF Rear_Trigger_5(0) : LABEL IS "iocell24";
     ATTRIBUTE Location OF Rear_Trigger_5(0) : LABEL IS "P4[5]";
-    ATTRIBUTE lib_model OF Rear_Trigger_6(0) : LABEL IS "iocell27";
+    ATTRIBUTE lib_model OF Rear_Trigger_6(0) : LABEL IS "iocell25";
     ATTRIBUTE Location OF Rear_Trigger_6(0) : LABEL IS "P4[6]";
-    ATTRIBUTE lib_model OF Rear_Trigger_7(0) : LABEL IS "iocell28";
+    ATTRIBUTE lib_model OF Rear_Trigger_7(0) : LABEL IS "iocell26";
     ATTRIBUTE Location OF Rear_Trigger_7(0) : LABEL IS "P4[7]";
-    ATTRIBUTE lib_model OF Rear_Echo_Pin_0(0) : LABEL IS "iocell29";
+    ATTRIBUTE lib_model OF Rear_Echo_Pin_0(0) : LABEL IS "iocell27";
     ATTRIBUTE Location OF Rear_Echo_Pin_0(0) : LABEL IS "P5[0]";
-    ATTRIBUTE lib_model OF Front_Echo_Pin_1(0) : LABEL IS "iocell30";
+    ATTRIBUTE lib_model OF Front_Echo_Pin_1(0) : LABEL IS "iocell28";
     ATTRIBUTE Location OF Front_Echo_Pin_1(0) : LABEL IS "P6[3]";
-    ATTRIBUTE lib_model OF Front_Echo_Pin_2(0) : LABEL IS "iocell31";
+    ATTRIBUTE lib_model OF Front_Echo_Pin_2(0) : LABEL IS "iocell29";
     ATTRIBUTE Location OF Front_Echo_Pin_2(0) : LABEL IS "P6[4]";
-    ATTRIBUTE lib_model OF Front_Echo_Pin_3(0) : LABEL IS "iocell32";
+    ATTRIBUTE lib_model OF Front_Echo_Pin_3(0) : LABEL IS "iocell30";
     ATTRIBUTE Location OF Front_Echo_Pin_3(0) : LABEL IS "P6[5]";
-    ATTRIBUTE lib_model OF Front_Echo_Pin_4(0) : LABEL IS "iocell33";
+    ATTRIBUTE lib_model OF Front_Echo_Pin_4(0) : LABEL IS "iocell31";
     ATTRIBUTE Location OF Front_Echo_Pin_4(0) : LABEL IS "P6[6]";
-    ATTRIBUTE lib_model OF Front_Echo_Pin_5(0) : LABEL IS "iocell34";
+    ATTRIBUTE lib_model OF Front_Echo_Pin_5(0) : LABEL IS "iocell32";
     ATTRIBUTE Location OF Front_Echo_Pin_5(0) : LABEL IS "P6[7]";
-    ATTRIBUTE lib_model OF Front_Echo_Pin_6(0) : LABEL IS "iocell35";
+    ATTRIBUTE lib_model OF Front_Echo_Pin_6(0) : LABEL IS "iocell33";
     ATTRIBUTE Location OF Front_Echo_Pin_6(0) : LABEL IS "P15[4]";
-    ATTRIBUTE lib_model OF Front_Echo_Pin_7(0) : LABEL IS "iocell36";
+    ATTRIBUTE lib_model OF Front_Echo_Pin_7(0) : LABEL IS "iocell34";
     ATTRIBUTE Location OF Front_Echo_Pin_7(0) : LABEL IS "P15[5]";
-    ATTRIBUTE lib_model OF Rear_Echo_Pin_1(0) : LABEL IS "iocell37";
+    ATTRIBUTE lib_model OF Rear_Echo_Pin_1(0) : LABEL IS "iocell35";
     ATTRIBUTE Location OF Rear_Echo_Pin_1(0) : LABEL IS "P5[1]";
-    ATTRIBUTE lib_model OF Rear_Echo_Pin_2(0) : LABEL IS "iocell38";
+    ATTRIBUTE lib_model OF Rear_Echo_Pin_2(0) : LABEL IS "iocell36";
     ATTRIBUTE Location OF Rear_Echo_Pin_2(0) : LABEL IS "P5[2]";
-    ATTRIBUTE lib_model OF Rear_Echo_Pin_3(0) : LABEL IS "iocell39";
+    ATTRIBUTE lib_model OF Rear_Echo_Pin_3(0) : LABEL IS "iocell37";
     ATTRIBUTE Location OF Rear_Echo_Pin_3(0) : LABEL IS "P5[3]";
-    ATTRIBUTE lib_model OF Rear_Echo_Pin_4(0) : LABEL IS "iocell40";
+    ATTRIBUTE lib_model OF Rear_Echo_Pin_4(0) : LABEL IS "iocell38";
     ATTRIBUTE Location OF Rear_Echo_Pin_4(0) : LABEL IS "P5[4]";
-    ATTRIBUTE lib_model OF Rear_Echo_Pin_5(0) : LABEL IS "iocell41";
+    ATTRIBUTE lib_model OF Rear_Echo_Pin_5(0) : LABEL IS "iocell39";
     ATTRIBUTE Location OF Rear_Echo_Pin_5(0) : LABEL IS "P5[5]";
-    ATTRIBUTE lib_model OF Rear_Echo_Pin_6(0) : LABEL IS "iocell42";
+    ATTRIBUTE lib_model OF Rear_Echo_Pin_6(0) : LABEL IS "iocell40";
     ATTRIBUTE Location OF Rear_Echo_Pin_6(0) : LABEL IS "P5[6]";
-    ATTRIBUTE lib_model OF Rear_Echo_Pin_7(0) : LABEL IS "iocell43";
+    ATTRIBUTE lib_model OF Rear_Echo_Pin_7(0) : LABEL IS "iocell41";
     ATTRIBUTE Location OF Rear_Echo_Pin_7(0) : LABEL IS "P5[7]";
-    ATTRIBUTE lib_model OF Infrared_Pin_0(0) : LABEL IS "iocell44";
+    ATTRIBUTE lib_model OF Infrared_Pin_0(0) : LABEL IS "iocell42";
     ATTRIBUTE Location OF Infrared_Pin_0(0) : LABEL IS "P3[0]";
-    ATTRIBUTE lib_model OF Infrared_Pin_1(0) : LABEL IS "iocell45";
+    ATTRIBUTE lib_model OF Infrared_Pin_1(0) : LABEL IS "iocell43";
     ATTRIBUTE Location OF Infrared_Pin_1(0) : LABEL IS "P3[1]";
-    ATTRIBUTE lib_model OF Infrared_Pin_2(0) : LABEL IS "iocell46";
+    ATTRIBUTE lib_model OF Infrared_Pin_2(0) : LABEL IS "iocell44";
     ATTRIBUTE Location OF Infrared_Pin_2(0) : LABEL IS "P3[2]";
-    ATTRIBUTE lib_model OF Infrared_Pin_3(0) : LABEL IS "iocell47";
+    ATTRIBUTE lib_model OF Infrared_Pin_3(0) : LABEL IS "iocell45";
     ATTRIBUTE Location OF Infrared_Pin_3(0) : LABEL IS "P3[3]";
-    ATTRIBUTE lib_model OF Infrared_Pin_4(0) : LABEL IS "iocell48";
+    ATTRIBUTE lib_model OF Infrared_Pin_4(0) : LABEL IS "iocell46";
     ATTRIBUTE Location OF Infrared_Pin_4(0) : LABEL IS "P3[4]";
-    ATTRIBUTE lib_model OF Infrared_Pin_5(0) : LABEL IS "iocell49";
+    ATTRIBUTE lib_model OF Infrared_Pin_5(0) : LABEL IS "iocell47";
     ATTRIBUTE Location OF Infrared_Pin_5(0) : LABEL IS "P3[5]";
-    ATTRIBUTE lib_model OF Infrared_Pin_6(0) : LABEL IS "iocell50";
+    ATTRIBUTE lib_model OF Infrared_Pin_6(0) : LABEL IS "iocell48";
     ATTRIBUTE Location OF Infrared_Pin_6(0) : LABEL IS "P3[6]";
-    ATTRIBUTE lib_model OF Infrared_Pin_7(0) : LABEL IS "iocell51";
+    ATTRIBUTE lib_model OF Infrared_Pin_7(0) : LABEL IS "iocell49";
     ATTRIBUTE Location OF Infrared_Pin_7(0) : LABEL IS "P3[7]";
-    ATTRIBUTE lib_model OF Infrared_Pin_8(0) : LABEL IS "iocell52";
+    ATTRIBUTE lib_model OF Infrared_Pin_8(0) : LABEL IS "iocell50";
     ATTRIBUTE Location OF Infrared_Pin_8(0) : LABEL IS "P0[0]";
-    ATTRIBUTE lib_model OF Infrared_Pin_9(0) : LABEL IS "iocell53";
+    ATTRIBUTE lib_model OF Infrared_Pin_9(0) : LABEL IS "iocell51";
     ATTRIBUTE Location OF Infrared_Pin_9(0) : LABEL IS "P0[1]";
-    ATTRIBUTE lib_model OF Infrared_Pin_10(0) : LABEL IS "iocell54";
+    ATTRIBUTE lib_model OF Infrared_Pin_10(0) : LABEL IS "iocell52";
     ATTRIBUTE Location OF Infrared_Pin_10(0) : LABEL IS "P0[2]";
-    ATTRIBUTE lib_model OF Infrared_Pin_11(0) : LABEL IS "iocell55";
+    ATTRIBUTE lib_model OF Infrared_Pin_11(0) : LABEL IS "iocell53";
     ATTRIBUTE Location OF Infrared_Pin_11(0) : LABEL IS "P0[3]";
-    ATTRIBUTE lib_model OF Infrared_Pin_12(0) : LABEL IS "iocell56";
+    ATTRIBUTE lib_model OF Infrared_Pin_12(0) : LABEL IS "iocell54";
     ATTRIBUTE Location OF Infrared_Pin_12(0) : LABEL IS "P0[4]";
-    ATTRIBUTE lib_model OF Infrared_Pin_13(0) : LABEL IS "iocell57";
+    ATTRIBUTE lib_model OF Infrared_Pin_13(0) : LABEL IS "iocell55";
     ATTRIBUTE Location OF Infrared_Pin_13(0) : LABEL IS "P0[5]";
-    ATTRIBUTE lib_model OF Infrared_Pin_14(0) : LABEL IS "iocell58";
+    ATTRIBUTE lib_model OF Infrared_Pin_14(0) : LABEL IS "iocell56";
     ATTRIBUTE Location OF Infrared_Pin_14(0) : LABEL IS "P0[6]";
-    ATTRIBUTE lib_model OF Infrared_Pin_15(0) : LABEL IS "iocell59";
+    ATTRIBUTE lib_model OF Infrared_Pin_15(0) : LABEL IS "iocell57";
     ATTRIBUTE Location OF Infrared_Pin_15(0) : LABEL IS "P0[7]";
-    ATTRIBUTE lib_model OF \USBUART:Dm(0)\ : LABEL IS "iocell60";
+    ATTRIBUTE lib_model OF \USBUART:Dm(0)\ : LABEL IS "iocell58";
     ATTRIBUTE Location OF \USBUART:Dm(0)\ : LABEL IS "P15[7]";
-    ATTRIBUTE lib_model OF \USBUART:Dp(0)\ : LABEL IS "iocell61";
+    ATTRIBUTE lib_model OF \USBUART:Dp(0)\ : LABEL IS "iocell59";
     ATTRIBUTE Location OF \USBUART:Dp(0)\ : LABEL IS "P15[6]";
     ATTRIBUTE lib_model OF \Left_QuadDec:Cnt16:CounterUDB:reload\ : LABEL IS "macrocell1";
     ATTRIBUTE lib_model OF \Left_QuadDec:Cnt16:CounterUDB:status_0\ : LABEL IS "macrocell2";
@@ -1129,20 +1109,12 @@ BEGIN
             clk_bus => ClockBlock_BUS_CLK_local,
             dsi_clkin_div => open,
             dsi_glb_div => open,
-            dclk_glb_0 => Net_106,
-            dclk_0 => Net_106_local,
-            dclk_glb_1 => Net_8493,
-            dclk_1 => Net_8493_local,
-            dclk_glb_2 => \Front_ADC_SAR:Net_376\,
-            dclk_2 => \Front_ADC_SAR:Net_376_local\,
-            dclk_glb_3 => \Rear_ADC_SAR:Net_376\,
-            dclk_3 => \Rear_ADC_SAR:Net_376_local\,
-            dclk_glb_4 => Net_7952,
-            dclk_4 => Net_7952_local,
-            dclk_glb_5 => Net_1586,
-            dclk_5 => Net_1586_local,
-            dclk_glb_6 => Net_28,
-            dclk_6 => Net_28_local);
+            dclk_glb_0 => ClockBlock_arlobot_sys_clock,
+            dclk_0 => ClockBlock_arlobot_sys_clock_local,
+            dclk_glb_1 => \Front_ADC_SAR:Net_376\,
+            dclk_1 => \Front_ADC_SAR:Net_376_local\,
+            dclk_glb_2 => \Rear_ADC_SAR:Net_376\,
+            dclk_2 => \Rear_ADC_SAR:Net_376_local\);
 
     Left_HB25_PWM_Pin:logicalport
         GENERIC MAP(
@@ -7134,7 +7106,7 @@ BEGIN
             clk_inv => '0',
             clken_mode => 1)
         PORT MAP(
-            clock => Net_1586,
+            clock => ClockBlock_arlobot_sys_clock,
             cs_addr_2 => \Left_HB25_PWM:PWMUDB:tc_i\,
             cs_addr_1 => \Left_HB25_PWM:PWMUDB:runmode_enable\,
             busclk => ClockBlock_BUS_CLK,
@@ -7180,7 +7152,7 @@ BEGIN
             clk_inv => '0',
             clken_mode => 1)
         PORT MAP(
-            clock => Net_1586,
+            clock => ClockBlock_arlobot_sys_clock,
             cs_addr_2 => \Left_HB25_PWM:PWMUDB:tc_i\,
             cs_addr_1 => \Left_HB25_PWM:PWMUDB:runmode_enable\,
             ce0_comb => \Left_HB25_PWM:PWMUDB:cmp1_eq\,
@@ -7229,7 +7201,7 @@ BEGIN
             clk_inv => '0',
             clken_mode => 1)
         PORT MAP(
-            clock => Net_28,
+            clock => ClockBlock_arlobot_sys_clock,
             cs_addr_2 => \Right_HB25_PWM:PWMUDB:tc_i\,
             cs_addr_1 => \Right_HB25_PWM:PWMUDB:runmode_enable\,
             busclk => ClockBlock_BUS_CLK,
@@ -7275,7 +7247,7 @@ BEGIN
             clk_inv => '0',
             clken_mode => 1)
         PORT MAP(
-            clock => Net_28,
+            clock => ClockBlock_arlobot_sys_clock,
             cs_addr_2 => \Right_HB25_PWM:PWMUDB:tc_i\,
             cs_addr_1 => \Right_HB25_PWM:PWMUDB:runmode_enable\,
             ce0_comb => \Right_HB25_PWM:PWMUDB:cmp1_eq\,
@@ -7313,7 +7285,7 @@ BEGIN
             clk_inv => '0',
             clken_mode => 1)
         PORT MAP(
-            clock => Net_8493,
+            clock => ClockBlock_arlobot_sys_clock,
             control_7 => \Left_QuadDec:Cnt16:CounterUDB:control_7\,
             control_6 => \Left_QuadDec:Cnt16:CounterUDB:control_6\,
             control_5 => \Left_QuadDec:Cnt16:CounterUDB:control_5\,
@@ -7334,7 +7306,7 @@ BEGIN
             reset_inv => '0')
         PORT MAP(
             reset => \Left_QuadDec:Net_1260\,
-            clock => Net_8493,
+            clock => ClockBlock_arlobot_sys_clock,
             status_6 => \Left_QuadDec:Cnt16:CounterUDB:status_6\,
             status_5 => \Left_QuadDec:Cnt16:CounterUDB:status_5\,
             status_4 => open,
@@ -7371,7 +7343,7 @@ BEGIN
             clk_inv => '0',
             clken_mode => 1)
         PORT MAP(
-            clock => Net_8493,
+            clock => ClockBlock_arlobot_sys_clock,
             cs_addr_2 => \Left_QuadDec:Net_1251\,
             cs_addr_1 => \Left_QuadDec:Cnt16:CounterUDB:count_enable\,
             cs_addr_0 => \Left_QuadDec:Cnt16:CounterUDB:reload\,
@@ -7418,7 +7390,7 @@ BEGIN
             clk_inv => '0',
             clken_mode => 1)
         PORT MAP(
-            clock => Net_8493,
+            clock => ClockBlock_arlobot_sys_clock,
             cs_addr_2 => \Left_QuadDec:Net_1251\,
             cs_addr_1 => \Left_QuadDec:Cnt16:CounterUDB:count_enable\,
             cs_addr_0 => \Left_QuadDec:Cnt16:CounterUDB:reload\,
@@ -7449,7 +7421,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Left_QuadDec:bQuadDec:quad_A_delayed_0\,
-            clock_0 => Net_8493,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => Net_3173);
 
     \Left_QuadDec:bQuadDec:quad_A_delayed_1\:macrocell
@@ -7459,7 +7431,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Left_QuadDec:bQuadDec:quad_A_delayed_1\,
-            clock_0 => Net_8493,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Left_QuadDec:bQuadDec:quad_A_delayed_0\);
 
     \Left_QuadDec:bQuadDec:quad_A_delayed_2\:macrocell
@@ -7469,7 +7441,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Left_QuadDec:bQuadDec:quad_A_delayed_2\,
-            clock_0 => Net_8493,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Left_QuadDec:bQuadDec:quad_A_delayed_1\);
 
     \Left_QuadDec:bQuadDec:quad_B_delayed_0\:macrocell
@@ -7479,7 +7451,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Left_QuadDec:bQuadDec:quad_B_delayed_0\,
-            clock_0 => Net_8493,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => Net_3174);
 
     \Left_QuadDec:bQuadDec:quad_B_delayed_1\:macrocell
@@ -7489,7 +7461,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Left_QuadDec:bQuadDec:quad_B_delayed_1\,
-            clock_0 => Net_8493,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Left_QuadDec:bQuadDec:quad_B_delayed_0\);
 
     \Left_QuadDec:bQuadDec:quad_B_delayed_2\:macrocell
@@ -7499,7 +7471,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Left_QuadDec:bQuadDec:quad_B_delayed_2\,
-            clock_0 => Net_8493,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Left_QuadDec:bQuadDec:quad_B_delayed_1\);
 
     \Left_QuadDec:bQuadDec:Stsreg\:statusicell
@@ -7510,7 +7482,7 @@ BEGIN
             clk_inv => '0',
             clken_mode => 1)
         PORT MAP(
-            clock => Net_8493,
+            clock => ClockBlock_arlobot_sys_clock,
             status_6 => open,
             status_5 => open,
             status_4 => open,
@@ -7537,7 +7509,7 @@ BEGIN
             clk_inv => '0',
             clken_mode => 1)
         PORT MAP(
-            clock => Net_106,
+            clock => ClockBlock_arlobot_sys_clock,
             control_7 => \Right_QuadDec:Cnt16:CounterUDB:control_7\,
             control_6 => \Right_QuadDec:Cnt16:CounterUDB:control_6\,
             control_5 => \Right_QuadDec:Cnt16:CounterUDB:control_5\,
@@ -7558,7 +7530,7 @@ BEGIN
             reset_inv => '0')
         PORT MAP(
             reset => \Right_QuadDec:Net_1260\,
-            clock => Net_106,
+            clock => ClockBlock_arlobot_sys_clock,
             status_6 => \Right_QuadDec:Cnt16:CounterUDB:status_6\,
             status_5 => \Right_QuadDec:Cnt16:CounterUDB:status_5\,
             status_4 => open,
@@ -7595,7 +7567,7 @@ BEGIN
             clk_inv => '0',
             clken_mode => 1)
         PORT MAP(
-            clock => Net_106,
+            clock => ClockBlock_arlobot_sys_clock,
             cs_addr_2 => \Right_QuadDec:Net_1251\,
             cs_addr_1 => \Right_QuadDec:Cnt16:CounterUDB:count_enable\,
             cs_addr_0 => \Right_QuadDec:Cnt16:CounterUDB:reload\,
@@ -7642,7 +7614,7 @@ BEGIN
             clk_inv => '0',
             clken_mode => 1)
         PORT MAP(
-            clock => Net_106,
+            clock => ClockBlock_arlobot_sys_clock,
             cs_addr_2 => \Right_QuadDec:Net_1251\,
             cs_addr_1 => \Right_QuadDec:Cnt16:CounterUDB:count_enable\,
             cs_addr_0 => \Right_QuadDec:Cnt16:CounterUDB:reload\,
@@ -7673,7 +7645,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Right_QuadDec:bQuadDec:quad_A_delayed_0\,
-            clock_0 => Net_106,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => Net_95);
 
     \Right_QuadDec:bQuadDec:quad_A_delayed_1\:macrocell
@@ -7683,7 +7655,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Right_QuadDec:bQuadDec:quad_A_delayed_1\,
-            clock_0 => Net_106,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Right_QuadDec:bQuadDec:quad_A_delayed_0\);
 
     \Right_QuadDec:bQuadDec:quad_A_delayed_2\:macrocell
@@ -7693,7 +7665,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Right_QuadDec:bQuadDec:quad_A_delayed_2\,
-            clock_0 => Net_106,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Right_QuadDec:bQuadDec:quad_A_delayed_1\);
 
     \Right_QuadDec:bQuadDec:quad_B_delayed_0\:macrocell
@@ -7703,7 +7675,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Right_QuadDec:bQuadDec:quad_B_delayed_0\,
-            clock_0 => Net_106,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => Net_96);
 
     \Right_QuadDec:bQuadDec:quad_B_delayed_1\:macrocell
@@ -7713,7 +7685,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Right_QuadDec:bQuadDec:quad_B_delayed_1\,
-            clock_0 => Net_106,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Right_QuadDec:bQuadDec:quad_B_delayed_0\);
 
     \Right_QuadDec:bQuadDec:quad_B_delayed_2\:macrocell
@@ -7723,7 +7695,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Right_QuadDec:bQuadDec:quad_B_delayed_2\,
-            clock_0 => Net_106,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Right_QuadDec:bQuadDec:quad_B_delayed_1\);
 
     \Right_QuadDec:bQuadDec:Stsreg\:statusicell
@@ -7734,7 +7706,7 @@ BEGIN
             clk_inv => '0',
             clken_mode => 1)
         PORT MAP(
-            clock => Net_106,
+            clock => ClockBlock_arlobot_sys_clock,
             status_6 => open,
             status_5 => open,
             status_4 => open,
@@ -7862,7 +7834,7 @@ BEGIN
             reset_inv => '0')
         PORT MAP(
             reset => Net_8114,
-            clock => Net_7952,
+            clock => ClockBlock_arlobot_sys_clock,
             status_6 => open,
             status_5 => open,
             status_4 => open,
@@ -7900,7 +7872,7 @@ BEGIN
             clk_inv => '0',
             clken_mode => 1)
         PORT MAP(
-            clock => Net_7952,
+            clock => ClockBlock_arlobot_sys_clock,
             cs_addr_2 => Net_8114,
             cs_addr_1 => \Rear_Echo_Timer:TimerUDB:trig_reg\,
             cs_addr_0 => \Rear_Echo_Timer:TimerUDB:per_zero\,
@@ -7948,7 +7920,7 @@ BEGIN
             clk_inv => '0',
             clken_mode => 1)
         PORT MAP(
-            clock => Net_7952,
+            clock => ClockBlock_arlobot_sys_clock,
             cs_addr_2 => Net_8114,
             cs_addr_1 => \Rear_Echo_Timer:TimerUDB:trig_reg\,
             cs_addr_0 => \Rear_Echo_Timer:TimerUDB:per_zero\,
@@ -7981,7 +7953,7 @@ BEGIN
             reset_inv => '0')
         PORT MAP(
             reset => Net_8113,
-            clock => Net_7952,
+            clock => ClockBlock_arlobot_sys_clock,
             status_6 => open,
             status_5 => open,
             status_4 => open,
@@ -8019,7 +7991,7 @@ BEGIN
             clk_inv => '0',
             clken_mode => 1)
         PORT MAP(
-            clock => Net_7952,
+            clock => ClockBlock_arlobot_sys_clock,
             cs_addr_2 => Net_8113,
             cs_addr_1 => \Front_Echo_Timer:TimerUDB:trig_reg\,
             cs_addr_0 => \Front_Echo_Timer:TimerUDB:per_zero\,
@@ -8067,7 +8039,7 @@ BEGIN
             clk_inv => '0',
             clken_mode => 1)
         PORT MAP(
-            clock => Net_7952,
+            clock => ClockBlock_arlobot_sys_clock,
             cs_addr_2 => Net_8113,
             cs_addr_1 => \Front_Echo_Timer:TimerUDB:trig_reg\,
             cs_addr_0 => \Front_Echo_Timer:TimerUDB:per_zero\,
@@ -8286,7 +8258,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Left_HB25_PWM:PWMUDB:runmode_enable\,
-            clock_0 => Net_1586,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => tmpOE__bufoe_1_net_0);
 
     Net_1537:macrocell
@@ -8296,7 +8268,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => Net_1537,
-            clock_0 => Net_1586,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Left_HB25_PWM:PWMUDB:runmode_enable\,
             main_1 => \Left_HB25_PWM:PWMUDB:cmp1_eq\,
             main_2 => \Left_HB25_PWM:PWMUDB:cmp1_less\);
@@ -8319,7 +8291,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Right_HB25_PWM:PWMUDB:runmode_enable\,
-            clock_0 => Net_28,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => tmpOE__bufoe_2_net_0);
 
     Net_39:macrocell
@@ -8329,7 +8301,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => Net_39,
-            clock_0 => Net_28,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Right_HB25_PWM:PWMUDB:runmode_enable\,
             main_1 => \Right_HB25_PWM:PWMUDB:cmp1_eq\,
             main_2 => \Right_HB25_PWM:PWMUDB:cmp1_less\);
@@ -8341,7 +8313,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Left_QuadDec:Net_1251\,
-            clock_0 => Net_8493,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Left_QuadDec:Net_1251\,
             main_1 => \Left_QuadDec:Net_1260\,
             main_2 => \Left_QuadDec:bQuadDec:quad_A_filt\,
@@ -8358,7 +8330,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Left_QuadDec:Cnt16:CounterUDB:overflow_reg_i\,
-            clock_0 => Net_8493,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Left_QuadDec:Cnt16:CounterUDB:overflow\);
 
     \Left_QuadDec:Cnt16:CounterUDB:underflow_reg_i\:macrocell
@@ -8368,7 +8340,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Left_QuadDec:Cnt16:CounterUDB:underflow_reg_i\,
-            clock_0 => Net_8493,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Left_QuadDec:Cnt16:CounterUDB:status_1\);
 
     \Left_QuadDec:Net_1275\:macrocell
@@ -8378,7 +8350,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Left_QuadDec:Net_1275\,
-            clock_0 => Net_8493,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Left_QuadDec:Cnt16:CounterUDB:status_1\,
             main_1 => \Left_QuadDec:Cnt16:CounterUDB:overflow\);
 
@@ -8389,7 +8361,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Left_QuadDec:Cnt16:CounterUDB:prevCompare\,
-            clock_0 => Net_8493,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Left_QuadDec:Cnt16:CounterUDB:cmp_out_i\);
 
     \Left_QuadDec:Net_1251_split\:macrocell
@@ -8413,7 +8385,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Left_QuadDec:Cnt16:CounterUDB:count_stored_i\,
-            clock_0 => Net_8493,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Left_QuadDec:Net_1203\);
 
     \Left_QuadDec:Net_1203\:macrocell
@@ -8423,7 +8395,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Left_QuadDec:Net_1203\,
-            clock_0 => Net_8493,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Left_QuadDec:bQuadDec:quad_A_filt\,
             main_1 => \Left_QuadDec:bQuadDec:quad_B_filt\,
             main_2 => \Left_QuadDec:bQuadDec:error\,
@@ -8438,7 +8410,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Left_QuadDec:bQuadDec:quad_A_filt\,
-            clock_0 => Net_8493,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Left_QuadDec:bQuadDec:quad_A_delayed_0\,
             main_1 => \Left_QuadDec:bQuadDec:quad_A_delayed_1\,
             main_2 => \Left_QuadDec:bQuadDec:quad_A_delayed_2\,
@@ -8451,7 +8423,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Left_QuadDec:bQuadDec:quad_B_filt\,
-            clock_0 => Net_8493,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Left_QuadDec:bQuadDec:quad_B_delayed_0\,
             main_1 => \Left_QuadDec:bQuadDec:quad_B_delayed_1\,
             main_2 => \Left_QuadDec:bQuadDec:quad_B_delayed_2\,
@@ -8464,7 +8436,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Left_QuadDec:Net_1260\,
-            clock_0 => Net_8493,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Left_QuadDec:Net_1260\,
             main_1 => \Left_QuadDec:bQuadDec:error\,
             main_2 => \Left_QuadDec:bQuadDec:state_1\,
@@ -8477,7 +8449,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Left_QuadDec:bQuadDec:error\,
-            clock_0 => Net_8493,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Left_QuadDec:Net_1260\,
             main_1 => \Left_QuadDec:bQuadDec:quad_A_filt\,
             main_2 => \Left_QuadDec:bQuadDec:quad_B_filt\,
@@ -8492,7 +8464,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Left_QuadDec:bQuadDec:state_1\,
-            clock_0 => Net_8493,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Left_QuadDec:Net_1260\,
             main_1 => \Left_QuadDec:bQuadDec:quad_A_filt\,
             main_2 => \Left_QuadDec:bQuadDec:quad_B_filt\,
@@ -8507,7 +8479,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Left_QuadDec:bQuadDec:state_0\,
-            clock_0 => Net_8493,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Left_QuadDec:Net_1260\,
             main_1 => \Left_QuadDec:bQuadDec:quad_A_filt\,
             main_2 => \Left_QuadDec:bQuadDec:quad_B_filt\,
@@ -8522,7 +8494,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Right_QuadDec:Net_1251\,
-            clock_0 => Net_106,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Right_QuadDec:Net_1251\,
             main_1 => \Right_QuadDec:Net_1260\,
             main_2 => \Right_QuadDec:bQuadDec:quad_A_filt\,
@@ -8539,7 +8511,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Right_QuadDec:Cnt16:CounterUDB:overflow_reg_i\,
-            clock_0 => Net_106,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Right_QuadDec:Cnt16:CounterUDB:overflow\);
 
     \Right_QuadDec:Cnt16:CounterUDB:underflow_reg_i\:macrocell
@@ -8549,7 +8521,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Right_QuadDec:Cnt16:CounterUDB:underflow_reg_i\,
-            clock_0 => Net_106,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Right_QuadDec:Cnt16:CounterUDB:status_1\);
 
     \Right_QuadDec:Net_1275\:macrocell
@@ -8559,7 +8531,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Right_QuadDec:Net_1275\,
-            clock_0 => Net_106,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Right_QuadDec:Cnt16:CounterUDB:status_1\,
             main_1 => \Right_QuadDec:Cnt16:CounterUDB:overflow\);
 
@@ -8570,7 +8542,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Right_QuadDec:Cnt16:CounterUDB:prevCompare\,
-            clock_0 => Net_106,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Right_QuadDec:Cnt16:CounterUDB:cmp_out_i\);
 
     \Left_QuadDec:Net_1203_split\:macrocell
@@ -8594,7 +8566,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Right_QuadDec:Cnt16:CounterUDB:count_stored_i\,
-            clock_0 => Net_106,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Right_QuadDec:Net_1203\);
 
     \Right_QuadDec:Net_1203\:macrocell
@@ -8604,7 +8576,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Right_QuadDec:Net_1203\,
-            clock_0 => Net_106,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Right_QuadDec:bQuadDec:quad_A_filt\,
             main_1 => \Right_QuadDec:bQuadDec:quad_B_filt\,
             main_2 => \Right_QuadDec:bQuadDec:error\,
@@ -8619,7 +8591,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Right_QuadDec:bQuadDec:quad_A_filt\,
-            clock_0 => Net_106,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Right_QuadDec:bQuadDec:quad_A_delayed_0\,
             main_1 => \Right_QuadDec:bQuadDec:quad_A_delayed_1\,
             main_2 => \Right_QuadDec:bQuadDec:quad_A_delayed_2\,
@@ -8632,7 +8604,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Right_QuadDec:bQuadDec:quad_B_filt\,
-            clock_0 => Net_106,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Right_QuadDec:bQuadDec:quad_B_delayed_0\,
             main_1 => \Right_QuadDec:bQuadDec:quad_B_delayed_1\,
             main_2 => \Right_QuadDec:bQuadDec:quad_B_delayed_2\,
@@ -8645,7 +8617,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Right_QuadDec:Net_1260\,
-            clock_0 => Net_106,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Right_QuadDec:Net_1260\,
             main_1 => \Right_QuadDec:bQuadDec:error\,
             main_2 => \Right_QuadDec:bQuadDec:state_1\,
@@ -8658,7 +8630,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Right_QuadDec:bQuadDec:error\,
-            clock_0 => Net_106,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Right_QuadDec:Net_1260\,
             main_1 => \Right_QuadDec:bQuadDec:quad_A_filt\,
             main_2 => \Right_QuadDec:bQuadDec:quad_B_filt\,
@@ -8673,7 +8645,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Right_QuadDec:bQuadDec:state_1\,
-            clock_0 => Net_106,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Right_QuadDec:Net_1260\,
             main_1 => \Right_QuadDec:bQuadDec:quad_A_filt\,
             main_2 => \Right_QuadDec:bQuadDec:quad_B_filt\,
@@ -8688,7 +8660,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Right_QuadDec:bQuadDec:state_0\,
-            clock_0 => Net_106,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => \Right_QuadDec:Net_1260\,
             main_1 => \Right_QuadDec:bQuadDec:quad_A_filt\,
             main_2 => \Right_QuadDec:bQuadDec:quad_B_filt\,
@@ -8703,7 +8675,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Rear_Echo_Timer:TimerUDB:capture_last\,
-            clock_0 => Net_7952,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => Net_7990_2,
             main_1 => Net_7990_1,
             main_2 => Net_7990_0,
@@ -8737,7 +8709,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => MODIN3_1,
-            clock_0 => Net_7952,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => Net_8007,
             main_1 => Net_8114,
             main_2 => \Rear_Echo_Timer:TimerUDB:capture_last\,
@@ -8752,7 +8724,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => MODIN3_0,
-            clock_0 => Net_7952,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => Net_8007,
             main_1 => Net_8114,
             main_2 => \Rear_Echo_Timer:TimerUDB:capture_last\,
@@ -8767,7 +8739,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Rear_Echo_Timer:TimerUDB:capt_int_temp\,
-            clock_0 => Net_7952,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => Net_8007,
             main_1 => Net_8114,
             main_2 => \Rear_Echo_Timer:TimerUDB:capture_last\,
@@ -8782,7 +8754,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Rear_Echo_Timer:TimerUDB:timer_enable\,
-            clock_0 => Net_7952,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => Net_8007,
             main_1 => Net_8114,
             main_2 => \Rear_Echo_Timer:TimerUDB:capture_last\,
@@ -8798,7 +8770,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Rear_Echo_Timer:TimerUDB:trig_disable\,
-            clock_0 => Net_7952,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => Net_8114,
             main_1 => \Rear_Echo_Timer:TimerUDB:capture_last\,
             main_2 => \Rear_Echo_Timer:TimerUDB:timer_enable\,
@@ -8827,7 +8799,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Rear_Echo_Timer:TimerUDB:trig_rise_detected\,
-            clock_0 => Net_7952,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => Net_8007,
             main_1 => Net_8114,
             main_2 => \Rear_Echo_Timer:TimerUDB:capture_last\,
@@ -8840,7 +8812,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Rear_Echo_Timer:TimerUDB:trig_fall_detected\,
-            clock_0 => Net_7952,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => Net_8007,
             main_1 => Net_8114,
             main_2 => \Rear_Echo_Timer:TimerUDB:capture_last\,
@@ -8853,7 +8825,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Front_Echo_Timer:TimerUDB:capture_last\,
-            clock_0 => Net_7952,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => Net_7964_2,
             main_1 => Net_7964_1,
             main_2 => Net_7964_0,
@@ -8873,7 +8845,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Front_Echo_Timer:TimerUDB:timer_enable\,
-            clock_0 => Net_7952,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => Net_8089,
             main_1 => Net_8113,
             main_2 => \Front_Echo_Timer:TimerUDB:capture_last\,
@@ -8889,7 +8861,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Front_Echo_Timer:TimerUDB:trig_disable\,
-            clock_0 => Net_7952,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => Net_8113,
             main_1 => \Front_Echo_Timer:TimerUDB:capture_last\,
             main_2 => \Front_Echo_Timer:TimerUDB:timer_enable\,
@@ -8904,7 +8876,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Front_Echo_Timer:TimerUDB:trig_rise_detected\,
-            clock_0 => Net_7952,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => Net_8089,
             main_1 => Net_8113,
             main_2 => \Front_Echo_Timer:TimerUDB:capture_last\,
@@ -8917,7 +8889,7 @@ BEGIN
             clken_mode => 1)
         PORT MAP(
             q => \Front_Echo_Timer:TimerUDB:trig_fall_detected\,
-            clock_0 => Net_7952,
+            clock_0 => ClockBlock_arlobot_sys_clock,
             main_0 => Net_8089,
             main_1 => Net_8113,
             main_2 => \Front_Echo_Timer:TimerUDB:capture_last\,
