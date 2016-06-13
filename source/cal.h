@@ -35,8 +35,8 @@ void Cal_Start();
 void Cal_Update();
 void Cal_Validate();
 
-void Cal_LeftGetCalData(CAL_DATA_TYPE *fwd_cal_data, CAL_DATA_TYPE *bwd_cal_data);
-void Cal_RightGetCalData(CAL_DATA_TYPE *fwd_cal_data, CAL_DATA_TYPE *bwd_cal_data);
+void Cal_LeftGetCalData(CAL_DATA_TYPE **fwd_cal_data, CAL_DATA_TYPE **bwd_cal_data);
+void Cal_RightGetCalData(CAL_DATA_TYPE **fwd_cal_data, CAL_DATA_TYPE **bwd_cal_data);
 
     
 #endif

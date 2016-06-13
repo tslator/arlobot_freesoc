@@ -29,9 +29,8 @@ typedef enum {FORWARD_DIR, BACKWARD_DIR} DIR_TYPE;
 /*---------------------------------------------------------------------------------------------------------------------- 
     Communication
 ----------------------------------------------------------------------------------------------------------------------*/
-#define COMMS_DEBUG_ENABLED
 
-#define COMMS_DEBUG_ENABLED
+//#define COMMS_DEBUG_ENABLED
 #define I2C_ADDRESS (0x08)
 
 #define LEFT_PID_DUMP_ENABLED

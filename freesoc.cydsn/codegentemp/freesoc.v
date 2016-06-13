@@ -1,6 +1,6 @@
 // ======================================================================
 // freesoc.v generated from TopDesign.cysch
-// 06/12/2016 at 13:02
+// 06/12/2016 at 15:35
 // This file is auto generated. ANY EDITS YOU MAKE MAY BE LOST WHEN THIS FILE IS REGENERATED!!!
 // ======================================================================
 
@@ -1890,7 +1890,7 @@ module top ;
           wire  Net_8130;
           wire  Net_8131;
           wire  Net_8147;
-          wire  Net_8676;
+          wire  Net_8772;
           wire  Net_8022;
           wire  Net_8023;
           wire  Net_8024;
@@ -1909,7 +1909,7 @@ module top ;
           wire  Net_8115;
           wire  Net_8522;
           wire  Net_8521;
-          wire  Net_8675;
+          wire  Net_8771;
           wire  Net_96;
           wire  Net_95;
           wire  Net_8520;
@@ -1931,7 +1931,7 @@ module top ;
     electrical  Net_167;
     electrical  Net_166;
     electrical  Net_165;
-          wire  Net_8674;
+          wire  Net_8770;
           wire  Net_7937;
           wire  Net_7936;
           wire  Net_7935;
@@ -2212,14 +2212,14 @@ module top ;
 
 
 	cy_clock_v1_0
-		#(.id("889d33ae-a321-4ecf-8f11-a21fd4007fd2"),
-		  .source_clock_id("35097f33-2624-4881-924b-731442ae2afa"),
+		#(.id("fcfe1954-f751-4d6e-b575-f69db78266f1"),
+		  .source_clock_id("61737EF6-3B74-48f9-8B91-F7473A442AE7"),
 		  .divisor(0),
-		  .period("0"),
-		  .is_direct(1),
+		  .period("200000000000"),
+		  .is_direct(0),
 		  .is_digital(1))
-		PWM_Clock
-		 (.clock_out(Net_8613));
+		Encoder_Clock
+		 (.clock_out(Net_8580));
 
 
 	wire [0:0] tmpOE__Right_HB25_PWM_Pin_net;
@@ -2755,14 +2755,14 @@ module top ;
 
 
 	cy_clock_v1_0
-		#(.id("c6755923-c513-44a4-8b34-b466d8980ed8"),
-		  .source_clock_id("35097f33-2624-4881-924b-731442ae2afa"),
+		#(.id("4c6929cb-8146-47ba-998f-949dba7ae6df"),
+		  .source_clock_id("61737EF6-3B74-48f9-8B91-F7473A442AE7"),
 		  .divisor(0),
-		  .period("0"),
-		  .is_direct(1),
+		  .period("1000000000"),
+		  .is_direct(0),
 		  .is_digital(1))
-		Encoder_Clock
-		 (.clock_out(Net_8580));
+		PWM_Clock
+		 (.clock_out(Net_8613));
 
 
     QuadDec_v3_0_5 Right_QuadDec (
@@ -3120,11 +3120,11 @@ module top ;
 
 
 	cy_clock_v1_0
-		#(.id("090b7f13-7340-4265-b2ef-c1c1aabadcfb"),
-		  .source_clock_id("35097f33-2624-4881-924b-731442ae2afa"),
+		#(.id("86c2cee2-b40a-4308-bc96-e3f889035e35"),
+		  .source_clock_id("61737EF6-3B74-48f9-8B91-F7473A442AE7"),
 		  .divisor(0),
-		  .period("0"),
-		  .is_direct(1),
+		  .period("1000000000"),
+		  .is_direct(0),
 		  .is_digital(1))
 		Echo_Clock
 		 (.clock_out(Net_7952));

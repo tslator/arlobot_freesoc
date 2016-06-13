@@ -374,8 +374,8 @@ void Motor_Init()
 
 void Motor_Start()
 {
-    Cal_LeftGetCalData(left_motor.p_fwd_cal_data, left_motor.p_bwd_cal_data);
-    Cal_RightGetCalData(right_motor.p_fwd_cal_data, right_motor.p_bwd_cal_data);
+    Cal_LeftGetCalData(&left_motor.p_fwd_cal_data, &left_motor.p_bwd_cal_data);
+    Cal_RightGetCalData(&right_motor.p_fwd_cal_data, &right_motor.p_bwd_cal_data);
     
     
     
