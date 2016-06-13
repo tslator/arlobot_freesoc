@@ -54,12 +54,11 @@ typedef struct _encoder_tag
     int32 delta_count;
     float avg_delta_count;
     float avg_cps;
-    float avg_mmps;
+    float avg_mps;
     MOVING_AVERAGE_FLOAT_TYPE delta_count_ma;
     MOVING_AVERAGE_FLOAT_TYPE avg_cps_ma;
     READ_ENCODER_COUNTER_TYPE read_counter;
     WRITE_ENCODER_COUNTER_TYPE write_counter;
-    WRITE_OUTPUT_TYPE write_output;
 } ENCODER_TYPE;
 
 static ENCODER_TYPE left_enc = {
@@ -69,7 +68,6 @@ static ENCODER_TYPE left_enc = {
     /* cps ma */            {0, 0},
     /* get enc count */     Left_QuadDec_GetCounter,
     /* set enc count */     Left_QuadDec_SetCounter,
-    /* set wheel speed */   I2c_LeftWriteOutput
 };
 
 static ENCODER_TYPE right_enc = {
@@ -79,7 +77,6 @@ static ENCODER_TYPE right_enc = {
     /* cps ma */            {0, 0},
     /* get enc count */     Right_QuadDec_GetCounter,
     /* set enc count */     Right_QuadDec_SetCounter,
-    /* set wheel speed */   I2c_RightWriteOutput
 };
 
 #if defined (LEFT_ENC_DUMP_ENABLED) || defined (RIGHT_ENC_DUMP_ENABLED)
@@ -87,14 +84,13 @@ static void DumpEncoder(ENCODER_TYPE *enc)
 {
     char avg_cps_str[10];
     char avg_delta_count_str[10];
-    char avg_mmps_str[10];
-    //char output[64];
+    char avg_mps_str[10];
     
     ftoa(enc->avg_cps, avg_cps_str, 3);
     ftoa(enc->avg_delta_count, avg_delta_count_str, 3);
-    ftoa(enc->avg_mmps, avg_mmps_str, 3);
+    ftoa(enc->avg_mps, avg_mps_str, 3);
     
-    DEBUG_PRINT("%s enc: %s %s %s %ld %ld %ld \r\n", enc->name, avg_cps_str, avg_delta_count_str, avg_mmps_str, enc->count, enc->last_count, enc->delta_count);
+    DEBUG_PRINT("%s enc: %s %s %s %ld %ld %ld \r\n", enc->name, avg_cps_str, avg_delta_count_str, avg_mps_str, enc->count, enc->last_count, enc->delta_count);
 }
 #endif
 
@@ -110,9 +106,7 @@ static void Encoder_Sample(ENCODER_TYPE *enc, uint32 delta_time)
     
     enc->avg_cps = MovingAverageFloat(&enc->avg_cps_ma, cps);
     
-    enc->avg_mmps = enc->avg_cps * MILLIMETER_PER_COUNT;
-
-    enc->write_output(enc->avg_mmps);
+    enc->avg_mps = enc->avg_cps * METER_PER_COUNT;
 }
 
 void Encoder_Init()
@@ -126,7 +120,7 @@ void Encoder_Init()
     left_enc.avg_cps_ma.last = 0;
     left_enc.avg_cps_ma.n = 10;
     left_enc.avg_cps = 0;
-    left_enc.avg_mmps = 0;
+    left_enc.avg_mps = 0;
     
     right_enc.count = 0;
     right_enc.last_count = 0;
@@ -137,7 +131,7 @@ void Encoder_Init()
     right_enc.avg_cps_ma.last = 0;
     right_enc.avg_cps_ma.n = 10;
     right_enc.avg_cps = 0;
-    right_enc.avg_mmps = 0;
+    right_enc.avg_mps = 0;
     
 }
 
@@ -180,14 +174,14 @@ float Encoder_RightGetCntsPerSec()
     return right_enc.avg_cps;
 }
 
-float Encoder_LeftGetMmPerSec()
+float Encoder_LeftGetMeterPerSec()
 {
-    return left_enc.avg_mmps;
+    return left_enc.avg_mps;
 }
 
-float Encoder_RightGetMmPerSec()
+float Encoder_RightGetMeterPerSec()
 {
-    return right_enc.avg_mmps;
+    return right_enc.avg_mps;
 }
 
 int32 Encoder_LeftGetCount()
@@ -218,7 +212,7 @@ void Encoder_Reset()
     left_enc.avg_delta_count = 0;
     left_enc.delta_count_ma.last = 0;
     left_enc.avg_cps = 0;
-    left_enc.avg_mmps = 0;
+    left_enc.avg_mps = 0;
     left_enc.avg_cps_ma.last = 0;
     left_enc.count = 0;
     
@@ -228,7 +222,7 @@ void Encoder_Reset()
     right_enc.avg_delta_count = 0;
     right_enc.delta_count_ma.last = 0;
     right_enc.avg_cps = 0;
-    right_enc.avg_mmps = 0;
+    right_enc.avg_mps = 0;
     right_enc.avg_cps_ma.last = 0;
     right_enc.count = 0;
     

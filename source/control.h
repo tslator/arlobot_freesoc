@@ -18,6 +18,9 @@
 void Control_Init();
 void Control_Start();
 void Control_Update();
+float Control_LeftGetCmdVelocity();
+float Control_RightGetCmdVelocity();
+
 
 #endif
 

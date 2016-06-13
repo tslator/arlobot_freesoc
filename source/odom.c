@@ -27,7 +27,7 @@
 
 #define ODOM_SAMPLE_TIME_MS  SAMPLE_TIME_MS(ODOM_SAMPLE_RATE)
 
-#define MILLIMETER_COUNT_SAMPLE_MILLIMETER (MILLIMETER_PER_COUNT / TRACK_WIDTH)
+#define METER_COUNT_SAMPLE_METER (METER_PER_COUNT / TRACK_WIDTH)
 
 static int32 last_left_count;
 static int32 last_right_count;
@@ -74,8 +74,8 @@ void calc_odom()
     float delta_x_dist;
     float delta_y_dist;
     
-    left_speed = Encoder_LeftGetMmPerSec();
-    right_speed = Encoder_RightGetMmPerSec();
+    left_speed = Encoder_LeftGetMeterPerSec();
+    right_speed = Encoder_RightGetMeterPerSec();
     
     left_count = Encoder_LeftGetCount();
     right_count = Encoder_RightGetCount();
@@ -89,11 +89,11 @@ void calc_odom()
        delta heading = ----------------- X ----- X ------
                           sample           count   meter
     */
-    delta_heading = (delta_right_count - delta_left_count) * MILLIMETER_COUNT_SAMPLE_MILLIMETER;
+    delta_heading = (delta_right_count - delta_left_count) * METER_COUNT_SAMPLE_METER;
     heading += delta_heading;
 
     // Calculate x/y distance and update
-    delta_dist = 0.5 * (delta_left_count + delta_right_count) * MILLIMETER_PER_COUNT;
+    delta_dist = 0.5 * (delta_left_count + delta_right_count) * METER_PER_COUNT;
     delta_x_dist = delta_dist * cos(heading);
     delta_y_dist = delta_dist * sin(heading);
 

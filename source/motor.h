@@ -26,8 +26,8 @@ void Motor_RightSetPwm(uint16 pwm);
 void Motor_SetPwm(uint16 left_pwm, uint16 right_pwm);
 void Motor_LeftSetCntsPerSec(float cps);
 void Motor_RightSetCntsPerSec(float cps);
-void Motor_LeftSetMmPerSec(int16 mmps);
-void Motor_RightSetMmPerSec(int16 mmps);
+void Motor_LeftSetMeterPerSec(float mmps);
+void Motor_RightSetMeterPerSec(float mmps);
 uint16 Motor_LeftGetPwm();
 uint16 Motor_RightGetPwm();
 

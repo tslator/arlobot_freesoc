@@ -137,7 +137,7 @@ static void ProcessPid(PID_TYPE *pid)
     
     enc_speed = pid->get_encoder();
     
-    PIDSetpointSet(&pid->pid, abs((float)tgt_speed / MILLIMETER_PER_COUNT));
+    PIDSetpointSet(&pid->pid, abs(tgt_speed / METER_PER_COUNT));
     PIDInputSet(&pid->pid, abs(enc_speed));
     
     if (PIDCompute(&pid->pid))

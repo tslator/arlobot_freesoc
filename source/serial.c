@@ -23,8 +23,6 @@
 #define LINE_STR_LENGTH     (20u)
 #endif
 
-static uint8 buffer[500];
-
 void Ser_Init()
 {
 }

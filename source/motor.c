@@ -424,17 +424,17 @@ void Motor_RightSetCntsPerSec(float cps)
     right_motor.set_pwm(right_motor.pwm);
 }
           
-void Motor_LeftSetMmPerSec(int16 mmps)
+void Motor_LeftSetMeterPerSec(float mps)
 {
-    /* convert mmps to cps and call Motor_LeftSetCntsPerSec */
-    int16 cps = mmps / MILLIMETER_PER_COUNT;
+    /* convert mps to cps and call Motor_LeftSetCntsPerSec */
+    int16 cps = mps / METER_PER_COUNT;
     Motor_LeftSetCntsPerSec(cps);
 }
           
-void Motor_RightSetMmPerSec(int16 mmps)
+void Motor_RightSetMeterPerSec(float mps)
 {
     /* convert mmps to cps and call Motor_RightSetCntsPerSec */
-    int16 cps = mmps / MILLIMETER_PER_COUNT;
+    int16 cps = mps / METER_PER_COUNT;
     Motor_RightSetCntsPerSec(cps);
 }
           

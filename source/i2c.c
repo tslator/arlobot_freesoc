@@ -21,7 +21,7 @@
 
     offset     num bytes     name                           description
       00           2         [control register]             the control register supports 
-                                                                - Bit 0: enable the HB25 motors
+                                                                - Bit 0: disable the HB25 motors
                                                                 - Bit 1: clear odometry (which includes the following:
                                                                     x,y distances
                                                                     heading
@@ -29,22 +29,20 @@
                                                                     encoder counts
                                                                 - Bit 2: calibrate - requests the Psoc to start calibrating
                                                                 - Bit 3: validate calibration
-      02           2         [left commanded velocity]      commanded velocity is in units of millimeters/second
-      04           2         [right commanded velocity]     commanded velocity is in units of millimeters/second
-      06           2         [calibration port]             the register through which calibration is passed to the Psoc
+        <---- Commanded Velocity ---->
+      02           4         [linear commanded velocity]    commanded linear velocity in meter/second
+      06           4         [angular commanded velocity]   commanded angular velocity in radian/second
+      10           2         [calibration port]             the register through which calibration is passed to the Psoc
                                                             when loading calibration from the Raspberry Pi and also how
                                                             calibration data is passed from the Psoc to the Raspberry Pi
                                                             for storage in a file
     ------------------------------ Read/Write Boundary --------------------------------------------
-      08           2         [device status]                contains bits that represent the status of the Psoc device
+      12           2         [device status]                contains bits that represent the status of the Psoc device
                                                                - Bit 0: HB25 Motor Controller Initialized
                                                                - Bit 1: Calibrated - indicates whether the calibration
                                                                         values have been loaded; 0 - no, 1 - yes
                                                                - Bit 2: Calibrating - indicates when the Psoc is in
                                                                         calibration; 0 - no, 1 - yes
-        <---- Left/Right Velocity ---->
-      10           2         [left wheel velocity]
-      12           2         [right wheel velocity]
            <------ Odometry ------>
       14           4         [x distance]                   measured x distance
       18           4         [y distance]                   measured y distance
@@ -72,8 +70,8 @@
 typedef struct
 {
     uint16 control;
-    int16  left_cmd_velocity;
-    int16  right_cmd_velocity;
+    float  linear_cmd_velocity;
+    float  angular_cmd_velocity;
     uint16 calibration_port;
 } __attribute__ ((packed)) READWRITE_TYPE;
 
@@ -107,8 +105,6 @@ typedef struct
 typedef struct
 {
     uint16     status;
-    int16      left_wheel_velocity;
-    int16      right_wheel_velocity;
     ODOMETRY   odom;
     ULTRASONIC us;
     INFRARED   ir;
@@ -178,7 +174,7 @@ uint16 I2c_ReadControl()
     uint16 value;
     
     value = i2c_buf.read_write.control;
-    //i2c_buf.read_write.control = 0;
+    i2c_buf.read_write.control = 0;
     
     //value |= CONTROL_ENABLE_CALIBRATION_BIT;
     //value |= CONTROL_VALIDATE_CALIBRATION_BIT;
@@ -187,16 +183,10 @@ uint16 I2c_ReadControl()
 
 #define STEP_INPUT (700)
 
-int16 I2c_LeftReadCmdVelocity()
+void I2c_ReadCmdVelocity(float *linear, float *angular)
 {
-    //i2c_buf.read_write.left_cmd_velocity = 300;
-    return i2c_buf.read_write.left_cmd_velocity;
-}
-
-int16 I2c_RightReadCmdVelocity()
-{
-    //i2c_buf.read_write.right_cmd_velocity = 300;
-    return i2c_buf.read_write.right_cmd_velocity;
+    *linear = max(MIN_LINEAR_VELOCITY, min(i2c_buf.read_write.linear_cmd_velocity, MAX_LINEAR_VELOCITY));
+    *angular = max(MIN_ANGULAR_VELOCITY, min(i2c_buf.read_write.angular_cmd_velocity, MAX_ANGULAR_VELOCITY));
 }
 
 void I2c_WriteCalReg(uint16 value)
@@ -221,25 +211,27 @@ void I2c_ClearStatusBit(uint8 bit)
     i2c_buf.read_only.status = i2c_status;
 }
 
-void I2c_LeftWriteOutput(int16 mmps)
-{
-    i2c_buf.read_only.left_wheel_velocity = mmps;
-    DEBUG_PRINT("I2C Left: %d\r\n", mmps);
-}
-
-void I2c_RightWriteOutput(int16 mmps)
-{
-    i2c_buf.read_only.right_wheel_velocity = mmps;
-    DEBUG_PRINT("I2C Right: %d\r\n", mmps);
-}
-
 void I2c_WriteOdom(float x_dist, float y_dist, float heading, float linear_speed, float angular_speed)
 {
+    char x_dist_str[10];
+    char y_dist_str[10];
+    char heading_str[10];
+    char linear_str[10];
+    char angular_str[10];
+    
+    ftoa(x_dist, x_dist_str, 3);
+    ftoa(y_dist, y_dist_str, 3);
+    ftoa(heading, heading_str, 3);
+    ftoa(linear_speed, linear_str, 3);
+    ftoa(angular_speed, angular_str, 3);
+    
     i2c_buf.read_only.odom.x_dist = x_dist;
     i2c_buf.read_only.odom.y_dist = y_dist;
     i2c_buf.read_only.odom.heading = heading;
     i2c_buf.read_only.odom.linear_velocity = linear_speed;
     i2c_buf.read_only.odom.angular_velocity = angular_speed;
+    
+    DEBUG_PRINT("x: %s, y: %s, h: %s, l: %s, a: %s\r\n", x_dist_str, y_dist_str, heading_str, linear_str, angular_str);
 }
 
 void I2c_WriteFrontUltrasonicDistance(uint8 offset, uint16 distance)

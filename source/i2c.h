@@ -15,8 +15,8 @@
 
 #include <project.h>
     
-#define CONTROL_POWER_ON_MOTOR_BIT       (0x0001)
-#define CONTROL_CLEAR_ENCODER_COUNT_BIT  (0x0002)
+#define CONTROL_DISABLE_MOTOR_BIT        (0x0001)
+#define CONTROL_CLEAR_ODOMETRY_BIT       (0x0002)
 #define CONTROL_ENABLE_CALIBRATION_BIT   (0x0004)
 #define CONTROL_VALIDATE_CALIBRATION_BIT (0x0008)
     
@@ -31,15 +31,12 @@ void I2c_Init();
 void I2c_Start();
 
 uint16 I2c_ReadControl();
-int16 I2c_LeftReadCmdVelocity();
-int16 I2c_RightReadCmdVelocity();
+void I2c_ReadCmdVelocity(float *linear, float *angular);
 void I2c_WriteCalReg(uint16 value);
 uint16 I2c_ReadCalReg();
 
 void I2c_SetStatusBit(uint8 bit);
 void I2c_ClearStatusBit(uint8 bit);
-void I2c_LeftWriteOutput(int16 mmps);
-void I2c_RightWriteOutput(int16 mmps);
 
 void I2c_WriteFrontUltrasonicDistance(uint8 offset, uint16 distance);
 void I2c_WriteRearUltrasonicDistance(uint8 offset, uint16 distance);

@@ -42,7 +42,7 @@ int main()
     I2c_Init();
     Encoder_Init();
     Motor_Init();
-    Pid_Init(I2c_LeftReadCmdVelocity, I2c_RightReadCmdVelocity);
+    Pid_Init(Control_LeftGetCmdVelocity, Control_RightGetCmdVelocity);
     Odom_Init();
     Ultrasonic_Init();
     Infrared_Init();

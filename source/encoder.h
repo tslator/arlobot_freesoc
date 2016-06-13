@@ -22,8 +22,8 @@ void Encoder_Update();
 float Encoder_LeftGetCntsPerSec();
 float Encoder_RightGetCntsPerSec();
 
-float Encoder_LeftGetMmPerSec();
-float Encoder_RightGetMmPerSec();
+float Encoder_LeftGetMeterPerSec();
+float Encoder_RightGetMeterPerSec();
 
 int32 Encoder_LeftGetCount();
 int32 Encoder_RightGetCount();
