@@ -187,6 +187,9 @@ void I2c_ReadCmdVelocity(float *linear, float *angular)
 {
     *linear = max(MIN_LINEAR_VELOCITY, min(i2c_buf.read_write.linear_cmd_velocity, MAX_LINEAR_VELOCITY));
     *angular = max(MIN_ANGULAR_VELOCITY, min(i2c_buf.read_write.angular_cmd_velocity, MAX_ANGULAR_VELOCITY));
+    
+    //*linear = 0.2;
+    //*angular = 0.0;
 }
 
 void I2c_WriteCalReg(uint16 value)

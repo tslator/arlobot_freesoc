@@ -128,7 +128,7 @@ void Pid_Start()
 
 static void ProcessPid(PID_TYPE *pid)
 {
-    int16 tgt_speed;
+    float tgt_speed;
     int8 dir;
     float enc_speed;
     
