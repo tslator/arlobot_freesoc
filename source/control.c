@@ -15,6 +15,7 @@
 #include "encoder.h"
 #include "motor.h"
 #include "cal.h"
+#include "odom.h"
 
 /* The purpose of this module is to handle control changes to the system.
  */
@@ -37,6 +38,7 @@ void Control_Update()
     if (control & CONTROL_CLEAR_ENCODER_COUNT_BIT)
     {
         Encoder_Reset();
+        Odom_Reset();
     }    
 
     /* Perform calibration */

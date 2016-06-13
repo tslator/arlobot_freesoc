@@ -36,8 +36,6 @@ static float x_dist;
 static float y_dist;
 static float linear_speed;
 static float angular_speed;
-static float left_speed;
-static float right_speed;
 
 void Odom_Init()
 {
@@ -48,8 +46,6 @@ void Odom_Init()
     y_dist = 0;
     linear_speed = 0;
     angular_speed = 0;
-    left_speed = 0;
-    right_speed = 0;
 }
 
 void Odom_Start()
@@ -126,6 +122,17 @@ void Odom_Update()
         calc_odom();
         I2c_WriteOdom(x_dist, y_dist, heading, linear_speed, angular_speed);
     }
+}
+
+void Odom_Reset()
+{
+    last_left_count = 0;
+    last_right_count = 0;
+    heading = 0;
+    x_dist = 0;
+    y_dist = 0;
+    linear_speed = 0;
+    angular_speed = 0;
 }
 
 /* [] END OF FILE */

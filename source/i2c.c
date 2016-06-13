@@ -22,11 +22,13 @@
     offset     num bytes     name                           description
       00           2         [control register]             the control register supports 
                                                                 - Bit 0: enable the HB25 motors
-                                                                - Bit 1: clear encoder count
+                                                                - Bit 1: clear odometry (which includes the following:
+                                                                    x,y distances
+                                                                    heading
+                                                                    linear,angular velocity
+                                                                    encoder counts
                                                                 - Bit 2: calibrate - requests the Psoc to start calibrating
-                                                                - Bit 3: upload calibration
-                                                                - Bit 4: download calibration
-                                                                - Bit 5: validate calibration
+                                                                - Bit 3: validate calibration
       02           2         [left commanded velocity]      commanded velocity is in units of millimeters/second
       04           2         [right commanded velocity]     commanded velocity is in units of millimeters/second
       06           2         [calibration port]             the register through which calibration is passed to the Psoc

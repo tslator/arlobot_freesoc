@@ -17,6 +17,7 @@
 void Odom_Init();
 void Odom_Start();
 void Odom_Update();
+void Odom_Reset();
 
 #endif
 
