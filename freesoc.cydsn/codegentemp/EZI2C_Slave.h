@@ -29,7 +29,7 @@
 *   Initial Parameter Constants
 ***************************************/
 
-#define EZI2C_Slave_DATA_RATE      (100u)
+#define EZI2C_Slave_DATA_RATE      (400u)
 #define EZI2C_Slave_BUS_PORT       (0u)
 #define EZI2C_Slave_ENABLE_WAKEUP  (0u)
 #define EZI2C_Slave_SUBADDR_WIDTH  (0u)
