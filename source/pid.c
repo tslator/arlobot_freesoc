@@ -109,7 +109,7 @@ static void DumpPid(PID_TYPE *pid)
     ftoa(pid->pid.iTerm, iterm_str, 6);
     ftoa(pid->pid.output, output_str, 6);
 
-    DEBUG_PRINT("%s pid: %s %s %s %s %s %s %d \r\n", pid->name, set_point_str, input_str, error_str, last_input_str, iterm_str, output_str, pid->get_pwm());
+    DEBUG_PRINT_STR("%s pid: %s %s %s %s %s %s %d \r\n", pid->name, set_point_str, input_str, error_str, last_input_str, iterm_str, output_str, pid->get_pwm());
 }
 #endif
 

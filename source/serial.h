@@ -14,8 +14,6 @@
 
 void Ser_Init();
 void Ser_Start();
-uint8 Ser_Write(uint8 *data, size_t num);
-uint8 Ser_Read(uint8 *data, size_t *num);
 void Ser_PutString(char *str);
 
 /* [] END OF FILE */

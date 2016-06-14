@@ -45,6 +45,7 @@ typedef void (*STOP_PWM_TYPE)();
 
 typedef struct _motor_tag
 {
+    char name[6];
     uint16 pwm;
     float cps;
     CAL_DATA_TYPE *p_fwd_cal_data;
@@ -85,6 +86,7 @@ Backward PWM
 1410,1420,1430,1440,1450,1460,1470,1480,1490,1500
 */
 static MOTOR_TYPE left_motor = {
+    "left",
     LEFT_PWM_STOP,
     0,
     0,
@@ -166,6 +168,7 @@ Backward PWM
 */
 
 static MOTOR_TYPE right_motor = {
+    "right",
     RIGHT_PWM_STOP,
     0,
     0,
@@ -227,7 +230,7 @@ static void DumpMotor(MOTOR_TYPE *motor)
     
     ftoa(motor->cps, cps_str, 3);
     
-    DEBUG_PRINT("%s %d \r\n", cps_str, motor->pwm);
+    DEBUG_PRINT_STR("%s: %s %d \r\n", motor->name, cps_str, motor->pwm);
 }
 #endif
 

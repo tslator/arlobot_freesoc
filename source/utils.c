@@ -93,6 +93,7 @@ int32 FourBytesToInt32(uint8* bytes)
     return (int32) FourBytesToUint32(bytes);
 }
 
+#ifdef USE_FTOA
 static int insert_zeros(int value, char *str, int offset, int precision)
 {
     int num_digits = 0;
@@ -146,6 +147,7 @@ void ftoa(float n, char *str, int precision)
         itoa( (int)fpart, &str[i], 10);
     }
 }
+#endif
 
 void BinaryRangeSearch(int32 search, int32 *data_points, uint8 num_points, uint8 *lower_index, uint8 *upper_index)
 /*

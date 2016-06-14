@@ -24,8 +24,20 @@
 #include "infrared.h"
 #include "cal.h"
 
+#ifdef MAIN_LOOP_DELTA_ENABLED
+static uint32 main_loop_delta;
+static uint32 last_main_loop;
+#define MAIN_LOOP_DEBUG_DELTA(delta) DEBUG_DELTA_TIME("main", delta)
+#else
+#define MAIN_LOOP_DEBUG_DELTA(delta)
+#endif    
+
+
 int main()
 {       
+    /* Think about whether this should be enabled before all of the init and start calls.  Maybe interrupts shouldn't
+       be enabled until everything is ready to go?
+     */
     CyGlobalIntEnable;      /* Enable global interrupts */
     
     /* Start this right away so that we debug as soon as possible */
@@ -59,12 +71,17 @@ int main()
     Ultrasonic_Start();
     Infrared_Start();
 
-    Ser_PutString("Hello, my name is ArloSoc!\r\n");
-    Ser_PutString("I am the microcontroller for Arlobot.\r\n");
-    Ser_PutString("I'm entering my main loop now!\r\n");
+    DEBUG_PRINT_NOARG("Hello, my name is ArloSoc!\r\n");
+    DEBUG_PRINT_NOARG("I am the microcontroller for Arlobot.\r\n");
+    DEBUG_PRINT_NOARG("I'm entering my main loop now!\r\n");
     
     for(;;)
     {
+#ifdef MAIN_LOOP_DELTA_ENABLED
+        main_loop_delta = millis() - last_main_loop;
+        MAIN_LOOP_DEBUG_DELTA(main_loop_delta)
+        last_main_loop = millis();
+#endif        
         LOOP_START();
         
         /* Update any control changes */

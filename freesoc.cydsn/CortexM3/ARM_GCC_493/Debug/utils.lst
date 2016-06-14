@@ -1,4 +1,4 @@
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 1
 
 
    1              		.syntax unified
@@ -58,7 +58,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
   30:..\source/utils.c ****     ma->last = ma_curr;
   31:..\source/utils.c ****     
   32:..\source/utils.c ****     return ma_curr/ma->n;
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 2
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 2
 
 
   33:..\source/utils.c **** }
@@ -118,7 +118,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
   87:..\source/utils.c **** {
   88:..\source/utils.c ****     return (uint32) ( (bytes[0] << 24) + (bytes[1] << 16) + (bytes[2] << 8) + bytes[3] );
   89:..\source/utils.c **** }
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 3
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 3
 
 
   90:..\source/utils.c **** 
@@ -127,9 +127,10 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
   93:..\source/utils.c ****     return (int32) FourBytesToUint32(bytes);
   94:..\source/utils.c **** }
   95:..\source/utils.c **** 
-  96:..\source/utils.c **** static int insert_zeros(int value, char *str, int offset, int precision)
-  97:..\source/utils.c **** {
-  26              		.loc 1 97 0
+  96:..\source/utils.c **** #ifdef USE_FTOA
+  97:..\source/utils.c **** static int insert_zeros(int value, char *str, int offset, int precision)
+  98:..\source/utils.c **** {
+  26              		.loc 1 98 0
   27              		.cfi_startproc
   28              		@ args = 0, pretend = 0, frame = 0
   29              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -140,67 +141,67 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
   34              		.cfi_offset 5, -8
   35              		.cfi_offset 14, -4
   36              	.LVL1:
-  98:..\source/utils.c ****     int num_digits = 0;
-  37              		.loc 1 98 0
+  99:..\source/utils.c ****     int num_digits = 0;
+  37              		.loc 1 99 0
   38 0002 0024     		movs	r4, #0
-  99:..\source/utils.c ****     
- 100:..\source/utils.c ****     // Count digits in number
- 101:..\source/utils.c ****     while (value)
-  39              		.loc 1 101 0
+ 100:..\source/utils.c ****     
+ 101:..\source/utils.c ****     // Count digits in number
+ 102:..\source/utils.c ****     while (value)
+  39              		.loc 1 102 0
   40 0004 06E0     		b	.L2
   41              	.LVL2:
   42              	.L3:
- 102:..\source/utils.c ****     {
- 103:..\source/utils.c ****         value /= 10;
-  43              		.loc 1 103 0
+ 103:..\source/utils.c ****     {
+ 104:..\source/utils.c ****         value /= 10;
+  43              		.loc 1 104 0
   44 0006 094D     		ldr	r5, .L7
   45 0008 85FB00E5 		smull	lr, r5, r5, r0
   46 000c C017     		asrs	r0, r0, #31
   47              	.LVL3:
   48 000e C0EBA500 		rsb	r0, r0, r5, asr #2
   49              	.LVL4:
- 104:..\source/utils.c ****         num_digits++;
-  50              		.loc 1 104 0
+ 105:..\source/utils.c ****         num_digits++;
+  50              		.loc 1 105 0
   51 0012 0134     		adds	r4, r4, #1
   52              	.LVL5:
   53              	.L2:
- 101:..\source/utils.c ****     {
-  54              		.loc 1 101 0
+ 102:..\source/utils.c ****     {
+  54              		.loc 1 102 0
   55 0014 0028     		cmp	r0, #0
   56 0016 F6D1     		bne	.L3
   57 0018 03E0     		b	.L4
   58              	.LVL6:
   59              	.L5:
- 105:..\source/utils.c ****     }
- 106:..\source/utils.c ****     
- 107:..\source/utils.c ****     // If num_digits is less than precision then insert zeros
- 108:..\source/utils.c ****     while (num_digits < precision)
- 109:..\source/utils.c ****     {
- 110:..\source/utils.c ****         str[offset] = '0';
-  60              		.loc 1 110 0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 4
+ 106:..\source/utils.c ****     }
+ 107:..\source/utils.c ****     
+ 108:..\source/utils.c ****     // If num_digits is less than precision then insert zeros
+ 109:..\source/utils.c ****     while (num_digits < precision)
+ 110:..\source/utils.c ****     {
+ 111:..\source/utils.c ****         str[offset] = '0';
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 4
 
 
+  60              		.loc 1 111 0
   61 001a 3020     		movs	r0, #48
   62 001c 8854     		strb	r0, [r1, r2]
- 111:..\source/utils.c ****         offset++;
-  63              		.loc 1 111 0
+ 112:..\source/utils.c ****         offset++;
+  63              		.loc 1 112 0
   64 001e 0132     		adds	r2, r2, #1
   65              	.LVL7:
- 112:..\source/utils.c ****         num_digits++;
-  66              		.loc 1 112 0
+ 113:..\source/utils.c ****         num_digits++;
+  66              		.loc 1 113 0
   67 0020 0134     		adds	r4, r4, #1
   68              	.LVL8:
   69              	.L4:
- 108:..\source/utils.c ****     {
-  70              		.loc 1 108 0
+ 109:..\source/utils.c ****     {
+  70              		.loc 1 109 0
   71 0022 9C42     		cmp	r4, r3
   72 0024 F9DB     		blt	.L5
- 113:..\source/utils.c ****     }
- 114:..\source/utils.c ****         
- 115:..\source/utils.c ****     return offset;
- 116:..\source/utils.c **** }
-  73              		.loc 1 116 0
+ 114:..\source/utils.c ****     }
+ 115:..\source/utils.c ****         
+ 116:..\source/utils.c ****     return offset;
+ 117:..\source/utils.c **** }
+  73              		.loc 1 117 0
   74 0026 1046     		mov	r0, r2
   75 0028 30BD     		pop	{r4, r5, pc}
   76              	.LVL9:
@@ -237,10 +238,10 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  105              	.LVL12:
   30:..\source/utils.c ****     
  106              		.loc 1 30 0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 5
+
+
  107 000c 4160     		str	r1, [r0, #4]
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 5
-
-
   33:..\source/utils.c **** 
  108              		.loc 1 33 0
  109 000e 91FBF2F0 		sdiv	r0, r1, r2
@@ -297,10 +298,10 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  157 0020 6060     		str	r0, [r4, #4]	@ float
   49:..\source/utils.c **** }
  158              		.loc 1 49 0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 6
+
+
  159 0022 2946     		mov	r1, r5
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 6
-
-
  160 0024 FFF7FEFF 		bl	__aeabi_fdiv
  161              	.LVL19:
   50:..\source/utils.c **** 
@@ -357,10 +358,10 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
   61:..\source/utils.c ****     bytes[2] = (value & 0x0000FF00) >> 8;
  207              		.loc 1 61 0
  208 0004 C0F30743 		ubfx	r3, r0, #16, #8
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 7
+
+
  209 0008 4B70     		strb	r3, [r1, #1]
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 7
-
-
   62:..\source/utils.c ****     bytes[3] = (value & 0x000000FF);
  210              		.loc 1 62 0
  211 000a C0F30723 		ubfx	r3, r0, #8, #8
@@ -417,10 +418,10 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  258              		.cfi_offset 3, -8
  259              		.cfi_offset 14, -4
   73:..\source/utils.c **** }
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 8
+
+
  260              		.loc 1 73 0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 8
-
-
  261 0002 FFF7FEFF 		bl	Uint32ToFourBytes
  262              	.LVL25:
  263 0006 08BD     		pop	{r3, pc}
@@ -477,10 +478,10 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  309              		.loc 1 83 0
  310 0002 FFF7FEFF 		bl	TwoBytesToUint16
  311              	.LVL29:
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 9
+
+
   84:..\source/utils.c **** 
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 9
-
-
  312              		.loc 1 84 0
  313 0006 00B2     		sxth	r0, r0
  314 0008 08BD     		pop	{r3, pc}
@@ -537,10 +538,10 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  361              		.cfi_def_cfa_offset 8
  362              		.cfi_offset 3, -8
  363              		.cfi_offset 14, -4
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 10
+
+
   93:..\source/utils.c **** }
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 10
-
-
  364              		.loc 1 93 0
  365 0002 FFF7FEFF 		bl	FourBytesToUint32
  366              	.LVL33:
@@ -565,11 +566,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  384              		.type	ftoa, %function
  385              	ftoa:
  386              	.LFB74:
- 117:..\source/utils.c **** 
- 118:..\source/utils.c **** // Converts a floating point number to string.
- 119:..\source/utils.c **** void ftoa(float n, char *str, int precision)
- 120:..\source/utils.c **** {   
- 387              		.loc 1 120 0
+ 118:..\source/utils.c **** 
+ 119:..\source/utils.c **** // Converts a floating point number to string.
+ 120:..\source/utils.c **** void ftoa(float n, char *str, int precision)
+ 121:..\source/utils.c **** {   
+ 387              		.loc 1 121 0
  388              		.cfi_startproc
  389              		@ args = 0, pretend = 0, frame = 0
  390              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -588,61 +589,61 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  403 0006 0D46     		mov	r5, r1
  404 0008 9046     		mov	r8, r2
  405              	.LVL35:
- 121:..\source/utils.c ****     int i = 0;
- 122:..\source/utils.c ****     
- 123:..\source/utils.c ****     if (n < 0)
- 406              		.loc 1 123 0
+ 122:..\source/utils.c ****     int i = 0;
+ 123:..\source/utils.c ****     
+ 124:..\source/utils.c ****     if (n < 0)
+ 406              		.loc 1 124 0
  407 000a 0021     		movs	r1, #0
  408              	.LVL36:
  409 000c FFF7FEFF 		bl	__aeabi_fcmplt
  410              	.LVL37:
  411 0010 50B1     		cbz	r0, .L33
- 124:..\source/utils.c ****     {
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 11
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 11
 
 
- 125:..\source/utils.c ****         str[i] = '-';
- 412              		.loc 1 125 0
+ 125:..\source/utils.c ****     {
+ 126:..\source/utils.c ****         str[i] = '-';
+ 412              		.loc 1 126 0
  413 0012 2D23     		movs	r3, #45
  414 0014 2B70     		strb	r3, [r5]
  415              	.LVL38:
- 126:..\source/utils.c ****         i++;
- 127:..\source/utils.c ****         n = abs(n);
- 416              		.loc 1 127 0
+ 127:..\source/utils.c ****         i++;
+ 128:..\source/utils.c ****         n = abs(n);
+ 416              		.loc 1 128 0
  417 0016 3046     		mov	r0, r6
  418 0018 0021     		movs	r1, #0
  419 001a FFF7FEFF 		bl	__aeabi_fcmplt
  420              	.LVL39:
  421 001e 08B1     		cbz	r0, .L27
- 422              		.loc 1 127 0 is_stmt 0 discriminator 1
+ 422              		.loc 1 128 0 is_stmt 0 discriminator 1
  423 0020 06F10046 		add	r6, r6, #-2147483648
  424              	.LVL40:
  425              	.L27:
- 126:..\source/utils.c ****         i++;
- 426              		.loc 1 126 0 is_stmt 1 discriminator 4
+ 127:..\source/utils.c ****         i++;
+ 426              		.loc 1 127 0 is_stmt 1 discriminator 4
  427 0024 0124     		movs	r4, #1
  428 0026 00E0     		b	.L25
  429              	.LVL41:
  430              	.L33:
- 121:..\source/utils.c ****     
- 431              		.loc 1 121 0
+ 122:..\source/utils.c ****     
+ 431              		.loc 1 122 0
  432 0028 0024     		movs	r4, #0
  433              	.LVL42:
  434              	.L25:
- 128:..\source/utils.c ****     }
- 129:..\source/utils.c ****     
- 130:..\source/utils.c ****     // Extract integer part
- 131:..\source/utils.c ****     int ipart = (int)n;
- 435              		.loc 1 131 0
+ 129:..\source/utils.c ****     }
+ 130:..\source/utils.c ****     
+ 131:..\source/utils.c ****     // Extract integer part
+ 132:..\source/utils.c ****     int ipart = (int)n;
+ 435              		.loc 1 132 0
  436 002a 3046     		mov	r0, r6
  437 002c FFF7FEFF 		bl	__aeabi_f2iz
  438              	.LVL43:
  439 0030 0746     		mov	r7, r0
  440              	.LVL44:
- 132:..\source/utils.c **** 
- 133:..\source/utils.c ****     // convert integer part to string
- 134:..\source/utils.c ****     i += strlen(itoa(ipart, &str[i], 10));
- 441              		.loc 1 134 0
+ 133:..\source/utils.c **** 
+ 134:..\source/utils.c ****     // convert integer part to string
+ 135:..\source/utils.c ****     i += strlen(itoa(ipart, &str[i], 10));
+ 441              		.loc 1 135 0
  442 0032 2919     		adds	r1, r5, r4
  443 0034 0A22     		movs	r2, #10
  444 0036 FFF7FEFF 		bl	itoa
@@ -651,28 +652,28 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  447              	.LVL46:
  448 003e 2044     		add	r0, r0, r4
  449              	.LVL47:
- 135:..\source/utils.c ****     
- 136:..\source/utils.c ****     // check for display option after point
- 137:..\source/utils.c ****     if (precision > 0)
- 450              		.loc 1 137 0
+ 136:..\source/utils.c ****     
+ 137:..\source/utils.c ****     // check for display option after point
+ 138:..\source/utils.c ****     if (precision > 0)
+ 450              		.loc 1 138 0
  451 0040 B8F1000F 		cmp	r8, #0
  452 0044 29DD     		ble	.L24
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 12
+
+
  453              	.LBB2:
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 12
-
-
- 138:..\source/utils.c ****     {
- 139:..\source/utils.c ****         str[i] = '.';  // add dot
- 454              		.loc 1 139 0
+ 139:..\source/utils.c ****     {
+ 140:..\source/utils.c ****         str[i] = '.';  // add dot
+ 454              		.loc 1 140 0
  455 0046 2E23     		movs	r3, #46
  456 0048 2B54     		strb	r3, [r5, r0]
- 140:..\source/utils.c ****         i++;
- 457              		.loc 1 140 0
+ 141:..\source/utils.c ****         i++;
+ 457              		.loc 1 141 0
  458 004a 441C     		adds	r4, r0, #1
  459              	.LVL48:
- 141:..\source/utils.c ****  
- 142:..\source/utils.c ****         int fpart = (int) ( (n - (float)ipart) * pow(10, precision) );
- 460              		.loc 1 142 0
+ 142:..\source/utils.c ****  
+ 143:..\source/utils.c ****         int fpart = (int) ( (n - (float)ipart) * pow(10, precision) );
+ 460              		.loc 1 143 0
  461 004c 3846     		mov	r0, r7
  462 004e FFF7FEFF 		bl	__aeabi_i2f
  463              	.LVL49:
@@ -705,22 +706,22 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  490              	.LVL57:
  491 0084 0646     		mov	r6, r0
  492              	.LVL58:
- 143:..\source/utils.c ****         
- 144:..\source/utils.c ****         i = insert_zeros(fpart, str, i, precision);
- 493              		.loc 1 144 0
+ 144:..\source/utils.c ****         
+ 145:..\source/utils.c ****         i = insert_zeros(fpart, str, i, precision);
+ 493              		.loc 1 145 0
  494 0086 2946     		mov	r1, r5
  495 0088 2246     		mov	r2, r4
  496 008a 4346     		mov	r3, r8
  497 008c FFF7FEFF 		bl	insert_zeros
  498              	.LVL59:
- 145:..\source/utils.c ****         
- 146:..\source/utils.c ****         itoa( (int)fpart, &str[i], 10);
- 499              		.loc 1 146 0
+ 146:..\source/utils.c ****         
+ 147:..\source/utils.c ****         itoa( (int)fpart, &str[i], 10);
+ 499              		.loc 1 147 0
  500 0090 2918     		adds	r1, r5, r0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 13
+
+
  501 0092 3046     		mov	r0, r6
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 13
-
-
  502              	.LVL60:
  503 0094 0A22     		movs	r2, #10
  504 0096 FFF7FEFF 		bl	itoa
@@ -744,23 +745,24 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  522              		.type	BinaryRangeSearch, %function
  523              	BinaryRangeSearch:
  524              	.LFB75:
- 147:..\source/utils.c ****     }
- 148:..\source/utils.c **** }
- 149:..\source/utils.c **** 
- 150:..\source/utils.c **** void BinaryRangeSearch(int32 search, int32 *data_points, uint8 num_points, uint8 *lower_index, uint
- 151:..\source/utils.c **** /*
- 152:..\source/utils.c ****     This is a binary search modified to return a range, e.g., lower and upper, when searching for a
- 153:..\source/utils.c **** 
- 154:..\source/utils.c ****     Performance:
- 155:..\source/utils.c ****     Array Size      log2N
- 156:..\source/utils.c ****         10            4
- 157:..\source/utils.c ****         50            6
- 158:..\source/utils.c ****        100            7
- 159:..\source/utils.c ****        500            9
- 160:..\source/utils.c **** 
- 161:..\source/utils.c **** */
- 162:..\source/utils.c **** {
- 525              		.loc 1 162 0
+ 148:..\source/utils.c ****     }
+ 149:..\source/utils.c **** }
+ 150:..\source/utils.c **** #endif
+ 151:..\source/utils.c **** 
+ 152:..\source/utils.c **** void BinaryRangeSearch(int32 search, int32 *data_points, uint8 num_points, uint8 *lower_index, uint
+ 153:..\source/utils.c **** /*
+ 154:..\source/utils.c ****     This is a binary search modified to return a range, e.g., lower and upper, when searching for a
+ 155:..\source/utils.c **** 
+ 156:..\source/utils.c ****     Performance:
+ 157:..\source/utils.c ****     Array Size      log2N
+ 158:..\source/utils.c ****         10            4
+ 159:..\source/utils.c ****         50            6
+ 160:..\source/utils.c ****        100            7
+ 161:..\source/utils.c ****        500            9
+ 162:..\source/utils.c **** 
+ 163:..\source/utils.c **** */
+ 164:..\source/utils.c **** {
+ 525              		.loc 1 164 0
  526              		.cfi_startproc
  527              		@ args = 4, pretend = 0, frame = 0
  528              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -774,120 +776,120 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  536              		.cfi_offset 7, -4
  537 0002 049F     		ldr	r7, [sp, #16]
  538              	.LVL64:
- 163:..\source/utils.c ****     uint8 first = 0;
- 164:..\source/utils.c ****     uint8 last = num_points - 1;
- 539              		.loc 1 164 0
+ 165:..\source/utils.c ****     uint8 first = 0;
+ 166:..\source/utils.c ****     uint8 last = num_points - 1;
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 14
+
+
+ 539              		.loc 1 166 0
  540 0004 013A     		subs	r2, r2, #1
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 14
-
-
  541              	.LVL65:
  542 0006 D2B2     		uxtb	r2, r2
  543              	.LVL66:
- 165:..\source/utils.c ****     uint8 middle = (first+last)/2;
- 544              		.loc 1 165 0
+ 167:..\source/utils.c ****     uint8 middle = (first+last)/2;
+ 544              		.loc 1 167 0
  545 0008 5408     		lsrs	r4, r2, #1
  546              	.LVL67:
- 166:..\source/utils.c ****     
- 167:..\source/utils.c ****     *lower_index = 0;
- 547              		.loc 1 167 0
+ 168:..\source/utils.c ****     
+ 169:..\source/utils.c ****     *lower_index = 0;
+ 547              		.loc 1 169 0
  548 000a 0025     		movs	r5, #0
  549 000c 1D70     		strb	r5, [r3]
- 168:..\source/utils.c ****     *upper_index = 0;
- 550              		.loc 1 168 0
+ 170:..\source/utils.c ****     *upper_index = 0;
+ 550              		.loc 1 170 0
  551 000e 3D70     		strb	r5, [r7]
- 169:..\source/utils.c **** 
- 170:..\source/utils.c ****     while (first <= last) {
- 552              		.loc 1 170 0
+ 171:..\source/utils.c **** 
+ 172:..\source/utils.c ****     while (first <= last) {
+ 552              		.loc 1 172 0
  553 0010 19E0     		b	.L38
  554              	.LVL68:
  555              	.L43:
- 171:..\source/utils.c ****         if (data_points[middle] < search)
- 556              		.loc 1 171 0
+ 173:..\source/utils.c ****         if (data_points[middle] < search)
+ 556              		.loc 1 173 0
  557 0012 51F82460 		ldr	r6, [r1, r4, lsl #2]
  558 0016 8642     		cmp	r6, r0
  559 0018 03DA     		bge	.L39
- 172:..\source/utils.c ****         {
- 173:..\source/utils.c ****             first = middle + 1;
- 560              		.loc 1 173 0
+ 174:..\source/utils.c ****         {
+ 175:..\source/utils.c ****             first = middle + 1;
+ 560              		.loc 1 175 0
  561 001a 651C     		adds	r5, r4, #1
  562              	.LVL69:
  563 001c EDB2     		uxtb	r5, r5
  564              	.LVL70:
- 174:..\source/utils.c ****             *lower_index = middle;
- 565              		.loc 1 174 0
+ 176:..\source/utils.c ****             *lower_index = middle;
+ 565              		.loc 1 176 0
  566 001e 1C70     		strb	r4, [r3]
  567 0020 0CE0     		b	.L40
  568              	.L39:
- 175:..\source/utils.c ****         }
- 176:..\source/utils.c ****         else if (data_points[middle] == search) 
- 569              		.loc 1 176 0
+ 177:..\source/utils.c ****         }
+ 178:..\source/utils.c ****         else if (data_points[middle] == search) 
+ 569              		.loc 1 178 0
  570 0022 8642     		cmp	r6, r0
  571 0024 02D1     		bne	.L41
- 177:..\source/utils.c ****         {
- 178:..\source/utils.c ****             *lower_index = middle;
- 572              		.loc 1 178 0
+ 179:..\source/utils.c ****         {
+ 180:..\source/utils.c ****             *lower_index = middle;
+ 572              		.loc 1 180 0
  573 0026 1C70     		strb	r4, [r3]
- 179:..\source/utils.c ****             *upper_index = middle;
- 574              		.loc 1 179 0
+ 181:..\source/utils.c ****             *upper_index = middle;
+ 574              		.loc 1 181 0
  575 0028 3C70     		strb	r4, [r7]
- 180:..\source/utils.c ****             break;
- 576              		.loc 1 180 0
+ 182:..\source/utils.c ****             break;
+ 576              		.loc 1 182 0
  577 002a 0EE0     		b	.L37
  578              	.L41:
- 181:..\source/utils.c ****         }
- 182:..\source/utils.c ****         else if (data_points[middle] > search)
- 579              		.loc 1 182 0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 15
+ 183:..\source/utils.c ****         }
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 15
 
 
+ 184:..\source/utils.c ****         else if (data_points[middle] > search)
+ 579              		.loc 1 184 0
  580 002c 8642     		cmp	r6, r0
  581 002e 05DD     		ble	.L40
- 183:..\source/utils.c ****         {            
- 184:..\source/utils.c ****             *upper_index = middle;
- 582              		.loc 1 184 0
+ 185:..\source/utils.c ****         {            
+ 186:..\source/utils.c ****             *upper_index = middle;
+ 582              		.loc 1 186 0
  583 0030 3C70     		strb	r4, [r7]
  584              	.LVL71:
- 185:..\source/utils.c ****             last = middle;
- 186:..\source/utils.c ****             
- 187:..\source/utils.c ****             if (*upper_index - *lower_index == 1)
- 585              		.loc 1 187 0
+ 187:..\source/utils.c ****             last = middle;
+ 188:..\source/utils.c ****             
+ 189:..\source/utils.c ****             if (*upper_index - *lower_index == 1)
+ 585              		.loc 1 189 0
  586 0032 1A78     		ldrb	r2, [r3]	@ zero_extendqisi2
  587 0034 A21A     		subs	r2, r4, r2
  588 0036 012A     		cmp	r2, #1
  589 0038 07D0     		beq	.L37
  590              	.LVL72:
- 185:..\source/utils.c ****             last = middle;
- 591              		.loc 1 185 0
+ 187:..\source/utils.c ****             last = middle;
+ 591              		.loc 1 187 0
  592 003a 2246     		mov	r2, r4
  593              	.LVL73:
  594              	.L40:
- 188:..\source/utils.c ****             {
- 189:..\source/utils.c ****                 break;
- 190:..\source/utils.c ****             }
- 191:..\source/utils.c ****         }
- 192:..\source/utils.c ****         else
- 193:..\source/utils.c ****         {
- 194:..\source/utils.c ****             // There are no other possibilities :-)
- 195:..\source/utils.c ****         }
- 196:..\source/utils.c ****  
- 197:..\source/utils.c ****         middle = (first + last)/2;
- 595              		.loc 1 197 0
+ 190:..\source/utils.c ****             {
+ 191:..\source/utils.c ****                 break;
+ 192:..\source/utils.c ****             }
+ 193:..\source/utils.c ****         }
+ 194:..\source/utils.c ****         else
+ 195:..\source/utils.c ****         {
+ 196:..\source/utils.c ****             // There are no other possibilities :-)
+ 197:..\source/utils.c ****         }
+ 198:..\source/utils.c ****  
+ 199:..\source/utils.c ****         middle = (first + last)/2;
+ 595              		.loc 1 199 0
  596 003c AC18     		adds	r4, r5, r2
  597              	.LVL74:
  598 003e 04EBD474 		add	r4, r4, r4, lsr #31
  599 0042 C4F34704 		ubfx	r4, r4, #1, #8
  600              	.LVL75:
  601              	.L38:
- 170:..\source/utils.c ****         if (data_points[middle] < search)
- 602              		.loc 1 170 0
+ 172:..\source/utils.c ****         if (data_points[middle] < search)
+ 602              		.loc 1 172 0
  603 0046 9542     		cmp	r5, r2
  604 0048 E3D9     		bls	.L43
  605              	.LVL76:
  606              	.L37:
- 198:..\source/utils.c ****    }
- 199:..\source/utils.c **** }
- 607              		.loc 1 199 0
+ 200:..\source/utils.c ****    }
+ 201:..\source/utils.c **** }
+ 607              		.loc 1 201 0
  608 004a F0BC     		pop	{r4, r5, r6, r7}
  609              		.cfi_restore 7
  610              		.cfi_restore 6
@@ -896,11 +898,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  613              		.cfi_def_cfa_offset 0
  614              	.LVL77:
  615 004c 7047     		bx	lr
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 16
+
+
  616              		.cfi_endproc
  617              	.LFE75:
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 16
-
-
  618              		.size	BinaryRangeSearch, .-BinaryRangeSearch
  619 004e 00BF     		.text
  620              	.Letext0:
@@ -956,11 +958,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  670 0054 04       		.byte	0x4
  671 0055 05       		.byte	0x5
  672 0056 EE000000 		.4byte	.LASF5
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 17
+
+
  673 005a 02       		.uleb128 0x2
  674 005b 04       		.byte	0x4
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 17
-
-
  675 005c 07       		.byte	0x7
  676 005d D5020000 		.4byte	.LASF6
  677 0061 02       		.uleb128 0x2
@@ -1016,11 +1018,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  727 00c0 07       		.uleb128 0x7
  728 00c1 7F000000 		.4byte	.LASF17
  729 00c5 05       		.byte	0x5
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 18
+
+
  730 00c6 3801     		.2byte	0x138
  731 00c8 33000000 		.4byte	0x33
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 18
-
-
  732 00cc 07       		.uleb128 0x7
  733 00cd 61000000 		.4byte	.LASF18
  734 00d1 05       		.byte	0x5
@@ -1045,57 +1047,57 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  753 00fd 50010000 		.4byte	.LASF24
  754 0101 08       		.byte	0x8
  755 0102 06       		.byte	0x6
- 756 0103 23       		.byte	0x23
+ 756 0103 22       		.byte	0x22
  757 0104 1F010000 		.4byte	0x11f
  758 0108 09       		.uleb128 0x9
  759 0109 6E00     		.ascii	"n\000"
  760 010b 06       		.byte	0x6
- 761 010c 25       		.byte	0x25
+ 761 010c 24       		.byte	0x24
  762 010d F0000000 		.4byte	0xf0
  763 0111 00       		.byte	0
  764 0112 0A       		.uleb128 0xa
  765 0113 A6010000 		.4byte	.LASF22
  766 0117 06       		.byte	0x6
- 767 0118 26       		.byte	0x26
+ 767 0118 25       		.byte	0x25
  768 0119 F0000000 		.4byte	0xf0
  769 011d 04       		.byte	0x4
  770 011e 00       		.byte	0
  771 011f 03       		.uleb128 0x3
  772 0120 67030000 		.4byte	.LASF23
  773 0124 06       		.byte	0x6
- 774 0125 27       		.byte	0x27
+ 774 0125 26       		.byte	0x26
  775 0126 FC000000 		.4byte	0xfc
  776 012a 08       		.uleb128 0x8
  777 012b 30010000 		.4byte	.LASF25
  778 012f 08       		.byte	0x8
  779 0130 06       		.byte	0x6
- 780 0131 29       		.byte	0x29
+ 780 0131 28       		.byte	0x28
  781 0132 4D010000 		.4byte	0x14d
  782 0136 09       		.uleb128 0x9
  783 0137 6E00     		.ascii	"n\000"
  784 0139 06       		.byte	0x6
- 785 013a 2B       		.byte	0x2b
+ 785 013a 2A       		.byte	0x2a
  786 013b 25000000 		.4byte	0x25
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 19
+
+
  787 013f 00       		.byte	0
  788 0140 0A       		.uleb128 0xa
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 19
-
-
  789 0141 A6010000 		.4byte	.LASF22
  790 0145 06       		.byte	0x6
- 791 0146 2C       		.byte	0x2c
+ 791 0146 2B       		.byte	0x2b
  792 0147 25000000 		.4byte	0x25
  793 014b 04       		.byte	0x4
  794 014c 00       		.byte	0
  795 014d 03       		.uleb128 0x3
  796 014e B4020000 		.4byte	.LASF26
  797 0152 06       		.byte	0x6
- 798 0153 2D       		.byte	0x2d
+ 798 0153 2C       		.byte	0x2c
  799 0154 2A010000 		.4byte	0x12a
  800 0158 0B       		.uleb128 0xb
  801 0159 FE000000 		.4byte	.LASF58
  802 015d 01       		.byte	0x1
- 803 015e 60       		.byte	0x60
+ 803 015e 61       		.byte	0x61
  804 015f 6F000000 		.4byte	0x6f
  805 0163 00000000 		.4byte	.LFB73
  806 0167 30000000 		.4byte	.LFE73-.LFB73
@@ -1105,42 +1107,42 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  810 0171 0C       		.uleb128 0xc
  811 0172 5B000000 		.4byte	.LASF27
  812 0176 01       		.byte	0x1
- 813 0177 60       		.byte	0x60
+ 813 0177 61       		.byte	0x61
  814 0178 6F000000 		.4byte	0x6f
  815 017c 00000000 		.4byte	.LLST0
  816 0180 0D       		.uleb128 0xd
  817 0181 73747200 		.ascii	"str\000"
  818 0185 01       		.byte	0x1
- 819 0186 60       		.byte	0x60
+ 819 0186 61       		.byte	0x61
  820 0187 8F000000 		.4byte	0x8f
  821 018b 01       		.uleb128 0x1
  822 018c 51       		.byte	0x51
  823 018d 0C       		.uleb128 0xc
  824 018e F7000000 		.4byte	.LASF28
  825 0192 01       		.byte	0x1
- 826 0193 60       		.byte	0x60
+ 826 0193 61       		.byte	0x61
  827 0194 6F000000 		.4byte	0x6f
  828 0198 1E000000 		.4byte	.LLST1
  829 019c 0E       		.uleb128 0xe
  830 019d 57030000 		.4byte	.LASF29
  831 01a1 01       		.byte	0x1
- 832 01a2 60       		.byte	0x60
+ 832 01a2 61       		.byte	0x61
  833 01a3 6F000000 		.4byte	0x6f
  834 01a7 01       		.uleb128 0x1
  835 01a8 53       		.byte	0x53
  836 01a9 0F       		.uleb128 0xf
  837 01aa 9B020000 		.4byte	.LASF30
  838 01ae 01       		.byte	0x1
- 839 01af 62       		.byte	0x62
+ 839 01af 63       		.byte	0x63
  840 01b0 6F000000 		.4byte	0x6f
  841 01b4 3C000000 		.4byte	.LLST2
  842 01b8 00       		.byte	0
  843 01b9 10       		.uleb128 0x10
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 20
+
+
  844 01ba A6020000 		.4byte	.LASF32
  845 01be 01       		.byte	0x1
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 20
-
-
  846 01bf 12       		.byte	0x12
  847 01c0 F0000000 		.4byte	0xf0
  848 01c4 00000000 		.4byte	.LFB63
@@ -1196,11 +1198,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  898 0239 0F       		.uleb128 0xf
  899 023a 07030000 		.4byte	.LASF31
  900 023e 01       		.byte	0x1
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 21
+
+
  901 023f 2C       		.byte	0x2c
  902 0240 25000000 		.4byte	0x25
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 21
-
-
  903 0244 DE000000 		.4byte	.LLST7
  904 0248 00       		.byte	0
  905 0249 05       		.uleb128 0x5
@@ -1256,11 +1258,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  955 02ae 7F020000 		.4byte	0x27f
  956 02b2 01       		.uleb128 0x1
  957 02b3 51       		.byte	0x51
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 22
+
+
  958 02b4 00       		.byte	0
  959 02b5 14       		.uleb128 0x14
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 22
-
-
  960 02b6 06000000 		.4byte	.LASF37
  961 02ba 01       		.byte	0x1
  962 02bb 42       		.byte	0x42
@@ -1316,11 +1318,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  1012 031d 25000000 		.4byte	0x25
  1013 0321 33010000 		.4byte	.LLST10
  1014 0325 0C       		.uleb128 0xc
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 23
+
+
  1015 0326 00000000 		.4byte	.LASF34
  1016 032a 01       		.byte	0x1
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 23
-
-
  1017 032b 47       		.byte	0x47
  1018 032c 7F020000 		.4byte	0x27f
  1019 0330 56010000 		.4byte	.LLST11
@@ -1376,11 +1378,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  1069 03a1 01       		.uleb128 0x1
  1070 03a2 50       		.byte	0x50
  1071 03a3 03       		.uleb128 0x3
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 24
+
+
  1072 03a4 F3       		.byte	0xf3
  1073 03a5 01       		.uleb128 0x1
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 24
-
-
  1074 03a6 50       		.byte	0x50
  1075 03a7 00       		.byte	0
  1076 03a8 00       		.byte	0
@@ -1432,43 +1434,43 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  1122 040c 17       		.uleb128 0x17
  1123 040d 96020000 		.4byte	.LASF43
  1124 0411 01       		.byte	0x1
- 1125 0412 77       		.byte	0x77
+ 1125 0412 78       		.byte	0x78
  1126 0413 00000000 		.4byte	.LFB74
  1127 0417 A4000000 		.4byte	.LFE74-.LFB74
  1128 041b 01       		.uleb128 0x1
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 25
+
+
  1129 041c 9C       		.byte	0x9c
  1130 041d F5040000 		.4byte	0x4f5
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 25
-
-
  1131 0421 11       		.uleb128 0x11
  1132 0422 6E00     		.ascii	"n\000"
  1133 0424 01       		.byte	0x1
- 1134 0425 77       		.byte	0x77
+ 1134 0425 78       		.byte	0x78
  1135 0426 25000000 		.4byte	0x25
  1136 042a FB010000 		.4byte	.LLST16
  1137 042e 11       		.uleb128 0x11
  1138 042f 73747200 		.ascii	"str\000"
  1139 0433 01       		.byte	0x1
- 1140 0434 77       		.byte	0x77
+ 1140 0434 78       		.byte	0x78
  1141 0435 8F000000 		.4byte	0x8f
  1142 0439 19020000 		.4byte	.LLST17
  1143 043d 0C       		.uleb128 0xc
  1144 043e 57030000 		.4byte	.LASF29
  1145 0442 01       		.byte	0x1
- 1146 0443 77       		.byte	0x77
+ 1146 0443 78       		.byte	0x78
  1147 0444 6F000000 		.4byte	0x6f
  1148 0448 45020000 		.4byte	.LLST18
  1149 044c 18       		.uleb128 0x18
  1150 044d 6900     		.ascii	"i\000"
  1151 044f 01       		.byte	0x1
- 1152 0450 79       		.byte	0x79
+ 1152 0450 7A       		.byte	0x7a
  1153 0451 6F000000 		.4byte	0x6f
  1154 0455 71020000 		.4byte	.LLST19
  1155 0459 0F       		.uleb128 0xf
  1156 045a 94010000 		.4byte	.LASF44
  1157 045e 01       		.byte	0x1
- 1158 045f 83       		.byte	0x83
+ 1158 045f 84       		.byte	0x84
  1159 0460 6F000000 		.4byte	0x6f
  1160 0464 C9020000 		.4byte	.LLST20
  1161 0468 19       		.uleb128 0x19
@@ -1478,7 +1480,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  1165 0475 0F       		.uleb128 0xf
  1166 0476 4A010000 		.4byte	.LASF45
  1167 047a 01       		.byte	0x1
- 1168 047b 8E       		.byte	0x8e
+ 1168 047b 8F       		.byte	0x8f
  1169 047c 6F000000 		.4byte	0x6f
  1170 0480 E7020000 		.4byte	.LLST21
  1171 0484 1A       		.uleb128 0x1a
@@ -1496,11 +1498,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  1183 049f 00       		.sleb128 0
  1184 04a0 16       		.uleb128 0x16
  1185 04a1 01       		.uleb128 0x1
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 26
+
+
  1186 04a2 52       		.byte	0x52
  1187 04a3 02       		.uleb128 0x2
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 26
-
-
  1188 04a4 74       		.byte	0x74
  1189 04a5 00       		.sleb128 0
  1190 04a6 16       		.uleb128 0x16
@@ -1556,18 +1558,18 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  1240 04e7 02       		.uleb128 0x2
  1241 04e8 77       		.byte	0x77
  1242 04e9 00       		.sleb128 0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 27
+
+
  1243 04ea 00       		.byte	0
  1244 04eb 1A       		.uleb128 0x1a
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 27
-
-
  1245 04ec 3E000000 		.4byte	.LVL46
  1246 04f0 CD050000 		.4byte	0x5cd
  1247 04f4 00       		.byte	0
  1248 04f5 14       		.uleb128 0x14
  1249 04f6 85000000 		.4byte	.LASF46
  1250 04fa 01       		.byte	0x1
- 1251 04fb 96       		.byte	0x96
+ 1251 04fb 98       		.byte	0x98
  1252 04fc 00000000 		.4byte	.LFB75
  1253 0500 4E000000 		.4byte	.LFE75-.LFB75
  1254 0504 01       		.uleb128 0x1
@@ -1576,55 +1578,55 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  1257 050a 0E       		.uleb128 0xe
  1258 050b 2A030000 		.4byte	.LASF47
  1259 050f 01       		.byte	0x1
- 1260 0510 96       		.byte	0x96
+ 1260 0510 98       		.byte	0x98
  1261 0511 F0000000 		.4byte	0xf0
  1262 0515 01       		.uleb128 0x1
  1263 0516 50       		.byte	0x50
  1264 0517 0E       		.uleb128 0xe
  1265 0518 17000000 		.4byte	.LASF48
  1266 051c 01       		.byte	0x1
- 1267 051d 96       		.byte	0x96
+ 1267 051d 98       		.byte	0x98
  1268 051e 7D050000 		.4byte	0x57d
  1269 0522 01       		.uleb128 0x1
  1270 0523 51       		.byte	0x51
  1271 0524 0C       		.uleb128 0xc
  1272 0525 8B020000 		.4byte	.LASF49
  1273 0529 01       		.byte	0x1
- 1274 052a 96       		.byte	0x96
+ 1274 052a 98       		.byte	0x98
  1275 052b C0000000 		.4byte	0xc0
  1276 052f 05030000 		.4byte	.LLST22
  1277 0533 0E       		.uleb128 0xe
  1278 0534 7F020000 		.4byte	.LASF50
  1279 0538 01       		.byte	0x1
- 1280 0539 96       		.byte	0x96
+ 1280 0539 98       		.byte	0x98
  1281 053a 7F020000 		.4byte	0x27f
  1282 053e 01       		.uleb128 0x1
  1283 053f 53       		.byte	0x53
  1284 0540 0C       		.uleb128 0xc
  1285 0541 9A010000 		.4byte	.LASF51
  1286 0545 01       		.byte	0x1
- 1287 0546 96       		.byte	0x96
+ 1287 0546 98       		.byte	0x98
  1288 0547 7F020000 		.4byte	0x27f
  1289 054b 26030000 		.4byte	.LLST23
  1290 054f 0F       		.uleb128 0xf
  1291 0550 61030000 		.4byte	.LASF52
  1292 0554 01       		.byte	0x1
- 1293 0555 A3       		.byte	0xa3
+ 1293 0555 A5       		.byte	0xa5
  1294 0556 C0000000 		.4byte	0xc0
  1295 055a 46030000 		.4byte	.LLST24
  1296 055e 0F       		.uleb128 0xf
  1297 055f A6010000 		.4byte	.LASF22
  1298 0563 01       		.byte	0x1
- 1299 0564 A4       		.byte	0xa4
+ 1299 0564 A6       		.byte	0xa6
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 28
+
+
  1300 0565 C0000000 		.4byte	0xc0
  1301 0569 70030000 		.4byte	.LLST25
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 28
-
-
  1302 056d 0F       		.uleb128 0xf
  1303 056e 50030000 		.4byte	.LASF53
  1304 0572 01       		.byte	0x1
- 1305 0573 A5       		.byte	0xa5
+ 1305 0573 A7       		.byte	0xa7
  1306 0574 C0000000 		.4byte	0xc0
  1307 0578 A5030000 		.4byte	.LLST26
  1308 057c 00       		.byte	0
@@ -1676,11 +1678,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  1354 0000 01       		.uleb128 0x1
  1355 0001 11       		.uleb128 0x11
  1356 0002 01       		.byte	0x1
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 29
+
+
  1357 0003 25       		.uleb128 0x25
  1358 0004 0E       		.uleb128 0xe
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 29
-
-
  1359 0005 13       		.uleb128 0x13
  1360 0006 0B       		.uleb128 0xb
  1361 0007 03       		.uleb128 0x3
@@ -1736,11 +1738,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  1411 0039 0B       		.uleb128 0xb
  1412 003a 0B       		.uleb128 0xb
  1413 003b 49       		.uleb128 0x49
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 30
+
+
  1414 003c 13       		.uleb128 0x13
  1415 003d 00       		.byte	0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 30
-
-
  1416 003e 00       		.byte	0
  1417 003f 06       		.uleb128 0x6
  1418 0040 26       		.uleb128 0x26
@@ -1796,11 +1798,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  1468 0072 0D       		.uleb128 0xd
  1469 0073 00       		.byte	0
  1470 0074 03       		.uleb128 0x3
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 31
+
+
  1471 0075 0E       		.uleb128 0xe
  1472 0076 3A       		.uleb128 0x3a
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 31
-
-
  1473 0077 0B       		.uleb128 0xb
  1474 0078 3B       		.uleb128 0x3b
  1475 0079 0B       		.uleb128 0xb
@@ -1856,11 +1858,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  1525 00ac 03       		.uleb128 0x3
  1526 00ad 08       		.uleb128 0x8
  1527 00ae 3A       		.uleb128 0x3a
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 32
+
+
  1528 00af 0B       		.uleb128 0xb
  1529 00b0 3B       		.uleb128 0x3b
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 32
-
-
  1530 00b1 0B       		.uleb128 0xb
  1531 00b2 49       		.uleb128 0x49
  1532 00b3 13       		.uleb128 0x13
@@ -1916,11 +1918,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  1582 00e5 11       		.uleb128 0x11
  1583 00e6 01       		.uleb128 0x1
  1584 00e7 12       		.uleb128 0x12
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 33
+
+
  1585 00e8 06       		.uleb128 0x6
  1586 00e9 40       		.uleb128 0x40
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 33
-
-
  1587 00ea 18       		.uleb128 0x18
  1588 00eb 9742     		.uleb128 0x2117
  1589 00ed 19       		.uleb128 0x19
@@ -1976,11 +1978,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  1639 011f 11       		.uleb128 0x11
  1640 0120 01       		.uleb128 0x1
  1641 0121 12       		.uleb128 0x12
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 34
+
+
  1642 0122 06       		.uleb128 0x6
  1643 0123 40       		.uleb128 0x40
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 34
-
-
  1644 0124 18       		.uleb128 0x18
  1645 0125 9642     		.uleb128 0x2116
  1646 0127 19       		.uleb128 0x19
@@ -2036,11 +2038,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  1696 015f 01       		.byte	0x1
  1697 0160 3F       		.uleb128 0x3f
  1698 0161 19       		.uleb128 0x19
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 35
+
+
  1699 0162 03       		.uleb128 0x3
  1700 0163 0E       		.uleb128 0xe
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 35
-
-
  1701 0164 3A       		.uleb128 0x3a
  1702 0165 0B       		.uleb128 0xb
  1703 0166 3B       		.uleb128 0x3b
@@ -2096,11 +2098,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  1753 019b 00       		.byte	0
  1754 019c 1B       		.uleb128 0x1b
  1755 019d 898201   		.uleb128 0x4109
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 36
+
+
  1756 01a0 01       		.byte	0x1
  1757 01a1 11       		.uleb128 0x11
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 36
-
-
  1758 01a2 01       		.uleb128 0x1
  1759 01a3 31       		.uleb128 0x31
  1760 01a4 13       		.uleb128 0x13
@@ -2156,11 +2158,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  1810 01d6 1F       		.uleb128 0x1f
  1811 01d7 05       		.uleb128 0x5
  1812 01d8 00       		.byte	0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 37
+
+
  1813 01d9 49       		.uleb128 0x49
  1814 01da 13       		.uleb128 0x13
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 37
-
-
  1815 01db 00       		.byte	0
  1816 01dc 00       		.byte	0
  1817 01dd 20       		.uleb128 0x20
@@ -2216,11 +2218,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  1867 0013 0100     		.2byte	0x1
  1868 0015 50       		.byte	0x50
  1869 0016 00000000 		.4byte	0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 38
+
+
  1870 001a 00000000 		.4byte	0
  1871              	.LLST1:
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 38
-
-
  1872 001e 00000000 		.4byte	.LVL0
  1873 0022 20000000 		.4byte	.LVL7
  1874 0026 0100     		.2byte	0x1
@@ -2276,11 +2278,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  1924 00a1 08000000 		.4byte	.LVL15
  1925 00a5 0100     		.2byte	0x1
  1926 00a7 50       		.byte	0x50
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 39
+
+
  1927 00a8 08000000 		.4byte	.LVL15
  1928 00ac 2A000000 		.4byte	.LFE64
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 39
-
-
  1929 00b0 0100     		.2byte	0x1
  1930 00b2 54       		.byte	0x54
  1931 00b3 00000000 		.4byte	0
@@ -2336,11 +2338,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  1981 012a 9F       		.byte	0x9f
  1982 012b 00000000 		.4byte	0
  1983 012f 00000000 		.4byte	0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 40
+
+
  1984              	.LLST10:
  1985 0133 00000000 		.4byte	.LVL24
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 40
-
-
  1986 0137 05000000 		.4byte	.LVL25-1
  1987 013b 0100     		.2byte	0x1
  1988 013d 50       		.byte	0x50
@@ -2396,11 +2398,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  2038 01af 50       		.byte	0x50
  2039 01b0 9F       		.byte	0x9f
  2040 01b1 00000000 		.4byte	0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 41
+
+
  2041 01b5 00000000 		.4byte	0
  2042              	.LLST14:
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 41
-
-
  2043 01b9 00000000 		.4byte	.LVL30
  2044 01bd 12000000 		.4byte	.LVL31
  2045 01c1 0100     		.2byte	0x1
@@ -2456,11 +2458,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  2095 023b 51       		.byte	0x51
  2096 023c 9F       		.byte	0x9f
  2097 023d 00000000 		.4byte	0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 42
+
+
  2098 0241 00000000 		.4byte	0
  2099              	.LLST18:
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 42
-
-
  2100 0245 00000000 		.4byte	.LVL34
  2101 0249 0F000000 		.4byte	.LVL37-1
  2102 024d 0100     		.2byte	0x1
@@ -2516,11 +2518,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  2152 02c9 32000000 		.4byte	.LVL44
  2153 02cd 39000000 		.4byte	.LVL45-1
  2154 02d1 0100     		.2byte	0x1
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 43
+
+
  2155 02d3 50       		.byte	0x50
  2156 02d4 39000000 		.4byte	.LVL45-1
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 43
-
-
  2157 02d8 72000000 		.4byte	.LVL54
  2158 02dc 0100     		.2byte	0x1
  2159 02de 57       		.byte	0x57
@@ -2576,11 +2578,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  2209 035c 55       		.byte	0x55
  2210 035d 1E000000 		.4byte	.LVL70
  2211 0361 4C000000 		.4byte	.LVL77
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 44
+
+
  2212 0365 0100     		.2byte	0x1
  2213 0367 55       		.byte	0x55
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 44
-
-
  2214 0368 00000000 		.4byte	0
  2215 036c 00000000 		.4byte	0
  2216              	.LLST25:
@@ -2636,11 +2638,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  2266 003c 08000000 		.4byte	.LFE67-.LFB67
  2267 0040 00000000 		.4byte	.LFB68
  2268 0044 08000000 		.4byte	.LFE68-.LFB68
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 45
+
+
  2269 0048 00000000 		.4byte	.LFB69
  2270 004c 0C000000 		.4byte	.LFE69-.LFB69
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 45
-
-
  2271 0050 00000000 		.4byte	.LFB70
  2272 0054 0A000000 		.4byte	.LFE70-.LFB70
  2273 0058 00000000 		.4byte	.LFB71
@@ -2696,11 +2698,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  2318              	.LASF37:
  2319 0006 496E7433 		.ascii	"Int32ToFourBytes\000"
  2319      32546F46 
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 46
+
+
  2319      6F757242 
  2319      79746573 
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 46
-
-
  2319      00
  2320              	.LASF48:
  2321 0017 64617461 		.ascii	"data_points\000"
@@ -2756,11 +2758,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  2345      79746573 
  2345      546F5569 
  2345      6E743136 
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 47
+
+
  2345      00
  2346              	.LASF0:
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 47
-
-
  2347 00a8 666C6F61 		.ascii	"float\000"
  2347      7400
  2348              	.LASF57:
@@ -2816,11 +2818,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  2370      61766572 
  2370      6167655F 
  2370      74616700 
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 48
+
+
  2371              	.LASF1:
  2372 0164 7369676E 		.ascii	"signed char\000"
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 48
-
-
  2372      65642063 
  2372      68617200 
  2373              	.LASF8:
@@ -2876,11 +2878,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  2393      6E203232 
  2393      31323230 
  2394 0248 67202D66 		.ascii	"g -ffunction-sections -ffat-lto-objects\000"
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 49
+
+
  2394      66756E63 
  2394      74696F6E 
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 49
-
-
  2394      2D736563 
  2394      74696F6E 
  2395              	.LASF60:
@@ -2936,11 +2938,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 1
  2420      65726167 
  2420      65466C6F 
  2420      617400
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccdeia5S.s 			page 50
+
+
  2421              	.LASF31:
  2422 0307 6D615F63 		.ascii	"ma_curr\000"
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccGTWOL6.s 			page 50
-
-
  2422      75727200 
  2423              	.LASF35:
  2424 030f 55696E74 		.ascii	"Uint16ToTwoBytes\000"

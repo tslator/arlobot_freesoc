@@ -12,7 +12,6 @@
 
 #include "control.h"
 #include "i2c.h"
-#include "encoder.h"
 #include "motor.h"
 #include "cal.h"
 #include "odom.h"
@@ -28,21 +27,15 @@ static float left_cmd_velocity;
 static float right_cmd_velocity;
 
 static void CalculateLeftRightSpeed()
+/* Calculate the left/right wheel speed from the commanded linear/angular velocity
+ */
 {
-    static uint32 last_calc_time;
     float linear;
     float angular;
-    uint32 delta_time;
-    
-    delta_time = millis() - last_calc_time;
-    if (delta_time > LEFT_RIGHT_CALC_MS)
-    {
-        last_calc_time = millis();
-        
-        I2c_ReadCmdVelocity(&linear, &angular);        
-        left_cmd_velocity = linear - (angular * TRACK_WIDTH)/2;
-        right_cmd_velocity = linear + (angular * TRACK_WIDTH)/2;
-    }
+
+    I2c_ReadCmdVelocity(&linear, &angular);
+    left_cmd_velocity = linear - (angular * TRACK_WIDTH)/2;
+    right_cmd_velocity = linear + (angular * TRACK_WIDTH)/2;
 }
 
 void Control_Init()
@@ -57,8 +50,6 @@ void Control_Update()
 {
     uint16 control;
     
-    CalculateLeftRightSpeed();   
-    
     control = I2c_ReadControl();
     
     if (control & CONTROL_DISABLE_MOTOR_BIT)
@@ -68,7 +59,6 @@ void Control_Update()
     
     if (control & CONTROL_CLEAR_ODOMETRY_BIT)
     {
-        Encoder_Reset();
         Odom_Reset();
     }    
 
@@ -83,6 +73,7 @@ void Control_Update()
         Cal_Validate();
     }
     
+    CalculateLeftRightSpeed();   
 }
 
 float Control_LeftGetCmdVelocity()

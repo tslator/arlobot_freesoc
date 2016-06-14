@@ -16,6 +16,11 @@
 #include "utils.h"
 #include "debug.h"
 
+/* Macro to wait for any outstanding master writes to the I2C buffer.  This ensures data integrity across the interface
+ */
+#define I2C_WAIT_FOR_ACCESS()   do  \
+                                {   \
+                                } while (0 !=  EZI2C_Slave_GetActivity())
 /*
     I2C Communication Data Layout
 
@@ -172,76 +177,86 @@ void I2c_Start()
 uint16 I2c_ReadControl()
 {
     uint16 value;
-    
+
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
     value = i2c_buf.read_write.control;
     i2c_buf.read_write.control = 0;
+    EZI2C_Slave_EnableInt();
     
-    //value |= CONTROL_ENABLE_CALIBRATION_BIT;
-    //value |= CONTROL_VALIDATE_CALIBRATION_BIT;
     return value;
 }
 
-#define STEP_INPUT (700)
-
 void I2c_ReadCmdVelocity(float *linear, float *angular)
 {
-    *linear = max(MIN_LINEAR_VELOCITY, min(i2c_buf.read_write.linear_cmd_velocity, MAX_LINEAR_VELOCITY));
-    *angular = max(MIN_ANGULAR_VELOCITY, min(i2c_buf.read_write.angular_cmd_velocity, MAX_ANGULAR_VELOCITY));
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
+    i2c_buf.read_write.linear_cmd_velocity = 0.0;
+    i2c_buf.read_write.angular_cmd_velocity = 0.75;
+    *linear = i2c_buf.read_write.linear_cmd_velocity;
+    *angular = i2c_buf.read_write.angular_cmd_velocity;
+    EZI2C_Slave_EnableInt();
     
-    //*linear = 0.2;
-    //*angular = 0.0;
+    *linear = max(MIN_LINEAR_VELOCITY, min(*linear, MAX_LINEAR_VELOCITY));
+    *angular = max(MIN_ANGULAR_VELOCITY, min(*angular, MAX_ANGULAR_VELOCITY));
 }
 
 void I2c_WriteCalReg(uint16 value)
 {
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
     i2c_buf.read_write.calibration_port = value;
+    EZI2C_Slave_EnableInt();
 }
 
 uint16 I2c_ReadCalReg()
 {
-    return i2c_buf.read_write.calibration_port;
+    uint16 value;
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
+    value = i2c_buf.read_write.calibration_port;
+    EZI2C_Slave_EnableInt();
+    return value;
 }
 
 void I2c_SetStatusBit(uint8 bit)
 {
     i2c_status |= bit;
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
     i2c_buf.read_only.status = i2c_status;
+    EZI2C_Slave_EnableInt();
 }
 
 void I2c_ClearStatusBit(uint8 bit)
 {
     i2c_status &= ~bit;
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
     i2c_buf.read_only.status = i2c_status;
+    EZI2C_Slave_EnableInt();
 }
 
 void I2c_WriteOdom(float x_dist, float y_dist, float heading, float linear_speed, float angular_speed)
 {
-    char x_dist_str[10];
-    char y_dist_str[10];
-    char heading_str[10];
-    char linear_str[10];
-    char angular_str[10];
-    
-    ftoa(x_dist, x_dist_str, 3);
-    ftoa(y_dist, y_dist_str, 3);
-    ftoa(heading, heading_str, 3);
-    ftoa(linear_speed, linear_str, 3);
-    ftoa(angular_speed, angular_str, 3);
-    
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
     i2c_buf.read_only.odom.x_dist = x_dist;
     i2c_buf.read_only.odom.y_dist = y_dist;
     i2c_buf.read_only.odom.heading = heading;
     i2c_buf.read_only.odom.linear_velocity = linear_speed;
     i2c_buf.read_only.odom.angular_velocity = angular_speed;
-    
-    DEBUG_PRINT("x: %s, y: %s, h: %s, l: %s, a: %s\r\n", x_dist_str, y_dist_str, heading_str, linear_str, angular_str);
+    EZI2C_Slave_EnableInt();
 }
 
 void I2c_WriteFrontUltrasonicDistance(uint8 offset, uint16 distance)
 {
     if (offset >= FIRST_FRONT_ULTRASONIC_SENSOR && offset <= LAST_FRONT_ULTRASONIC_SENSOR)
     {
+        I2C_WAIT_FOR_ACCESS();
+        EZI2C_Slave_DisableInt();
         i2c_buf.read_only.us.front[offset] = distance;
+        EZI2C_Slave_EnableInt();
     }
 }
 
@@ -249,7 +264,10 @@ void I2c_WriteRearUltrasonicDistance(uint8 offset, uint16 distance)
 {
     if (offset >= FIRST_REAR_ULTRASONIC_SENSOR && offset <= LAST_REAR_ULTRASONIC_SENSOR)
     {
+        I2C_WAIT_FOR_ACCESS();
+        EZI2C_Slave_DisableInt();
         i2c_buf.read_only.us.rear[offset] = distance;
+        EZI2C_Slave_EnableInt();
     }            
 }
 
@@ -257,7 +275,10 @@ void I2c_WriteFrontInfraredDistance(uint8 offset, uint8 distance)
 {
     if (offset >= FIRST_REAR_INFRARED_SENSOR && offset <= LAST_REAR_INFRARED_SENSOR)
     {
+        I2C_WAIT_FOR_ACCESS();
+        EZI2C_Slave_DisableInt();
         i2c_buf.read_only.ir.front[offset] = distance;
+        EZI2C_Slave_EnableInt();
     }
 }
 
@@ -265,13 +286,19 @@ void I2c_WriteRearInfraredDistance(uint8 offset, uint8 distance)
 {
     if (offset >= FIRST_REAR_INFRARED_SENSOR && offset <= LAST_REAR_INFRARED_SENSOR)
     {
+        I2C_WAIT_FOR_ACCESS();
+        EZI2C_Slave_DisableInt();
         i2c_buf.read_only.ir.rear[offset] = distance;
+        EZI2C_Slave_EnableInt();
     }            
 }
 
 void I2c_UpdateHeartbeat()
 {
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
     i2c_buf.read_only.heartbeat++;
+    EZI2C_Slave_EnableInt();
 }
 
 /* [] END OF FILE */

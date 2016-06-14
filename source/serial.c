@@ -23,8 +23,20 @@
 #define LINE_STR_LENGTH     (20u)
 #endif
 
+typedef struct _line_tag
+{
+    char string[256];
+} LINE_TYPE;
+
+static LINE_TYPE buffer[100];
+static uint8 back_offset;
+static uint8 front_offset;
+
 void Ser_Init()
 {
+    memset(buffer, 0, sizeof(LINE_TYPE)*100);
+    front_offset = 0;
+    back_offset = 0;    
 }
 
 void Ser_Start()
@@ -53,52 +65,15 @@ void Ser_Start()
 #endif
 }
 
-uint8 Ser_Write(uint8 *data, size_t num)
-{
-#ifdef COMMS_DEBUG_ENABLED    
-    if (0 != USBUART_CDCIsReady())
-    {
-        USBUART_PutData(data, num);
-        return 0;    
-    }
-    
-    return 1;
-#else
-    data = data;
-    num = num;
-    return 0;
-#endif    
-}
-
-uint8 Ser_Read(uint8 *data, size_t *num)
-{
-#ifdef COMMS_DEBUG_ENABLED    
-    uint16 count;
-    
-    if (0u != USBUART_DataIsReady())
-    {
-        /* Read received data and re-enable OUT endpoint. */
-        count = USBUART_GetAll(buffer);
-                
-        *num = min(*num, count);
-        memcpy(data, buffer, *num);
-        return 0;
-    }
-    
-    return 1;
-#else
-    data = data;
-    num = num;
-    return 0;
-#endif    
-}
-
 void Ser_PutString(char *str)
 {
 #ifdef COMMS_DEBUG_ENABLED    
-    if (0 != USBUART_CDCIsReady())
-    {
-        USBUART_PutString(str);
+    if (0u != USBUART_GetConfiguration())
+    {    
+        if (USBUART_CDCIsReady())
+        {
+            USBUART_PutString(str);
+        }
     }
 #else
     str = str;

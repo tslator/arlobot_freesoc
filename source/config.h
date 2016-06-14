@@ -15,6 +15,11 @@
     
 #include <project.h>
     
+/* There is a known issue with printf/sprintf and float formating which can be resolved by converting floats to string
+   and then using format to include into a string.  However, the gcc compiler does not support ftoa so I had to role my
+   own.  This define enabled the home-grown ftoa (in utils.c)
+ */
+#define USE_FTOA
     
 typedef float (*GET_TARGET_TYPE)();
 typedef float (*GET_ENCODER_TYPE)();
@@ -30,20 +35,22 @@ typedef enum {FORWARD_DIR, BACKWARD_DIR} DIR_TYPE;
     Communication
 ----------------------------------------------------------------------------------------------------------------------*/
 
-//#define COMMS_DEBUG_ENABLED
-#define I2C_ADDRESS (0x08)
+#define COMMS_DEBUG_ENABLED
 
-#define LEFT_PID_DUMP_ENABLED
-#define LEFT_ENC_DUMP_ENABLED
+//#define LEFT_PID_DUMP_ENABLED
+//#define LEFT_ENC_DUMP_ENABLED
 
-#define RIGHT_PID_DUMP_ENABLED
-#define RIGHT_ENC_DUMP_ENABLED
+//#define RIGHT_PID_DUMP_ENABLED
+//#define RIGHT_ENC_DUMP_ENABLED
 
-#define MOTOR_DUMP_ENABLED
+//#define MOTOR_DUMP_ENABLED
 
-#define ENC_UPDATE_DELTA_ENABLED
-#define PID_UPDATE_DELTA_ENABLED
-#define ODOM_UPDATE_DELTA_ENABLED
+#define ODOM_DUMP_ENABLED
+
+//#define ENC_UPDATE_DELTA_ENABLED
+//#define PID_UPDATE_DELTA_ENABLED
+//#define ODOM_UPDATE_DELTA_ENABLED
+//#define MAIN_LOOP_DELTA_ENABLED
 
 /*---------------------------------------------------------------------------------------------------------------------- 
     Sensors
@@ -65,12 +72,17 @@ typedef enum {FORWARD_DIR, BACKWARD_DIR} DIR_TYPE;
 #define FIRST_REAR_INFRARED_SENSOR (0)    
 #define LAST_REAR_INFRARED_SENSOR (NUM_REAR_INFRARED_SENSORS - 1)    
 
-
+#define PI (3.1415926535897932384626433832795)
+#define WHEEL_DIAMETER (0.1524)
 #define TRACK_WIDTH (0.403)             // meter
 #define METER_PER_REVOLUTION (0.4787)   // meter
-#define COUNTS_PER_REVOLUTION (36.0 * 4)  /* 36 teeth per revolution (4x encoder) */
-#define METER_PER_COUNT (METER_PER_REVOLUTION/COUNTS_PER_REVOLUTION)
+#define COUNT_PER_REVOLUTION (36.0 * 4)  /* 36 teeth per revolution (4x encoder) */
+#define METER_PER_COUNT (METER_PER_REVOLUTION/COUNT_PER_REVOLUTION)
 #define COUNT_PER_METER (COUNTS_PER_REVOLUTION/METER_PER_REVOLUTION)
+#define RADIAN_PER_COUNT (PI * (WHEEL_DIAMETER/(TRACK_WIDTH*COUNT_PER_REVOLUTION)))
+#define RADIAN_PER_METER (PI * (WHEEL_DIAMETER/(TRACK_WIDTH*METER_PER_REVOLUTION)))
+
+
 
 // Note: These are the theoretical values, so it may be prudent to back these down to more conservative values
 #define MAX_METER_PER_SECOND    (0.7579)
@@ -81,14 +93,6 @@ typedef enum {FORWARD_DIR, BACKWARD_DIR} DIR_TYPE;
 #define MIN_ANGULAR_VELOCITY    (-MAX_RADIAN_PER_SECOND)
 #define MAX_ANGULAR_VELOCITY    (MAX_RADIAN_PER_SECOND)
 
-
-    
-
-
-/* The unity range used for mapping forward/reverse adjustments to the PWM output */
-#define MIN_UNITY_VALUE (-1.0)
-#define MAX_UNITY_VALUE (1.0)
-
 /*----------------------------------------------------------------------------------------------------------------------
 
 Sample Rates
@@ -96,16 +100,16 @@ Sample Rates
 ----------------------------------------------------------------------------------------------------------------------*/
 #define ENC_SAMPLE_RATE     (20) /* Hz */
 #define PID_SAMPLE_RATE     (20) /* Hz */
-#define ODOM_SAMPLE_RATE    (10) /* Hz */
+#define ODOM_SAMPLE_RATE    (20) /* Hz */
 #define HEARTBEAT_RATE      (2)  /* Hz */
-#define CONTROL_RATE        (20) /* Hz */
+#define CONTROL_RATE        (10) /* Hz */
 
 /* The following defines and macro provide a mechanism to distribute the sampling across the main loop, i.e., keep the
    sampling from happening all of the same time, by introducing a one-time initial delay or sampling offset.
  */
-#define ENC_SCHED_OFFSET    (0)  /* ms */
-#define PID_SCHED_OFFSET    (10)  /* ms */
-#define ODOM_SCHED_OFFSET   (15)  /* ms */
+#define ENC_SCHED_OFFSET    (7)  /* ms */
+#define PID_SCHED_OFFSET    (19)  /* ms */
+#define ODOM_SCHED_OFFSET   (11)  /* ms */
 
 #define APPLY_SCHED_OFFSET(offset, applied) do {                        \
                                                 if (!applied)           \
@@ -115,11 +119,6 @@ Sample Rates
                                                 }                       \
                                             } while (0);
 
-/*----------------------------------------------------------------------------------------------------------------------
-
-PID Tuning
-
-----------------------------------------------------------------------------------------------------------------------*/
 
 
 
