@@ -1,6 +1,6 @@
 // ======================================================================
 // freesoc.v generated from TopDesign.cysch
-// 06/14/2016 at 16:19
+// 06/14/2016 at 16:23
 // This file is auto generated. ANY EDITS YOU MAKE MAY BE LOST WHEN THIS FILE IS REGENERATED!!!
 // ======================================================================
 
@@ -847,7 +847,7 @@ module QuadDec_v3_0_5 (
 
 endmodule
 
-// EZI2C_v2_0(BitWidthReplacementString=uint8, BusSpeed_kHz=400, EnableWakeup=false, Hex1=false, Hex2=false, I2C_Address1=8, I2C_Address2=9, I2C_Addresses=1, I2cBusPort=0, Sub_Address_Size=0, CY_API_CALLBACK_HEADER_INCLUDE=#include "cyapicallbacks.h", CY_COMPONENT_NAME=EZI2C_v2_0, CY_CONTROL_FILE=<:default:>, CY_DATASHEET_FILE=<:default:>, CY_FITTER_NAME=EZI2C_Slave, CY_INSTANCE_SHORT_NAME=EZI2C_Slave, CY_MAJOR_VERSION=2, CY_MINOR_VERSION=0, CY_REMOVE=false, CY_SUPPRESS_API_GEN=false, CY_VERSION=PSoC Creator  3.3 CP3, INSTANCE_NAME=EZI2C_Slave, )
+// EZI2C_v2_0(BitWidthReplacementString=uint8, BusSpeed_kHz=1000, EnableWakeup=false, Hex1=false, Hex2=false, I2C_Address1=8, I2C_Address2=9, I2C_Addresses=1, I2cBusPort=0, Sub_Address_Size=0, CY_API_CALLBACK_HEADER_INCLUDE=#include "cyapicallbacks.h", CY_COMPONENT_NAME=EZI2C_v2_0, CY_CONTROL_FILE=<:default:>, CY_DATASHEET_FILE=<:default:>, CY_FITTER_NAME=EZI2C_Slave, CY_INSTANCE_SHORT_NAME=EZI2C_Slave, CY_MAJOR_VERSION=2, CY_MINOR_VERSION=0, CY_REMOVE=false, CY_SUPPRESS_API_GEN=false, CY_VERSION=PSoC Creator  3.3 CP3, INSTANCE_NAME=EZI2C_Slave, )
 module EZI2C_v2_0_6 (
     sda,
     scl);
