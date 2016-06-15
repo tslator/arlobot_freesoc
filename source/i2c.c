@@ -191,8 +191,8 @@ void I2c_ReadCmdVelocity(float *linear, float *angular)
 {
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
-    i2c_buf.read_write.linear_cmd_velocity = 0.0;
-    i2c_buf.read_write.angular_cmd_velocity = 0.75;
+    //i2c_buf.read_write.linear_cmd_velocity = 0.0;
+    //i2c_buf.read_write.angular_cmd_velocity = 0.75;
     *linear = i2c_buf.read_write.linear_cmd_velocity;
     *angular = i2c_buf.read_write.angular_cmd_velocity;
     EZI2C_Slave_EnableInt();
