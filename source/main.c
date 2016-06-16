@@ -71,9 +71,9 @@ int main()
     Ultrasonic_Start();
     Infrared_Start();
 
-    DEBUG_PRINT_NOARG("Hello, my name is ArloSoc!\r\n");
-    DEBUG_PRINT_NOARG("I am the microcontroller for Arlobot.\r\n");
-    DEBUG_PRINT_NOARG("I'm entering my main loop now!\r\n");
+    DEBUG_PRINT_STR("Hello, my name is ArloSoc!\r\n");
+    DEBUG_PRINT_STR("I am the microcontroller for Arlobot.\r\n");
+    DEBUG_PRINT_STR("I'm entering my main loop now!\r\n");
     
     for(;;)
     {

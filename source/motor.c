@@ -230,7 +230,7 @@ static void DumpMotor(MOTOR_TYPE *motor)
     
     ftoa(motor->cps, cps_str, 3);
     
-    DEBUG_PRINT_STR("%s: %s %d \r\n", motor->name, cps_str, motor->pwm);
+    DEBUG_PRINT_ARG("%s: %s %d \r\n", motor->name, cps_str, motor->pwm);
 }
 #endif
 
@@ -459,15 +459,6 @@ void Motor_Stop()
     right_motor.enable(HB25_DISABLE);
 }
 
-static void WriteTwoValues(uint16 pwm, float cps)
-{
-    char cps_str[10];
-    
-    ftoa(cps, cps_str, 3);
-    
-    DEBUG_PRINT("%d %s \r\n", pwm, cps_str);
-}
-    
 static int32 CollectCpsPwmSamples(MOTOR_TYPE *motor, GET_ENCODER_TYPE encoder, uint8 num_avg_iter)
 {
     uint8 ii;
@@ -490,9 +481,7 @@ static int32 CollectCpsPwmSamples(MOTOR_TYPE *motor, GET_ENCODER_TYPE encoder, u
         CyDelay(10);
     }
     
-    int32 avg_cps = (int32) cnts_per_sec_sum / num_avg_iter;
-    WriteTwoValues(motor->pwm, avg_cps);
-    return avg_cps;
+    return (int32) cnts_per_sec_sum / num_avg_iter;
 }
 
 static void RampSpeed(MOTOR_TYPE *motor, uint32 time_ms, uint16 pwm)

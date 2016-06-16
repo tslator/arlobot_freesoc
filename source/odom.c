@@ -55,7 +55,7 @@ static void DumpOdom()
     ftoa(linear_speed, linear_str, 3);
     ftoa(angular_speed, angular_str, 3);
     
-    DEBUG_PRINT_STR("x: %s, y: %s, h: %s, l: %s, a: %s\r\n", x_dist_str, y_dist_str, heading_str, linear_str, angular_str);
+    DEBUG_PRINT_ARG("x: %s, y: %s, h: %s, l: %s, a: %s\r\n", x_dist_str, y_dist_str, heading_str, linear_str, angular_str);
 }
 #endif
 

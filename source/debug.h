@@ -31,27 +31,27 @@ char formatted_string[256];
 
 #define WHERESTR "[FILE : %s, FUNC : %s, LINE : %d]: "
 #define WHEREARG __FILE__,__func__,__LINE__
-#define INSIDE_DEBUG_DETAIL(...)  do { \
-                                snprintf(formatted_string, sizeof(formatted_string), __VA_ARGS__); \
-                                Ser_PutString(formatted_string);            \
-                           } while (0)
+#define INSIDE_DEBUG_DETAIL(...)    do {                                                                \
+                                    snprintf(formatted_string, sizeof(formatted_string), __VA_ARGS__);  \
+                                    Ser_PutString(formatted_string);                                    \
+                                    } while (0)
 
-#define INSIDE_DEBUG(...)  do {                                                                     \
-                                snprintf(formatted_string, sizeof(formatted_string), __VA_ARGS__);  \
-                                Ser_PutString(formatted_string);                                    \
-                           } while (0)
+#define INSIDE_DEBUG(...)           do {                                                                     \
+                                    snprintf(formatted_string, sizeof(formatted_string), __VA_ARGS__);  \
+                                    Ser_PutString(formatted_string);                                    \
+                                    } while (0)
                                 
 #ifdef COMMS_DEBUG_ENABLED
-#define DEBUG_PRINT(_fmt, ...)           INSIDE_DEBUG_DETAIL(WHERESTR _fmt, WHEREARG,__VA_ARGS__)
-#define DEBUG_PRINT_LEVEL(X, _fmt, ...)  if((DEBUG_LEVEL & X) == X) \
-                                             INSIDE_DEBUG_DETAIL(WHERESTR _fmt, WHEREARG,__VA_ARGS__)
-#define DEBUG_PRINT_NOARG(_fmt)          INSIDE_DEBUG(_fmt)
-#define DEBUG_PRINT_STR(_fmt, ...)       INSIDE_DEBUG(_fmt, __VA_ARGS__)
+#define DEBUG_PRINT_STR(_fmt)               INSIDE_DEBUG(_fmt)
+#define DEBUG_PRINT_ARG(_fmt, ...)          INSIDE_DEBUG(_fmt, __VA_ARGS__)
+#define DEBUG_PRINT_LINEFILE(_fmt, ...)     INSIDE_DEBUG_DETAIL(WHERESTR _fmt, WHEREARG,__VA_ARGS__)
+#define DEBUG_PRINT_LEVEL(X, _fmt, ...)     if((DEBUG_LEVEL & X) == X) \
+                                                INSIDE_DEBUG_DETAIL(WHERESTR _fmt, WHEREARG,__VA_ARGS__)
 #else
-#define DEBUG_PRINT(X, _fmt, ...)
+#define DEBUG_PRINT_STR(_fmt)
+#define DEBUG_PRINT_ARG(_fmt, ...)
+#define DEBUG_PRINT_LINEFILE(X, _fmt, ...)
 #define DEBUG_PRINT_LEVEL(X, _fmt, ...)
-#define DEBUG_PRINT_NOARG(_fmt)
-#define DEBUG_PRINT_STR(_fmt, ...)
 #endif
     
 
