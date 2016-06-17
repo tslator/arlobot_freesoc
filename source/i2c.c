@@ -293,11 +293,11 @@ void I2c_WriteRearInfraredDistance(uint8 offset, uint8 distance)
     }            
 }
 
-void I2c_UpdateHeartbeat()
+void I2c_UpdateHeartbeat(uint32 counter)
 {
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
-    i2c_buf.read_only.heartbeat++;
+    i2c_buf.read_only.heartbeat = counter;
     EZI2C_Slave_EnableInt();
 }
 

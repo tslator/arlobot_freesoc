@@ -44,7 +44,7 @@ void I2c_WriteFrontInfraredDistance(uint8 offset, uint8 distance);
 void I2c_WriteRearInfraredDistance(uint8 offset, uint8 distance);
 void I2c_WriteOdom(float x_dist, float y_dist, float heading, float linear_speed, float angular_speed);
 
-void I2c_UpdateHeartbeat();
+void I2c_UpdateHeartbeat(uint32 counter);
 
 
 
