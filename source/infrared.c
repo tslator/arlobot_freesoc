@@ -53,38 +53,138 @@ ADC    Voltage        Pow          cm           mm
 static uint8 rear_adc_last_channel;
 static uint8 front_adc_last_channel;
 
+typedef struct queueItem_s
+{
+    uint8 channel;
+    float voltage;
+} queueItem_t;
+
+typedef void (*WRITE_DISTANCE_TYPE)(uint8 offset, uint8 distance);
+typedef void (*LOCK_TYPE)(void);
+typedef void (*UNLOCK_TYPE)(void);
+
+typedef struct circularQueue_s
+{
+    int first;
+    int last;
+    int validItems;
+    int maxItems;
+    int *p_items;
+    queueItem_t *p_data;
+    LOCK_TYPE lock;
+    UNLOCK_TYPE unlock;
+    WRITE_DISTANCE_TYPE Report;        
+} circularQueue_t;
+
+static circularQueue_t front_queue;
+static int front_queue_items[8];
+static queueItem_t front_queue_data[8];
+
+static circularQueue_t rear_queue;
+static int rear_queue_items[8];
+static queueItem_t rear_queue_data[8];
+
+void initializeQueue(circularQueue_t *theQueue, int *items_buffer, queueItem_t *data_buffer)
+{
+    theQueue->validItems = 0;
+    theQueue->first      = 0;
+    theQueue->last       = 0;
+    theQueue->p_items    = items_buffer;
+    theQueue->p_data     = data_buffer;
+}
+ 
+int isEmpty(circularQueue_t *theQueue)
+{
+    int result;
+    
+    theQueue->lock();
+    result = theQueue->validItems == 0;
+    theQueue->unlock();
+    return result;
+}
+ 
+int putItem(circularQueue_t *theQueue, int theItemValue)
+{
+    theQueue->lock();
+    if ( theQueue->validItems>=theQueue->maxItems )
+    {
+        theQueue->unlock();
+        return 0;
+    }
+
+    theQueue->validItems++;
+    theQueue->p_items[theQueue->last] = theItemValue;
+    theQueue->last = (theQueue->last+1) % theQueue->maxItems;
+    
+    theQueue->unlock();
+    
+    return 1;
+}
+ 
+int getItem(circularQueue_t *theQueue, int *theItemValue)
+{
+    if(isEmpty(theQueue))
+    {
+        return 0;
+    }
+    
+    theQueue->lock();
+    *theItemValue = theQueue->p_items[theQueue->first];
+    theQueue->first = (theQueue->first+1)%theQueue->maxItems;
+    theQueue->validItems--;
+    theQueue->unlock();
+    return 1;
+}
+ 
+void printQueue(circularQueue_t *theQueue)
+{
+    int index, num_valid_items;
+    theQueue->lock();
+    index  = theQueue->first;
+    num_valid_items = theQueue->validItems;
+    theQueue->unlock();
+    while(num_valid_items>0)
+    {
+        theQueue->lock();
+        int entry = theQueue->p_items[index];
+        index=(index+1)%theQueue->maxItems;
+        theQueue->unlock();
+        num_valid_items--;
+        DEBUG_PRINT_ARG("Element #%d = %d\n", index, entry);
+    }
+    return;
+}
+
 static CY_ISR(Front_EOC_Interrupt)
 /* This interrupt occurs when the ADC completes the conversion
        Clear the interrupt
        Read value from ADC
-       Calculate distance
-       Store distance
+       Store channel and counts
  */
 {
     Front_ADC_SAR_IRQ_ClearPending();
     
     int16 counts = Front_ADC_SAR_GetResult16();
-    float voltage = Front_ADC_SAR_CountsTo_Volts(counts);    
-    voltage = constrain(voltage, ADC_MIN_VALUE, ADC_MAX_VALUE);
-    uint8 distance = CALCULATE_DISTANCE(voltage);
-    I2c_WriteFrontInfraredDistance(front_adc_last_channel, distance);    
+    float voltage = Front_ADC_SAR_CountsTo_Volts(counts);
+    front_queue.p_data[front_adc_last_channel].channel = front_adc_last_channel;
+    front_queue.p_data[front_adc_last_channel].voltage = voltage;
+    putItem(&front_queue, front_adc_last_channel);
 }
 
 static CY_ISR(Rear_EOC_Interrupt)
 /* This interrupt occurs when the ADC completes the conversion
        Clear the interrupt
        Read value from ADC
-       Calculate distance
-       Store distance
+       Store channel and counts
  */
 {
     Rear_ADC_SAR_IRQ_ClearPending();
     
     int16 counts = Rear_ADC_SAR_GetResult16();
     float voltage = Rear_ADC_SAR_CountsTo_Volts(counts);
-    voltage = constrain(voltage, ADC_MIN_VALUE, ADC_MAX_VALUE);
-    uint8 distance = CALCULATE_DISTANCE(voltage);
-    I2c_WriteRearInfraredDistance(rear_adc_last_channel, distance);    
+    rear_queue.p_data[rear_adc_last_channel].channel = rear_adc_last_channel;
+    rear_queue.p_data[rear_adc_last_channel].voltage = voltage;
+    putItem(&rear_queue, rear_adc_last_channel);
 }
 
 static CY_ISR(Front_EOS_Interrupt)
@@ -119,6 +219,9 @@ void Infrared_Init()
 {
     Front_AMuxSeq_DisconnectAll();
     Rear_AMuxSeq_DisconnectAll();
+
+    initializeQueue(&front_queue, &front_queue_items[0], &front_queue_data[0]);
+    initializeQueue(&rear_queue, &rear_queue_items[0], &rear_queue_data[0]);
 }
 
 void Infrared_Start()
@@ -143,6 +246,26 @@ void Infrared_Start()
     
     Front_ADC_SAR_StartConvert();
     Rear_ADC_SAR_StartConvert();
+}
+
+void Infrared_Update()
+{
+    int index;
+    while (getItem(&front_queue, &index))
+    {
+        float voltage = front_queue.p_data[index].voltage;
+        uint8 channel = front_queue.p_data[index].channel;
+        uint8 distance = CALCULATE_DISTANCE(constrain(voltage, ADC_MIN_VALUE, ADC_MAX_VALUE));
+        front_queue.Report(channel, distance);
+    }
+    
+    while (getItem(&rear_queue, &index))
+    {
+        float voltage = rear_queue_data[index].voltage;
+        uint8 channel = rear_queue_data[index].channel;
+        uint8 distance = CALCULATE_DISTANCE(constrain(voltage, ADC_MIN_VALUE, ADC_MAX_VALUE));
+        rear_queue.Report(channel, distance);
+    }
 }
 
 void Infrared_Test()

@@ -93,6 +93,10 @@ void Ultrasonic_Start()
     Rear_Trigger_Next();
 }
 
+void Ultrasonic_Update()
+{
+}
+
 void Ultrasonic_Test()
 {
 }

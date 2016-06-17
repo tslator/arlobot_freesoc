@@ -200,4 +200,5 @@ void BinaryRangeSearch(int32 search, int32 *data_points, uint8 num_points, uint8
    }
 }
 
+
 /* [] END OF FILE */

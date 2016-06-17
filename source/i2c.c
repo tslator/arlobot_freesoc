@@ -58,17 +58,17 @@
       34           8         [front ultrasonic distance]    ultrasonic distance is an array of 
                                                             distances from the ultrasonic sensors in 
                                                             centimeters, range 2 to 500
-      42           8         [rear ultrasonic distance]     ultrasonic distance is an array of 
+      50           8         [rear ultrasonic distance]     ultrasonic distance is an array of 
                                                             distances from the ultrasonic sensors in 
                                                             centimeters, range 2 to 500
            <------ Infrared ------>
-      50           8         [infrared distance]            infrared distance is an array of distances 
+      66           8         [infrared distance]            infrared distance is an array of distances 
                                                             from the infrared sensors in centimeters, 
                                                             range 10 to 80
-      58           8         [infrared distance]            infrared distance is an array of distances 
+      74           8         [infrared distance]            infrared distance is an array of distances 
                                                             from the infrared sensors in centimeters, 
                                                             range 10 to 80
-      66           4         [heartbeat]                    used for testing the i2c communication
+      82           4         [heartbeat]                    used for testing the i2c communication
  */
 
 /* Define the portion of the I2C Slave that Read/Write */
@@ -125,21 +125,8 @@ typedef struct
 } __attribute__ ((packed)) I2C_DATASTRUCT;
 
 
-/* The following structure was created to allow the encoder count to be read from the other board.  The API doesn't
-   provide for reading at an offset on the slave.  So, unfortunately, we need to read from offset 0 through the encoder
-   count.
-
-   Note: It is possible to move the encoder count to the read/write section of the slave.  Something to think about.
- */
-typedef struct
-{
-    int32  count;
-} __attribute__((packed)) SLAVE_DATA_TYPE;
-
 /* Define the I2C Slave buffer (as seen by the slave on this Psoc) */
 static I2C_DATASTRUCT i2c_buf;
-/* Define the I2C Slave buffer (as seen by the master on this Psoc) */
-static SLAVE_DATA_TYPE i2c_slave_data;
 /* Define a persistant status that can be set and cleared */
 static uint16 i2c_status;
 
@@ -160,7 +147,6 @@ static uint16 i2c_status;
 void I2c_Init()
 {
     memset( &i2c_buf, 0, sizeof(i2c_buf));
-    memset( &i2c_slave_data, 0, sizeof(i2c_slave_data));
     i2c_status = 0;
 }
 

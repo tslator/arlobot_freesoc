@@ -17,6 +17,7 @@
 
 void Infrared_Init();
 void Infrared_Start();
+void Infrared_Update();
 void Infrared_Test();
 
 #endif

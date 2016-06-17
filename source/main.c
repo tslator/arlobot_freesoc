@@ -69,12 +69,13 @@ int main()
     Pid_Start();
     Odom_Start();
     Ultrasonic_Start();
-    Infrared_Start();
+    // Note: There is a problem with the infrared implementation and interrupts that needs to be fixed.
+    //Infrared_Start();
 
     DEBUG_PRINT_STR("Hello, my name is ArloSoc!\r\n");
     DEBUG_PRINT_STR("I am the microcontroller for Arlobot.\r\n");
     DEBUG_PRINT_STR("I'm entering my main loop now!\r\n");
-    
+
     for(;;)
     {
 #ifdef MAIN_LOOP_DELTA_ENABLED
@@ -92,6 +93,8 @@ int main()
         Pid_Update();
         /* Update the odometry calculation */
         Odom_Update();
+        /* Calculate Infrared distances and send out I2C */
+        Infrared_Update();
         /* Diagnostic update */
         Diag_Update();
         

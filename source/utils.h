@@ -61,4 +61,5 @@ void ftoa(float n, char *str, int precision);
 
 void BinaryRangeSearch(int32 search, int32 *data_points, uint8 num_points, uint8 *lower_index, uint8 *upper_index);
 
+
 #endif

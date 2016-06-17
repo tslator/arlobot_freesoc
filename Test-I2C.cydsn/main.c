@@ -20,9 +20,14 @@ typedef struct _buffer_tag
     uint32 dword_0;
     int32 dword_1;
     float float_0;
+    uint32 counter;
 } __attribute__ ((packed)) BUFFER_TYPE;
 
 static BUFFER_TYPE buffer;
+
+#define I2C_WAIT_FOR_ACCESS()   do  \
+                                {   \
+                                } while (0 !=  EZI2C_Slave_GetActivity())
 
 int main()
 {
@@ -35,13 +40,19 @@ int main()
     buffer.dword_0 = 100000;
     buffer.dword_1 = -100000;
     buffer.float_0 = 3.14;
+    buffer.counter = 0;
 
     EZI2C_Slave_Start();
     EZI2C_Slave_SetBuffer1(sizeof(BUFFER_TYPE), sizeof(BUFFER_TYPE), (uint8 *) &buffer);
 
     for(;;)
     {
-        /* Place your application code here. */
+        I2C_WAIT_FOR_ACCESS();
+        EZI2C_Slave_DisableInt();
+        buffer.counter++;
+        EZI2C_Slave_EnableInt();
+        CyDelay(1000);
+        
     }
 }
 
