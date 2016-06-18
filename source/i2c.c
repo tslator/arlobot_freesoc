@@ -16,6 +16,8 @@
 #include "utils.h"
 #include "debug.h"
 
+#define MAX_CMD_VELOCITY_TIMEOUT (2000)
+
 /* Macro to wait for any outstanding master writes to the I2C buffer.  This ensures data integrity across the interface
  */
 #define I2C_WAIT_FOR_ACCESS()   do  \
@@ -130,6 +132,8 @@ static I2C_DATASTRUCT i2c_buf;
 /* Define a persistant status that can be set and cleared */
 static uint16 i2c_status;
 
+static uint32 last_cmd_velocity_time = 0;
+static uint32 cmd_velocity_timeout = 0;
 
 /*----------------------------------------------------------------------------------------------------------------------
 
@@ -175,13 +179,44 @@ uint16 I2c_ReadControl()
 
 void I2c_ReadCmdVelocity(float *linear, float *angular)
 {
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
-    //i2c_buf.read_write.linear_cmd_velocity = 0.0;
-    //i2c_buf.read_write.angular_cmd_velocity = 0.75;
-    *linear = i2c_buf.read_write.linear_cmd_velocity;
-    *angular = i2c_buf.read_write.angular_cmd_velocity;
-    EZI2C_Slave_EnableInt();
+    /* GetActivity() returns the status of the I2C activity: write, read, busy, or error
+       Wrt to I2C writes, only the first 12 bytes can be written to.  Of those 12 bytes, 2 are for the control register,
+       2 are for the calibration register, and 8 are for the commanded velocity (linear and angular).  The commanded 
+       velocity will always be written to more often than the control and calibration registers, so checking for write
+       status is reasonably good way to know if we have received any recent velocity commands.
+    
+       When a write has occurred on the I2C bus, we assume it was a velocity command, and reset the command velocity 
+       timeout; otherwise, we accumulate time which will be checked against the maximum command velocity timeout.
+    
+       As long as the timeout is less then the maximum timeout, we will process the command values received via I2C.  If
+       the timeout exceeded the maximum timeout, we set the commanded velocity to 0.
+       
+     */
+    uint8 i2c_write_occurred = EZI2C_Slave_STATUS_WRITE1 == EZI2C_Slave_GetActivity();
+    
+    if (i2c_write_occurred)
+    {
+        cmd_velocity_timeout = 0;
+    }
+    else
+    {
+        cmd_velocity_timeout += millis() - last_cmd_velocity_time;
+        last_cmd_velocity_time = millis();
+    }
+
+    *linear = 0;
+    *angular = 0;
+    
+    if (cmd_velocity_timeout < MAX_CMD_VELOCITY_TIMEOUT)
+    {
+        I2C_WAIT_FOR_ACCESS();
+        EZI2C_Slave_DisableInt();
+        //i2c_buf.read_write.linear_cmd_velocity = 0.0;
+        //i2c_buf.read_write.angular_cmd_velocity = 0.75;
+        *linear = i2c_buf.read_write.linear_cmd_velocity;
+        *angular = i2c_buf.read_write.angular_cmd_velocity;
+        EZI2C_Slave_EnableInt();
+    }
     
     *linear = max(MIN_LINEAR_VELOCITY, min(*linear, MAX_LINEAR_VELOCITY));
     *angular = max(MIN_ANGULAR_VELOCITY, min(*angular, MAX_ANGULAR_VELOCITY));
