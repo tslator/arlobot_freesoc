@@ -94,7 +94,7 @@ int main()
         /* Update the odometry calculation */
         Odom_Update();
         /* Calculate Infrared distances and send out I2C */
-        Infrared_Update();
+        //Infrared_Update();
         /* Diagnostic update */
         Diag_Update();
         
