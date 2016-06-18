@@ -192,9 +192,9 @@ void I2c_ReadCmdVelocity(float *linear, float *angular)
        the timeout exceeded the maximum timeout, we set the commanded velocity to 0.
        
      */
-    uint8 i2c_write_occurred = EZI2C_Slave_STATUS_WRITE1 == EZI2C_Slave_GetActivity();
+    uint8 i2c_write_occurred = EZI2C_Slave_GetActivity();
     
-    if (i2c_write_occurred)
+    if (i2c_write_occurred & EZI2C_Slave_STATUS_WRITE1)
     {
         cmd_velocity_timeout = 0;
     }
@@ -263,9 +263,21 @@ void I2c_WriteOdom(float x_dist, float y_dist, float heading, float linear_speed
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
     i2c_buf.read_only.odom.x_dist = x_dist;
+    EZI2C_Slave_EnableInt();
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
     i2c_buf.read_only.odom.y_dist = y_dist;
+    EZI2C_Slave_EnableInt();
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
     i2c_buf.read_only.odom.heading = heading;
+    EZI2C_Slave_EnableInt();
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
     i2c_buf.read_only.odom.linear_velocity = linear_speed;
+    EZI2C_Slave_EnableInt();
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
     i2c_buf.read_only.odom.angular_velocity = angular_speed;
     EZI2C_Slave_EnableInt();
 }

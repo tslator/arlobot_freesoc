@@ -68,7 +68,7 @@ int main()
     Motor_Start();
     Pid_Start();
     Odom_Start();
-    Ultrasonic_Start();
+    //Ultrasonic_Start();
     // Note: There is a problem with the infrared implementation and interrupts that needs to be fixed.
     //Infrared_Start();
 
@@ -93,6 +93,8 @@ int main()
         Pid_Update();
         /* Update the odometry calculation */
         Odom_Update();
+        /* Calculate Ultrasonic distances and send out I2C */
+        //Ultrasonic_Update();
         /* Calculate Infrared distances and send out I2C */
         //Infrared_Update();
         /* Diagnostic update */

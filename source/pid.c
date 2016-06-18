@@ -64,7 +64,7 @@ typedef struct _pid_tag
 
 #define TUNE_KP (6.0)
 #define TUNE_KI (2.2)
-#define TUNE_KD (0.65)
+#define TUNE_KD (0.67)
 
 #define left_kp (TUNE_KP)
 #define left_ki (TUNE_KI)
