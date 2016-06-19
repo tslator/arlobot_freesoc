@@ -103,7 +103,7 @@ void calc_odom(uint32 delta_time)
        delta heading = delta dist X ------
                                      meter
     */
-    delta_heading = (delta_left_dist - delta_right_dist) * RADIAN_PER_METER;
+    delta_heading = ((delta_left_dist - delta_right_dist) / TRACK_WIDTH) * CAL_ANGULAR_SCALE_CORRECTION;
     heading += delta_heading;
 
     // Constrain heading to -Pi to Pi
@@ -117,7 +117,7 @@ void calc_odom(uint32 delta_time)
     }
 
     // Calculate x/y distance and update
-    delta_dist = 0.5 * (delta_left_dist + delta_right_dist);
+    delta_dist = 0.5 * (delta_left_dist + delta_right_dist) * CAL_LINEAR_SCALE_CORRECTION;
     delta_x_dist = delta_dist * cos(heading);
     delta_y_dist = delta_dist * sin(heading);
 
