@@ -230,7 +230,10 @@ static void DumpMotor(MOTOR_TYPE *motor)
     
     ftoa(motor->cps, cps_str, 3);
     
-    DEBUG_PRINT_ARG("%s: %s %d \r\n", motor->name, cps_str, motor->pwm);
+    if (MOTOR_DEBUG_CONTROL_ENABLED)
+    {
+        DEBUG_PRINT_ARG("%s: %s %d \r\n", motor->name, cps_str, motor->pwm);
+    }
 }
 #endif
 
@@ -377,10 +380,8 @@ void Motor_Init()
 
 void Motor_Start()
 {
-    Cal_LeftGetCalData(&left_motor.p_fwd_cal_data, &left_motor.p_bwd_cal_data);
-    Cal_RightGetCalData(&right_motor.p_fwd_cal_data, &right_motor.p_bwd_cal_data);
-    
-    
+    Cal_LeftGetMotorCalData(&left_motor.p_fwd_cal_data, &left_motor.p_bwd_cal_data);
+    Cal_RightGetMotorCalData(&right_motor.p_fwd_cal_data, &right_motor.p_bwd_cal_data);
     
     /* Enable the power on the HB-25 motor 
        Note: The HB-25 has a specific initialization sequence that is handled in hardware (see HB-25 reference).  

@@ -34,52 +34,60 @@
                                                                     heading
                                                                     linear,angular velocity
                                                                     encoder counts
-                                                                - Bit 2: calibrate - requests the Psoc to start calibrating
-                                                                - Bit 3: validate calibration
+      02           2         [debug register]               the debug register supports
+                                                                - Bit 0: Enable/Disable Encoder Debug
+                                                                - Bit 1: Enable/Disable PID debug
+                                                                - Bit 2: Enable/Disable Motor debug
+                                                                - Bit 3: Enable/Disable Odometry debug
+                                                                - Bit 4: Enable/Disable Sample debug
+      04           2         [calibration register]         the calibration register controls robot calibration
+                                                                - bit 0: Count/Sec to PWM
+                                                                - bit 1: PID
+                                                                - bit 2: Linear Bias
+                                                                - bit 3: Angular Bias
+                                                                - bit 7: Verbose (writes data to serial port)
         <---- Commanded Velocity ---->
-      02           4         [linear commanded velocity]    commanded linear velocity in meter/second
-      06           4         [angular commanded velocity]   commanded angular velocity in radian/second
-      10           2         [calibration port]             the register through which calibration is passed to the Psoc
-                                                            when loading calibration from the Raspberry Pi and also how
-                                                            calibration data is passed from the Psoc to the Raspberry Pi
-                                                            for storage in a file
+      06           4         [linear commanded velocity]    commanded linear velocity in meter/second
+      10           4         [angular commanded velocity]   commanded angular velocity in radian/second
     ------------------------------ Read/Write Boundary --------------------------------------------
-      12           2         [device status]                contains bits that represent the status of the Psoc device
+      14           2         [device status]                contains bits that represent the status of the Psoc device
                                                                - Bit 0: HB25 Motor Controller Initialized
-                                                               - Bit 1: Calibrated - indicates whether the calibration
-                                                                        values have been loaded; 0 - no, 1 - yes
-                                                               - Bit 2: Calibrating - indicates when the Psoc is in
-                                                                        calibration; 0 - no, 1 - yes
+      16           2         [calibration status]           contains bits that represent the calibration state
+                                                               - Bit 0: Count/Sec to PWM
+                                                               - Bit 1: PID
+                                                               - Bit 2: Linear Bias
+                                                               - Bit 3: Angular Bias
            <------ Odometry ------>
-      14           4         [x distance]                   measured x distance
-      18           4         [y distance]                   measured y distance
-      22           4         [heading]                      measured heading
-      26           4         [linear velocity]              measured linear velocity
-      30           4         [angular velocity]             measured angular velocity
+      18           4         [x distance]                   measured x distance
+      22           4         [y distance]                   measured y distance
+      26           4         [heading]                      measured heading
+      30           4         [linear velocity]              measured linear velocity
+      34           4         [angular velocity]             measured angular velocity
           <------ Ultrasonic ------>
-      34           8         [front ultrasonic distance]    ultrasonic distance is an array of 
+      38          16         [front ultrasonic distance]    ultrasonic distance is an array of 
                                                             distances from the ultrasonic sensors in 
                                                             centimeters, range 2 to 500
-      50           8         [rear ultrasonic distance]     ultrasonic distance is an array of 
+      54          16         [rear ultrasonic distance]     ultrasonic distance is an array of 
                                                             distances from the ultrasonic sensors in 
                                                             centimeters, range 2 to 500
            <------ Infrared ------>
-      66           8         [infrared distance]            infrared distance is an array of distances 
+      70           8         [infrared distance]            infrared distance is an array of distances 
                                                             from the infrared sensors in centimeters, 
                                                             range 10 to 80
-      74           8         [infrared distance]            infrared distance is an array of distances 
+      78           8         [infrared distance]            infrared distance is an array of distances 
                                                             from the infrared sensors in centimeters, 
                                                             range 10 to 80
-      82           4         [heartbeat]                    used for testing the i2c communication
+      86           4         [heartbeat]                    used for testing the i2c communication
  */
 
 /* Define the portion of the I2C Slave that Read/Write */
 typedef struct
 {
-    uint16 control;
+    uint16 device_control;
+    uint16 debug_control;
+    uint16 calibration_control;
     float  linear_cmd_velocity;
     float  angular_cmd_velocity;
-    uint16 calibration_port;
 } __attribute__ ((packed)) READWRITE_TYPE;
 
 /* Define the odometry structure for communicating the position, heading and velocity of the wheel 
@@ -111,7 +119,8 @@ typedef struct
 /* Define the I2C Slave that Read Only */
 typedef struct
 {
-    uint16     status;
+    uint16     device_status;
+    uint16     calibration_status;
     ODOMETRY   odom;
     ULTRASONIC us;
     INFRARED   ir;
@@ -129,8 +138,10 @@ typedef struct
 
 /* Define the I2C Slave buffer (as seen by the slave on this Psoc) */
 static I2C_DATASTRUCT i2c_buf;
-/* Define a persistant status that can be set and cleared */
-static uint16 i2c_status;
+/* Define a persistant device status that can be set and cleared */
+static uint16 device_status;
+/* Define a persistant calibration status that can be set and cleared */
+static uint16 calibration_status;
 
 static uint32 last_cmd_velocity_time = 0;
 static uint32 cmd_velocity_timeout = 0;
@@ -151,7 +162,8 @@ static uint32 cmd_velocity_timeout = 0;
 void I2c_Init()
 {
     memset( &i2c_buf, 0, sizeof(i2c_buf));
-    i2c_status = 0;
+    device_status = 0;
+    calibration_status = 0;
 }
 
 void I2c_Start()
@@ -162,16 +174,44 @@ void I2c_Start()
      */
     EZI2C_Slave_Start();
     EZI2C_Slave_SetBuffer1(sizeof(i2c_buf), sizeof(i2c_buf.read_write), (volatile uint8 *) &i2c_buf);
+    
+    /* Read the calibration status from EEPROM and mirror in calibration_status */
 }
 
-uint16 I2c_ReadControl()
+uint16 I2c_ReadDeviceControl()
 {
     uint16 value;
 
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
-    value = i2c_buf.read_write.control;
-    i2c_buf.read_write.control = 0;
+    value = i2c_buf.read_write.device_control;
+    i2c_buf.read_write.device_control = 0;
+    EZI2C_Slave_EnableInt();
+    
+    return value;
+}
+
+uint16 I2c_ReadDebugControl()
+{
+    uint16 value;
+    
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
+    value = i2c_buf.read_write.debug_control;
+    i2c_buf.read_write.debug_control = 0;
+    EZI2C_Slave_EnableInt();
+    
+    return value;
+}
+
+uint16 I2c_ReadCalibrationControl()
+{
+    uint16 value;
+    
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
+    value = i2c_buf.read_write.calibration_control;
+    i2c_buf.read_write.calibration_control = 0;
     EZI2C_Slave_EnableInt();
     
     return value;
@@ -222,39 +262,39 @@ void I2c_ReadCmdVelocity(float *linear, float *angular)
     *angular = max(MIN_ANGULAR_VELOCITY, min(*angular, MAX_ANGULAR_VELOCITY));
 }
 
-void I2c_WriteCalReg(uint16 value)
+void I2c_SetDeviceStatusBit(uint8 bit)
 {
+    device_status |= bit;
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
-    i2c_buf.read_write.calibration_port = value;
+    i2c_buf.read_only.device_status = device_status;
     EZI2C_Slave_EnableInt();
 }
 
-uint16 I2c_ReadCalReg()
+void I2c_ClearDeviceStatusBit(uint8 bit)
 {
-    uint16 value;
+    device_status &= ~bit;
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
-    value = i2c_buf.read_write.calibration_port;
-    EZI2C_Slave_EnableInt();
-    return value;
-}
-
-void I2c_SetStatusBit(uint8 bit)
-{
-    i2c_status |= bit;
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
-    i2c_buf.read_only.status = i2c_status;
+    i2c_buf.read_only.device_status = device_status;
     EZI2C_Slave_EnableInt();
 }
 
-void I2c_ClearStatusBit(uint8 bit)
+void I2c_SetCalibrationStatusBit(uint8 bit)
 {
-    i2c_status &= ~bit;
+    calibration_status |= bit;
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
-    i2c_buf.read_only.status = i2c_status;
+    i2c_buf.read_only.device_status = calibration_status;
+    EZI2C_Slave_EnableInt();
+}
+
+void I2c_ClearCalibrationStatusBit(uint8 bit)
+{
+    calibration_status &= ~bit;
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
+    i2c_buf.read_only.calibration_status = calibration_status;
     EZI2C_Slave_EnableInt();
 }
 

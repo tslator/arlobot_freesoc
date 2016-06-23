@@ -95,6 +95,9 @@ void Pid_Start();
  ------------------------------------------------------------------------------------------------*/
 void Pid_Update();
 
+float Pid_LeftStepInput(float *gains, float velocity, uint32 run_time);
+float Pid_RightStepInput(float *gains, float velocity, uint32 run_time);
+
 
 #endif
 

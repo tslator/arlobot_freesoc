@@ -51,6 +51,7 @@ int16 TwoBytesToInt16(uint8* bytes);
 uint16 TwoBytesToUint16(uint8* bytes);
 uint32 FourBytesToUint32(uint8* bytes);
 int32 FourBytesToInt32(uint8* bytes);
+float FourBytesToFloat(uint8 *bytes);
 void Int32ToFourBytes(int32 value, uint8* bytes);
 void Uint16ToTwoBytes(uint16 value, uint8* bytes);
 void FloatToFourBytes(float value, uint8* bytes);

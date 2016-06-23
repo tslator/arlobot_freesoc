@@ -17,6 +17,7 @@
 #include "odom.h"
 #include "time.h"
 #include "utils.h"
+#include "debug.h"
 
 /* The purpose of this module is to handle control changes to the system.
  */
@@ -48,29 +49,29 @@ void Control_Start()
 
 void Control_Update()
 {
-    uint16 control;
+    uint16 dev_control;
+    uint16 cal_control;
     
-    control = I2c_ReadControl();
+    dev_control = I2c_ReadDeviceControl();
+#ifdef COMMS_DEBUG_ENABLED
+    // When debug is enabled, the bitmap can be used to turn on/off specify debug, e.g., encoder, pid, odom, etc.
+    debug_control_enabled = I2c_ReadDebugControl();
+#endif
+    cal_control = I2c_ReadCalibrationControl();
     
-    if (control & CONTROL_DISABLE_MOTOR_BIT)
+    if (dev_control & CONTROL_DISABLE_MOTOR_BIT)
     {
         Motor_Stop();
     }
     
-    if (control & CONTROL_CLEAR_ODOMETRY_BIT)
+    if (dev_control & CONTROL_CLEAR_ODOMETRY_BIT)
     {
         Odom_Reset();
-    }    
-
-    /* Perform calibration */
-    if (control & CONTROL_ENABLE_CALIBRATION_BIT)
-    {
-        Cal_Update();
     }
     
-    if (control & CONTROL_VALIDATE_CALIBRATION_BIT)
+    if (cal_control)
     {
-        Cal_Validate();
+        Cal_Update(cal_control);
     }
     
     CalculateLeftRightSpeed();   

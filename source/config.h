@@ -35,22 +35,8 @@ typedef enum {FORWARD_DIR, BACKWARD_DIR} DIR_TYPE;
     Communication
 ----------------------------------------------------------------------------------------------------------------------*/
 
-#define COMMS_DEBUG_ENABLED
+//#define COMMS_DEBUG_ENABLED
 
-//#define LEFT_PID_DUMP_ENABLED
-//#define LEFT_ENC_DUMP_ENABLED
-
-//#define RIGHT_PID_DUMP_ENABLED
-//#define RIGHT_ENC_DUMP_ENABLED
-
-//#define MOTOR_DUMP_ENABLED
-
-#define ODOM_DUMP_ENABLED
-
-//#define ENC_UPDATE_DELTA_ENABLED
-//#define PID_UPDATE_DELTA_ENABLED
-//#define ODOM_UPDATE_DELTA_ENABLED
-//#define MAIN_LOOP_DELTA_ENABLED
 
 /*---------------------------------------------------------------------------------------------------------------------- 
     Sensors

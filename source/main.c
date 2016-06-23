@@ -23,6 +23,7 @@
 #include "ultrasonic.h"
 #include "infrared.h"
 #include "cal.h"
+#include "nvstore.h"
 
 #ifdef MAIN_LOOP_DELTA_ENABLED
 static uint32 main_loop_delta;
@@ -41,6 +42,7 @@ int main()
     CyGlobalIntEnable;      /* Enable global interrupts */
     
     /* Start this right away so that we debug as soon as possible */
+    Nvstore_Init();
     Ser_Init();
     Debug_Init();
     Debug_Start();
@@ -48,10 +50,10 @@ int main()
     Diag_Init();
     Diag_Start();
         
+    I2c_Init();
     Control_Init();
     Cal_Init();
     Time_Init();
-    I2c_Init();
     Encoder_Init();
     Motor_Init();
     Pid_Init(Control_LeftGetCmdVelocity, Control_RightGetCmdVelocity);
@@ -59,11 +61,12 @@ int main()
     Ultrasonic_Init();
     Infrared_Init();
 
+    Nvstore_Start();
     Ser_Start();
+    I2c_Start();
     Control_Start();
     Cal_Start();
     Time_Start();
-    I2c_Start();
     Encoder_Start();
     Motor_Start();
     Pid_Start();

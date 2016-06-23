@@ -57,14 +57,10 @@ typedef struct _pid_tag
     GET_MOTOR_PWM_TYPE get_pwm;
 } PID_TYPE;
 
-#define DEFAULT_KP (5)
+#define DEFAULT_KP (6.0)
 #define DEFAULT_KI (2.2)
 #define DEFAULT_KD (0.67)
 
-
-#define TUNE_KP (6.0)
-#define TUNE_KI (2.2)
-#define TUNE_KD (0.67)
 
 #define left_kp (TUNE_KP)
 #define left_ki (TUNE_KI)
@@ -76,7 +72,7 @@ typedef struct _pid_tag
 
 static PID_TYPE left_pid = { 
     /* name */          "left",
-    /* pid */           {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC},
+    /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC},
     /* get_target */    0,
     /* get_encoder */   Encoder_LeftGetCntsPerSec,
     /* set_motor */     Motor_LeftSetCntsPerSec,
@@ -85,7 +81,7 @@ static PID_TYPE left_pid = {
 
 static PID_TYPE right_pid = { 
     /* name */          "right",
-    /* pid */           {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC},
+    /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC},
     /* get_target */    0,    
     /* get_encoder */   Encoder_RightGetCntsPerSec,
     /* set_motor */     Motor_RightSetCntsPerSec,
@@ -109,21 +105,35 @@ static void DumpPid(PID_TYPE *pid)
     ftoa(pid->pid.iTerm, iterm_str, 6);
     ftoa(pid->pid.output, output_str, 6);
 
-    DEBUG_PRINT_ARG("%s pid: %s %s %s %s %s %s %d \r\n", pid->name, set_point_str, input_str, error_str, last_input_str, iterm_str, output_str, pid->get_pwm());
+    if (PID_DEBUG_CONTROL_ENABLED)
+    {
+        DEBUG_PRINT_ARG("%s pid: %s %s %s %s %s %s %d \r\n", pid->name, set_point_str, input_str, error_str, last_input_str, iterm_str, output_str, pid->get_pwm());
+    }
 }
 #endif
 
 void Pid_Init(GET_TARGET_TYPE left_target, GET_TARGET_TYPE right_target)
 {
+    
     left_pid.get_target = left_target;
     right_pid.get_target = right_target;
     
-    PIDInit(&left_pid.pid, left_kp, left_ki, left_kd, PID_SAMPLE_TIME_SEC, PID_MIN, PID_MAX, AUTOMATIC, DIRECT); 
-    PIDInit(&right_pid.pid, right_kp, right_ki, right_kd, PID_SAMPLE_TIME_SEC, PID_MIN, PID_MAX, AUTOMATIC, DIRECT); 
+    PIDInit(&left_pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, PID_MIN, PID_MAX, AUTOMATIC, DIRECT); 
+    PIDInit(&right_pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, PID_MIN, PID_MAX, AUTOMATIC, DIRECT); 
 }
     
 void Pid_Start()
 {
+    CAL_PID_TYPE *p_gains;
+    
+    // Note: the PID gains are stored in EEPROM, so we don't have access to EEPROM until the EEPROM component has been 
+    // started.  Pid_Start is called after Nvstore_Start.
+    
+    p_gains = Cal_LeftGetPidGains();
+    PIDTuningsSet(&left_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
+    
+    p_gains = Cal_RightGetPidGains();
+    PIDTuningsSet(&right_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
 }
 
 static void ProcessPid(PID_TYPE *pid)
@@ -166,5 +176,49 @@ void Pid_Update()
         RIGHT_DUMP_PID(&right_pid);
     }
 }
+
+static float StepImpulse(PID_TYPE *pid, float velocity, uint32 time_in_ms)
+/*
+    Apply the velocity to the motor
+    Update encoder and pid update
+    Quit after 5 seconds
+ */
+{
+    float vel_error_sum = 0;
+    uint32 samples = 0;
+    uint32 start_time;
+    #define MIN_SAMPLE_TIME (1000)
+    
+    start_time = millis();
+    while (millis() - start_time < time_in_ms)
+    {
+        pid->set_motor(velocity);
+        Encoder_Update();
+        Pid_Update();
         
+        if (millis() - start_time > MIN_SAMPLE_TIME)
+        {
+            float error = velocity - pid->get_encoder();
+            vel_error_sum += error * error;
+            samples++;
+        }
+    }
+    
+    return vel_error_sum / samples;
+}
+
+float Pid_LeftStepInput(float *gains, float velocity, uint32 run_time)
+{
+    PIDTuningsSet(&left_pid.pid, gains[0], gains[1], gains[2]);    
+    
+    return StepImpulse(&left_pid, velocity, run_time);
+}
+
+float Pid_RightStepInput(float *gains, float velocity, uint32 run_time)
+{
+    PIDTuningsSet(&right_pid.pid, gains[0], gains[1], gains[2]);    
+    
+    return StepImpulse(&right_pid, velocity, run_time);
+}
+
 /* [] END OF FILE */

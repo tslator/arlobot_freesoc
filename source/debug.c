@@ -15,7 +15,9 @@
 
 void Debug_Init()
 {
+#ifdef COMMS_DEBUG_ENABLED    
     memset(formatted_string, 0, sizeof(formatted_string));
+#endif    
 }
 
 void Debug_Start()

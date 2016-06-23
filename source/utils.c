@@ -51,16 +51,16 @@ MA[i]= MA*[i]/N
 
 void Uint16ToTwoBytes(uint16 value, uint8* bytes)
 {
-    bytes[0] = (uint8) (value & 0xFF00) >> 8;
+    bytes[0] = (uint8) ((value & 0xFF00) >> 8);
     bytes[1] = (uint8) (value & 0x00FF);
 }
 
 void Uint32ToFourBytes(uint32 value, uint8* bytes)
 {
-    bytes[0] = (value & 0xFF000000) >> 24;
-    bytes[1] = (value & 0x00FF0000) >> 16;
-    bytes[2] = (value & 0x0000FF00) >> 8;
-    bytes[3] = (value & 0x000000FF);
+    bytes[0] = (uint8) ((value & 0xFF000000) >> 24);
+    bytes[1] = (uint8) ((value & 0x00FF0000) >> 16);
+    bytes[2] = (uint8) ((value & 0x0000FF00) >> 8);
+    bytes[3] = (uint8) (value & 0x000000FF);
 }
 
 void Int32ToFourBytes(int32 value, uint8* bytes)
@@ -70,12 +70,19 @@ void Int32ToFourBytes(int32 value, uint8* bytes)
 
 void FloatToFourBytes(float value, uint8* bytes)
 {
-    Uint32ToFourBytes(*((uint32*)&value), bytes);
+    uint8 *p_bytes = (uint8 *) &value;
+    
+    bytes[0] = p_bytes[0];
+    bytes[1] = p_bytes[1];
+    bytes[2] = p_bytes[2];
+    bytes[3] = p_bytes[3];
 }
 
 uint16 TwoBytesToUint16(uint8* bytes)
 {
-    return (uint16) ( (bytes[0] << 8) + bytes[1] );
+    uint16 upper = bytes[0] << 8;
+    uint16 lower = bytes[1];
+    return upper + lower;
 }
 
 int16 TwoBytesInt16(uint8* bytes)
@@ -91,6 +98,12 @@ uint32 FourBytesToUint32(uint8* bytes)
 int32 FourBytesToInt32(uint8* bytes)
 {
     return (int32) FourBytesToUint32(bytes);
+}
+
+float FourBytesToFloat(uint8 *bytes)
+{   
+    float value = *((float *) bytes);    
+    return value;
 }
 
 #ifdef USE_FTOA

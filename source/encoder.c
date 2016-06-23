@@ -90,7 +90,10 @@ static void DumpEncoder(ENCODER_TYPE *enc)
     ftoa(enc->avg_delta_count, avg_delta_count_str, 3);
     ftoa(enc->avg_mps, avg_mps_str, 3);
     
-    DEBUG_PRINT_ARG("%s enc: %s %s %s %ld %ld %ld \r\n", enc->name, avg_cps_str, avg_delta_count_str, avg_mps_str, enc->count, enc->last_count, enc->delta_count);
+    if (ENCODER_DEBUG_CONTROL_ENABLED)
+    {
+        DEBUG_PRINT_ARG("%s enc: %s %s %s %ld %ld %ld \r\n", enc->name, avg_cps_str, avg_delta_count_str, avg_mps_str, enc->count, enc->last_count, enc->delta_count);
+    }
 }
 #endif
 
