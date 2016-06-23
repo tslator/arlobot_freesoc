@@ -1,6 +1,6 @@
 // ======================================================================
 // freesoc.v generated from TopDesign.cysch
-// 06/22/2016 at 21:54
+// 06/22/2016 at 22:11
 // This file is auto generated. ANY EDITS YOU MAKE MAY BE LOST WHEN THIS FILE IS REGENERATED!!!
 // ======================================================================
 
@@ -1811,9 +1811,105 @@ module USBFS_v3_0_11 (
 
 endmodule
 
+// Comp_v2_0(Hysteresis=1, Pd_Override=0, Polarity=0, PSOC5A=false, Speed=1, Sync=1, CY_API_CALLBACK_HEADER_INCLUDE=#include "cyapicallbacks.h", CY_COMPONENT_NAME=Comp_v2_0, CY_CONTROL_FILE=<:default:>, CY_DATASHEET_FILE=<:default:>, CY_FITTER_NAME=Front_CliffDetect, CY_INSTANCE_SHORT_NAME=Front_CliffDetect, CY_MAJOR_VERSION=2, CY_MINOR_VERSION=0, CY_REMOVE=false, CY_SUPPRESS_API_GEN=false, CY_VERSION=PSoC Creator  3.3 CP3, INSTANCE_NAME=Front_CliffDetect, )
+module Comp_v2_0_12 (
+    Vplus,
+    CmpOut,
+    Vminus,
+    clock);
+    inout       Vplus;
+    electrical  Vplus;
+    output      CmpOut;
+    inout       Vminus;
+    electrical  Vminus;
+    input       clock;
+
+
+          wire  Net_9;
+          wire  Net_1;
+
+    cy_psoc3_ctcomp_v1_0 ctComp (
+        .vplus(Vplus),
+        .vminus(Vminus),
+        .cmpout(Net_1),
+        .clk_udb(clock),
+        .clock(clock));
+
+	// VirtualMux_1 (cy_virtualmux_v1_0)
+	assign CmpOut = Net_1;
+
+
+    assign Net_9 = ~Net_1;
+
+
+
+endmodule
+
+// Component: AMux_v1_80
+`ifdef CY_BLK_DIR
+`undef CY_BLK_DIR
+`endif
+
+`ifdef WARP
+`define CY_BLK_DIR "C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\AMux_v1_80"
+`include "C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\AMux_v1_80\AMux_v1_80.v"
+`else
+`define CY_BLK_DIR "C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\AMux_v1_80"
+`include "C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cycomponentlibrary\CyComponentLibrary.cylib\AMux_v1_80\AMux_v1_80.v"
+`endif
+
+// Component: cy_vref_v1_70
+`ifdef CY_BLK_DIR
+`undef CY_BLK_DIR
+`endif
+
+`ifdef WARP
+`define CY_BLK_DIR "C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\cy_vref_v1_70"
+`include "C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\cy_vref_v1_70\cy_vref_v1_70.v"
+`else
+`define CY_BLK_DIR "C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\cy_vref_v1_70"
+`include "C:\Program Files (x86)\Cypress\PSoC Creator\3.3\PSoC Creator\psoc\content\cyprimitives\CyPrimitives.cylib\cy_vref_v1_70\cy_vref_v1_70.v"
+`endif
+
+// Comp_v2_0(Hysteresis=1, Pd_Override=0, Polarity=0, PSOC5A=false, Speed=1, Sync=1, CY_API_CALLBACK_HEADER_INCLUDE=#include "cyapicallbacks.h", CY_COMPONENT_NAME=Comp_v2_0, CY_CONTROL_FILE=<:default:>, CY_DATASHEET_FILE=<:default:>, CY_FITTER_NAME=Rear_CliffDetect, CY_INSTANCE_SHORT_NAME=Rear_CliffDetect, CY_MAJOR_VERSION=2, CY_MINOR_VERSION=0, CY_REMOVE=false, CY_SUPPRESS_API_GEN=false, CY_VERSION=PSoC Creator  3.3 CP3, INSTANCE_NAME=Rear_CliffDetect, )
+module Comp_v2_0_13 (
+    Vplus,
+    CmpOut,
+    Vminus,
+    clock);
+    inout       Vplus;
+    electrical  Vplus;
+    output      CmpOut;
+    inout       Vminus;
+    electrical  Vminus;
+    input       clock;
+
+
+          wire  Net_9;
+          wire  Net_1;
+
+    cy_psoc3_ctcomp_v1_0 ctComp (
+        .vplus(Vplus),
+        .vminus(Vminus),
+        .cmpout(Net_1),
+        .clk_udb(clock),
+        .clock(clock));
+
+	// VirtualMux_1 (cy_virtualmux_v1_0)
+	assign CmpOut = Net_1;
+
+
+    assign Net_9 = ~Net_1;
+
+
+
+endmodule
+
 // top
 module top ;
 
+          wire  Net_8844;
+          wire  Net_8835;
           wire  Net_8552;
           wire  Net_8551;
     electrical  Net_8548;
@@ -1951,6 +2047,16 @@ module top ;
     electrical  Net_4;
     electrical  Net_3;
     electrical  Net_2;
+    electrical  Net_8843;
+    electrical  Net_8842;
+    electrical  Net_8837;
+    electrical  Net_8836;
+          wire  Net_8839;
+    electrical  Net_8840;
+    electrical  Net_8838;
+          wire  Net_8834;
+    electrical  Net_8824;
+    electrical  Net_8822;
           wire  Net_8613;
           wire  Net_8580;
           wire  Net_7952;
@@ -7118,6 +7224,390 @@ module top ;
         .sof(Net_8551),
         .vbusdet(1'b0));
     defparam USBUART.epDMAautoOptimization = 0;
+
+    Comp_v2_0_12 Front_CliffDetect (
+        .Vplus(Net_8822),
+        .CmpOut(Net_8834),
+        .Vminus(Net_8824),
+        .clock(1'b0));
+
+    // -- AMux Front_CliffMux start -- ***
+    // -- Mux A --
+    
+    cy_psoc3_amux_v1_0 Front_CliffMux(
+        .muxin({
+            Net_8837,
+            Net_8836
+            }),
+        .vout(Net_8822)
+        );
+    
+    defparam Front_CliffMux.muxin_width = 2;
+    defparam Front_CliffMux.init_mux_sel = 2'h0;
+    defparam Front_CliffMux.one_active = 0;
+    defparam Front_CliffMux.connect_mode = 1;
+    
+    // -- AMux Front_CliffMux end --
+
+
+	cy_vref_v1_0
+		#(.autoenable(1),
+		  .guid("89B398AD-36A8-4627-9212-707F2986319E"),
+		  .name("1.024V"))
+		vRef_1
+		 (.vout(Net_8824));
+
+
+	wire [0:0] tmpOE__Front_LeftCliffDetect_net;
+	wire [0:0] tmpFB_0__Front_LeftCliffDetect_net;
+	wire [0:0] tmpIO_0__Front_LeftCliffDetect_net;
+	wire [0:0] tmpINTERRUPT_0__Front_LeftCliffDetect_net;
+	electrical [0:0] tmpSIOVREF__Front_LeftCliffDetect_net;
+
+	cy_psoc3_pins_v1_10
+		#(.id("08d43ead-b8ff-465c-84f5-7e98c9ac5056"),
+		  .drive_mode(3'b000),
+		  .ibuf_enabled(1'b0),
+		  .init_dr_st(1'b0),
+		  .input_clk_en(0),
+		  .input_sync(1'b1),
+		  .input_sync_mode(1'b0),
+		  .intr_mode(2'b00),
+		  .invert_in_clock(0),
+		  .invert_in_clock_en(0),
+		  .invert_in_reset(0),
+		  .invert_out_clock(0),
+		  .invert_out_clock_en(0),
+		  .invert_out_reset(0),
+		  .io_voltage(""),
+		  .layout_mode("CONTIGUOUS"),
+		  .oe_conn(1'b0),
+		  .oe_reset(0),
+		  .oe_sync(1'b0),
+		  .output_clk_en(0),
+		  .output_clock_mode(1'b0),
+		  .output_conn(1'b0),
+		  .output_mode(1'b0),
+		  .output_reset(0),
+		  .output_sync(1'b0),
+		  .pa_in_clock(-1),
+		  .pa_in_clock_en(-1),
+		  .pa_in_reset(-1),
+		  .pa_out_clock(-1),
+		  .pa_out_clock_en(-1),
+		  .pa_out_reset(-1),
+		  .pin_aliases(""),
+		  .pin_mode("A"),
+		  .por_state(4),
+		  .sio_group_cnt(0),
+		  .sio_hyst(1'b1),
+		  .sio_ibuf(""),
+		  .sio_info(2'b00),
+		  .sio_obuf(""),
+		  .sio_refsel(""),
+		  .sio_vtrip(""),
+		  .sio_hifreq(""),
+		  .sio_vohsel(""),
+		  .slew_rate(1'b0),
+		  .spanning(0),
+		  .use_annotation(1'b0),
+		  .vtrip(2'b10),
+		  .width(1),
+		  .ovt_hyst_trim(1'b0),
+		  .ovt_needed(1'b0),
+		  .ovt_slew_control(2'b00),
+		  .input_buffer_sel(2'b00))
+		Front_LeftCliffDetect
+		 (.oe(tmpOE__Front_LeftCliffDetect_net),
+		  .y({1'b0}),
+		  .fb({tmpFB_0__Front_LeftCliffDetect_net[0:0]}),
+		  .analog({Net_8836}),
+		  .io({tmpIO_0__Front_LeftCliffDetect_net[0:0]}),
+		  .siovref(tmpSIOVREF__Front_LeftCliffDetect_net),
+		  .interrupt({tmpINTERRUPT_0__Front_LeftCliffDetect_net[0:0]}),
+		  .in_clock({1'b0}),
+		  .in_clock_en({1'b1}),
+		  .in_reset({1'b0}),
+		  .out_clock({1'b0}),
+		  .out_clock_en({1'b1}),
+		  .out_reset({1'b0}));
+
+	assign tmpOE__Front_LeftCliffDetect_net = (`CYDEV_CHIP_MEMBER_USED == `CYDEV_CHIP_MEMBER_3A && `CYDEV_CHIP_REVISION_USED < `CYDEV_CHIP_REVISION_3A_ES3) ? ~{1'b1} : {1'b1};
+
+	wire [0:0] tmpOE__Front_RightCliffDetect_net;
+	wire [0:0] tmpFB_0__Front_RightCliffDetect_net;
+	wire [0:0] tmpIO_0__Front_RightCliffDetect_net;
+	wire [0:0] tmpINTERRUPT_0__Front_RightCliffDetect_net;
+	electrical [0:0] tmpSIOVREF__Front_RightCliffDetect_net;
+
+	cy_psoc3_pins_v1_10
+		#(.id("06a52144-e5cc-4ba7-b5d6-ebe22fc718b2"),
+		  .drive_mode(3'b000),
+		  .ibuf_enabled(1'b0),
+		  .init_dr_st(1'b0),
+		  .input_clk_en(0),
+		  .input_sync(1'b1),
+		  .input_sync_mode(1'b0),
+		  .intr_mode(2'b00),
+		  .invert_in_clock(0),
+		  .invert_in_clock_en(0),
+		  .invert_in_reset(0),
+		  .invert_out_clock(0),
+		  .invert_out_clock_en(0),
+		  .invert_out_reset(0),
+		  .io_voltage(""),
+		  .layout_mode("CONTIGUOUS"),
+		  .oe_conn(1'b0),
+		  .oe_reset(0),
+		  .oe_sync(1'b0),
+		  .output_clk_en(0),
+		  .output_clock_mode(1'b0),
+		  .output_conn(1'b0),
+		  .output_mode(1'b0),
+		  .output_reset(0),
+		  .output_sync(1'b0),
+		  .pa_in_clock(-1),
+		  .pa_in_clock_en(-1),
+		  .pa_in_reset(-1),
+		  .pa_out_clock(-1),
+		  .pa_out_clock_en(-1),
+		  .pa_out_reset(-1),
+		  .pin_aliases(""),
+		  .pin_mode("A"),
+		  .por_state(4),
+		  .sio_group_cnt(0),
+		  .sio_hyst(1'b1),
+		  .sio_ibuf(""),
+		  .sio_info(2'b00),
+		  .sio_obuf(""),
+		  .sio_refsel(""),
+		  .sio_vtrip(""),
+		  .sio_hifreq(""),
+		  .sio_vohsel(""),
+		  .slew_rate(1'b0),
+		  .spanning(0),
+		  .use_annotation(1'b0),
+		  .vtrip(2'b10),
+		  .width(1),
+		  .ovt_hyst_trim(1'b0),
+		  .ovt_needed(1'b0),
+		  .ovt_slew_control(2'b00),
+		  .input_buffer_sel(2'b00))
+		Front_RightCliffDetect
+		 (.oe(tmpOE__Front_RightCliffDetect_net),
+		  .y({1'b0}),
+		  .fb({tmpFB_0__Front_RightCliffDetect_net[0:0]}),
+		  .analog({Net_8837}),
+		  .io({tmpIO_0__Front_RightCliffDetect_net[0:0]}),
+		  .siovref(tmpSIOVREF__Front_RightCliffDetect_net),
+		  .interrupt({tmpINTERRUPT_0__Front_RightCliffDetect_net[0:0]}),
+		  .in_clock({1'b0}),
+		  .in_clock_en({1'b1}),
+		  .in_reset({1'b0}),
+		  .out_clock({1'b0}),
+		  .out_clock_en({1'b1}),
+		  .out_reset({1'b0}));
+
+	assign tmpOE__Front_RightCliffDetect_net = (`CYDEV_CHIP_MEMBER_USED == `CYDEV_CHIP_MEMBER_3A && `CYDEV_CHIP_REVISION_USED < `CYDEV_CHIP_REVISION_3A_ES3) ? ~{1'b1} : {1'b1};
+
+
+	cy_isr_v1_0
+		#(.int_type(2'b10))
+		Front_CliffDetect_Isr
+		 (.int_signal(Net_8834));
+
+
+    Comp_v2_0_13 Rear_CliffDetect (
+        .Vplus(Net_8838),
+        .CmpOut(Net_8839),
+        .Vminus(Net_8840),
+        .clock(1'b0));
+
+    // -- AMux Rear_CliffMux start -- ***
+    // -- Mux A --
+    
+    cy_psoc3_amux_v1_0 Rear_CliffMux(
+        .muxin({
+            Net_8843,
+            Net_8842
+            }),
+        .vout(Net_8838)
+        );
+    
+    defparam Rear_CliffMux.muxin_width = 2;
+    defparam Rear_CliffMux.init_mux_sel = 2'h0;
+    defparam Rear_CliffMux.one_active = 0;
+    defparam Rear_CliffMux.connect_mode = 1;
+    
+    // -- AMux Rear_CliffMux end --
+
+
+	cy_vref_v1_0
+		#(.autoenable(1),
+		  .guid("89B398AD-36A8-4627-9212-707F2986319E"),
+		  .name("1.024V"))
+		vRef_2
+		 (.vout(Net_8840));
+
+
+	wire [0:0] tmpOE__Rear_LeftCliffDetect_net;
+	wire [0:0] tmpFB_0__Rear_LeftCliffDetect_net;
+	wire [0:0] tmpIO_0__Rear_LeftCliffDetect_net;
+	wire [0:0] tmpINTERRUPT_0__Rear_LeftCliffDetect_net;
+	electrical [0:0] tmpSIOVREF__Rear_LeftCliffDetect_net;
+
+	cy_psoc3_pins_v1_10
+		#(.id("6234f23c-0ca9-4190-84bb-e0b5725033c9"),
+		  .drive_mode(3'b000),
+		  .ibuf_enabled(1'b0),
+		  .init_dr_st(1'b0),
+		  .input_clk_en(0),
+		  .input_sync(1'b1),
+		  .input_sync_mode(1'b0),
+		  .intr_mode(2'b00),
+		  .invert_in_clock(0),
+		  .invert_in_clock_en(0),
+		  .invert_in_reset(0),
+		  .invert_out_clock(0),
+		  .invert_out_clock_en(0),
+		  .invert_out_reset(0),
+		  .io_voltage(""),
+		  .layout_mode("CONTIGUOUS"),
+		  .oe_conn(1'b0),
+		  .oe_reset(0),
+		  .oe_sync(1'b0),
+		  .output_clk_en(0),
+		  .output_clock_mode(1'b0),
+		  .output_conn(1'b0),
+		  .output_mode(1'b0),
+		  .output_reset(0),
+		  .output_sync(1'b0),
+		  .pa_in_clock(-1),
+		  .pa_in_clock_en(-1),
+		  .pa_in_reset(-1),
+		  .pa_out_clock(-1),
+		  .pa_out_clock_en(-1),
+		  .pa_out_reset(-1),
+		  .pin_aliases(""),
+		  .pin_mode("A"),
+		  .por_state(4),
+		  .sio_group_cnt(0),
+		  .sio_hyst(1'b1),
+		  .sio_ibuf(""),
+		  .sio_info(2'b00),
+		  .sio_obuf(""),
+		  .sio_refsel(""),
+		  .sio_vtrip(""),
+		  .sio_hifreq(""),
+		  .sio_vohsel(""),
+		  .slew_rate(1'b0),
+		  .spanning(0),
+		  .use_annotation(1'b0),
+		  .vtrip(2'b10),
+		  .width(1),
+		  .ovt_hyst_trim(1'b0),
+		  .ovt_needed(1'b0),
+		  .ovt_slew_control(2'b00),
+		  .input_buffer_sel(2'b00))
+		Rear_LeftCliffDetect
+		 (.oe(tmpOE__Rear_LeftCliffDetect_net),
+		  .y({1'b0}),
+		  .fb({tmpFB_0__Rear_LeftCliffDetect_net[0:0]}),
+		  .analog({Net_8842}),
+		  .io({tmpIO_0__Rear_LeftCliffDetect_net[0:0]}),
+		  .siovref(tmpSIOVREF__Rear_LeftCliffDetect_net),
+		  .interrupt({tmpINTERRUPT_0__Rear_LeftCliffDetect_net[0:0]}),
+		  .in_clock({1'b0}),
+		  .in_clock_en({1'b1}),
+		  .in_reset({1'b0}),
+		  .out_clock({1'b0}),
+		  .out_clock_en({1'b1}),
+		  .out_reset({1'b0}));
+
+	assign tmpOE__Rear_LeftCliffDetect_net = (`CYDEV_CHIP_MEMBER_USED == `CYDEV_CHIP_MEMBER_3A && `CYDEV_CHIP_REVISION_USED < `CYDEV_CHIP_REVISION_3A_ES3) ? ~{1'b1} : {1'b1};
+
+	wire [0:0] tmpOE__Rear_RightCliffDetect_net;
+	wire [0:0] tmpFB_0__Rear_RightCliffDetect_net;
+	wire [0:0] tmpIO_0__Rear_RightCliffDetect_net;
+	wire [0:0] tmpINTERRUPT_0__Rear_RightCliffDetect_net;
+	electrical [0:0] tmpSIOVREF__Rear_RightCliffDetect_net;
+
+	cy_psoc3_pins_v1_10
+		#(.id("bdfae646-2c48-4271-a6c3-36698df32bb5"),
+		  .drive_mode(3'b000),
+		  .ibuf_enabled(1'b0),
+		  .init_dr_st(1'b0),
+		  .input_clk_en(0),
+		  .input_sync(1'b1),
+		  .input_sync_mode(1'b0),
+		  .intr_mode(2'b00),
+		  .invert_in_clock(0),
+		  .invert_in_clock_en(0),
+		  .invert_in_reset(0),
+		  .invert_out_clock(0),
+		  .invert_out_clock_en(0),
+		  .invert_out_reset(0),
+		  .io_voltage(""),
+		  .layout_mode("CONTIGUOUS"),
+		  .oe_conn(1'b0),
+		  .oe_reset(0),
+		  .oe_sync(1'b0),
+		  .output_clk_en(0),
+		  .output_clock_mode(1'b0),
+		  .output_conn(1'b0),
+		  .output_mode(1'b0),
+		  .output_reset(0),
+		  .output_sync(1'b0),
+		  .pa_in_clock(-1),
+		  .pa_in_clock_en(-1),
+		  .pa_in_reset(-1),
+		  .pa_out_clock(-1),
+		  .pa_out_clock_en(-1),
+		  .pa_out_reset(-1),
+		  .pin_aliases(""),
+		  .pin_mode("A"),
+		  .por_state(4),
+		  .sio_group_cnt(0),
+		  .sio_hyst(1'b1),
+		  .sio_ibuf(""),
+		  .sio_info(2'b00),
+		  .sio_obuf(""),
+		  .sio_refsel(""),
+		  .sio_vtrip(""),
+		  .sio_hifreq(""),
+		  .sio_vohsel(""),
+		  .slew_rate(1'b0),
+		  .spanning(0),
+		  .use_annotation(1'b0),
+		  .vtrip(2'b10),
+		  .width(1),
+		  .ovt_hyst_trim(1'b0),
+		  .ovt_needed(1'b0),
+		  .ovt_slew_control(2'b00),
+		  .input_buffer_sel(2'b00))
+		Rear_RightCliffDetect
+		 (.oe(tmpOE__Rear_RightCliffDetect_net),
+		  .y({1'b0}),
+		  .fb({tmpFB_0__Rear_RightCliffDetect_net[0:0]}),
+		  .analog({Net_8843}),
+		  .io({tmpIO_0__Rear_RightCliffDetect_net[0:0]}),
+		  .siovref(tmpSIOVREF__Rear_RightCliffDetect_net),
+		  .interrupt({tmpINTERRUPT_0__Rear_RightCliffDetect_net[0:0]}),
+		  .in_clock({1'b0}),
+		  .in_clock_en({1'b1}),
+		  .in_reset({1'b0}),
+		  .out_clock({1'b0}),
+		  .out_clock_en({1'b1}),
+		  .out_reset({1'b0}));
+
+	assign tmpOE__Rear_RightCliffDetect_net = (`CYDEV_CHIP_MEMBER_USED == `CYDEV_CHIP_MEMBER_3A && `CYDEV_CHIP_REVISION_USED < `CYDEV_CHIP_REVISION_3A_ES3) ? ~{1'b1} : {1'b1};
+
+
+	cy_isr_v1_0
+		#(.int_type(2'b10))
+		Rear_CliffDetect_Isr
+		 (.int_signal(Net_8839));
+
 
 
 

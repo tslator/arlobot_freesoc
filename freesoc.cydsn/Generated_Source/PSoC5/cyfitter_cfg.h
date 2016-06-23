@@ -23,6 +23,26 @@ extern void cyfitter_cfg(void);
 
 /* Analog Set/Unset methods */
 extern void SetAnalogRoutingPumps(uint8 enabled);
+extern void Front_CliffMux_Set(uint8 channel);
+extern void Front_CliffMux_Unset(uint8 channel);
+/* Front_CliffMux__addrTable is an implementation detail of the AMux.
+   Code that depends on it may be incompatible with other versions
+   of PSoC Creator. */
+extern uint8 CYXDATA * const CYCODE Front_CliffMux__addrTable[4];
+/* Front_CliffMux__maskTable is an implementation detail of the AMux.
+   Code that depends on it may be incompatible with other versions
+   of PSoC Creator. */
+extern const uint8 CYCODE Front_CliffMux__maskTable[4];
+extern void Rear_CliffMux_Set(uint8 channel);
+extern void Rear_CliffMux_Unset(uint8 channel);
+/* Rear_CliffMux__addrTable is an implementation detail of the AMux.
+   Code that depends on it may be incompatible with other versions
+   of PSoC Creator. */
+extern uint8 CYXDATA * const CYCODE Rear_CliffMux__addrTable[4];
+/* Rear_CliffMux__maskTable is an implementation detail of the AMux.
+   Code that depends on it may be incompatible with other versions
+   of PSoC Creator. */
+extern const uint8 CYCODE Rear_CliffMux__maskTable[4];
 extern void Front_AMuxSeq_DisconnectAll(void);
 extern void Front_AMuxSeq_Next(void);
 extern int8 Front_AMuxSeq_curChannel;
