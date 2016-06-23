@@ -311,67 +311,6 @@ static void calc_motor_output_from_cps(float cps, MOTOR_TYPE *motor)
     MOTOR_DUMP(motor);
 }
 
-static void PrintFormatDataInt32(char *label, uint8 data_size, int32 *data)
-{
-    uint8 ii;
-    char buf[32];
-    char label_str[20];
-    
-    sprintf(label_str, "%s\r\n", label);
-    Ser_PutString(label_str);
-    for ( ii = 0; ii < data_size - 1; ++ii)
-    {
-        if ((ii > 0) && (ii % 10 == 0))
-        {
-            sprintf(buf, "%ld,\r\n", data[ii]);
-        }
-        else
-        {            
-            sprintf(buf, "%ld,", data[ii]);
-        }
-        Ser_PutString(buf);
-    }
-    sprintf(buf, "%ld\r\n", data[ii]);
-    Ser_PutString(buf);
-}
-
-static void PrintFormatDataUint16(char *label, uint8 data_size, uint16 *data)
-{
-    uint8 ii;
-    char buf[32];
-    char label_str[20];
-    
-    sprintf(label_str, "%s\r\n", label);
-    Ser_PutString(label_str);
-    for ( ii = 0; ii < data_size - 1; ++ii)
-    {
-        if ((ii > 0) && (ii % 10 == 0))
-        {
-            sprintf(buf, "%d,\r\n", data[ii]);
-        }
-        else
-        {            
-            sprintf(buf, "%d,", data[ii]);
-        }
-        Ser_PutString(buf);
-    }
-    sprintf(buf, "%d\r\n", data[ii]);
-    Ser_PutString(buf);
-}
-
-static void DumpMotorCal(char *name, MOTOR_TYPE *motor)
-{
-
-    Ser_PutString(name);
-    
-    PrintFormatDataInt32("Forward CPS", CAL_DATA_SIZE, motor->p_bwd_cal_data->cps_data);
-    PrintFormatDataUint16("Forward PWM\r\n", CAL_DATA_SIZE, motor->p_fwd_cal_data->pwm_data);
-  
-    PrintFormatDataInt32("Backward CPS", CAL_DATA_SIZE, motor->p_bwd_cal_data->cps_data);
-    PrintFormatDataUint16("Backward PWM\r\n", CAL_DATA_SIZE, motor->p_bwd_cal_data->pwm_data);
-    
-}
-
 void Motor_Init()
 {
     left_motor.enable(HB25_DISABLE);
@@ -549,16 +488,12 @@ void Motor_LeftSetCalibration(CAL_DATA_TYPE *fwd_cal_data, CAL_DATA_TYPE *bwd_ca
 {
     left_motor.p_fwd_cal_data = fwd_cal_data;
     left_motor.p_bwd_cal_data = bwd_cal_data;
-    
-    DumpMotorCal("Left\r\n", &left_motor);
 }
 
 void Motor_RightSetCalibration(CAL_DATA_TYPE *fwd_cal_data, CAL_DATA_TYPE *bwd_cal_data)
 {
     right_motor.p_fwd_cal_data = fwd_cal_data;
     right_motor.p_bwd_cal_data = bwd_cal_data;
-    
-    DumpMotorCal("Right\r\n", &right_motor);
 }
 
 

@@ -168,7 +168,7 @@ static void CalibrateWheelSpeed(WHEEL_TYPE wheel, DIR_TYPE dir, uint8 num_runs, 
     CalculateAvgCpsSamples(cps_sum, num_runs, cps_samples);
 }
 
-static void StoreWheelSpeed(WHEEL_TYPE wheel, DIR_TYPE dir, int32 *cps_samples, uint16 *pwm_samples)
+static void StoreWheelSpeedSamples(WHEEL_TYPE wheel, DIR_TYPE dir, int32 *cps_samples, uint16 *pwm_samples)
 {
     CalculateMinMaxCpsSample(cps_samples, CAL_NUM_SAMPLES, &cal_data.cps_min, &cal_data.cps_max);
     cal_data.cps_scale = CAL_SCALE_FACTOR;
@@ -203,17 +203,21 @@ static void StoreWheelSpeed(WHEEL_TYPE wheel, DIR_TYPE dir, int32 *cps_samples, 
     Nvstore_WriteBytes((uint8 *) &cal_data, sizeof(cal_data), offset);
 }
 
-static void OutputSamples(int32 *cps_samples, uint16 *pwm_samples)
+static void OutputSamples(char *label, int32 *cps_samples, uint16 *pwm_samples)
 {
     uint8 ii;
     char  buffer[100];
+    char label_str[20];
+    
+    sprintf(label_str, "%s\r\n", label);
+    Ser_PutString(label_str);
     
     for (ii = 0; ii < CAL_NUM_SAMPLES - 1; ++ii)
     {
         sprintf(buffer, "%ld -> %d,", cps_samples[ii], pwm_samples[ii]);
         Ser_PutString(buffer);
     }
-    sprintf(buffer, "%ld -> %d", cps_samples[ii], pwm_samples[ii]);
+    sprintf(buffer, "%ld -> %d\r\n\r\n", cps_samples[ii], pwm_samples[ii]);
     Ser_PutString(buffer);
 }
 
@@ -233,32 +237,32 @@ void PerformCountPerSecToPwmCalibration(uint8 verbose)
     }
     
     CalibrateWheelSpeed(LEFT_WHEEL, FORWARD_DIR, 5, cps_samples, pwm_samples);
+    StoreWheelSpeedSamples(LEFT_WHEEL, FORWARD_DIR, cps_samples, pwm_samples);
     if (verbose)
     {
-        OutputSamples(cps_samples, pwm_samples);
+        OutputSamples("Left-Forward", cps_samples, pwm_samples);
     }
-    StoreWheelSpeed(LEFT_WHEEL, FORWARD_DIR, cps_samples, pwm_samples);
 
     CalibrateWheelSpeed(LEFT_WHEEL, BACKWARD_DIR, 5, cps_samples, pwm_samples);
+    StoreWheelSpeedSamples(LEFT_WHEEL, BACKWARD_DIR, cps_samples, pwm_samples);
     if (verbose)
     {
-        OutputSamples(cps_samples, pwm_samples);
+        OutputSamples("Left-Backward", cps_samples, pwm_samples);
     }
-    StoreWheelSpeed(LEFT_WHEEL, BACKWARD_DIR, cps_samples, pwm_samples);
 
     CalibrateWheelSpeed(RIGHT_WHEEL, FORWARD_DIR, 5, cps_samples, pwm_samples);
+    StoreWheelSpeedSamples(RIGHT_WHEEL, FORWARD_DIR, cps_samples, pwm_samples);
     if (verbose)
     {
-        OutputSamples(cps_samples, pwm_samples);
+        OutputSamples("Right-Forward", cps_samples, pwm_samples);
     }
-    StoreWheelSpeed(RIGHT_WHEEL, FORWARD_DIR, cps_samples, pwm_samples);
 
     CalibrateWheelSpeed(RIGHT_WHEEL, BACKWARD_DIR, 5, cps_samples, pwm_samples);
+    StoreWheelSpeedSamples(RIGHT_WHEEL, BACKWARD_DIR, cps_samples, pwm_samples);
     if (verbose)
     {
-        OutputSamples(cps_samples, pwm_samples);
+        OutputSamples("Right-Backward", cps_samples, pwm_samples);
     }
-    StoreWheelSpeed(RIGHT_WHEEL, BACKWARD_DIR, cps_samples, pwm_samples);
 
     Motor_LeftSetCalibration((CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_fwd, (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd);
     Motor_RightSetCalibration((CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd, (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd);

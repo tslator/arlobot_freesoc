@@ -15,5 +15,6 @@
 void Ser_Init();
 void Ser_Start();
 void Ser_PutString(char *str);
+void Ser_ReadFloat(float *value);
 
 /* [] END OF FILE */

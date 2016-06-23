@@ -69,6 +69,9 @@ void Control_Update()
         Odom_Reset();
     }
     
+    /* Note: We can add more logic here regarding the status of calibration.  For example, if cps2pwm calibration has
+       not been done, then we can prevent any request for movement.
+     */
     if (cal_control)
     {
         Cal_Update(cal_control);

@@ -24,27 +24,6 @@
 #include "callin.h"
 #include "calang.h"
 
-static uint8 cal_verbose;
-
-static void ClearCalibrationStatusBit(uint16 bit)
-{
-    p_cal_eeprom->status &= ~bit;
-    Nvstore_WriteUint16(p_cal_eeprom->status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
-    I2c_ClearCalibrationStatusBit(bit);
-}
-
-static void SetCalibrationStatusBit(uint16 bit)
-{
-    p_cal_eeprom->status |= bit;
-    Nvstore_WriteUint16(p_cal_eeprom->status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
-    I2c_SetCalibrationStatusBit(bit);   
-}
-
-void Cal_Init()
-{
-    p_cal_eeprom = NVSTORE_CAL_EEPROM_BASE;
-    cal_verbose = 0;
-}
 #ifdef DEFAULT_CALIBRATION
 static CAL_DATA_TYPE left_fwd_cal_data = {
     0,
@@ -136,6 +115,28 @@ static CAL_DATA_TYPE right_bwd_cal_data = {
     0
 };    
 #endif
+
+static uint8 cal_verbose;
+
+static void ClearCalibrationStatusBit(uint16 bit)
+{
+    p_cal_eeprom->status &= ~bit;
+    Nvstore_WriteUint16(p_cal_eeprom->status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
+    I2c_ClearCalibrationStatusBit(bit);
+}
+
+static void SetCalibrationStatusBit(uint16 bit)
+{
+    p_cal_eeprom->status |= bit;
+    Nvstore_WriteUint16(p_cal_eeprom->status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
+    I2c_SetCalibrationStatusBit(bit);   
+}
+
+void Cal_Init()
+{
+    p_cal_eeprom = NVSTORE_CAL_EEPROM_BASE;
+    cal_verbose = 0;
+}
 
 void Cal_Start()
 {

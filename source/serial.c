@@ -80,4 +80,15 @@ void Ser_PutString(char *str)
 #endif    
 }
 
+void Ser_ReadFloat(float *value)
+{
+    if (0u != USBUART_GetConfiguration())
+    {    
+        if (USBUART_CDCIsReady())
+        {
+            USBUART_GetAll((uint8 *) value);
+        }
+    }
+}
+
 /* [] END OF FILE */

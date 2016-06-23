@@ -161,4 +161,10 @@ void Odom_Reset()
     I2c_WriteOdom(x_dist, y_dist, heading, linear_speed, angular_speed);
 }
 
+void Odom_GetPosition(float *x, float *y)
+{
+    *x = x_dist;
+    *y = y_dist;
+}
+
 /* [] END OF FILE */
