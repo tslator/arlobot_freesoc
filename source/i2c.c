@@ -28,20 +28,20 @@
     I2C Communication Data Layout
 
     offset     num bytes     name                           description
-      00           2         [control register]             the control register supports 
+      00           2         [device control]               the control register supports 
                                                                 - Bit 0: disable the HB25 motors
                                                                 - Bit 1: clear odometry (which includes the following:
                                                                     x,y distances
                                                                     heading
                                                                     linear,angular velocity
                                                                     encoder counts
-      02           2         [debug register]               the debug register supports
+      02           2         [debug control]                the debug register supports
                                                                 - Bit 0: Enable/Disable Encoder Debug
                                                                 - Bit 1: Enable/Disable PID debug
                                                                 - Bit 2: Enable/Disable Motor debug
                                                                 - Bit 3: Enable/Disable Odometry debug
                                                                 - Bit 4: Enable/Disable Sample debug
-      04           2         [calibration register]         the calibration register controls robot calibration
+      04           2         [calibration control]          the calibration register controls robot calibration
                                                                 - bit 0: Count/Sec to PWM
                                                                 - bit 1: PID
                                                                 - bit 2: Linear Bias
@@ -178,7 +178,7 @@ void I2c_Start()
     
     /* Read the calibration status from EEPROM and mirror in calibration_status */
     i2c_buf.read_write.calibration_control = p_cal_eeprom->status;
-    i2c_buf.read_write.calibration_control = 0x0004;
+    //i2c_buf.read_write.calibration_control = 0x0004;
 }
 
 uint16 I2c_ReadDeviceControl()
@@ -254,7 +254,7 @@ void I2c_ReadCmdVelocity(float *linear, float *angular)
     {
         I2C_WAIT_FOR_ACCESS();
         EZI2C_Slave_DisableInt();
-        i2c_buf.read_write.linear_cmd_velocity = 0.15;
+        //i2c_buf.read_write.linear_cmd_velocity = 0.15;
         //i2c_buf.read_write.angular_cmd_velocity = 0.75;
         *linear = i2c_buf.read_write.linear_cmd_velocity;
         *angular = i2c_buf.read_write.angular_cmd_velocity;

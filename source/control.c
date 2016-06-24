@@ -26,6 +26,10 @@
 
 static float left_cmd_velocity;
 static float right_cmd_velocity;
+#ifdef CLIFF_SENSORS    
+static uint8 front_cliff_detect;
+static uint8 rear_cliff_detect;
+#endif
 
 static void CalculateLeftRightSpeed()
 /* Calculate the left/right wheel speed from the commanded linear/angular velocity
@@ -35,7 +39,17 @@ static void CalculateLeftRightSpeed()
     float angular;
 
     I2c_ReadCmdVelocity(&linear, &angular);
+    #ifdef CLIFF_SENSORS    
+    if ( (front_cliff_detect && linear > 0 && angular != 0) ||
+         (rear_cliff_detect && linear < 0 && angular != 0) )
+    {
+        linear = 0;
+        angular = 0;
+    }
+    #endif
+    
     ConvertLinearAngularToDifferential(linear, angular, &left_cmd_velocity, &right_cmd_velocity);
+    
 }
 
 void Control_Init()
