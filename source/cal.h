@@ -96,7 +96,6 @@ typedef struct _eeprom_tag
 
 volatile CAL_EEPROM_TYPE *p_cal_eeprom;
 
-
 void Cal_Init();
 void Cal_Start();
 void Cal_Update(uint16 status);

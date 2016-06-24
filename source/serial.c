@@ -81,25 +81,26 @@ void Ser_PutString(char *str)
 #endif    
 }
 
+uint8 Ser_IsDataReady()
+{
+    if (0u != USBUART_GetConfiguration())
+    {    
+        if (USBUART_CDCIsReady())
+        {
+            return USBUART_GetCount() > 0;
+        }
+    }
+    
+    return 0;
+}
+
 void Ser_ReadFloat(float *value)
 {
     if (0u != USBUART_GetConfiguration())
     {    
         if (USBUART_CDCIsReady())
         {
-            uint32 start = millis();
-            while (USBUART_GetCount() == 0 && millis() - start < 5000)
-            {
-            }
-            
-            if (USBUART_GetCount() > 0)
-            {
-                USBUART_GetAll((uint8 *) value);
-            }
-            else
-            {
-                *value = 1.0;
-            }
+            USBUART_GetAll((uint8 *) value);
         }
     }
 }

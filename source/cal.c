@@ -24,7 +24,7 @@
 #include "callin.h"
 #include "calang.h"
 
-#define DEFAULT_CALIBRATION
+//#define DEFAULT_CALIBRATION
 #ifdef DEFAULT_CALIBRATION
 static CAL_DATA_TYPE left_fwd_cal_data = {
     0,
@@ -145,7 +145,7 @@ void Cal_Start()
     //Nvstore_WriteBytes((uint8 *) &left_bwd_cal_data, sizeof(CAL_DATA_TYPE), NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_motor_bwd));
     //Nvstore_WriteBytes((uint8 *) &right_fwd_cal_data, sizeof(CAL_DATA_TYPE), NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_motor_fwd));
     //Nvstore_WriteBytes((uint8 *) &right_bwd_cal_data, sizeof(CAL_DATA_TYPE), NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_motor_bwd));
-    Nvstore_WriteUint16(0, 0);
+    //Nvstore_WriteUint16(0, 0);
     
     I2c_SetCalibrationStatusBit(p_cal_eeprom->status);
 }

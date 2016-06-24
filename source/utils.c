@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "utils.h"
+#include "config.h"
 
 int32 MovingAverage(MOVING_AVERAGE_TYPE* ma, int32 value)
 /*
@@ -213,5 +214,10 @@ void BinaryRangeSearch(int32 search, int32 *data_points, uint8 num_points, uint8
    }
 }
 
+void ConvertLinearAngularToDifferential(float linear, float angular, float *left_cmd_velocity, float *right_cmd_velocity)
+{
+    *left_cmd_velocity = linear - (angular * TRACK_WIDTH)/2;
+    *right_cmd_velocity = linear + (angular * TRACK_WIDTH)/2;
+}
 
 /* [] END OF FILE */

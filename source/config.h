@@ -17,7 +17,7 @@
     
 /* There is a known issue with printf/sprintf and float formating which can be resolved by converting floats to string
    and then using format to include into a string.  However, the gcc compiler does not support ftoa so I had to role my
-   own.  This define enabled the home-grown ftoa (in utils.c)
+   own (stolen from others who rolled their own).  This define enables the home-grown ftoa (in utils.c)
  */
 #define USE_FTOA
     

@@ -19,6 +19,7 @@
 #include "utils.h"
 #include "diag.h"
 #include "debug.h"
+#include "cal.h"
 
 #ifdef ODOM_UPDATE_DELTA_ENABLED
 #define ODOM_DEBUG_DELTA(delta) DEBUG_DELTA_TIME("odom", delta)
@@ -106,7 +107,7 @@ void calc_odom(uint32 delta_time)
        delta heading = delta dist X ------
                                      meter
     */
-    delta_heading = ((delta_left_dist - delta_right_dist) / TRACK_WIDTH) * CAL_ANGULAR_SCALE_CORRECTION;
+    delta_heading = ((delta_left_dist - delta_right_dist) / TRACK_WIDTH) * p_cal_eeprom->angular_bias;
     heading += delta_heading;
 
     // Constrain heading to -Pi to Pi
@@ -120,7 +121,7 @@ void calc_odom(uint32 delta_time)
     }
 
     // Calculate x/y distance and update
-    delta_dist = 0.5 * (delta_left_dist + delta_right_dist) * CAL_LINEAR_SCALE_CORRECTION;
+    delta_dist = 0.5 * (delta_left_dist + delta_right_dist) * p_cal_eeprom->linear_bias;
     delta_x_dist = delta_dist * cos(heading);
     delta_y_dist = delta_dist * sin(heading);
 
@@ -165,6 +166,11 @@ void Odom_GetPosition(float *x, float *y)
 {
     *x = x_dist;
     *y = y_dist;
+}
+
+float Odom_GetHeading()
+{
+    return heading;
 }
 
 /* [] END OF FILE */

@@ -25,6 +25,16 @@ static uint16 pwm_samples[CAL_NUM_SAMPLES];
 static int32 cps_sum[CAL_NUM_SAMPLES];
 static CAL_DATA_TYPE cal_data;
 
+static CAL_DATA_TYPE * WHEEL_DIR_TO_CAL_DATA[2][2];
+
+static void Init()
+{
+    WHEEL_DIR_TO_CAL_DATA[LEFT_WHEEL][FORWARD_DIR] = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_fwd;
+    WHEEL_DIR_TO_CAL_DATA[LEFT_WHEEL][BACKWARD_DIR] = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd;
+    WHEEL_DIR_TO_CAL_DATA[RIGHT_WHEEL][FORWARD_DIR] = (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd;
+    WHEEL_DIR_TO_CAL_DATA[RIGHT_WHEEL][BACKWARD_DIR] = (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd;
+}
+
 static void CalculatePwmSamples(WHEEL_TYPE wheel, DIR_TYPE dir, uint16 *pwm_samples, uint8 *reverse_pwm)
 {
     /*
@@ -175,29 +185,7 @@ static void StoreWheelSpeedSamples(WHEEL_TYPE wheel, DIR_TYPE dir, int32 *cps_sa
     memcpy(&cal_data.cps_data[0], cps_samples, sizeof(cps_samples[0]) * CAL_NUM_SAMPLES);
     memcpy(&cal_data.pwm_data[0], pwm_samples, sizeof(pwm_samples[0]) * CAL_NUM_SAMPLES);
 
-    CAL_DATA_TYPE *p_cal_data;
-    if (wheel == LEFT_WHEEL)
-    {
-        if (dir == FORWARD_DIR)
-        {
-            p_cal_data = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_fwd;
-        }
-        else
-        {
-            p_cal_data = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd;
-        }
-    }
-    else
-    {
-        if (dir == FORWARD_DIR)
-        {
-            p_cal_data = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_fwd;
-        }
-        else
-        {
-            p_cal_data = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd;
-        }
-    }
+    CAL_DATA_TYPE *p_cal_data = WHEEL_DIR_TO_CAL_DATA[wheel][dir];
     
     uint16 offset = NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(p_cal_data);
     Nvstore_WriteBytes((uint8 *) &cal_data, sizeof(cal_data), offset);
@@ -231,6 +219,8 @@ void PerformCountPerSecToPwmCalibration(uint8 verbose)
     Update Count/Sec to PWM calibration bit in EEPROM
  */
 {
+    Init();
+    
     if (verbose)
     {
         Ser_PutString("Starting Count/Sec To PWM calibration ...\r\n");

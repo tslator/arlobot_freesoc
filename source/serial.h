@@ -16,5 +16,6 @@ void Ser_Init();
 void Ser_Start();
 void Ser_PutString(char *str);
 void Ser_ReadFloat(float *value);
+uint8 Ser_IsDataReady();
 
 /* [] END OF FILE */

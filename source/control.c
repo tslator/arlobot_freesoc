@@ -35,8 +35,7 @@ static void CalculateLeftRightSpeed()
     float angular;
 
     I2c_ReadCmdVelocity(&linear, &angular);
-    left_cmd_velocity = linear - (angular * TRACK_WIDTH)/2;
-    right_cmd_velocity = linear + (angular * TRACK_WIDTH)/2;
+    ConvertLinearAngularToDifferential(linear, angular, &left_cmd_velocity, &right_cmd_velocity);
 }
 
 void Control_Init()

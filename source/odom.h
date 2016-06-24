@@ -19,6 +19,7 @@ void Odom_Start();
 void Odom_Update();
 void Odom_Reset();
 void Odom_GetPosition(float *x, float *y);
+float Odom_GetHeading();
 
 #endif
 
