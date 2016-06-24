@@ -1,6 +1,6 @@
 -- Project:   freesoc
--- Generated: 06/22/2016 22:11:14
--- PSoC Creator  3.3 CP3
+-- Generated: 06/24/2016 15:11:40
+-- PSoC Creator  3.3 CP2
 
 ENTITY freesoc IS
     PORT(
@@ -78,8 +78,6 @@ ARCHITECTURE __DEFAULT__ OF freesoc IS
     SIGNAL Front_Echo_Pin_5(0)__PA : bit;
     SIGNAL Front_Echo_Pin_6(0)__PA : bit;
     SIGNAL Front_Echo_Pin_7(0)__PA : bit;
-    SIGNAL Front_LeftCliffDetect(0)__PA : bit;
-    SIGNAL Front_RightCliffDetect(0)__PA : bit;
     SIGNAL Front_Trigger_0(0)__PA : bit;
     SIGNAL Front_Trigger_1(0)__PA : bit;
     SIGNAL Front_Trigger_2(0)__PA : bit;
@@ -186,8 +184,6 @@ ARCHITECTURE __DEFAULT__ OF freesoc IS
     ATTRIBUTE udbclken_assigned OF Net_8613 : SIGNAL IS "True";
     ATTRIBUTE global_signal OF Net_8613 : SIGNAL IS true;
     SIGNAL Net_8613_local : bit;
-    SIGNAL Net_8834 : bit;
-    SIGNAL Net_8839 : bit;
     SIGNAL Net_95 : bit;
     SIGNAL Net_96 : bit;
     SIGNAL Rear_Echo_Pin_0(0)__PA : bit;
@@ -198,8 +194,6 @@ ARCHITECTURE __DEFAULT__ OF freesoc IS
     SIGNAL Rear_Echo_Pin_5(0)__PA : bit;
     SIGNAL Rear_Echo_Pin_6(0)__PA : bit;
     SIGNAL Rear_Echo_Pin_7(0)__PA : bit;
-    SIGNAL Rear_LeftCliffDetect(0)__PA : bit;
-    SIGNAL Rear_RightCliffDetect(0)__PA : bit;
     SIGNAL Rear_Trigger_0(0)__PA : bit;
     SIGNAL Rear_Trigger_1(0)__PA : bit;
     SIGNAL Rear_Trigger_2(0)__PA : bit;
@@ -614,14 +608,6 @@ ARCHITECTURE __DEFAULT__ OF freesoc IS
     ATTRIBUTE Location OF \USBUART:Dm(0)\ : LABEL IS "P15[7]";
     ATTRIBUTE lib_model OF \USBUART:Dp(0)\ : LABEL IS "iocell59";
     ATTRIBUTE Location OF \USBUART:Dp(0)\ : LABEL IS "P15[6]";
-    ATTRIBUTE lib_model OF Front_LeftCliffDetect(0) : LABEL IS "iocell60";
-    ATTRIBUTE Location OF Front_LeftCliffDetect(0) : LABEL IS "P1[4]";
-    ATTRIBUTE lib_model OF Front_RightCliffDetect(0) : LABEL IS "iocell61";
-    ATTRIBUTE Location OF Front_RightCliffDetect(0) : LABEL IS "P6[0]";
-    ATTRIBUTE lib_model OF Rear_LeftCliffDetect(0) : LABEL IS "iocell62";
-    ATTRIBUTE Location OF Rear_LeftCliffDetect(0) : LABEL IS "P6[1]";
-    ATTRIBUTE lib_model OF Rear_RightCliffDetect(0) : LABEL IS "iocell63";
-    ATTRIBUTE Location OF Rear_RightCliffDetect(0) : LABEL IS "P1[5]";
     ATTRIBUTE lib_model OF \Left_QuadDec:Cnt16:CounterUDB:reload\ : LABEL IS "macrocell1";
     ATTRIBUTE lib_model OF \Left_QuadDec:Cnt16:CounterUDB:status_0\ : LABEL IS "macrocell2";
     ATTRIBUTE lib_model OF \Left_QuadDec:Cnt16:CounterUDB:status_2\ : LABEL IS "macrocell3";
@@ -699,8 +685,6 @@ ARCHITECTURE __DEFAULT__ OF freesoc IS
     ATTRIBUTE Location OF \Front_ADC_SAR:ADC_SAR\ : LABEL IS "F(SAR,1)";
     ATTRIBUTE Location OF \Rear_ADC_SAR:ADC_SAR\ : LABEL IS "F(SAR,0)";
     ATTRIBUTE Location OF \USBUART:USB\ : LABEL IS "F(USB,0)";
-    ATTRIBUTE Location OF \Front_CliffDetect:ctComp\ : LABEL IS "F(Comparator,0)";
-    ATTRIBUTE Location OF \Rear_CliffDetect:ctComp\ : LABEL IS "F(Comparator,1)";
     ATTRIBUTE lib_model OF tmpOE__bufoe_1_net_0 : LABEL IS "macrocell51";
     ATTRIBUTE lib_model OF \Left_HB25_PWM:PWMUDB:runmode_enable\ : LABEL IS "macrocell52";
     ATTRIBUTE lib_model OF Net_1537 : LABEL IS "macrocell53";
@@ -829,12 +813,6 @@ ARCHITECTURE __DEFAULT__ OF freesoc IS
             dclk_glb_ff_5 : OUT std_ulogic;
             dclk_glb_ff_6 : OUT std_ulogic;
             dclk_glb_ff_7 : OUT std_ulogic);
-    END COMPONENT;
-    COMPONENT comparatorcell
-        PORT (
-            out : OUT std_ulogic;
-            clk_udb : IN std_ulogic;
-            clock : IN std_ulogic);
     END COMPONENT;
     COMPONENT controlcell
         PORT (
@@ -6706,362 +6684,6 @@ BEGIN
             out_clock_en => '1',
             out_reset => '0');
 
-    Front_LeftCliffDetect:logicalport
-        GENERIC MAP(
-            drive_mode => "000",
-            ibuf_enabled => "0",
-            id => "08d43ead-b8ff-465c-84f5-7e98c9ac5056",
-            init_dr_st => "0",
-            input_buffer_sel => "00",
-            input_clk_en => 0,
-            input_sync => "1",
-            input_sync_mode => "0",
-            intr_mode => "00",
-            invert_in_clock => 0,
-            invert_in_clock_en => 0,
-            invert_in_reset => 0,
-            invert_out_clock => 0,
-            invert_out_clock_en => 0,
-            invert_out_reset => 0,
-            io_voltage => "",
-            layout_mode => "CONTIGUOUS",
-            oe_conn => "0",
-            oe_reset => 0,
-            oe_sync => "0",
-            output_clk_en => 0,
-            output_clock_mode => "0",
-            output_conn => "0",
-            output_mode => "0",
-            output_reset => 0,
-            output_sync => "0",
-            ovt_hyst_trim => "0",
-            ovt_needed => "0",
-            ovt_slew_control => "00",
-            pa_in_clock => -1,
-            pa_in_clock_en => -1,
-            pa_in_reset => -1,
-            pa_out_clock => -1,
-            pa_out_clock_en => -1,
-            pa_out_reset => -1,
-            pin_aliases => "",
-            pin_mode => "A",
-            por_state => 4,
-            port_alias_group => "",
-            port_alias_required => 0,
-            sio_group_cnt => 0,
-            sio_hifreq => "00000000",
-            sio_hyst => "1",
-            sio_ibuf => "00000000",
-            sio_info => "00",
-            sio_obuf => "00000000",
-            sio_refsel => "00000000",
-            sio_vohsel => "00000000",
-            sio_vtrip => "00000000",
-            slew_rate => "0",
-            spanning => 0,
-            sw_only => 0,
-            use_annotation => "0",
-            vtrip => "10",
-            width => 1,
-            in_clk_inv => 0,
-            in_clken_inv => 0,
-            in_clken_mode => 1,
-            in_rst_inv => 0,
-            out_clk_inv => 0,
-            out_clken_inv => 0,
-            out_clken_mode => 1,
-            out_rst_inv => 0)
-        PORT MAP(
-            in_clock_en => open,
-            in_reset => open,
-            out_clock_en => open,
-            out_reset => open);
-
-    Front_LeftCliffDetect(0):iocell
-        GENERIC MAP(
-            in_sync_mode => 0,
-            out_sync_mode => 0,
-            oe_sync_mode => 0,
-            logicalport => "Front_LeftCliffDetect",
-            logicalport_pin_id => 0,
-            io_capabilities => "0000000000000000000000000000000000000000000000000000000000000010")
-        PORT MAP(
-            pa_out => Front_LeftCliffDetect(0)__PA,
-            oe => open,
-            in_clock => open,
-            in_clock_en => '1',
-            in_reset => '0',
-            out_clock => open,
-            out_clock_en => '1',
-            out_reset => '0');
-
-    Front_RightCliffDetect:logicalport
-        GENERIC MAP(
-            drive_mode => "000",
-            ibuf_enabled => "0",
-            id => "06a52144-e5cc-4ba7-b5d6-ebe22fc718b2",
-            init_dr_st => "0",
-            input_buffer_sel => "00",
-            input_clk_en => 0,
-            input_sync => "1",
-            input_sync_mode => "0",
-            intr_mode => "00",
-            invert_in_clock => 0,
-            invert_in_clock_en => 0,
-            invert_in_reset => 0,
-            invert_out_clock => 0,
-            invert_out_clock_en => 0,
-            invert_out_reset => 0,
-            io_voltage => "",
-            layout_mode => "CONTIGUOUS",
-            oe_conn => "0",
-            oe_reset => 0,
-            oe_sync => "0",
-            output_clk_en => 0,
-            output_clock_mode => "0",
-            output_conn => "0",
-            output_mode => "0",
-            output_reset => 0,
-            output_sync => "0",
-            ovt_hyst_trim => "0",
-            ovt_needed => "0",
-            ovt_slew_control => "00",
-            pa_in_clock => -1,
-            pa_in_clock_en => -1,
-            pa_in_reset => -1,
-            pa_out_clock => -1,
-            pa_out_clock_en => -1,
-            pa_out_reset => -1,
-            pin_aliases => "",
-            pin_mode => "A",
-            por_state => 4,
-            port_alias_group => "",
-            port_alias_required => 0,
-            sio_group_cnt => 0,
-            sio_hifreq => "00000000",
-            sio_hyst => "1",
-            sio_ibuf => "00000000",
-            sio_info => "00",
-            sio_obuf => "00000000",
-            sio_refsel => "00000000",
-            sio_vohsel => "00000000",
-            sio_vtrip => "00000000",
-            slew_rate => "0",
-            spanning => 0,
-            sw_only => 0,
-            use_annotation => "0",
-            vtrip => "10",
-            width => 1,
-            in_clk_inv => 0,
-            in_clken_inv => 0,
-            in_clken_mode => 1,
-            in_rst_inv => 0,
-            out_clk_inv => 0,
-            out_clken_inv => 0,
-            out_clken_mode => 1,
-            out_rst_inv => 0)
-        PORT MAP(
-            in_clock_en => open,
-            in_reset => open,
-            out_clock_en => open,
-            out_reset => open);
-
-    Front_RightCliffDetect(0):iocell
-        GENERIC MAP(
-            in_sync_mode => 0,
-            out_sync_mode => 0,
-            oe_sync_mode => 0,
-            logicalport => "Front_RightCliffDetect",
-            logicalport_pin_id => 0,
-            io_capabilities => "0000000000000000000000000000000000000000000000000000000000000010")
-        PORT MAP(
-            pa_out => Front_RightCliffDetect(0)__PA,
-            oe => open,
-            in_clock => open,
-            in_clock_en => '1',
-            in_reset => '0',
-            out_clock => open,
-            out_clock_en => '1',
-            out_reset => '0');
-
-    Rear_LeftCliffDetect:logicalport
-        GENERIC MAP(
-            drive_mode => "000",
-            ibuf_enabled => "0",
-            id => "6234f23c-0ca9-4190-84bb-e0b5725033c9",
-            init_dr_st => "0",
-            input_buffer_sel => "00",
-            input_clk_en => 0,
-            input_sync => "1",
-            input_sync_mode => "0",
-            intr_mode => "00",
-            invert_in_clock => 0,
-            invert_in_clock_en => 0,
-            invert_in_reset => 0,
-            invert_out_clock => 0,
-            invert_out_clock_en => 0,
-            invert_out_reset => 0,
-            io_voltage => "",
-            layout_mode => "CONTIGUOUS",
-            oe_conn => "0",
-            oe_reset => 0,
-            oe_sync => "0",
-            output_clk_en => 0,
-            output_clock_mode => "0",
-            output_conn => "0",
-            output_mode => "0",
-            output_reset => 0,
-            output_sync => "0",
-            ovt_hyst_trim => "0",
-            ovt_needed => "0",
-            ovt_slew_control => "00",
-            pa_in_clock => -1,
-            pa_in_clock_en => -1,
-            pa_in_reset => -1,
-            pa_out_clock => -1,
-            pa_out_clock_en => -1,
-            pa_out_reset => -1,
-            pin_aliases => "",
-            pin_mode => "A",
-            por_state => 4,
-            port_alias_group => "",
-            port_alias_required => 0,
-            sio_group_cnt => 0,
-            sio_hifreq => "00000000",
-            sio_hyst => "1",
-            sio_ibuf => "00000000",
-            sio_info => "00",
-            sio_obuf => "00000000",
-            sio_refsel => "00000000",
-            sio_vohsel => "00000000",
-            sio_vtrip => "00000000",
-            slew_rate => "0",
-            spanning => 0,
-            sw_only => 0,
-            use_annotation => "0",
-            vtrip => "10",
-            width => 1,
-            in_clk_inv => 0,
-            in_clken_inv => 0,
-            in_clken_mode => 1,
-            in_rst_inv => 0,
-            out_clk_inv => 0,
-            out_clken_inv => 0,
-            out_clken_mode => 1,
-            out_rst_inv => 0)
-        PORT MAP(
-            in_clock_en => open,
-            in_reset => open,
-            out_clock_en => open,
-            out_reset => open);
-
-    Rear_LeftCliffDetect(0):iocell
-        GENERIC MAP(
-            in_sync_mode => 0,
-            out_sync_mode => 0,
-            oe_sync_mode => 0,
-            logicalport => "Rear_LeftCliffDetect",
-            logicalport_pin_id => 0,
-            io_capabilities => "0000000000000000000000000000000000000000000000000000000000000010")
-        PORT MAP(
-            pa_out => Rear_LeftCliffDetect(0)__PA,
-            oe => open,
-            in_clock => open,
-            in_clock_en => '1',
-            in_reset => '0',
-            out_clock => open,
-            out_clock_en => '1',
-            out_reset => '0');
-
-    Rear_RightCliffDetect:logicalport
-        GENERIC MAP(
-            drive_mode => "000",
-            ibuf_enabled => "0",
-            id => "bdfae646-2c48-4271-a6c3-36698df32bb5",
-            init_dr_st => "0",
-            input_buffer_sel => "00",
-            input_clk_en => 0,
-            input_sync => "1",
-            input_sync_mode => "0",
-            intr_mode => "00",
-            invert_in_clock => 0,
-            invert_in_clock_en => 0,
-            invert_in_reset => 0,
-            invert_out_clock => 0,
-            invert_out_clock_en => 0,
-            invert_out_reset => 0,
-            io_voltage => "",
-            layout_mode => "CONTIGUOUS",
-            oe_conn => "0",
-            oe_reset => 0,
-            oe_sync => "0",
-            output_clk_en => 0,
-            output_clock_mode => "0",
-            output_conn => "0",
-            output_mode => "0",
-            output_reset => 0,
-            output_sync => "0",
-            ovt_hyst_trim => "0",
-            ovt_needed => "0",
-            ovt_slew_control => "00",
-            pa_in_clock => -1,
-            pa_in_clock_en => -1,
-            pa_in_reset => -1,
-            pa_out_clock => -1,
-            pa_out_clock_en => -1,
-            pa_out_reset => -1,
-            pin_aliases => "",
-            pin_mode => "A",
-            por_state => 4,
-            port_alias_group => "",
-            port_alias_required => 0,
-            sio_group_cnt => 0,
-            sio_hifreq => "00000000",
-            sio_hyst => "1",
-            sio_ibuf => "00000000",
-            sio_info => "00",
-            sio_obuf => "00000000",
-            sio_refsel => "00000000",
-            sio_vohsel => "00000000",
-            sio_vtrip => "00000000",
-            slew_rate => "0",
-            spanning => 0,
-            sw_only => 0,
-            use_annotation => "0",
-            vtrip => "10",
-            width => 1,
-            in_clk_inv => 0,
-            in_clken_inv => 0,
-            in_clken_mode => 1,
-            in_rst_inv => 0,
-            out_clk_inv => 0,
-            out_clken_inv => 0,
-            out_clken_mode => 1,
-            out_rst_inv => 0)
-        PORT MAP(
-            in_clock_en => open,
-            in_reset => open,
-            out_clock_en => open,
-            out_reset => open);
-
-    Rear_RightCliffDetect(0):iocell
-        GENERIC MAP(
-            in_sync_mode => 0,
-            out_sync_mode => 0,
-            oe_sync_mode => 0,
-            logicalport => "Rear_RightCliffDetect",
-            logicalport_pin_id => 0,
-            io_capabilities => "0000000000000000000000000000000000000000000000000000000000000010")
-        PORT MAP(
-            pa_out => Rear_RightCliffDetect(0)__PA,
-            oe => open,
-            in_clock => open,
-            in_clock_en => '1',
-            in_reset => '0',
-            out_clock => open,
-            out_clock_en => '1',
-            out_reset => '0');
-
     \Left_QuadDec:Cnt16:CounterUDB:reload\:macrocell
         GENERIC MAP(
             eqn_main => "(!main_0 * !main_1 * !main_2)",
@@ -8628,32 +8250,6 @@ BEGIN
             int_type => "10")
         PORT MAP(
             interrupt => Net_8551,
-            clock => ClockBlock_BUS_CLK);
-
-    \Front_CliffDetect:ctComp\:comparatorcell
-        GENERIC MAP(
-            cy_registers => "")
-        PORT MAP(
-            out => Net_8834);
-
-    Front_CliffDetect_Isr:interrupt
-        GENERIC MAP(
-            int_type => "10")
-        PORT MAP(
-            interrupt => Net_8834,
-            clock => ClockBlock_BUS_CLK);
-
-    \Rear_CliffDetect:ctComp\:comparatorcell
-        GENERIC MAP(
-            cy_registers => "")
-        PORT MAP(
-            out => Net_8839);
-
-    Rear_CliffDetect_Isr:interrupt
-        GENERIC MAP(
-            int_type => "10")
-        PORT MAP(
-            interrupt => Net_8839,
             clock => ClockBlock_BUS_CLK);
 
     tmpOE__bufoe_1_net_0:macrocell

@@ -178,7 +178,7 @@ void I2c_Start()
     
     /* Read the calibration status from EEPROM and mirror in calibration_status */
     i2c_buf.read_write.calibration_control = p_cal_eeprom->status;
-    //i2c_buf.read_write.calibration_control = 0x0004;
+    //i2c_buf.read_write.calibration_control = 0x0008;
 }
 
 uint16 I2c_ReadDeviceControl()
@@ -254,8 +254,6 @@ void I2c_ReadCmdVelocity(float *linear, float *angular)
     {
         I2C_WAIT_FOR_ACCESS();
         EZI2C_Slave_DisableInt();
-        //i2c_buf.read_write.linear_cmd_velocity = 0.15;
-        //i2c_buf.read_write.angular_cmd_velocity = 0.75;
         *linear = i2c_buf.read_write.linear_cmd_velocity;
         *angular = i2c_buf.read_write.angular_cmd_velocity;
         EZI2C_Slave_EnableInt();
