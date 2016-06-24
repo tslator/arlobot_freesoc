@@ -1,4 +1,4 @@
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 1
 
 
    1              		.syntax unified
@@ -58,7 +58,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
   25:..\source/control.c **** #define LEFT_RIGHT_CALC_MS  SAMPLE_TIME_MS(CONTROL_RATE)
   26:..\source/control.c **** 
   27:..\source/control.c **** static float left_cmd_velocity;
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 2
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 2
 
 
   28:..\source/control.c **** static float right_cmd_velocity;
@@ -118,7 +118,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
   74              	.LVL5:
   75 0040 0A4C     		ldr	r4, .L3+12
   76 0042 FFF7FEFF 		bl	__aeabi_d2f
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 3
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 3
 
 
   77              	.LVL6:
@@ -178,7 +178,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  126              		.type	Control_Start, %function
  127              	Control_Start:
  128              	.LFB65:
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 4
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 4
 
 
   44:..\source/control.c **** }
@@ -238,7 +238,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  166              	.LVL12:
   61:..\source/control.c ****     
   62:..\source/control.c ****     if (dev_control & CONTROL_DISABLE_MOTOR_BIT)
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 5
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 5
 
 
  167              		.loc 1 62 0
@@ -266,20 +266,23 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  182              	.L9:
   70:..\source/control.c ****     }
   71:..\source/control.c ****     
-  72:..\source/control.c ****     if (cal_control)
- 183              		.loc 1 72 0
+  72:..\source/control.c ****     /* Note: We can add more logic here regarding the status of calibration.  For example, if cps2p
+  73:..\source/control.c ****        not been done, then we can prevent any request for movement.
+  74:..\source/control.c ****      */
+  75:..\source/control.c ****     if (cal_control)
+ 183              		.loc 1 75 0
  184 0024 15B1     		cbz	r5, .L10
-  73:..\source/control.c ****     {
-  74:..\source/control.c ****         Cal_Update(cal_control);
- 185              		.loc 1 74 0
+  76:..\source/control.c ****     {
+  77:..\source/control.c ****         Cal_Update(cal_control);
+ 185              		.loc 1 77 0
  186 0026 2846     		mov	r0, r5
  187 0028 FFF7FEFF 		bl	Cal_Update
  188              	.LVL16:
  189              	.L10:
-  75:..\source/control.c ****     }
-  76:..\source/control.c ****     
-  77:..\source/control.c ****     CalculateLeftRightSpeed();   
- 190              		.loc 1 77 0
+  78:..\source/control.c ****     }
+  79:..\source/control.c ****     
+  80:..\source/control.c ****     CalculateLeftRightSpeed();   
+ 190              		.loc 1 80 0
  191 002c FFF7FEFF 		bl	CalculateLeftRightSpeed
  192              	.LVL17:
  193 0030 38BD     		pop	{r3, r4, r5, pc}
@@ -294,21 +297,21 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  202              		.type	Control_LeftGetCmdVelocity, %function
  203              	Control_LeftGetCmdVelocity:
  204              	.LFB67:
-  78:..\source/control.c **** }
-  79:..\source/control.c **** 
-  80:..\source/control.c **** float Control_LeftGetCmdVelocity()
-  81:..\source/control.c **** {
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 6
+  81:..\source/control.c **** }
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 6
 
 
- 205              		.loc 1 81 0
+  82:..\source/control.c **** 
+  83:..\source/control.c **** float Control_LeftGetCmdVelocity()
+  84:..\source/control.c **** {
+ 205              		.loc 1 84 0
  206              		.cfi_startproc
  207              		@ args = 0, pretend = 0, frame = 0
  208              		@ frame_needed = 0, uses_anonymous_args = 0
  209              		@ link register save eliminated.
-  82:..\source/control.c ****     return left_cmd_velocity;
-  83:..\source/control.c **** }
- 210              		.loc 1 83 0
+  85:..\source/control.c ****     return left_cmd_velocity;
+  86:..\source/control.c **** }
+ 210              		.loc 1 86 0
  211 0000 014B     		ldr	r3, .L13
  212 0002 1868     		ldr	r0, [r3]	@ float
  213 0004 7047     		bx	lr
@@ -327,17 +330,17 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  226              		.type	Control_RightGetCmdVelocity, %function
  227              	Control_RightGetCmdVelocity:
  228              	.LFB68:
-  84:..\source/control.c **** 
-  85:..\source/control.c **** float Control_RightGetCmdVelocity()
-  86:..\source/control.c **** {
- 229              		.loc 1 86 0
+  87:..\source/control.c **** 
+  88:..\source/control.c **** float Control_RightGetCmdVelocity()
+  89:..\source/control.c **** {
+ 229              		.loc 1 89 0
  230              		.cfi_startproc
  231              		@ args = 0, pretend = 0, frame = 0
  232              		@ frame_needed = 0, uses_anonymous_args = 0
  233              		@ link register save eliminated.
-  87:..\source/control.c ****     return right_cmd_velocity;
-  88:..\source/control.c **** }
- 234              		.loc 1 88 0
+  90:..\source/control.c ****     return right_cmd_velocity;
+  91:..\source/control.c **** }
+ 234              		.loc 1 91 0
  235 0000 014B     		ldr	r3, .L16
  236 0002 5868     		ldr	r0, [r3, #4]	@ float
  237 0004 7047     		bx	lr
@@ -355,12 +358,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  249              		.type	left_cmd_velocity, %object
  250              		.size	left_cmd_velocity, 4
  251              	left_cmd_velocity:
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 7
+
+
  252 0000 00000000 		.space	4
  253              		.type	right_cmd_velocity, %object
  254              		.size	right_cmd_velocity, 4
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 7
-
-
  255              	right_cmd_velocity:
  256 0004 00000000 		.space	4
  257              		.text
@@ -415,12 +418,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  306 0053 02       		.uleb128 0x2
  307 0054 04       		.byte	0x4
  308 0055 07       		.byte	0x7
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 8
+
+
  309 0056 A8020000 		.4byte	.LASF5
  310 005a 02       		.uleb128 0x2
  311 005b 08       		.byte	0x8
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 8
-
-
  312 005c 05       		.byte	0x5
  313 005d 2B010000 		.4byte	.LASF6
  314 0061 02       		.uleb128 0x2
@@ -475,12 +478,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  363 00c2 E5010000 		.4byte	.LASF25
  364 00c6 4001     		.2byte	0x140
  365 00c8 05       		.byte	0x5
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 9
+
+
  366 00c9 38       		.byte	0x38
  367 00ca 18010000 		.4byte	0x118
  368 00ce 07       		.uleb128 0x7
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 9
-
-
  369 00cf 64000000 		.4byte	.LASF18
  370 00d3 05       		.byte	0x5
  371 00d4 3A       		.byte	0x3a
@@ -535,12 +538,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  420 0139 A4030000 		.4byte	.LASF24
  421 013d 05       		.byte	0x5
  422 013e 41       		.byte	0x41
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 10
+
+
  423 013f C1000000 		.4byte	0xc1
  424 0143 0B       		.uleb128 0xb
  425 0144 28000000 		.4byte	.LASF26
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 10
-
-
  426 0148 0C       		.byte	0xc
  427 0149 05       		.byte	0x5
  428 014a 43       		.byte	0x43
@@ -595,12 +598,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  477 01ac 04       		.byte	0x4
  478 01ad 07       		.uleb128 0x7
  479 01ae DA010000 		.4byte	.LASF31
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 11
+
+
  480 01b2 05       		.byte	0x5
  481 01b3 57       		.byte	0x57
  482 01b4 71010000 		.4byte	0x171
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 11
-
-
  483 01b8 10       		.byte	0x10
  484 01b9 07       		.uleb128 0x7
  485 01ba C0010000 		.4byte	.LASF32
@@ -655,12 +658,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  534 0221 03       		.uleb128 0x3
  535 0222 C9000000 		.4byte	.LASF39
  536 0226 05       		.byte	0x5
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 12
+
+
  537 0227 5F       		.byte	0x5f
  538 0228 7C010000 		.4byte	0x17c
  539 022c 0D       		.uleb128 0xd
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 12
-
-
  540 022d 57020000 		.4byte	.LASF61
  541 0231 01       		.byte	0x1
  542 0232 1E       		.byte	0x1e
@@ -715,12 +718,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  591 028a 01       		.byte	0x1
  592 028b 2E       		.byte	0x2e
  593 028c 00000000 		.4byte	.LFB65
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 13
+
+
  594 0290 02000000 		.4byte	.LFE65-.LFB65
  595 0294 01       		.uleb128 0x1
  596 0295 9C       		.byte	0x9c
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 13
-
-
  597 0296 12       		.uleb128 0x12
  598 0297 41020000 		.4byte	.LASF62
  599 029b 01       		.byte	0x1
@@ -773,19 +776,19 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  646 0309 16       		.uleb128 0x16
  647 030a 45010000 		.4byte	.LASF46
  648 030e 01       		.byte	0x1
- 649 030f 50       		.byte	0x50
+ 649 030f 53       		.byte	0x53
  650 0310 A5000000 		.4byte	0xa5
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 14
+
+
  651 0314 00000000 		.4byte	.LFB67
  652 0318 0C000000 		.4byte	.LFE67-.LFB67
  653 031c 01       		.uleb128 0x1
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 14
-
-
  654 031d 9C       		.byte	0x9c
  655 031e 16       		.uleb128 0x16
  656 031f 99000000 		.4byte	.LASF47
  657 0323 01       		.byte	0x1
- 658 0324 55       		.byte	0x55
+ 658 0324 58       		.byte	0x58
  659 0325 A5000000 		.4byte	0xa5
  660 0329 00000000 		.4byte	.LFB68
  661 032d 0C000000 		.4byte	.LFE68-.LFB68
@@ -835,12 +838,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  705 038d 1C       		.uleb128 0x1c
  706 038e 98030000 		.4byte	0x398
  707 0392 1C       		.uleb128 0x1c
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 15
+
+
  708 0393 98030000 		.4byte	0x398
  709 0397 00       		.byte	0
  710 0398 1A       		.uleb128 0x1a
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 15
-
-
  711 0399 04       		.byte	0x4
  712 039a A5000000 		.4byte	0xa5
  713 039e 1D       		.uleb128 0x1d
@@ -895,12 +898,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  762 0009 1B       		.uleb128 0x1b
  763 000a 0E       		.uleb128 0xe
  764 000b 55       		.uleb128 0x55
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 16
+
+
  765 000c 17       		.uleb128 0x17
  766 000d 11       		.uleb128 0x11
  767 000e 01       		.uleb128 0x1
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 16
-
-
  768 000f 10       		.uleb128 0x10
  769 0010 17       		.uleb128 0x17
  770 0011 00       		.byte	0
@@ -955,12 +958,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  819 0042 00       		.byte	0
  820 0043 06       		.uleb128 0x6
  821 0044 13       		.uleb128 0x13
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 17
+
+
  822 0045 01       		.byte	0x1
  823 0046 03       		.uleb128 0x3
  824 0047 0E       		.uleb128 0xe
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 17
-
-
  825 0048 0B       		.uleb128 0xb
  826 0049 05       		.uleb128 0x5
  827 004a 3A       		.uleb128 0x3a
@@ -1015,12 +1018,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  876 007b 00       		.byte	0
  877 007c 49       		.uleb128 0x49
  878 007d 13       		.uleb128 0x13
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 18
+
+
  879 007e 2F       		.uleb128 0x2f
  880 007f 0B       		.uleb128 0xb
  881 0080 00       		.byte	0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 18
-
-
  882 0081 00       		.byte	0
  883 0082 0B       		.uleb128 0xb
  884 0083 13       		.uleb128 0x13
@@ -1075,12 +1078,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  933 00b5 00       		.byte	0
  934 00b6 0E       		.uleb128 0xe
  935 00b7 34       		.uleb128 0x34
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 19
+
+
  936 00b8 00       		.byte	0
  937 00b9 03       		.uleb128 0x3
  938 00ba 0E       		.uleb128 0xe
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 19
-
-
  939 00bb 3A       		.uleb128 0x3a
  940 00bc 0B       		.uleb128 0xb
  941 00bd 3B       		.uleb128 0x3b
@@ -1135,12 +1138,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  990 00f4 01       		.byte	0x1
  991 00f5 3F       		.uleb128 0x3f
  992 00f6 19       		.uleb128 0x19
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 20
+
+
  993 00f7 03       		.uleb128 0x3
  994 00f8 0E       		.uleb128 0xe
  995 00f9 3A       		.uleb128 0x3a
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 20
-
-
  996 00fa 0B       		.uleb128 0xb
  997 00fb 3B       		.uleb128 0x3b
  998 00fc 0B       		.uleb128 0xb
@@ -1195,12 +1198,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  1047 0132 2E       		.uleb128 0x2e
  1048 0133 00       		.byte	0
  1049 0134 3F       		.uleb128 0x3f
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 21
+
+
  1050 0135 19       		.uleb128 0x19
  1051 0136 03       		.uleb128 0x3
  1052 0137 0E       		.uleb128 0xe
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 21
-
-
  1053 0138 3A       		.uleb128 0x3a
  1054 0139 0B       		.uleb128 0xb
  1055 013a 3B       		.uleb128 0x3b
@@ -1255,12 +1258,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  1104 016c 3F       		.uleb128 0x3f
  1105 016d 19       		.uleb128 0x19
  1106 016e 02       		.uleb128 0x2
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 22
+
+
  1107 016f 18       		.uleb128 0x18
  1108 0170 00       		.byte	0
  1109 0171 00       		.byte	0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 22
-
-
  1110 0172 1A       		.uleb128 0x1a
  1111 0173 0F       		.uleb128 0xf
  1112 0174 00       		.byte	0
@@ -1315,12 +1318,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  1161 01a5 13       		.uleb128 0x13
  1162 01a6 00       		.byte	0
  1163 01a7 00       		.byte	0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 23
+
+
  1164 01a8 1E       		.uleb128 0x1e
  1165 01a9 18       		.uleb128 0x18
  1166 01aa 00       		.byte	0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 23
-
-
  1167 01ab 00       		.byte	0
  1168 01ac 00       		.byte	0
  1169 01ad 1F       		.uleb128 0x1f
@@ -1375,12 +1378,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  1218 000b 00       		.byte	0
  1219 000c 0000     		.2byte	0
  1220 000e 0000     		.2byte	0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 24
+
+
  1221 0010 00000000 		.4byte	.LFB63
  1222 0014 70000000 		.4byte	.LFE63-.LFB63
  1223 0018 00000000 		.4byte	.LFB64
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 24
-
-
  1224 001c 02000000 		.4byte	.LFE64-.LFB64
  1225 0020 00000000 		.4byte	.LFB65
  1226 0024 02000000 		.4byte	.LFE65-.LFB65
@@ -1435,12 +1438,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  1263      5F706964 
  1263      5F746167 
  1263      00
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 25
+
+
  1264              	.LASF2:
  1265 0035 73686F72 		.ascii	"short int\000"
  1265      7420696E 
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 25
-
-
  1265      7400
  1266              	.LASF17:
  1267 003f 73697A65 		.ascii	"sizetype\000"
@@ -1495,12 +1498,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  1288              	.LASF0:
  1289 00d9 7369676E 		.ascii	"signed char\000"
  1289      65642063 
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 26
+
+
  1289      68617200 
  1290              	.LASF43:
  1291 00e5 436F6E74 		.ascii	"Control_Start\000"
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 26
-
-
  1291      726F6C5F 
  1291      53746172 
  1291      7400
@@ -1555,12 +1558,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  1312      5F6D6F74 
  1312      6F725F62 
  1312      776400
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 27
+
+
  1313              	.LASF55:
  1314 01b5 4D6F746F 		.ascii	"Motor_Stop\000"
  1314      725F5374 
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 27
-
-
  1314      6F7000
  1315              	.LASF32:
  1316 01c0 72696768 		.ascii	"right_gains\000"
@@ -1615,12 +1618,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  1336 0257 43616C63 		.ascii	"CalculateLeftRightSpeed\000"
  1336      756C6174 
  1336      654C6566 
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 28
+
+
  1336      74526967 
  1336      68745370 
  1337              	.LASF16:
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 28
-
-
  1338 026f 63686172 		.ascii	"char\000"
  1338      00
  1339              	.LASF4:
@@ -1675,12 +1678,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 1
  1363              	.LASF58:
  1364 02f4 474E5520 		.ascii	"GNU C 4.9.3 20150303 (release) [ARM/embedded-4_9-br"
  1364      4320342E 
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\cciHAv1h.s 			page 29
+
+
  1364      392E3320 
  1364      32303135 
  1364      30333033 
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccsdVlex.s 			page 29
-
-
  1365 0327 616E6368 		.ascii	"anch revision 221220] -mcpu=cortex-m3 -mthumb -g -O"
  1365      20726576 
  1365      6973696F 

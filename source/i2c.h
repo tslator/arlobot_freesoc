@@ -35,10 +35,10 @@ uint16 I2c_ReadDebugControl();
 uint16 I2c_ReadCalibrationControl();
 void I2c_ReadCmdVelocity(float *linear, float *angular);
 
-void I2c_SetDeviceStatusBit(uint8 bit);
-void I2c_ClearDeviceStatusBit(uint8 bit);
-void I2c_SetCalibrationStatusBit(uint8 bit);
-void I2c_ClearCalibrationStatusBit(uint8 bit);
+void I2c_SetDeviceStatusBit(uint16 bit);
+void I2c_ClearDeviceStatusBit(uint16 bit);
+void I2c_SetCalibrationStatusBit(uint16 bit);
+void I2c_ClearCalibrationStatusBit(uint16 bit);
 
 void I2c_WriteFrontUltrasonicDistance(uint8 offset, uint16 distance);
 void I2c_WriteRearUltrasonicDistance(uint8 offset, uint16 distance);

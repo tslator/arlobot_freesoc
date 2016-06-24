@@ -12,6 +12,7 @@
 
 #include "serial.h"
 #include "utils.h"
+#include "time.h"
 
 #ifdef COMMS_DEBUG_ENABLED    
 #define USBFS_DEVICE    (0u)
@@ -86,7 +87,19 @@ void Ser_ReadFloat(float *value)
     {    
         if (USBUART_CDCIsReady())
         {
-            USBUART_GetAll((uint8 *) value);
+            uint32 start = millis();
+            while (USBUART_GetCount() == 0 && millis() - start < 5000)
+            {
+            }
+            
+            if (USBUART_GetCount() > 0)
+            {
+                USBUART_GetAll((uint8 *) value);
+            }
+            else
+            {
+                *value = 1.0;
+            }
         }
     }
 }

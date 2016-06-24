@@ -9,6 +9,8 @@
 #include "serial.h"
 #include "nvstore.h"
 
+static float dist_error;
+
 void PerformLinearBiasCalibration(uint8 verbose)
 /* 
     Set Linear Bias value to 1.0
@@ -39,7 +41,8 @@ void PerformLinearBiasCalibration(uint8 verbose)
     #define LINEAR_BIAS_DISTANCE (1.0)
     #define LINEAR_BIAS_VELOCITY (0.150)
     #define LINEAR_BIAS_TOLERANCE (0.01)
-    float dist_error;
+    #define LIN_SAMPLE_TIME_MS  SAMPLE_TIME_MS(40)
+    dist_error = LINEAR_BIAS_DISTANCE;
     uint32 start_time;
     
     Odom_GetPosition(&x_start, &y_start);
@@ -53,15 +56,15 @@ void PerformLinearBiasCalibration(uint8 verbose)
         Pid_Update();
         Odom_Update();
         
-        if (millis() - start_time > 25)
+        if (millis() - start_time > LIN_SAMPLE_TIME_MS)
         {
             Odom_GetPosition(&x_pos, &y_pos);
             float distance = sqrt(pow((x_pos - x_start), 2) +
                                   pow((y_pos - y_start), 2));
             distance *= linear_bias;
             dist_error = distance - LINEAR_BIAS_DISTANCE;
-            Motor_LeftSetCntsPerSec(LINEAR_BIAS_VELOCITY);
-            Motor_RightSetCntsPerSec(LINEAR_BIAS_VELOCITY);
+            Motor_LeftSetMeterPerSec(LINEAR_BIAS_VELOCITY);
+            Motor_RightSetMeterPerSec(LINEAR_BIAS_VELOCITY);
         }
     } while (abs(dist_error) > LINEAR_BIAS_TOLERANCE);
     

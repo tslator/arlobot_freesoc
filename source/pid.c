@@ -203,7 +203,9 @@ static float StepImpulse(PID_TYPE *pid, float velocity, uint32 time_in_ms)
             samples++;
         }
     }
-    
+
+    pid->set_motor(0);
+    CyDelay(500);
     return vel_error_sum / samples;
 }
 

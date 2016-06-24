@@ -15,6 +15,7 @@
 #include "config.h"
 #include "utils.h"
 #include "debug.h"
+#include "cal.h"
 
 #define MAX_CMD_VELOCITY_TIMEOUT (2000)
 
@@ -176,6 +177,8 @@ void I2c_Start()
     EZI2C_Slave_SetBuffer1(sizeof(i2c_buf), sizeof(i2c_buf.read_write), (volatile uint8 *) &i2c_buf);
     
     /* Read the calibration status from EEPROM and mirror in calibration_status */
+    i2c_buf.read_write.calibration_control = p_cal_eeprom->status;
+    i2c_buf.read_write.calibration_control = 0x0004;
 }
 
 uint16 I2c_ReadDeviceControl()
@@ -251,7 +254,7 @@ void I2c_ReadCmdVelocity(float *linear, float *angular)
     {
         I2C_WAIT_FOR_ACCESS();
         EZI2C_Slave_DisableInt();
-        //i2c_buf.read_write.linear_cmd_velocity = 0.0;
+        i2c_buf.read_write.linear_cmd_velocity = 0.15;
         //i2c_buf.read_write.angular_cmd_velocity = 0.75;
         *linear = i2c_buf.read_write.linear_cmd_velocity;
         *angular = i2c_buf.read_write.angular_cmd_velocity;
@@ -262,7 +265,7 @@ void I2c_ReadCmdVelocity(float *linear, float *angular)
     *angular = max(MIN_ANGULAR_VELOCITY, min(*angular, MAX_ANGULAR_VELOCITY));
 }
 
-void I2c_SetDeviceStatusBit(uint8 bit)
+void I2c_SetDeviceStatusBit(uint16 bit)
 {
     device_status |= bit;
     I2C_WAIT_FOR_ACCESS();
@@ -271,7 +274,7 @@ void I2c_SetDeviceStatusBit(uint8 bit)
     EZI2C_Slave_EnableInt();
 }
 
-void I2c_ClearDeviceStatusBit(uint8 bit)
+void I2c_ClearDeviceStatusBit(uint16 bit)
 {
     device_status &= ~bit;
     I2C_WAIT_FOR_ACCESS();
@@ -280,7 +283,7 @@ void I2c_ClearDeviceStatusBit(uint8 bit)
     EZI2C_Slave_EnableInt();
 }
 
-void I2c_SetCalibrationStatusBit(uint8 bit)
+void I2c_SetCalibrationStatusBit(uint16 bit)
 {
     calibration_status |= bit;
     I2C_WAIT_FOR_ACCESS();
@@ -289,7 +292,7 @@ void I2c_SetCalibrationStatusBit(uint8 bit)
     EZI2C_Slave_EnableInt();
 }
 
-void I2c_ClearCalibrationStatusBit(uint8 bit)
+void I2c_ClearCalibrationStatusBit(uint16 bit)
 {
     calibration_status &= ~bit;
     I2C_WAIT_FOR_ACCESS();

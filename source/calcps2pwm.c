@@ -172,8 +172,8 @@ static void StoreWheelSpeedSamples(WHEEL_TYPE wheel, DIR_TYPE dir, int32 *cps_sa
 {
     CalculateMinMaxCpsSample(cps_samples, CAL_NUM_SAMPLES, &cal_data.cps_min, &cal_data.cps_max);
     cal_data.cps_scale = CAL_SCALE_FACTOR;
-    memcpy(cal_data.cps_data, cps_samples, CAL_NUM_SAMPLES);
-    memcpy(cal_data.pwm_data, pwm_samples, CAL_NUM_SAMPLES);
+    memcpy(&cal_data.cps_data[0], cps_samples, sizeof(cps_samples[0]) * CAL_NUM_SAMPLES);
+    memcpy(&cal_data.pwm_data[0], pwm_samples, sizeof(pwm_samples[0]) * CAL_NUM_SAMPLES);
 
     CAL_DATA_TYPE *p_cal_data;
     if (wheel == LEFT_WHEEL)

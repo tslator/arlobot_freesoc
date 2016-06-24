@@ -24,6 +24,7 @@
 #include "callin.h"
 #include "calang.h"
 
+#define DEFAULT_CALIBRATION
 #ifdef DEFAULT_CALIBRATION
 static CAL_DATA_TYPE left_fwd_cal_data = {
     0,
@@ -120,15 +121,15 @@ static uint8 cal_verbose;
 
 static void ClearCalibrationStatusBit(uint16 bit)
 {
-    p_cal_eeprom->status &= ~bit;
-    Nvstore_WriteUint16(p_cal_eeprom->status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
+    uint16 status = p_cal_eeprom->status &= ~bit;
+    Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
     I2c_ClearCalibrationStatusBit(bit);
 }
 
 static void SetCalibrationStatusBit(uint16 bit)
 {
-    p_cal_eeprom->status |= bit;
-    Nvstore_WriteUint16(p_cal_eeprom->status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
+    uint16 status = p_cal_eeprom->status | bit;
+    Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
     I2c_SetCalibrationStatusBit(bit);   
 }
 
@@ -144,7 +145,7 @@ void Cal_Start()
     //Nvstore_WriteBytes((uint8 *) &left_bwd_cal_data, sizeof(CAL_DATA_TYPE), NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_motor_bwd));
     //Nvstore_WriteBytes((uint8 *) &right_fwd_cal_data, sizeof(CAL_DATA_TYPE), NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_motor_fwd));
     //Nvstore_WriteBytes((uint8 *) &right_bwd_cal_data, sizeof(CAL_DATA_TYPE), NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_motor_bwd));
-    //Nvstore_WriteUint16(CAL_COUNT_PER_SEC_TO_PWM_BIT, 0);
+    Nvstore_WriteUint16(0, 0);
     
     I2c_SetCalibrationStatusBit(p_cal_eeprom->status);
 }
@@ -215,11 +216,6 @@ CAL_PID_TYPE * Cal_RightGetPidGains()
 
 void Cal_Validate()
 {
-    /* Write to the serial port that we are validating calibration: VALIDATING CALIBRATION !!! */
-    
-    //Motor_ValidateCalibration();
-    
-    /* Write to the serial port that we are done: VALIDATION COMPLETE !!! */
 }
 
 /* [] END OF FILE */

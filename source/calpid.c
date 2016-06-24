@@ -10,8 +10,8 @@ typedef float (*RUN_TYPE)(float *gains, float velocity, uint32 run_time);
 
 #define SUM(g)      (g[0] + g[1] + g[2])
 #define TOLERANCE   (0.2)
-#define STEP_INPUT  (0.7)   // counts/sec
-#define TIME_IN_MS  (5000)  // millisecond
+#define STEP_INPUT  (225)   // counts/sec
+#define TIME_IN_MS  (2000)  // millisecond
 #define NUM_GAINS   (3)
 
 static void Twiddle(RUN_TYPE run, float *gains, float velocity, uint32 run_time)
