@@ -62,33 +62,24 @@ void Control_Start()
 
 void Control_Update()
 {
-    uint16 dev_control;
-    uint16 cal_control;
-    
-    dev_control = I2c_ReadDeviceControl();
-#ifdef COMMS_DEBUG_ENABLED
-    // When debug is enabled, the bitmap can be used to turn on/off specify debug, e.g., encoder, pid, odom, etc.
-    debug_control_enabled = I2c_ReadDebugControl();
-#endif
-    cal_control = I2c_ReadCalibrationControl();
-    
-    if (dev_control & CONTROL_DISABLE_MOTOR_BIT)
+    uint16 control = I2c_ReadDeviceControl();
+    if (control & CONTROL_DISABLE_MOTOR_BIT)
     {
         Motor_Stop();
     }
     
-    if (dev_control & CONTROL_CLEAR_ODOMETRY_BIT)
+    if (control & CONTROL_CLEAR_ODOMETRY_BIT)
     {
         Odom_Reset();
     }
     
-    /* Note: We can add more logic here regarding the status of calibration.  For example, if cps2pwm calibration has
-       not been done, then we can prevent any request for movement.
-     */
-    if (cal_control)
-    {
-        Cal_Update(cal_control);
-    }
+#ifdef COMMS_DEBUG_ENABLED
+    // When debug is enabled, the bitmap can be used to turn on/off specify debug, e.g., encoder, pid, odom, etc.
+    control = I2c_ReadDebugControl();
+#endif
+
+    /* Check if calibration is requested */
+    Cal_ReadControl();
     
     CalculateLeftRightSpeed();   
 }

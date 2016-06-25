@@ -103,12 +103,194 @@ static void EepromTest()
     }
 }
 
+static void Ser_Update()
+{
+    ///* Host can send double SET_INTERFACE request. */
+    if (0u != USBUART_IsConfigurationChanged())
+    {
+        /* Initialize IN endpoints when device is configured. */
+        if (0u != USBUART_GetConfiguration())
+        {
+            /* Enumeration is done, enable OUT endpoint to receive data 
+             * from host. */
+            USBUART_CDC_Init();
+        }
+    }
+}
+
+static uint8 Ser_ReadByte()
+{
+    /* Service USB CDC when device is configured. */
+    if (0u != USBUART_GetConfiguration())
+    {
+        /* Check for input data from host. */
+        if (0u != USBUART_DataIsReady())
+        {
+            /* Read received data and re-enable OUT endpoint. */
+            return USBUART_GetChar();
+        }
+    }
+    return 0;
+}
+
+static void Ser_WriteByte(uint8 value)
+{
+    if (0u != USBUART_GetConfiguration())
+    {
+        while (0u == USBUART_CDCIsReady())
+        {
+        }
+        
+        USBUART_PutChar(value);
+    }
+}
+
+static void Ser_WriteString(char *str)
+{
+    if (0u != USBUART_GetConfiguration())
+    {
+        while (0u == USBUART_CDCIsReady())
+        {
+        }
+        
+        USBUART_PutString(str);
+    }
+}
+
+static uint16 Ser_ReadString(char *str)
+{
+    uint16 num_bytes = 0;
+    /* Service USB CDC when device is configured. */
+    if (0u != USBUART_GetConfiguration())
+    {
+        /* Check for input data from host. */
+        if (0u != USBUART_DataIsReady())
+        {
+            /* Read received data and re-enable OUT endpoint. */
+            num_bytes = USBUART_GetAll((uint8 *) str);
+        }
+    }
+    return num_bytes;
+}
+
+static uint8 Ser_IsDataReady()
+{
+    uint8 result = 0;
+    /* Service USB CDC when device is configured. */
+    if (0u != USBUART_GetConfiguration())
+    {
+        /* Check for input data from host. */
+        result = USBUART_DataIsReady();
+    }
+    return result;
+}
+
+static void UsbuartTest()
+{
+    #define USBFS_DEVICE    (0u)
+
+    /* The buffer size is equal to the maximum packet size of the IN and OUT bulk
+    * endpoints.
+    */
+    #define USBUART_BUFFER_SIZE (64u)
+    
+    uint16 count;
+    uint8 buffer[USBUART_BUFFER_SIZE];
+    
+    /* Start USBFS operation with 5-V operation. */
+    USBUART_Start(USBFS_DEVICE, USBUART_5V_OPERATION);
+    
+    #define PROMPT (0)
+    #define WAIT_FOR_CMD (1)
+    #define ECHO_CMD (2)
+    #define DONE (3)
+    uint8 state = PROMPT;
+    uint8 index;
+    
+    for(;;)
+    {
+        Ser_Update();
+
+        switch (state)
+        {
+            case PROMPT:
+                Ser_WriteString("This is a string test: \r\n");
+                state = WAIT_FOR_CMD;
+                index = 0;
+                break;
+                
+            case WAIT_FOR_CMD:
+                if (Ser_IsDataReady())
+                {
+                    buffer[index] = Ser_ReadByte();
+                    index++;
+                    
+                    if (index == 5)
+                    {
+                        state = ECHO_CMD;
+                    }
+                }
+                break;
+                
+            case ECHO_CMD:
+                Ser_WriteString("Received command\r\n");
+                state = DONE;
+                break;
+                
+            case DONE:
+                break;
+        }
+        
+        
+        #ifdef XXX
+        /* Service USB CDC when device is configured. */
+        if (0u != USBUART_GetConfiguration())
+        {
+            /* Check for input data from host. */
+            if (0u != USBUART_DataIsReady())
+            {
+                /* Read received data and re-enable OUT endpoint. */
+                count = USBUART_GetAll(buffer);
+
+                if (0u != count)
+                {
+                    /* Wait until component is ready to send data to host. */
+                    while (0u == USBUART_CDCIsReady())
+                    {
+                    }
+
+                    /* Send data back to host. */
+                    USBUART_PutData(buffer, count);
+
+                    /* If the last sent packet is exactly the maximum packet 
+                    *  size, it is followed by a zero-length packet to assure
+                    *  that the end of the segment is properly identified by 
+                    *  the terminal.
+                    */
+                    if (USBUART_BUFFER_SIZE == count)
+                    {
+                        /* Wait until component is ready to send data to PC. */
+                        while (0u == USBUART_CDCIsReady())
+                        {
+                        }
+
+                        /* Send zero-length packet to PC. */
+                        USBUART_PutData(NULL, 0u);
+                    }
+                }
+            }
+        }
+        #endif
+    }
+}
+
 int main()
 {
     CyGlobalIntEnable; /* Enable global interrupts. */
 
     //I2cTest();
-    EepromTest();
+    //EepromTest();
+    UsbuartTest();
 }
 
 /* [] END OF FILE */

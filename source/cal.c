@@ -10,6 +10,7 @@
  * ========================================
 */
 #include <stdio.h>
+#include <stdlib.h>
 #include "cal.h"
 #include "motor.h"
 #include "i2c.h"
@@ -117,8 +118,6 @@ static CAL_DATA_TYPE right_bwd_cal_data = {
 };    
 #endif
 
-static uint8 cal_verbose;
-
 static void ClearCalibrationStatusBit(uint16 bit)
 {
     uint16 status = p_cal_eeprom->status &= ~bit;
@@ -136,7 +135,6 @@ static void SetCalibrationStatusBit(uint16 bit)
 void Cal_Init()
 {
     p_cal_eeprom = NVSTORE_CAL_EEPROM_BASE;
-    cal_verbose = 0;
 }
 
 void Cal_Start()
@@ -152,36 +150,127 @@ void Cal_Start()
     I2c_SetCalibrationStatusBit(p_cal_eeprom->status);
 }
 
-void Cal_Update(uint16 status)
-{   
-    cal_verbose = status & CAL_VERBOSE_BIT;
-    
-    if (status & CAL_COUNT_PER_SEC_TO_PWM_BIT)
+static float ReadFloat()
+{
+    while (!Ser_IsDataReady())
     {
-        ClearCalibrationStatusBit(CAL_COUNT_PER_SEC_TO_PWM_BIT);
-        PerformCountPerSecToPwmCalibration(cal_verbose);
-        SetCalibrationStatusBit(CAL_COUNT_PER_SEC_TO_PWM_BIT);
-    }
-    else if (status & CAL_PID_BIT)
-    {
-        ClearCalibrationStatusBit(CAL_PID_BIT);
-        PerformPidCalibration(cal_verbose);
-        SetCalibrationStatusBit(CAL_PID_BIT);
-    }
-    else if (status & CAL_LINEAR_BIAS_BIT)
-    {
-        ClearCalibrationStatusBit(CAL_LINEAR_BIAS_BIT);
-        PerformLinearBiasCalibration(cal_verbose);
-        SetCalibrationStatusBit(CAL_LINEAR_BIAS_BIT);
-    }
-    else if (status & CAL_ANGULAR_BIAS_BIT)
-    {
-        ClearCalibrationStatusBit(CAL_ANGULAR_BIAS_BIT);
-        PerformAngularBiasCalibration(cal_verbose);
-        SetCalibrationStatusBit(CAL_ANGULAR_BIAS_BIT);
+        ;
     }
     
-    cal_verbose = 0;
+    char data[10];
+    uint8 index = 0;
+    
+    while (index < 10)
+    {
+        data[index] = Ser_ReadChar();
+        if (data[index] == '\r' || data[index] == '\n')
+        {
+            break;
+        }
+        index++;
+    }
+    
+    return (float) atof(data);
+}
+
+static uint8 CalibrationRequested()
+{
+    uint8 result = 0;
+    if (Ser_IsDataReady())
+    {
+        /* The only command supported is 'cal' */
+        char data;
+        
+        data = Ser_ReadChar();
+        if (data == 'c')
+        {
+            data = Ser_ReadChar();
+            if (data == 'a')
+            {
+                data = Ser_ReadChar();
+                if (data == 'l')
+                {
+                    Ser_FlushRead();
+                    result = 1;
+                }
+            }
+        }
+    }
+    
+    return result;
+}
+
+void Cal_ReadControl()
+{    
+    if (CalibrationRequested())
+    {
+        uint8 verbose;
+        
+        /* Print out a menu */
+        Ser_PutString("\r\nWelcome to the Arlobot calibration interface.\r\n");
+        Ser_PutString("The following calibration operations are allowed:\r\n");
+        Ser_PutString("    1. Motor Calibration - creates mapping between count/sec and PWM.\r\n");
+        Ser_PutString("    2. PID Calibration - determines the PID gains that minimizes velocity error.\r\n");
+        Ser_PutString("    3. Linear Bias - moves forward 1 meter and allows user to enter a ratio to be applied as a bias in linear motion\r\n");
+        Ser_PutString("    4. Angular Bias - rotates 360 degrees and allows user to enter a ratio to be applied as a bias in angular motion\r\n");
+        Ser_PutString("\r\n");
+        Ser_PutString("Enter a number [1-4]: ");
+        char action = Ser_ReadChar();
+        Ser_PutString("Enter output level (1-verbose, 0-None): ");
+        char level = Ser_ReadChar();
+        
+        verbose = level == '1' ? 1 : 0;
+        
+        switch (action)
+        {
+            case '1':
+                ClearCalibrationStatusBit(CAL_COUNT_PER_SEC_TO_PWM_BIT);
+                PerformCountPerSecToPwmCalibration(verbose);
+                SetCalibrationStatusBit(CAL_COUNT_PER_SEC_TO_PWM_BIT);
+                break;
+                
+            case '2':
+                ClearCalibrationStatusBit(CAL_PID_BIT);
+                PerformPidCalibration(verbose);
+                SetCalibrationStatusBit(CAL_PID_BIT);
+                break;
+                
+            case '3':
+                ClearCalibrationStatusBit(CAL_LINEAR_BIAS_BIT);
+                PerformLinearBiasCalibration(verbose);
+                
+                /* Pend on reading the linear bias */
+                Ser_PutString("Enter the measured distance traveled in meters (up to 3 significant digits): ");
+                float measured_distance = ReadFloat();
+                
+                float linear_bias = 1.0 / measured_distance;
+                
+                /* Store the linear bias into EEPROM */
+                Nvstore_WriteFloat(linear_bias, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->linear_bias));
+                
+                SetCalibrationStatusBit(CAL_LINEAR_BIAS_BIT);
+                break;
+                
+            case '4':
+                ClearCalibrationStatusBit(CAL_ANGULAR_BIAS_BIT);
+                PerformAngularBiasCalibration(verbose);
+                
+                /* Pend on reading the angular bias */
+                Ser_PutString("Enter the measured rotation in degrees (up to 3 significant digits): ");
+                float measured_rotation = ReadFloat();
+                
+                float angular_bias = 360.0 / measured_rotation;
+
+                /* Store the angular bias into EEPROM */
+                Nvstore_WriteFloat(angular_bias, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias));
+                
+                SetCalibrationStatusBit(CAL_ANGULAR_BIAS_BIT);
+                break;
+                
+            default:
+                break;
+        }
+    }
 }
 
 void Cal_LeftGetMotorCalData(CAL_DATA_TYPE **fwd_cal_data, CAL_DATA_TYPE **bwd_cal_data)

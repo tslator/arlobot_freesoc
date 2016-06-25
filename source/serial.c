@@ -14,7 +14,6 @@
 #include "utils.h"
 #include "time.h"
 
-#ifdef COMMS_DEBUG_ENABLED    
 #define USBFS_DEVICE    (0u)
 
 /* The buffer size is equal to the maximum packet size of the IN and OUT bulk
@@ -22,27 +21,14 @@
 */
 #define USBUART_BUFFER_SIZE (64u)
 #define LINE_STR_LENGTH     (20u)
-#endif
 
-typedef struct _line_tag
-{
-    char string[256];
-} LINE_TYPE;
-
-static LINE_TYPE buffer[100];
-static uint8 back_offset;
-static uint8 front_offset;
 
 void Ser_Init()
 {
-    memset(buffer, 0, sizeof(LINE_TYPE)*100);
-    front_offset = 0;
-    back_offset = 0;    
 }
 
 void Ser_Start()
 {
-#ifdef COMMS_DEBUG_ENABLED    
     /* Start USBFS operation with 5-V operation. */
     USBUART_Start(USBFS_DEVICE, USBUART_5V_OPERATION);
 
@@ -63,12 +49,10 @@ void Ser_Start()
     {
         USBUART_PutString("USB UART is configured!\r\n");
     }
-#endif
 }
 
 void Ser_PutString(char *str)
 {
-#ifdef COMMS_DEBUG_ENABLED    
     if (0u != USBUART_GetConfiguration())
     {    
         if (USBUART_CDCIsReady())
@@ -76,22 +60,20 @@ void Ser_PutString(char *str)
             USBUART_PutString(str);
         }
     }
-#else
-    str = str;
-#endif    
 }
 
 uint8 Ser_IsDataReady()
 {
+    uint8 result = 0;
     if (0u != USBUART_GetConfiguration())
     {    
         if (USBUART_CDCIsReady())
         {
-            return USBUART_GetCount() > 0;
+            result = USBUART_DataIsReady();
         }
     }
     
-    return 0;
+    return result;
 }
 
 void Ser_ReadFloat(float *value)
@@ -101,6 +83,49 @@ void Ser_ReadFloat(float *value)
         if (USBUART_CDCIsReady())
         {
             USBUART_GetAll((uint8 *) value);
+        }
+    }
+}
+
+void Ser_ReadString(char *str)
+{
+    if (0u != USBUART_GetConfiguration())
+    {    
+        if (USBUART_CDCIsReady())
+        {
+            if (USBUART_DataIsReady())
+            {
+                USBUART_GetAll((uint8 *) str);
+            }
+        }
+    }
+}
+
+char Ser_ReadChar()
+{
+    char data = 0;
+    if (0u != USBUART_GetConfiguration())
+    {    
+        if (USBUART_CDCIsReady())
+        {
+            if (USBUART_DataIsReady())
+            {
+                data = USBUART_GetChar();
+            }
+        }
+    }
+    
+    return data;
+}
+
+void Ser_FlushRead()
+{
+    char data[10];
+    if (0u != USBUART_GetConfiguration())
+    {    
+        if (USBUART_CDCIsReady())
+        {
+            USBUART_GetAll((uint8 *) data);
         }
     }
 }

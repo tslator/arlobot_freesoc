@@ -8,7 +8,7 @@
 #define I2C_SCL__0__MASK 0x01u
 #define I2C_SCL__0__PC CYREG_PRT12_PC0
 #define I2C_SCL__0__PORT 12u
-#define I2C_SCL__0__SHIFT 0
+#define I2C_SCL__0__SHIFT 0u
 #define I2C_SCL__AG CYREG_PRT12_AG
 #define I2C_SCL__BIE CYREG_PRT12_BIE
 #define I2C_SCL__BIT_MASK CYREG_PRT12_BIT_MASK
@@ -29,7 +29,7 @@
 #define I2C_SCL__PRTDSI__OUT_SEL1 CYREG_PRT12_OUT_SEL1
 #define I2C_SCL__PRTDSI__SYNC_OUT CYREG_PRT12_SYNC_OUT
 #define I2C_SCL__PS CYREG_PRT12_PS
-#define I2C_SCL__SHIFT 0
+#define I2C_SCL__SHIFT 0u
 #define I2C_SCL__SIO_CFG CYREG_PRT12_SIO_CFG
 #define I2C_SCL__SIO_DIFF CYREG_PRT12_SIO_DIFF
 #define I2C_SCL__SIO_HYST_EN CYREG_PRT12_SIO_HYST_EN
@@ -41,7 +41,7 @@
 #define I2C_SDA__0__MASK 0x02u
 #define I2C_SDA__0__PC CYREG_PRT12_PC1
 #define I2C_SDA__0__PORT 12u
-#define I2C_SDA__0__SHIFT 1
+#define I2C_SDA__0__SHIFT 1u
 #define I2C_SDA__AG CYREG_PRT12_AG
 #define I2C_SDA__BIE CYREG_PRT12_BIE
 #define I2C_SDA__BIT_MASK CYREG_PRT12_BIT_MASK
@@ -62,7 +62,7 @@
 #define I2C_SDA__PRTDSI__OUT_SEL1 CYREG_PRT12_OUT_SEL1
 #define I2C_SDA__PRTDSI__SYNC_OUT CYREG_PRT12_SYNC_OUT
 #define I2C_SDA__PS CYREG_PRT12_PS
-#define I2C_SDA__SHIFT 1
+#define I2C_SDA__SHIFT 1u
 #define I2C_SDA__SIO_CFG CYREG_PRT12_SIO_CFG
 #define I2C_SDA__SIO_DIFF CYREG_PRT12_SIO_DIFF
 #define I2C_SDA__SIO_HYST_EN CYREG_PRT12_SIO_HYST_EN
@@ -94,7 +94,7 @@
 #define USBUART_Dm__0__MASK 0x80u
 #define USBUART_Dm__0__PC CYREG_IO_PC_PRT15_7_6_PC1
 #define USBUART_Dm__0__PORT 15u
-#define USBUART_Dm__0__SHIFT 7
+#define USBUART_Dm__0__SHIFT 7u
 #define USBUART_Dm__AG CYREG_PRT15_AG
 #define USBUART_Dm__AMUX CYREG_PRT15_AMUX
 #define USBUART_Dm__BIE CYREG_PRT15_BIE
@@ -120,7 +120,7 @@
 #define USBUART_Dm__PRTDSI__OUT_SEL1 CYREG_PRT15_OUT_SEL1
 #define USBUART_Dm__PRTDSI__SYNC_OUT CYREG_PRT15_SYNC_OUT
 #define USBUART_Dm__PS CYREG_PRT15_PS
-#define USBUART_Dm__SHIFT 7
+#define USBUART_Dm__SHIFT 7u
 #define USBUART_Dm__SLW CYREG_PRT15_SLW
 
 /* USBUART_Dp */
@@ -128,7 +128,7 @@
 #define USBUART_Dp__0__MASK 0x40u
 #define USBUART_Dp__0__PC CYREG_IO_PC_PRT15_7_6_PC0
 #define USBUART_Dp__0__PORT 15u
-#define USBUART_Dp__0__SHIFT 6
+#define USBUART_Dp__0__SHIFT 6u
 #define USBUART_Dp__AG CYREG_PRT15_AG
 #define USBUART_Dp__AMUX CYREG_PRT15_AMUX
 #define USBUART_Dp__BIE CYREG_PRT15_BIE
@@ -155,7 +155,7 @@
 #define USBUART_Dp__PRTDSI__OUT_SEL1 CYREG_PRT15_OUT_SEL1
 #define USBUART_Dp__PRTDSI__SYNC_OUT CYREG_PRT15_SYNC_OUT
 #define USBUART_Dp__PS CYREG_PRT15_PS
-#define USBUART_Dp__SHIFT 6
+#define USBUART_Dp__SHIFT 6u
 #define USBUART_Dp__SLW CYREG_PRT15_SLW
 #define USBUART_Dp__SNAP CYREG_PICU_15_SNAP_15
 
@@ -514,7 +514,7 @@
 #define Mainloop_Pin__0__MASK 0x04u
 #define Mainloop_Pin__0__PC CYREG_PRT12_PC2
 #define Mainloop_Pin__0__PORT 12u
-#define Mainloop_Pin__0__SHIFT 2
+#define Mainloop_Pin__0__SHIFT 2u
 #define Mainloop_Pin__AG CYREG_PRT12_AG
 #define Mainloop_Pin__BIE CYREG_PRT12_BIE
 #define Mainloop_Pin__BIT_MASK CYREG_PRT12_BIT_MASK
@@ -535,7 +535,7 @@
 #define Mainloop_Pin__PRTDSI__OUT_SEL1 CYREG_PRT12_OUT_SEL1
 #define Mainloop_Pin__PRTDSI__SYNC_OUT CYREG_PRT12_SYNC_OUT
 #define Mainloop_Pin__PS CYREG_PRT12_PS
-#define Mainloop_Pin__SHIFT 2
+#define Mainloop_Pin__SHIFT 2u
 #define Mainloop_Pin__SIO_CFG CYREG_PRT12_SIO_CFG
 #define Mainloop_Pin__SIO_DIFF CYREG_PRT12_SIO_DIFF
 #define Mainloop_Pin__SIO_HYST_EN CYREG_PRT12_SIO_HYST_EN
@@ -644,7 +644,7 @@
 #define Left_HB25_PWM_Pin__0__MASK 0x02u
 #define Left_HB25_PWM_Pin__0__PC CYREG_PRT2_PC1
 #define Left_HB25_PWM_Pin__0__PORT 2u
-#define Left_HB25_PWM_Pin__0__SHIFT 1
+#define Left_HB25_PWM_Pin__0__SHIFT 1u
 #define Left_HB25_PWM_Pin__AG CYREG_PRT2_AG
 #define Left_HB25_PWM_Pin__AMUX CYREG_PRT2_AMUX
 #define Left_HB25_PWM_Pin__BIE CYREG_PRT2_BIE
@@ -670,7 +670,7 @@
 #define Left_HB25_PWM_Pin__PRTDSI__OUT_SEL1 CYREG_PRT2_OUT_SEL1
 #define Left_HB25_PWM_Pin__PRTDSI__SYNC_OUT CYREG_PRT2_SYNC_OUT
 #define Left_HB25_PWM_Pin__PS CYREG_PRT2_PS
-#define Left_HB25_PWM_Pin__SHIFT 1
+#define Left_HB25_PWM_Pin__SHIFT 1u
 #define Left_HB25_PWM_Pin__SLW CYREG_PRT2_SLW
 
 /* Left_HB25_PWM_PWMUDB */
@@ -834,7 +834,7 @@
 #define Infrared_Pin_0__0__MASK 0x01u
 #define Infrared_Pin_0__0__PC CYREG_PRT3_PC0
 #define Infrared_Pin_0__0__PORT 3u
-#define Infrared_Pin_0__0__SHIFT 0
+#define Infrared_Pin_0__0__SHIFT 0u
 #define Infrared_Pin_0__AG CYREG_PRT3_AG
 #define Infrared_Pin_0__AMUX CYREG_PRT3_AMUX
 #define Infrared_Pin_0__BIE CYREG_PRT3_BIE
@@ -860,7 +860,7 @@
 #define Infrared_Pin_0__PRTDSI__OUT_SEL1 CYREG_PRT3_OUT_SEL1
 #define Infrared_Pin_0__PRTDSI__SYNC_OUT CYREG_PRT3_SYNC_OUT
 #define Infrared_Pin_0__PS CYREG_PRT3_PS
-#define Infrared_Pin_0__SHIFT 0
+#define Infrared_Pin_0__SHIFT 0u
 #define Infrared_Pin_0__SLW CYREG_PRT3_SLW
 
 /* Infrared_Pin_1 */
@@ -868,7 +868,7 @@
 #define Infrared_Pin_1__0__MASK 0x02u
 #define Infrared_Pin_1__0__PC CYREG_PRT3_PC1
 #define Infrared_Pin_1__0__PORT 3u
-#define Infrared_Pin_1__0__SHIFT 1
+#define Infrared_Pin_1__0__SHIFT 1u
 #define Infrared_Pin_1__AG CYREG_PRT3_AG
 #define Infrared_Pin_1__AMUX CYREG_PRT3_AMUX
 #define Infrared_Pin_1__BIE CYREG_PRT3_BIE
@@ -894,7 +894,7 @@
 #define Infrared_Pin_1__PRTDSI__OUT_SEL1 CYREG_PRT3_OUT_SEL1
 #define Infrared_Pin_1__PRTDSI__SYNC_OUT CYREG_PRT3_SYNC_OUT
 #define Infrared_Pin_1__PS CYREG_PRT3_PS
-#define Infrared_Pin_1__SHIFT 1
+#define Infrared_Pin_1__SHIFT 1u
 #define Infrared_Pin_1__SLW CYREG_PRT3_SLW
 
 /* Infrared_Pin_2 */
@@ -902,7 +902,7 @@
 #define Infrared_Pin_2__0__MASK 0x04u
 #define Infrared_Pin_2__0__PC CYREG_PRT3_PC2
 #define Infrared_Pin_2__0__PORT 3u
-#define Infrared_Pin_2__0__SHIFT 2
+#define Infrared_Pin_2__0__SHIFT 2u
 #define Infrared_Pin_2__AG CYREG_PRT3_AG
 #define Infrared_Pin_2__AMUX CYREG_PRT3_AMUX
 #define Infrared_Pin_2__BIE CYREG_PRT3_BIE
@@ -928,7 +928,7 @@
 #define Infrared_Pin_2__PRTDSI__OUT_SEL1 CYREG_PRT3_OUT_SEL1
 #define Infrared_Pin_2__PRTDSI__SYNC_OUT CYREG_PRT3_SYNC_OUT
 #define Infrared_Pin_2__PS CYREG_PRT3_PS
-#define Infrared_Pin_2__SHIFT 2
+#define Infrared_Pin_2__SHIFT 2u
 #define Infrared_Pin_2__SLW CYREG_PRT3_SLW
 
 /* Infrared_Pin_3 */
@@ -936,7 +936,7 @@
 #define Infrared_Pin_3__0__MASK 0x08u
 #define Infrared_Pin_3__0__PC CYREG_PRT3_PC3
 #define Infrared_Pin_3__0__PORT 3u
-#define Infrared_Pin_3__0__SHIFT 3
+#define Infrared_Pin_3__0__SHIFT 3u
 #define Infrared_Pin_3__AG CYREG_PRT3_AG
 #define Infrared_Pin_3__AMUX CYREG_PRT3_AMUX
 #define Infrared_Pin_3__BIE CYREG_PRT3_BIE
@@ -962,7 +962,7 @@
 #define Infrared_Pin_3__PRTDSI__OUT_SEL1 CYREG_PRT3_OUT_SEL1
 #define Infrared_Pin_3__PRTDSI__SYNC_OUT CYREG_PRT3_SYNC_OUT
 #define Infrared_Pin_3__PS CYREG_PRT3_PS
-#define Infrared_Pin_3__SHIFT 3
+#define Infrared_Pin_3__SHIFT 3u
 #define Infrared_Pin_3__SLW CYREG_PRT3_SLW
 
 /* Infrared_Pin_4 */
@@ -970,7 +970,7 @@
 #define Infrared_Pin_4__0__MASK 0x10u
 #define Infrared_Pin_4__0__PC CYREG_PRT3_PC4
 #define Infrared_Pin_4__0__PORT 3u
-#define Infrared_Pin_4__0__SHIFT 4
+#define Infrared_Pin_4__0__SHIFT 4u
 #define Infrared_Pin_4__AG CYREG_PRT3_AG
 #define Infrared_Pin_4__AMUX CYREG_PRT3_AMUX
 #define Infrared_Pin_4__BIE CYREG_PRT3_BIE
@@ -996,7 +996,7 @@
 #define Infrared_Pin_4__PRTDSI__OUT_SEL1 CYREG_PRT3_OUT_SEL1
 #define Infrared_Pin_4__PRTDSI__SYNC_OUT CYREG_PRT3_SYNC_OUT
 #define Infrared_Pin_4__PS CYREG_PRT3_PS
-#define Infrared_Pin_4__SHIFT 4
+#define Infrared_Pin_4__SHIFT 4u
 #define Infrared_Pin_4__SLW CYREG_PRT3_SLW
 
 /* Infrared_Pin_5 */
@@ -1004,7 +1004,7 @@
 #define Infrared_Pin_5__0__MASK 0x20u
 #define Infrared_Pin_5__0__PC CYREG_PRT3_PC5
 #define Infrared_Pin_5__0__PORT 3u
-#define Infrared_Pin_5__0__SHIFT 5
+#define Infrared_Pin_5__0__SHIFT 5u
 #define Infrared_Pin_5__AG CYREG_PRT3_AG
 #define Infrared_Pin_5__AMUX CYREG_PRT3_AMUX
 #define Infrared_Pin_5__BIE CYREG_PRT3_BIE
@@ -1030,7 +1030,7 @@
 #define Infrared_Pin_5__PRTDSI__OUT_SEL1 CYREG_PRT3_OUT_SEL1
 #define Infrared_Pin_5__PRTDSI__SYNC_OUT CYREG_PRT3_SYNC_OUT
 #define Infrared_Pin_5__PS CYREG_PRT3_PS
-#define Infrared_Pin_5__SHIFT 5
+#define Infrared_Pin_5__SHIFT 5u
 #define Infrared_Pin_5__SLW CYREG_PRT3_SLW
 
 /* Infrared_Pin_6 */
@@ -1038,7 +1038,7 @@
 #define Infrared_Pin_6__0__MASK 0x40u
 #define Infrared_Pin_6__0__PC CYREG_PRT3_PC6
 #define Infrared_Pin_6__0__PORT 3u
-#define Infrared_Pin_6__0__SHIFT 6
+#define Infrared_Pin_6__0__SHIFT 6u
 #define Infrared_Pin_6__AG CYREG_PRT3_AG
 #define Infrared_Pin_6__AMUX CYREG_PRT3_AMUX
 #define Infrared_Pin_6__BIE CYREG_PRT3_BIE
@@ -1064,7 +1064,7 @@
 #define Infrared_Pin_6__PRTDSI__OUT_SEL1 CYREG_PRT3_OUT_SEL1
 #define Infrared_Pin_6__PRTDSI__SYNC_OUT CYREG_PRT3_SYNC_OUT
 #define Infrared_Pin_6__PS CYREG_PRT3_PS
-#define Infrared_Pin_6__SHIFT 6
+#define Infrared_Pin_6__SHIFT 6u
 #define Infrared_Pin_6__SLW CYREG_PRT3_SLW
 
 /* Infrared_Pin_7 */
@@ -1072,7 +1072,7 @@
 #define Infrared_Pin_7__0__MASK 0x80u
 #define Infrared_Pin_7__0__PC CYREG_PRT3_PC7
 #define Infrared_Pin_7__0__PORT 3u
-#define Infrared_Pin_7__0__SHIFT 7
+#define Infrared_Pin_7__0__SHIFT 7u
 #define Infrared_Pin_7__AG CYREG_PRT3_AG
 #define Infrared_Pin_7__AMUX CYREG_PRT3_AMUX
 #define Infrared_Pin_7__BIE CYREG_PRT3_BIE
@@ -1098,7 +1098,7 @@
 #define Infrared_Pin_7__PRTDSI__OUT_SEL1 CYREG_PRT3_OUT_SEL1
 #define Infrared_Pin_7__PRTDSI__SYNC_OUT CYREG_PRT3_SYNC_OUT
 #define Infrared_Pin_7__PS CYREG_PRT3_PS
-#define Infrared_Pin_7__SHIFT 7
+#define Infrared_Pin_7__SHIFT 7u
 #define Infrared_Pin_7__SLW CYREG_PRT3_SLW
 
 /* Infrared_Pin_8 */
@@ -1106,7 +1106,7 @@
 #define Infrared_Pin_8__0__MASK 0x01u
 #define Infrared_Pin_8__0__PC CYREG_PRT0_PC0
 #define Infrared_Pin_8__0__PORT 0u
-#define Infrared_Pin_8__0__SHIFT 0
+#define Infrared_Pin_8__0__SHIFT 0u
 #define Infrared_Pin_8__AG CYREG_PRT0_AG
 #define Infrared_Pin_8__AMUX CYREG_PRT0_AMUX
 #define Infrared_Pin_8__BIE CYREG_PRT0_BIE
@@ -1132,7 +1132,7 @@
 #define Infrared_Pin_8__PRTDSI__OUT_SEL1 CYREG_PRT0_OUT_SEL1
 #define Infrared_Pin_8__PRTDSI__SYNC_OUT CYREG_PRT0_SYNC_OUT
 #define Infrared_Pin_8__PS CYREG_PRT0_PS
-#define Infrared_Pin_8__SHIFT 0
+#define Infrared_Pin_8__SHIFT 0u
 #define Infrared_Pin_8__SLW CYREG_PRT0_SLW
 
 /* Infrared_Pin_9 */
@@ -1140,7 +1140,7 @@
 #define Infrared_Pin_9__0__MASK 0x02u
 #define Infrared_Pin_9__0__PC CYREG_PRT0_PC1
 #define Infrared_Pin_9__0__PORT 0u
-#define Infrared_Pin_9__0__SHIFT 1
+#define Infrared_Pin_9__0__SHIFT 1u
 #define Infrared_Pin_9__AG CYREG_PRT0_AG
 #define Infrared_Pin_9__AMUX CYREG_PRT0_AMUX
 #define Infrared_Pin_9__BIE CYREG_PRT0_BIE
@@ -1166,7 +1166,7 @@
 #define Infrared_Pin_9__PRTDSI__OUT_SEL1 CYREG_PRT0_OUT_SEL1
 #define Infrared_Pin_9__PRTDSI__SYNC_OUT CYREG_PRT0_SYNC_OUT
 #define Infrared_Pin_9__PS CYREG_PRT0_PS
-#define Infrared_Pin_9__SHIFT 1
+#define Infrared_Pin_9__SHIFT 1u
 #define Infrared_Pin_9__SLW CYREG_PRT0_SLW
 
 /* Left_Encoder_A */
@@ -1174,7 +1174,7 @@
 #define Left_Encoder_A__0__MASK 0x04u
 #define Left_Encoder_A__0__PC CYREG_PRT2_PC2
 #define Left_Encoder_A__0__PORT 2u
-#define Left_Encoder_A__0__SHIFT 2
+#define Left_Encoder_A__0__SHIFT 2u
 #define Left_Encoder_A__AG CYREG_PRT2_AG
 #define Left_Encoder_A__AMUX CYREG_PRT2_AMUX
 #define Left_Encoder_A__BIE CYREG_PRT2_BIE
@@ -1200,7 +1200,7 @@
 #define Left_Encoder_A__PRTDSI__OUT_SEL1 CYREG_PRT2_OUT_SEL1
 #define Left_Encoder_A__PRTDSI__SYNC_OUT CYREG_PRT2_SYNC_OUT
 #define Left_Encoder_A__PS CYREG_PRT2_PS
-#define Left_Encoder_A__SHIFT 2
+#define Left_Encoder_A__SHIFT 2u
 #define Left_Encoder_A__SLW CYREG_PRT2_SLW
 
 /* Left_Encoder_B */
@@ -1208,7 +1208,7 @@
 #define Left_Encoder_B__0__MASK 0x08u
 #define Left_Encoder_B__0__PC CYREG_PRT2_PC3
 #define Left_Encoder_B__0__PORT 2u
-#define Left_Encoder_B__0__SHIFT 3
+#define Left_Encoder_B__0__SHIFT 3u
 #define Left_Encoder_B__AG CYREG_PRT2_AG
 #define Left_Encoder_B__AMUX CYREG_PRT2_AMUX
 #define Left_Encoder_B__BIE CYREG_PRT2_BIE
@@ -1234,7 +1234,7 @@
 #define Left_Encoder_B__PRTDSI__OUT_SEL1 CYREG_PRT2_OUT_SEL1
 #define Left_Encoder_B__PRTDSI__SYNC_OUT CYREG_PRT2_SYNC_OUT
 #define Left_Encoder_B__PS CYREG_PRT2_PS
-#define Left_Encoder_B__SHIFT 3
+#define Left_Encoder_B__SHIFT 3u
 #define Left_Encoder_B__SLW CYREG_PRT2_SLW
 
 /* Rear_Echo_Intr */
@@ -1252,7 +1252,7 @@
 #define Rear_Trigger_0__0__MASK 0x01u
 #define Rear_Trigger_0__0__PC CYREG_PRT4_PC0
 #define Rear_Trigger_0__0__PORT 4u
-#define Rear_Trigger_0__0__SHIFT 0
+#define Rear_Trigger_0__0__SHIFT 0u
 #define Rear_Trigger_0__AG CYREG_PRT4_AG
 #define Rear_Trigger_0__AMUX CYREG_PRT4_AMUX
 #define Rear_Trigger_0__BIE CYREG_PRT4_BIE
@@ -1278,7 +1278,7 @@
 #define Rear_Trigger_0__PRTDSI__OUT_SEL1 CYREG_PRT4_OUT_SEL1
 #define Rear_Trigger_0__PRTDSI__SYNC_OUT CYREG_PRT4_SYNC_OUT
 #define Rear_Trigger_0__PS CYREG_PRT4_PS
-#define Rear_Trigger_0__SHIFT 0
+#define Rear_Trigger_0__SHIFT 0u
 #define Rear_Trigger_0__SLW CYREG_PRT4_SLW
 
 /* Rear_Trigger_1 */
@@ -1286,7 +1286,7 @@
 #define Rear_Trigger_1__0__MASK 0x02u
 #define Rear_Trigger_1__0__PC CYREG_PRT4_PC1
 #define Rear_Trigger_1__0__PORT 4u
-#define Rear_Trigger_1__0__SHIFT 1
+#define Rear_Trigger_1__0__SHIFT 1u
 #define Rear_Trigger_1__AG CYREG_PRT4_AG
 #define Rear_Trigger_1__AMUX CYREG_PRT4_AMUX
 #define Rear_Trigger_1__BIE CYREG_PRT4_BIE
@@ -1312,7 +1312,7 @@
 #define Rear_Trigger_1__PRTDSI__OUT_SEL1 CYREG_PRT4_OUT_SEL1
 #define Rear_Trigger_1__PRTDSI__SYNC_OUT CYREG_PRT4_SYNC_OUT
 #define Rear_Trigger_1__PS CYREG_PRT4_PS
-#define Rear_Trigger_1__SHIFT 1
+#define Rear_Trigger_1__SHIFT 1u
 #define Rear_Trigger_1__SLW CYREG_PRT4_SLW
 
 /* Rear_Trigger_2 */
@@ -1320,7 +1320,7 @@
 #define Rear_Trigger_2__0__MASK 0x04u
 #define Rear_Trigger_2__0__PC CYREG_PRT4_PC2
 #define Rear_Trigger_2__0__PORT 4u
-#define Rear_Trigger_2__0__SHIFT 2
+#define Rear_Trigger_2__0__SHIFT 2u
 #define Rear_Trigger_2__AG CYREG_PRT4_AG
 #define Rear_Trigger_2__AMUX CYREG_PRT4_AMUX
 #define Rear_Trigger_2__BIE CYREG_PRT4_BIE
@@ -1346,7 +1346,7 @@
 #define Rear_Trigger_2__PRTDSI__OUT_SEL1 CYREG_PRT4_OUT_SEL1
 #define Rear_Trigger_2__PRTDSI__SYNC_OUT CYREG_PRT4_SYNC_OUT
 #define Rear_Trigger_2__PS CYREG_PRT4_PS
-#define Rear_Trigger_2__SHIFT 2
+#define Rear_Trigger_2__SHIFT 2u
 #define Rear_Trigger_2__SLW CYREG_PRT4_SLW
 
 /* Rear_Trigger_3 */
@@ -1354,7 +1354,7 @@
 #define Rear_Trigger_3__0__MASK 0x08u
 #define Rear_Trigger_3__0__PC CYREG_PRT4_PC3
 #define Rear_Trigger_3__0__PORT 4u
-#define Rear_Trigger_3__0__SHIFT 3
+#define Rear_Trigger_3__0__SHIFT 3u
 #define Rear_Trigger_3__AG CYREG_PRT4_AG
 #define Rear_Trigger_3__AMUX CYREG_PRT4_AMUX
 #define Rear_Trigger_3__BIE CYREG_PRT4_BIE
@@ -1380,7 +1380,7 @@
 #define Rear_Trigger_3__PRTDSI__OUT_SEL1 CYREG_PRT4_OUT_SEL1
 #define Rear_Trigger_3__PRTDSI__SYNC_OUT CYREG_PRT4_SYNC_OUT
 #define Rear_Trigger_3__PS CYREG_PRT4_PS
-#define Rear_Trigger_3__SHIFT 3
+#define Rear_Trigger_3__SHIFT 3u
 #define Rear_Trigger_3__SLW CYREG_PRT4_SLW
 
 /* Rear_Trigger_4 */
@@ -1388,7 +1388,7 @@
 #define Rear_Trigger_4__0__MASK 0x10u
 #define Rear_Trigger_4__0__PC CYREG_PRT4_PC4
 #define Rear_Trigger_4__0__PORT 4u
-#define Rear_Trigger_4__0__SHIFT 4
+#define Rear_Trigger_4__0__SHIFT 4u
 #define Rear_Trigger_4__AG CYREG_PRT4_AG
 #define Rear_Trigger_4__AMUX CYREG_PRT4_AMUX
 #define Rear_Trigger_4__BIE CYREG_PRT4_BIE
@@ -1414,7 +1414,7 @@
 #define Rear_Trigger_4__PRTDSI__OUT_SEL1 CYREG_PRT4_OUT_SEL1
 #define Rear_Trigger_4__PRTDSI__SYNC_OUT CYREG_PRT4_SYNC_OUT
 #define Rear_Trigger_4__PS CYREG_PRT4_PS
-#define Rear_Trigger_4__SHIFT 4
+#define Rear_Trigger_4__SHIFT 4u
 #define Rear_Trigger_4__SLW CYREG_PRT4_SLW
 
 /* Rear_Trigger_5 */
@@ -1422,7 +1422,7 @@
 #define Rear_Trigger_5__0__MASK 0x20u
 #define Rear_Trigger_5__0__PC CYREG_PRT4_PC5
 #define Rear_Trigger_5__0__PORT 4u
-#define Rear_Trigger_5__0__SHIFT 5
+#define Rear_Trigger_5__0__SHIFT 5u
 #define Rear_Trigger_5__AG CYREG_PRT4_AG
 #define Rear_Trigger_5__AMUX CYREG_PRT4_AMUX
 #define Rear_Trigger_5__BIE CYREG_PRT4_BIE
@@ -1448,7 +1448,7 @@
 #define Rear_Trigger_5__PRTDSI__OUT_SEL1 CYREG_PRT4_OUT_SEL1
 #define Rear_Trigger_5__PRTDSI__SYNC_OUT CYREG_PRT4_SYNC_OUT
 #define Rear_Trigger_5__PS CYREG_PRT4_PS
-#define Rear_Trigger_5__SHIFT 5
+#define Rear_Trigger_5__SHIFT 5u
 #define Rear_Trigger_5__SLW CYREG_PRT4_SLW
 
 /* Rear_Trigger_6 */
@@ -1456,7 +1456,7 @@
 #define Rear_Trigger_6__0__MASK 0x40u
 #define Rear_Trigger_6__0__PC CYREG_PRT4_PC6
 #define Rear_Trigger_6__0__PORT 4u
-#define Rear_Trigger_6__0__SHIFT 6
+#define Rear_Trigger_6__0__SHIFT 6u
 #define Rear_Trigger_6__AG CYREG_PRT4_AG
 #define Rear_Trigger_6__AMUX CYREG_PRT4_AMUX
 #define Rear_Trigger_6__BIE CYREG_PRT4_BIE
@@ -1482,7 +1482,7 @@
 #define Rear_Trigger_6__PRTDSI__OUT_SEL1 CYREG_PRT4_OUT_SEL1
 #define Rear_Trigger_6__PRTDSI__SYNC_OUT CYREG_PRT4_SYNC_OUT
 #define Rear_Trigger_6__PS CYREG_PRT4_PS
-#define Rear_Trigger_6__SHIFT 6
+#define Rear_Trigger_6__SHIFT 6u
 #define Rear_Trigger_6__SLW CYREG_PRT4_SLW
 
 /* Rear_Trigger_7 */
@@ -1490,7 +1490,7 @@
 #define Rear_Trigger_7__0__MASK 0x80u
 #define Rear_Trigger_7__0__PC CYREG_PRT4_PC7
 #define Rear_Trigger_7__0__PORT 4u
-#define Rear_Trigger_7__0__SHIFT 7
+#define Rear_Trigger_7__0__SHIFT 7u
 #define Rear_Trigger_7__AG CYREG_PRT4_AG
 #define Rear_Trigger_7__AMUX CYREG_PRT4_AMUX
 #define Rear_Trigger_7__BIE CYREG_PRT4_BIE
@@ -1516,7 +1516,7 @@
 #define Rear_Trigger_7__PRTDSI__OUT_SEL1 CYREG_PRT4_OUT_SEL1
 #define Rear_Trigger_7__PRTDSI__SYNC_OUT CYREG_PRT4_SYNC_OUT
 #define Rear_Trigger_7__PS CYREG_PRT4_PS
-#define Rear_Trigger_7__SHIFT 7
+#define Rear_Trigger_7__SHIFT 7u
 #define Rear_Trigger_7__SLW CYREG_PRT4_SLW
 
 /* Right_HB25_PWM_Pin */
@@ -1524,7 +1524,7 @@
 #define Right_HB25_PWM_Pin__0__MASK 0x20u
 #define Right_HB25_PWM_Pin__0__PC CYREG_PRT2_PC5
 #define Right_HB25_PWM_Pin__0__PORT 2u
-#define Right_HB25_PWM_Pin__0__SHIFT 5
+#define Right_HB25_PWM_Pin__0__SHIFT 5u
 #define Right_HB25_PWM_Pin__AG CYREG_PRT2_AG
 #define Right_HB25_PWM_Pin__AMUX CYREG_PRT2_AMUX
 #define Right_HB25_PWM_Pin__BIE CYREG_PRT2_BIE
@@ -1550,7 +1550,7 @@
 #define Right_HB25_PWM_Pin__PRTDSI__OUT_SEL1 CYREG_PRT2_OUT_SEL1
 #define Right_HB25_PWM_Pin__PRTDSI__SYNC_OUT CYREG_PRT2_SYNC_OUT
 #define Right_HB25_PWM_Pin__PS CYREG_PRT2_PS
-#define Right_HB25_PWM_Pin__SHIFT 5
+#define Right_HB25_PWM_Pin__SHIFT 5u
 #define Right_HB25_PWM_Pin__SLW CYREG_PRT2_SLW
 
 /* Right_HB25_PWM_PWMUDB */
@@ -1606,7 +1606,7 @@
 #define Front_Trigger_0__0__MASK 0x01u
 #define Front_Trigger_0__0__PC CYREG_IO_PC_PRT15_PC0
 #define Front_Trigger_0__0__PORT 15u
-#define Front_Trigger_0__0__SHIFT 0
+#define Front_Trigger_0__0__SHIFT 0u
 #define Front_Trigger_0__AG CYREG_PRT15_AG
 #define Front_Trigger_0__AMUX CYREG_PRT15_AMUX
 #define Front_Trigger_0__BIE CYREG_PRT15_BIE
@@ -1632,7 +1632,7 @@
 #define Front_Trigger_0__PRTDSI__OUT_SEL1 CYREG_PRT15_OUT_SEL1
 #define Front_Trigger_0__PRTDSI__SYNC_OUT CYREG_PRT15_SYNC_OUT
 #define Front_Trigger_0__PS CYREG_PRT15_PS
-#define Front_Trigger_0__SHIFT 0
+#define Front_Trigger_0__SHIFT 0u
 #define Front_Trigger_0__SLW CYREG_PRT15_SLW
 
 /* Front_Trigger_1 */
@@ -1640,7 +1640,7 @@
 #define Front_Trigger_1__0__MASK 0x02u
 #define Front_Trigger_1__0__PC CYREG_IO_PC_PRT15_PC1
 #define Front_Trigger_1__0__PORT 15u
-#define Front_Trigger_1__0__SHIFT 1
+#define Front_Trigger_1__0__SHIFT 1u
 #define Front_Trigger_1__AG CYREG_PRT15_AG
 #define Front_Trigger_1__AMUX CYREG_PRT15_AMUX
 #define Front_Trigger_1__BIE CYREG_PRT15_BIE
@@ -1666,7 +1666,7 @@
 #define Front_Trigger_1__PRTDSI__OUT_SEL1 CYREG_PRT15_OUT_SEL1
 #define Front_Trigger_1__PRTDSI__SYNC_OUT CYREG_PRT15_SYNC_OUT
 #define Front_Trigger_1__PS CYREG_PRT15_PS
-#define Front_Trigger_1__SHIFT 1
+#define Front_Trigger_1__SHIFT 1u
 #define Front_Trigger_1__SLW CYREG_PRT15_SLW
 
 /* Front_Trigger_2 */
@@ -1674,7 +1674,7 @@
 #define Front_Trigger_2__0__MASK 0x04u
 #define Front_Trigger_2__0__PC CYREG_IO_PC_PRT15_PC2
 #define Front_Trigger_2__0__PORT 15u
-#define Front_Trigger_2__0__SHIFT 2
+#define Front_Trigger_2__0__SHIFT 2u
 #define Front_Trigger_2__AG CYREG_PRT15_AG
 #define Front_Trigger_2__AMUX CYREG_PRT15_AMUX
 #define Front_Trigger_2__BIE CYREG_PRT15_BIE
@@ -1700,7 +1700,7 @@
 #define Front_Trigger_2__PRTDSI__OUT_SEL1 CYREG_PRT15_OUT_SEL1
 #define Front_Trigger_2__PRTDSI__SYNC_OUT CYREG_PRT15_SYNC_OUT
 #define Front_Trigger_2__PS CYREG_PRT15_PS
-#define Front_Trigger_2__SHIFT 2
+#define Front_Trigger_2__SHIFT 2u
 #define Front_Trigger_2__SLW CYREG_PRT15_SLW
 
 /* Front_Trigger_3 */
@@ -1708,7 +1708,7 @@
 #define Front_Trigger_3__0__MASK 0x08u
 #define Front_Trigger_3__0__PC CYREG_IO_PC_PRT15_PC3
 #define Front_Trigger_3__0__PORT 15u
-#define Front_Trigger_3__0__SHIFT 3
+#define Front_Trigger_3__0__SHIFT 3u
 #define Front_Trigger_3__AG CYREG_PRT15_AG
 #define Front_Trigger_3__AMUX CYREG_PRT15_AMUX
 #define Front_Trigger_3__BIE CYREG_PRT15_BIE
@@ -1734,7 +1734,7 @@
 #define Front_Trigger_3__PRTDSI__OUT_SEL1 CYREG_PRT15_OUT_SEL1
 #define Front_Trigger_3__PRTDSI__SYNC_OUT CYREG_PRT15_SYNC_OUT
 #define Front_Trigger_3__PS CYREG_PRT15_PS
-#define Front_Trigger_3__SHIFT 3
+#define Front_Trigger_3__SHIFT 3u
 #define Front_Trigger_3__SLW CYREG_PRT15_SLW
 
 /* Front_Trigger_4 */
@@ -1742,7 +1742,7 @@
 #define Front_Trigger_4__0__MASK 0x80u
 #define Front_Trigger_4__0__PC CYREG_PRT12_PC7
 #define Front_Trigger_4__0__PORT 12u
-#define Front_Trigger_4__0__SHIFT 7
+#define Front_Trigger_4__0__SHIFT 7u
 #define Front_Trigger_4__AG CYREG_PRT12_AG
 #define Front_Trigger_4__BIE CYREG_PRT12_BIE
 #define Front_Trigger_4__BIT_MASK CYREG_PRT12_BIT_MASK
@@ -1763,7 +1763,7 @@
 #define Front_Trigger_4__PRTDSI__OUT_SEL1 CYREG_PRT12_OUT_SEL1
 #define Front_Trigger_4__PRTDSI__SYNC_OUT CYREG_PRT12_SYNC_OUT
 #define Front_Trigger_4__PS CYREG_PRT12_PS
-#define Front_Trigger_4__SHIFT 7
+#define Front_Trigger_4__SHIFT 7u
 #define Front_Trigger_4__SIO_CFG CYREG_PRT12_SIO_CFG
 #define Front_Trigger_4__SIO_DIFF CYREG_PRT12_SIO_DIFF
 #define Front_Trigger_4__SIO_HYST_EN CYREG_PRT12_SIO_HYST_EN
@@ -1775,7 +1775,7 @@
 #define Front_Trigger_5__0__MASK 0x40u
 #define Front_Trigger_5__0__PC CYREG_PRT12_PC6
 #define Front_Trigger_5__0__PORT 12u
-#define Front_Trigger_5__0__SHIFT 6
+#define Front_Trigger_5__0__SHIFT 6u
 #define Front_Trigger_5__AG CYREG_PRT12_AG
 #define Front_Trigger_5__BIE CYREG_PRT12_BIE
 #define Front_Trigger_5__BIT_MASK CYREG_PRT12_BIT_MASK
@@ -1796,7 +1796,7 @@
 #define Front_Trigger_5__PRTDSI__OUT_SEL1 CYREG_PRT12_OUT_SEL1
 #define Front_Trigger_5__PRTDSI__SYNC_OUT CYREG_PRT12_SYNC_OUT
 #define Front_Trigger_5__PS CYREG_PRT12_PS
-#define Front_Trigger_5__SHIFT 6
+#define Front_Trigger_5__SHIFT 6u
 #define Front_Trigger_5__SIO_CFG CYREG_PRT12_SIO_CFG
 #define Front_Trigger_5__SIO_DIFF CYREG_PRT12_SIO_DIFF
 #define Front_Trigger_5__SIO_HYST_EN CYREG_PRT12_SIO_HYST_EN
@@ -1808,7 +1808,7 @@
 #define Front_Trigger_6__0__MASK 0x40u
 #define Front_Trigger_6__0__PC CYREG_PRT1_PC6
 #define Front_Trigger_6__0__PORT 1u
-#define Front_Trigger_6__0__SHIFT 6
+#define Front_Trigger_6__0__SHIFT 6u
 #define Front_Trigger_6__AG CYREG_PRT1_AG
 #define Front_Trigger_6__AMUX CYREG_PRT1_AMUX
 #define Front_Trigger_6__BIE CYREG_PRT1_BIE
@@ -1834,7 +1834,7 @@
 #define Front_Trigger_6__PRTDSI__OUT_SEL1 CYREG_PRT1_OUT_SEL1
 #define Front_Trigger_6__PRTDSI__SYNC_OUT CYREG_PRT1_SYNC_OUT
 #define Front_Trigger_6__PS CYREG_PRT1_PS
-#define Front_Trigger_6__SHIFT 6
+#define Front_Trigger_6__SHIFT 6u
 #define Front_Trigger_6__SLW CYREG_PRT1_SLW
 
 /* Front_Trigger_7 */
@@ -1842,7 +1842,7 @@
 #define Front_Trigger_7__0__MASK 0x80u
 #define Front_Trigger_7__0__PC CYREG_PRT1_PC7
 #define Front_Trigger_7__0__PORT 1u
-#define Front_Trigger_7__0__SHIFT 7
+#define Front_Trigger_7__0__SHIFT 7u
 #define Front_Trigger_7__AG CYREG_PRT1_AG
 #define Front_Trigger_7__AMUX CYREG_PRT1_AMUX
 #define Front_Trigger_7__BIE CYREG_PRT1_BIE
@@ -1868,7 +1868,7 @@
 #define Front_Trigger_7__PRTDSI__OUT_SEL1 CYREG_PRT1_OUT_SEL1
 #define Front_Trigger_7__PRTDSI__SYNC_OUT CYREG_PRT1_SYNC_OUT
 #define Front_Trigger_7__PS CYREG_PRT1_PS
-#define Front_Trigger_7__SHIFT 7
+#define Front_Trigger_7__SHIFT 7u
 #define Front_Trigger_7__SLW CYREG_PRT1_SLW
 
 /* Infrared_Pin_10 */
@@ -1876,7 +1876,7 @@
 #define Infrared_Pin_10__0__MASK 0x04u
 #define Infrared_Pin_10__0__PC CYREG_PRT0_PC2
 #define Infrared_Pin_10__0__PORT 0u
-#define Infrared_Pin_10__0__SHIFT 2
+#define Infrared_Pin_10__0__SHIFT 2u
 #define Infrared_Pin_10__AG CYREG_PRT0_AG
 #define Infrared_Pin_10__AMUX CYREG_PRT0_AMUX
 #define Infrared_Pin_10__BIE CYREG_PRT0_BIE
@@ -1902,7 +1902,7 @@
 #define Infrared_Pin_10__PRTDSI__OUT_SEL1 CYREG_PRT0_OUT_SEL1
 #define Infrared_Pin_10__PRTDSI__SYNC_OUT CYREG_PRT0_SYNC_OUT
 #define Infrared_Pin_10__PS CYREG_PRT0_PS
-#define Infrared_Pin_10__SHIFT 2
+#define Infrared_Pin_10__SHIFT 2u
 #define Infrared_Pin_10__SLW CYREG_PRT0_SLW
 
 /* Infrared_Pin_11 */
@@ -1910,7 +1910,7 @@
 #define Infrared_Pin_11__0__MASK 0x08u
 #define Infrared_Pin_11__0__PC CYREG_PRT0_PC3
 #define Infrared_Pin_11__0__PORT 0u
-#define Infrared_Pin_11__0__SHIFT 3
+#define Infrared_Pin_11__0__SHIFT 3u
 #define Infrared_Pin_11__AG CYREG_PRT0_AG
 #define Infrared_Pin_11__AMUX CYREG_PRT0_AMUX
 #define Infrared_Pin_11__BIE CYREG_PRT0_BIE
@@ -1936,7 +1936,7 @@
 #define Infrared_Pin_11__PRTDSI__OUT_SEL1 CYREG_PRT0_OUT_SEL1
 #define Infrared_Pin_11__PRTDSI__SYNC_OUT CYREG_PRT0_SYNC_OUT
 #define Infrared_Pin_11__PS CYREG_PRT0_PS
-#define Infrared_Pin_11__SHIFT 3
+#define Infrared_Pin_11__SHIFT 3u
 #define Infrared_Pin_11__SLW CYREG_PRT0_SLW
 
 /* Infrared_Pin_12 */
@@ -1944,7 +1944,7 @@
 #define Infrared_Pin_12__0__MASK 0x10u
 #define Infrared_Pin_12__0__PC CYREG_PRT0_PC4
 #define Infrared_Pin_12__0__PORT 0u
-#define Infrared_Pin_12__0__SHIFT 4
+#define Infrared_Pin_12__0__SHIFT 4u
 #define Infrared_Pin_12__AG CYREG_PRT0_AG
 #define Infrared_Pin_12__AMUX CYREG_PRT0_AMUX
 #define Infrared_Pin_12__BIE CYREG_PRT0_BIE
@@ -1970,7 +1970,7 @@
 #define Infrared_Pin_12__PRTDSI__OUT_SEL1 CYREG_PRT0_OUT_SEL1
 #define Infrared_Pin_12__PRTDSI__SYNC_OUT CYREG_PRT0_SYNC_OUT
 #define Infrared_Pin_12__PS CYREG_PRT0_PS
-#define Infrared_Pin_12__SHIFT 4
+#define Infrared_Pin_12__SHIFT 4u
 #define Infrared_Pin_12__SLW CYREG_PRT0_SLW
 
 /* Infrared_Pin_13 */
@@ -1978,7 +1978,7 @@
 #define Infrared_Pin_13__0__MASK 0x20u
 #define Infrared_Pin_13__0__PC CYREG_PRT0_PC5
 #define Infrared_Pin_13__0__PORT 0u
-#define Infrared_Pin_13__0__SHIFT 5
+#define Infrared_Pin_13__0__SHIFT 5u
 #define Infrared_Pin_13__AG CYREG_PRT0_AG
 #define Infrared_Pin_13__AMUX CYREG_PRT0_AMUX
 #define Infrared_Pin_13__BIE CYREG_PRT0_BIE
@@ -2004,7 +2004,7 @@
 #define Infrared_Pin_13__PRTDSI__OUT_SEL1 CYREG_PRT0_OUT_SEL1
 #define Infrared_Pin_13__PRTDSI__SYNC_OUT CYREG_PRT0_SYNC_OUT
 #define Infrared_Pin_13__PS CYREG_PRT0_PS
-#define Infrared_Pin_13__SHIFT 5
+#define Infrared_Pin_13__SHIFT 5u
 #define Infrared_Pin_13__SLW CYREG_PRT0_SLW
 
 /* Infrared_Pin_14 */
@@ -2012,7 +2012,7 @@
 #define Infrared_Pin_14__0__MASK 0x40u
 #define Infrared_Pin_14__0__PC CYREG_PRT0_PC6
 #define Infrared_Pin_14__0__PORT 0u
-#define Infrared_Pin_14__0__SHIFT 6
+#define Infrared_Pin_14__0__SHIFT 6u
 #define Infrared_Pin_14__AG CYREG_PRT0_AG
 #define Infrared_Pin_14__AMUX CYREG_PRT0_AMUX
 #define Infrared_Pin_14__BIE CYREG_PRT0_BIE
@@ -2038,7 +2038,7 @@
 #define Infrared_Pin_14__PRTDSI__OUT_SEL1 CYREG_PRT0_OUT_SEL1
 #define Infrared_Pin_14__PRTDSI__SYNC_OUT CYREG_PRT0_SYNC_OUT
 #define Infrared_Pin_14__PS CYREG_PRT0_PS
-#define Infrared_Pin_14__SHIFT 6
+#define Infrared_Pin_14__SHIFT 6u
 #define Infrared_Pin_14__SLW CYREG_PRT0_SLW
 
 /* Infrared_Pin_15 */
@@ -2046,7 +2046,7 @@
 #define Infrared_Pin_15__0__MASK 0x80u
 #define Infrared_Pin_15__0__PC CYREG_PRT0_PC7
 #define Infrared_Pin_15__0__PORT 0u
-#define Infrared_Pin_15__0__SHIFT 7
+#define Infrared_Pin_15__0__SHIFT 7u
 #define Infrared_Pin_15__AG CYREG_PRT0_AG
 #define Infrared_Pin_15__AMUX CYREG_PRT0_AMUX
 #define Infrared_Pin_15__BIE CYREG_PRT0_BIE
@@ -2072,7 +2072,7 @@
 #define Infrared_Pin_15__PRTDSI__OUT_SEL1 CYREG_PRT0_OUT_SEL1
 #define Infrared_Pin_15__PRTDSI__SYNC_OUT CYREG_PRT0_SYNC_OUT
 #define Infrared_Pin_15__PS CYREG_PRT0_PS
-#define Infrared_Pin_15__SHIFT 7
+#define Infrared_Pin_15__SHIFT 7u
 #define Infrared_Pin_15__SLW CYREG_PRT0_SLW
 
 /* Rear_Echo_Pin_0 */
@@ -2080,7 +2080,7 @@
 #define Rear_Echo_Pin_0__0__MASK 0x01u
 #define Rear_Echo_Pin_0__0__PC CYREG_PRT5_PC0
 #define Rear_Echo_Pin_0__0__PORT 5u
-#define Rear_Echo_Pin_0__0__SHIFT 0
+#define Rear_Echo_Pin_0__0__SHIFT 0u
 #define Rear_Echo_Pin_0__AG CYREG_PRT5_AG
 #define Rear_Echo_Pin_0__AMUX CYREG_PRT5_AMUX
 #define Rear_Echo_Pin_0__BIE CYREG_PRT5_BIE
@@ -2106,7 +2106,7 @@
 #define Rear_Echo_Pin_0__PRTDSI__OUT_SEL1 CYREG_PRT5_OUT_SEL1
 #define Rear_Echo_Pin_0__PRTDSI__SYNC_OUT CYREG_PRT5_SYNC_OUT
 #define Rear_Echo_Pin_0__PS CYREG_PRT5_PS
-#define Rear_Echo_Pin_0__SHIFT 0
+#define Rear_Echo_Pin_0__SHIFT 0u
 #define Rear_Echo_Pin_0__SLW CYREG_PRT5_SLW
 
 /* Rear_Echo_Pin_1 */
@@ -2114,7 +2114,7 @@
 #define Rear_Echo_Pin_1__0__MASK 0x02u
 #define Rear_Echo_Pin_1__0__PC CYREG_PRT5_PC1
 #define Rear_Echo_Pin_1__0__PORT 5u
-#define Rear_Echo_Pin_1__0__SHIFT 1
+#define Rear_Echo_Pin_1__0__SHIFT 1u
 #define Rear_Echo_Pin_1__AG CYREG_PRT5_AG
 #define Rear_Echo_Pin_1__AMUX CYREG_PRT5_AMUX
 #define Rear_Echo_Pin_1__BIE CYREG_PRT5_BIE
@@ -2140,7 +2140,7 @@
 #define Rear_Echo_Pin_1__PRTDSI__OUT_SEL1 CYREG_PRT5_OUT_SEL1
 #define Rear_Echo_Pin_1__PRTDSI__SYNC_OUT CYREG_PRT5_SYNC_OUT
 #define Rear_Echo_Pin_1__PS CYREG_PRT5_PS
-#define Rear_Echo_Pin_1__SHIFT 1
+#define Rear_Echo_Pin_1__SHIFT 1u
 #define Rear_Echo_Pin_1__SLW CYREG_PRT5_SLW
 
 /* Rear_Echo_Pin_2 */
@@ -2148,7 +2148,7 @@
 #define Rear_Echo_Pin_2__0__MASK 0x04u
 #define Rear_Echo_Pin_2__0__PC CYREG_PRT5_PC2
 #define Rear_Echo_Pin_2__0__PORT 5u
-#define Rear_Echo_Pin_2__0__SHIFT 2
+#define Rear_Echo_Pin_2__0__SHIFT 2u
 #define Rear_Echo_Pin_2__AG CYREG_PRT5_AG
 #define Rear_Echo_Pin_2__AMUX CYREG_PRT5_AMUX
 #define Rear_Echo_Pin_2__BIE CYREG_PRT5_BIE
@@ -2174,7 +2174,7 @@
 #define Rear_Echo_Pin_2__PRTDSI__OUT_SEL1 CYREG_PRT5_OUT_SEL1
 #define Rear_Echo_Pin_2__PRTDSI__SYNC_OUT CYREG_PRT5_SYNC_OUT
 #define Rear_Echo_Pin_2__PS CYREG_PRT5_PS
-#define Rear_Echo_Pin_2__SHIFT 2
+#define Rear_Echo_Pin_2__SHIFT 2u
 #define Rear_Echo_Pin_2__SLW CYREG_PRT5_SLW
 
 /* Rear_Echo_Pin_3 */
@@ -2182,7 +2182,7 @@
 #define Rear_Echo_Pin_3__0__MASK 0x08u
 #define Rear_Echo_Pin_3__0__PC CYREG_PRT5_PC3
 #define Rear_Echo_Pin_3__0__PORT 5u
-#define Rear_Echo_Pin_3__0__SHIFT 3
+#define Rear_Echo_Pin_3__0__SHIFT 3u
 #define Rear_Echo_Pin_3__AG CYREG_PRT5_AG
 #define Rear_Echo_Pin_3__AMUX CYREG_PRT5_AMUX
 #define Rear_Echo_Pin_3__BIE CYREG_PRT5_BIE
@@ -2208,7 +2208,7 @@
 #define Rear_Echo_Pin_3__PRTDSI__OUT_SEL1 CYREG_PRT5_OUT_SEL1
 #define Rear_Echo_Pin_3__PRTDSI__SYNC_OUT CYREG_PRT5_SYNC_OUT
 #define Rear_Echo_Pin_3__PS CYREG_PRT5_PS
-#define Rear_Echo_Pin_3__SHIFT 3
+#define Rear_Echo_Pin_3__SHIFT 3u
 #define Rear_Echo_Pin_3__SLW CYREG_PRT5_SLW
 
 /* Rear_Echo_Pin_4 */
@@ -2216,7 +2216,7 @@
 #define Rear_Echo_Pin_4__0__MASK 0x10u
 #define Rear_Echo_Pin_4__0__PC CYREG_PRT5_PC4
 #define Rear_Echo_Pin_4__0__PORT 5u
-#define Rear_Echo_Pin_4__0__SHIFT 4
+#define Rear_Echo_Pin_4__0__SHIFT 4u
 #define Rear_Echo_Pin_4__AG CYREG_PRT5_AG
 #define Rear_Echo_Pin_4__AMUX CYREG_PRT5_AMUX
 #define Rear_Echo_Pin_4__BIE CYREG_PRT5_BIE
@@ -2242,7 +2242,7 @@
 #define Rear_Echo_Pin_4__PRTDSI__OUT_SEL1 CYREG_PRT5_OUT_SEL1
 #define Rear_Echo_Pin_4__PRTDSI__SYNC_OUT CYREG_PRT5_SYNC_OUT
 #define Rear_Echo_Pin_4__PS CYREG_PRT5_PS
-#define Rear_Echo_Pin_4__SHIFT 4
+#define Rear_Echo_Pin_4__SHIFT 4u
 #define Rear_Echo_Pin_4__SLW CYREG_PRT5_SLW
 
 /* Rear_Echo_Pin_5 */
@@ -2250,7 +2250,7 @@
 #define Rear_Echo_Pin_5__0__MASK 0x20u
 #define Rear_Echo_Pin_5__0__PC CYREG_PRT5_PC5
 #define Rear_Echo_Pin_5__0__PORT 5u
-#define Rear_Echo_Pin_5__0__SHIFT 5
+#define Rear_Echo_Pin_5__0__SHIFT 5u
 #define Rear_Echo_Pin_5__AG CYREG_PRT5_AG
 #define Rear_Echo_Pin_5__AMUX CYREG_PRT5_AMUX
 #define Rear_Echo_Pin_5__BIE CYREG_PRT5_BIE
@@ -2276,7 +2276,7 @@
 #define Rear_Echo_Pin_5__PRTDSI__OUT_SEL1 CYREG_PRT5_OUT_SEL1
 #define Rear_Echo_Pin_5__PRTDSI__SYNC_OUT CYREG_PRT5_SYNC_OUT
 #define Rear_Echo_Pin_5__PS CYREG_PRT5_PS
-#define Rear_Echo_Pin_5__SHIFT 5
+#define Rear_Echo_Pin_5__SHIFT 5u
 #define Rear_Echo_Pin_5__SLW CYREG_PRT5_SLW
 
 /* Rear_Echo_Pin_6 */
@@ -2284,7 +2284,7 @@
 #define Rear_Echo_Pin_6__0__MASK 0x40u
 #define Rear_Echo_Pin_6__0__PC CYREG_PRT5_PC6
 #define Rear_Echo_Pin_6__0__PORT 5u
-#define Rear_Echo_Pin_6__0__SHIFT 6
+#define Rear_Echo_Pin_6__0__SHIFT 6u
 #define Rear_Echo_Pin_6__AG CYREG_PRT5_AG
 #define Rear_Echo_Pin_6__AMUX CYREG_PRT5_AMUX
 #define Rear_Echo_Pin_6__BIE CYREG_PRT5_BIE
@@ -2310,7 +2310,7 @@
 #define Rear_Echo_Pin_6__PRTDSI__OUT_SEL1 CYREG_PRT5_OUT_SEL1
 #define Rear_Echo_Pin_6__PRTDSI__SYNC_OUT CYREG_PRT5_SYNC_OUT
 #define Rear_Echo_Pin_6__PS CYREG_PRT5_PS
-#define Rear_Echo_Pin_6__SHIFT 6
+#define Rear_Echo_Pin_6__SHIFT 6u
 #define Rear_Echo_Pin_6__SLW CYREG_PRT5_SLW
 
 /* Rear_Echo_Pin_7 */
@@ -2318,7 +2318,7 @@
 #define Rear_Echo_Pin_7__0__MASK 0x80u
 #define Rear_Echo_Pin_7__0__PC CYREG_PRT5_PC7
 #define Rear_Echo_Pin_7__0__PORT 5u
-#define Rear_Echo_Pin_7__0__SHIFT 7
+#define Rear_Echo_Pin_7__0__SHIFT 7u
 #define Rear_Echo_Pin_7__AG CYREG_PRT5_AG
 #define Rear_Echo_Pin_7__AMUX CYREG_PRT5_AMUX
 #define Rear_Echo_Pin_7__BIE CYREG_PRT5_BIE
@@ -2344,7 +2344,7 @@
 #define Rear_Echo_Pin_7__PRTDSI__OUT_SEL1 CYREG_PRT5_OUT_SEL1
 #define Rear_Echo_Pin_7__PRTDSI__SYNC_OUT CYREG_PRT5_SYNC_OUT
 #define Rear_Echo_Pin_7__PS CYREG_PRT5_PS
-#define Rear_Echo_Pin_7__SHIFT 7
+#define Rear_Echo_Pin_7__SHIFT 7u
 #define Rear_Echo_Pin_7__SLW CYREG_PRT5_SLW
 
 /* Rear_Echo_Timer_TimerUDB */
@@ -2401,7 +2401,7 @@
 #define Right_Encoder_A__0__MASK 0x40u
 #define Right_Encoder_A__0__PC CYREG_PRT2_PC6
 #define Right_Encoder_A__0__PORT 2u
-#define Right_Encoder_A__0__SHIFT 6
+#define Right_Encoder_A__0__SHIFT 6u
 #define Right_Encoder_A__AG CYREG_PRT2_AG
 #define Right_Encoder_A__AMUX CYREG_PRT2_AMUX
 #define Right_Encoder_A__BIE CYREG_PRT2_BIE
@@ -2427,7 +2427,7 @@
 #define Right_Encoder_A__PRTDSI__OUT_SEL1 CYREG_PRT2_OUT_SEL1
 #define Right_Encoder_A__PRTDSI__SYNC_OUT CYREG_PRT2_SYNC_OUT
 #define Right_Encoder_A__PS CYREG_PRT2_PS
-#define Right_Encoder_A__SHIFT 6
+#define Right_Encoder_A__SHIFT 6u
 #define Right_Encoder_A__SLW CYREG_PRT2_SLW
 
 /* Right_Encoder_B */
@@ -2435,7 +2435,7 @@
 #define Right_Encoder_B__0__MASK 0x80u
 #define Right_Encoder_B__0__PC CYREG_PRT2_PC7
 #define Right_Encoder_B__0__PORT 2u
-#define Right_Encoder_B__0__SHIFT 7
+#define Right_Encoder_B__0__SHIFT 7u
 #define Right_Encoder_B__AG CYREG_PRT2_AG
 #define Right_Encoder_B__AMUX CYREG_PRT2_AMUX
 #define Right_Encoder_B__BIE CYREG_PRT2_BIE
@@ -2461,7 +2461,7 @@
 #define Right_Encoder_B__PRTDSI__OUT_SEL1 CYREG_PRT2_OUT_SEL1
 #define Right_Encoder_B__PRTDSI__SYNC_OUT CYREG_PRT2_SYNC_OUT
 #define Right_Encoder_B__PS CYREG_PRT2_PS
-#define Right_Encoder_B__SHIFT 7
+#define Right_Encoder_B__SHIFT 7u
 #define Right_Encoder_B__SLW CYREG_PRT2_SLW
 
 /* Front_Echo_Pin_0 */
@@ -2469,7 +2469,7 @@
 #define Front_Echo_Pin_0__0__MASK 0x04u
 #define Front_Echo_Pin_0__0__PC CYREG_PRT6_PC2
 #define Front_Echo_Pin_0__0__PORT 6u
-#define Front_Echo_Pin_0__0__SHIFT 2
+#define Front_Echo_Pin_0__0__SHIFT 2u
 #define Front_Echo_Pin_0__AG CYREG_PRT6_AG
 #define Front_Echo_Pin_0__AMUX CYREG_PRT6_AMUX
 #define Front_Echo_Pin_0__BIE CYREG_PRT6_BIE
@@ -2495,7 +2495,7 @@
 #define Front_Echo_Pin_0__PRTDSI__OUT_SEL1 CYREG_PRT6_OUT_SEL1
 #define Front_Echo_Pin_0__PRTDSI__SYNC_OUT CYREG_PRT6_SYNC_OUT
 #define Front_Echo_Pin_0__PS CYREG_PRT6_PS
-#define Front_Echo_Pin_0__SHIFT 2
+#define Front_Echo_Pin_0__SHIFT 2u
 #define Front_Echo_Pin_0__SLW CYREG_PRT6_SLW
 
 /* Front_Echo_Pin_1 */
@@ -2503,7 +2503,7 @@
 #define Front_Echo_Pin_1__0__MASK 0x08u
 #define Front_Echo_Pin_1__0__PC CYREG_PRT6_PC3
 #define Front_Echo_Pin_1__0__PORT 6u
-#define Front_Echo_Pin_1__0__SHIFT 3
+#define Front_Echo_Pin_1__0__SHIFT 3u
 #define Front_Echo_Pin_1__AG CYREG_PRT6_AG
 #define Front_Echo_Pin_1__AMUX CYREG_PRT6_AMUX
 #define Front_Echo_Pin_1__BIE CYREG_PRT6_BIE
@@ -2529,7 +2529,7 @@
 #define Front_Echo_Pin_1__PRTDSI__OUT_SEL1 CYREG_PRT6_OUT_SEL1
 #define Front_Echo_Pin_1__PRTDSI__SYNC_OUT CYREG_PRT6_SYNC_OUT
 #define Front_Echo_Pin_1__PS CYREG_PRT6_PS
-#define Front_Echo_Pin_1__SHIFT 3
+#define Front_Echo_Pin_1__SHIFT 3u
 #define Front_Echo_Pin_1__SLW CYREG_PRT6_SLW
 
 /* Front_Echo_Pin_2 */
@@ -2537,7 +2537,7 @@
 #define Front_Echo_Pin_2__0__MASK 0x10u
 #define Front_Echo_Pin_2__0__PC CYREG_PRT6_PC4
 #define Front_Echo_Pin_2__0__PORT 6u
-#define Front_Echo_Pin_2__0__SHIFT 4
+#define Front_Echo_Pin_2__0__SHIFT 4u
 #define Front_Echo_Pin_2__AG CYREG_PRT6_AG
 #define Front_Echo_Pin_2__AMUX CYREG_PRT6_AMUX
 #define Front_Echo_Pin_2__BIE CYREG_PRT6_BIE
@@ -2563,7 +2563,7 @@
 #define Front_Echo_Pin_2__PRTDSI__OUT_SEL1 CYREG_PRT6_OUT_SEL1
 #define Front_Echo_Pin_2__PRTDSI__SYNC_OUT CYREG_PRT6_SYNC_OUT
 #define Front_Echo_Pin_2__PS CYREG_PRT6_PS
-#define Front_Echo_Pin_2__SHIFT 4
+#define Front_Echo_Pin_2__SHIFT 4u
 #define Front_Echo_Pin_2__SLW CYREG_PRT6_SLW
 
 /* Front_Echo_Pin_3 */
@@ -2571,7 +2571,7 @@
 #define Front_Echo_Pin_3__0__MASK 0x20u
 #define Front_Echo_Pin_3__0__PC CYREG_PRT6_PC5
 #define Front_Echo_Pin_3__0__PORT 6u
-#define Front_Echo_Pin_3__0__SHIFT 5
+#define Front_Echo_Pin_3__0__SHIFT 5u
 #define Front_Echo_Pin_3__AG CYREG_PRT6_AG
 #define Front_Echo_Pin_3__AMUX CYREG_PRT6_AMUX
 #define Front_Echo_Pin_3__BIE CYREG_PRT6_BIE
@@ -2597,7 +2597,7 @@
 #define Front_Echo_Pin_3__PRTDSI__OUT_SEL1 CYREG_PRT6_OUT_SEL1
 #define Front_Echo_Pin_3__PRTDSI__SYNC_OUT CYREG_PRT6_SYNC_OUT
 #define Front_Echo_Pin_3__PS CYREG_PRT6_PS
-#define Front_Echo_Pin_3__SHIFT 5
+#define Front_Echo_Pin_3__SHIFT 5u
 #define Front_Echo_Pin_3__SLW CYREG_PRT6_SLW
 
 /* Front_Echo_Pin_4 */
@@ -2605,7 +2605,7 @@
 #define Front_Echo_Pin_4__0__MASK 0x40u
 #define Front_Echo_Pin_4__0__PC CYREG_PRT6_PC6
 #define Front_Echo_Pin_4__0__PORT 6u
-#define Front_Echo_Pin_4__0__SHIFT 6
+#define Front_Echo_Pin_4__0__SHIFT 6u
 #define Front_Echo_Pin_4__AG CYREG_PRT6_AG
 #define Front_Echo_Pin_4__AMUX CYREG_PRT6_AMUX
 #define Front_Echo_Pin_4__BIE CYREG_PRT6_BIE
@@ -2631,7 +2631,7 @@
 #define Front_Echo_Pin_4__PRTDSI__OUT_SEL1 CYREG_PRT6_OUT_SEL1
 #define Front_Echo_Pin_4__PRTDSI__SYNC_OUT CYREG_PRT6_SYNC_OUT
 #define Front_Echo_Pin_4__PS CYREG_PRT6_PS
-#define Front_Echo_Pin_4__SHIFT 6
+#define Front_Echo_Pin_4__SHIFT 6u
 #define Front_Echo_Pin_4__SLW CYREG_PRT6_SLW
 
 /* Front_Echo_Pin_5 */
@@ -2639,7 +2639,7 @@
 #define Front_Echo_Pin_5__0__MASK 0x80u
 #define Front_Echo_Pin_5__0__PC CYREG_PRT6_PC7
 #define Front_Echo_Pin_5__0__PORT 6u
-#define Front_Echo_Pin_5__0__SHIFT 7
+#define Front_Echo_Pin_5__0__SHIFT 7u
 #define Front_Echo_Pin_5__AG CYREG_PRT6_AG
 #define Front_Echo_Pin_5__AMUX CYREG_PRT6_AMUX
 #define Front_Echo_Pin_5__BIE CYREG_PRT6_BIE
@@ -2665,7 +2665,7 @@
 #define Front_Echo_Pin_5__PRTDSI__OUT_SEL1 CYREG_PRT6_OUT_SEL1
 #define Front_Echo_Pin_5__PRTDSI__SYNC_OUT CYREG_PRT6_SYNC_OUT
 #define Front_Echo_Pin_5__PS CYREG_PRT6_PS
-#define Front_Echo_Pin_5__SHIFT 7
+#define Front_Echo_Pin_5__SHIFT 7u
 #define Front_Echo_Pin_5__SLW CYREG_PRT6_SLW
 
 /* Front_Echo_Pin_6 */
@@ -2673,7 +2673,7 @@
 #define Front_Echo_Pin_6__0__MASK 0x10u
 #define Front_Echo_Pin_6__0__PC CYREG_IO_PC_PRT15_PC4
 #define Front_Echo_Pin_6__0__PORT 15u
-#define Front_Echo_Pin_6__0__SHIFT 4
+#define Front_Echo_Pin_6__0__SHIFT 4u
 #define Front_Echo_Pin_6__AG CYREG_PRT15_AG
 #define Front_Echo_Pin_6__AMUX CYREG_PRT15_AMUX
 #define Front_Echo_Pin_6__BIE CYREG_PRT15_BIE
@@ -2699,7 +2699,7 @@
 #define Front_Echo_Pin_6__PRTDSI__OUT_SEL1 CYREG_PRT15_OUT_SEL1
 #define Front_Echo_Pin_6__PRTDSI__SYNC_OUT CYREG_PRT15_SYNC_OUT
 #define Front_Echo_Pin_6__PS CYREG_PRT15_PS
-#define Front_Echo_Pin_6__SHIFT 4
+#define Front_Echo_Pin_6__SHIFT 4u
 #define Front_Echo_Pin_6__SLW CYREG_PRT15_SLW
 
 /* Front_Echo_Pin_7 */
@@ -2707,7 +2707,7 @@
 #define Front_Echo_Pin_7__0__MASK 0x20u
 #define Front_Echo_Pin_7__0__PC CYREG_IO_PC_PRT15_PC5
 #define Front_Echo_Pin_7__0__PORT 15u
-#define Front_Echo_Pin_7__0__SHIFT 5
+#define Front_Echo_Pin_7__0__SHIFT 5u
 #define Front_Echo_Pin_7__AG CYREG_PRT15_AG
 #define Front_Echo_Pin_7__AMUX CYREG_PRT15_AMUX
 #define Front_Echo_Pin_7__BIE CYREG_PRT15_BIE
@@ -2733,7 +2733,7 @@
 #define Front_Echo_Pin_7__PRTDSI__OUT_SEL1 CYREG_PRT15_OUT_SEL1
 #define Front_Echo_Pin_7__PRTDSI__SYNC_OUT CYREG_PRT15_SYNC_OUT
 #define Front_Echo_Pin_7__PS CYREG_PRT15_PS
-#define Front_Echo_Pin_7__SHIFT 5
+#define Front_Echo_Pin_7__SHIFT 5u
 #define Front_Echo_Pin_7__SLW CYREG_PRT15_SLW
 
 /* Front_Echo_Timer_TimerUDB */
@@ -2843,7 +2843,7 @@
 #define Left_HB25_Enable_Pin__0__MASK 0x01u
 #define Left_HB25_Enable_Pin__0__PC CYREG_PRT2_PC0
 #define Left_HB25_Enable_Pin__0__PORT 2u
-#define Left_HB25_Enable_Pin__0__SHIFT 0
+#define Left_HB25_Enable_Pin__0__SHIFT 0u
 #define Left_HB25_Enable_Pin__AG CYREG_PRT2_AG
 #define Left_HB25_Enable_Pin__AMUX CYREG_PRT2_AMUX
 #define Left_HB25_Enable_Pin__BIE CYREG_PRT2_BIE
@@ -2869,7 +2869,7 @@
 #define Left_HB25_Enable_Pin__PRTDSI__OUT_SEL1 CYREG_PRT2_OUT_SEL1
 #define Left_HB25_Enable_Pin__PRTDSI__SYNC_OUT CYREG_PRT2_SYNC_OUT
 #define Left_HB25_Enable_Pin__PS CYREG_PRT2_PS
-#define Left_HB25_Enable_Pin__SHIFT 0
+#define Left_HB25_Enable_Pin__SHIFT 0u
 #define Left_HB25_Enable_Pin__SLW CYREG_PRT2_SLW
 
 /* Right_HB25_Enable_Pin */
@@ -2877,7 +2877,7 @@
 #define Right_HB25_Enable_Pin__0__MASK 0x10u
 #define Right_HB25_Enable_Pin__0__PC CYREG_PRT2_PC4
 #define Right_HB25_Enable_Pin__0__PORT 2u
-#define Right_HB25_Enable_Pin__0__SHIFT 4
+#define Right_HB25_Enable_Pin__0__SHIFT 4u
 #define Right_HB25_Enable_Pin__AG CYREG_PRT2_AG
 #define Right_HB25_Enable_Pin__AMUX CYREG_PRT2_AMUX
 #define Right_HB25_Enable_Pin__BIE CYREG_PRT2_BIE
@@ -2903,7 +2903,7 @@
 #define Right_HB25_Enable_Pin__PRTDSI__OUT_SEL1 CYREG_PRT2_OUT_SEL1
 #define Right_HB25_Enable_Pin__PRTDSI__SYNC_OUT CYREG_PRT2_SYNC_OUT
 #define Right_HB25_Enable_Pin__PS CYREG_PRT2_PS
-#define Right_HB25_Enable_Pin__SHIFT 4
+#define Right_HB25_Enable_Pin__SHIFT 4u
 #define Right_HB25_Enable_Pin__SLW CYREG_PRT2_SLW
 
 /* Rear_Trigger_Select_Reg */
@@ -2954,11 +2954,11 @@
 #define BCLK__BUS_CLK__KHZ 24000U
 #define BCLK__BUS_CLK__MHZ 24U
 #define CY_PROJECT_NAME "freesoc"
-#define CY_VERSION "PSoC Creator  3.3 CP2"
+#define CY_VERSION "PSoC Creator  3.3 CP3"
 #define CYDEV_CHIP_DIE_LEOPARD 1u
-#define CYDEV_CHIP_DIE_PANTHER 18u
-#define CYDEV_CHIP_DIE_PSOC4A 10u
-#define CYDEV_CHIP_DIE_PSOC5LP 17u
+#define CYDEV_CHIP_DIE_PANTHER 19u
+#define CYDEV_CHIP_DIE_PSOC4A 11u
+#define CYDEV_CHIP_DIE_PSOC5LP 18u
 #define CYDEV_CHIP_DIE_TMA4 2u
 #define CYDEV_CHIP_DIE_UNKNOWN 0u
 #define CYDEV_CHIP_FAMILY_PSOC3 1u
@@ -2968,22 +2968,23 @@
 #define CYDEV_CHIP_FAMILY_USED CYDEV_CHIP_FAMILY_PSOC5
 #define CYDEV_CHIP_JTAG_ID 0x2E160069u
 #define CYDEV_CHIP_MEMBER_3A 1u
-#define CYDEV_CHIP_MEMBER_4A 10u
-#define CYDEV_CHIP_MEMBER_4C 15u
-#define CYDEV_CHIP_MEMBER_4D 6u
+#define CYDEV_CHIP_MEMBER_4A 11u
+#define CYDEV_CHIP_MEMBER_4C 16u
+#define CYDEV_CHIP_MEMBER_4D 7u
 #define CYDEV_CHIP_MEMBER_4E 4u
-#define CYDEV_CHIP_MEMBER_4F 11u
+#define CYDEV_CHIP_MEMBER_4F 12u
 #define CYDEV_CHIP_MEMBER_4G 2u
-#define CYDEV_CHIP_MEMBER_4H 9u
-#define CYDEV_CHIP_MEMBER_4I 14u
-#define CYDEV_CHIP_MEMBER_4J 7u
-#define CYDEV_CHIP_MEMBER_4K 8u
-#define CYDEV_CHIP_MEMBER_4L 13u
-#define CYDEV_CHIP_MEMBER_4M 12u
-#define CYDEV_CHIP_MEMBER_4N 5u
+#define CYDEV_CHIP_MEMBER_4H 10u
+#define CYDEV_CHIP_MEMBER_4I 15u
+#define CYDEV_CHIP_MEMBER_4J 8u
+#define CYDEV_CHIP_MEMBER_4K 9u
+#define CYDEV_CHIP_MEMBER_4L 14u
+#define CYDEV_CHIP_MEMBER_4M 13u
+#define CYDEV_CHIP_MEMBER_4N 6u
+#define CYDEV_CHIP_MEMBER_4O 5u
 #define CYDEV_CHIP_MEMBER_4U 3u
-#define CYDEV_CHIP_MEMBER_5A 17u
-#define CYDEV_CHIP_MEMBER_5B 16u
+#define CYDEV_CHIP_MEMBER_5A 18u
+#define CYDEV_CHIP_MEMBER_5B 17u
 #define CYDEV_CHIP_MEMBER_UNKNOWN 0u
 #define CYDEV_CHIP_MEMBER_USED CYDEV_CHIP_MEMBER_5B
 #define CYDEV_CHIP_DIE_EXPECT CYDEV_CHIP_MEMBER_USED
@@ -3024,6 +3025,7 @@
 #define CYDEV_CHIP_REVISION_4L_PRODUCTION 0u
 #define CYDEV_CHIP_REVISION_4M_PRODUCTION 0u
 #define CYDEV_CHIP_REVISION_4N_PRODUCTION 0u
+#define CYDEV_CHIP_REVISION_4O_PRODUCTION 0u
 #define CYDEV_CHIP_REVISION_4U_PRODUCTION 0u
 #define CYDEV_CHIP_REVISION_5A_ES0 0u
 #define CYDEV_CHIP_REVISION_5A_ES1 1u

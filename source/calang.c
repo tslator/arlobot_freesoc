@@ -75,21 +75,4 @@ void PerformAngularBiasCalibration(uint8 verbose)
     
     Motor_LeftSetCntsPerSec(0);
     Motor_RightSetCntsPerSec(0);
-    
-    /* Pend on reading the linear bias (or timeout 60 seconds) */
-    float angular_bias;
-    uint32 wait_time = millis();
-    while (millis() - wait_time < 60000)
-    {
-        if (Ser_IsDataReady())
-        {
-            Ser_ReadFloat(&angular_bias);
-            
-            /* Convert angular bias from degrees (because it is easier to estimate) to radian. */
-            angular_bias = DEGREES_TO_RADIANS(angular_bias);
-            
-            /* Store the linear bias into EEPROM */
-            Nvstore_WriteFloat(angular_bias, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias));
-        }
-    }
 }
