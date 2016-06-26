@@ -3,6 +3,6 @@
     
 #include <project.h>
     
-void PerformPidCalibration(uint8 verbose);    
+void PerformPidCalibration();    
     
 #endif

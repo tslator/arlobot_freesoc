@@ -209,7 +209,7 @@ static void OutputSamples(char *label, int32 *cps_samples, uint16 *pwm_samples)
     Ser_PutString(buffer);
 }
 
-void PerformCountPerSecToPwmCalibration(uint8 verbose)
+void PerformCountPerSecToPwmCalibration()
 /* 
     Clear Count/Sec to PWM calibration bit
     Perform left/right forward/reverse calibration
@@ -221,44 +221,30 @@ void PerformCountPerSecToPwmCalibration(uint8 verbose)
 {
     Init();
     
-    if (verbose)
-    {
-        Ser_PutString("Starting Count/Sec To PWM calibration ...\r\n");
-    }
+    Ser_PutString("\r\nPerforming motor calibration\r\n");
     
+    Ser_PutString("Left-Forward Calibration\r\n");
     CalibrateWheelSpeed(LEFT_WHEEL, FORWARD_DIR, 5, cps_samples, pwm_samples);
     StoreWheelSpeedSamples(LEFT_WHEEL, FORWARD_DIR, cps_samples, pwm_samples);
-    if (verbose)
-    {
-        OutputSamples("Left-Forward", cps_samples, pwm_samples);
-    }
+    OutputSamples("Left-Forward", cps_samples, pwm_samples);
 
+    Ser_PutString("Left-Backward Calibration\r\n");
     CalibrateWheelSpeed(LEFT_WHEEL, BACKWARD_DIR, 5, cps_samples, pwm_samples);
     StoreWheelSpeedSamples(LEFT_WHEEL, BACKWARD_DIR, cps_samples, pwm_samples);
-    if (verbose)
-    {
-        OutputSamples("Left-Backward", cps_samples, pwm_samples);
-    }
+    OutputSamples("Left-Backward", cps_samples, pwm_samples);
 
+    Ser_PutString("Right-Forward Calibration\r\n");
     CalibrateWheelSpeed(RIGHT_WHEEL, FORWARD_DIR, 5, cps_samples, pwm_samples);
     StoreWheelSpeedSamples(RIGHT_WHEEL, FORWARD_DIR, cps_samples, pwm_samples);
-    if (verbose)
-    {
-        OutputSamples("Right-Forward", cps_samples, pwm_samples);
-    }
+    OutputSamples("Right-Forward", cps_samples, pwm_samples);
 
+    Ser_PutString("Right-Backward Calibration\r\n");
     CalibrateWheelSpeed(RIGHT_WHEEL, BACKWARD_DIR, 5, cps_samples, pwm_samples);
     StoreWheelSpeedSamples(RIGHT_WHEEL, BACKWARD_DIR, cps_samples, pwm_samples);
-    if (verbose)
-    {
-        OutputSamples("Right-Backward", cps_samples, pwm_samples);
-    }
+    OutputSamples("Right-Backward", cps_samples, pwm_samples);
 
     Motor_LeftSetCalibration((CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_fwd, (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd);
     Motor_RightSetCalibration((CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd, (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd);
     
-    if (verbose)
-    {
-        Ser_PutString("Count/Sec to PWM Calibration complete.\r\n");
-    }
+    Ser_PutString("Motor calibration complete\r\n");
 }

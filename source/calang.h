@@ -3,6 +3,7 @@
     
 #include <project.h>    
     
-void PerformAngularBiasCalibration(uint8 verbose);
+void CalibrateAngularBias();
+void ValidateAngularBias();
     
 #endif

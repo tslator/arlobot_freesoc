@@ -15,7 +15,7 @@
 static float test_left_vel;
 static float test_right_vel;
 
-void PerformAngularBiasCalibration(uint8 verbose)
+void DoAngularBiasMotion()
 /*
     Set angular bias to 1.0
     Rotate 360 degrees
@@ -39,8 +39,6 @@ void PerformAngularBiasCalibration(uint8 verbose)
     float delta_heading;
     float last_heading;
     
-    // Reset angular bias
-    Nvstore_WriteFloat(1.0, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias));    
     ConvertLinearAngularToDifferential(0, TEST_ANGULAR_VEL, &test_left_vel, &test_right_vel);            
     
     turn_heading = 0;
@@ -75,4 +73,17 @@ void PerformAngularBiasCalibration(uint8 verbose)
     
     Motor_LeftSetCntsPerSec(0);
     Motor_RightSetCntsPerSec(0);
+}
+
+void CalibrateAngularBias()
+{
+    // Reset angular bias
+    Nvstore_WriteFloat(1.0, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias));
+    
+    DoAngularBiasMotion();
+}
+
+void ValidateAngularBias()
+{
+    DoAngularBiasMotion();
 }

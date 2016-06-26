@@ -103,6 +103,9 @@ int main()
         /* Diagnostic update */
         Diag_Update();
         
+        /* Keep the serial connection active */
+        Ser_Update();
+        
         LOOP_END();
     }
 }

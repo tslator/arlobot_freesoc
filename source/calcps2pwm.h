@@ -3,6 +3,6 @@
     
 #include <project.h>
     
-void PerformCountPerSecToPwmCalibration(uint8 verbose);    
+void PerformCountPerSecToPwmCalibration();    
     
 #endif    

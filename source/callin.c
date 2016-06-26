@@ -15,9 +15,8 @@
 
 static float dist_error;
 
-void PerformLinearBiasCalibration(uint8 verbose)
+void DoLinearBiasMotion()
 /* 
-    Set Linear Bias value to 1.0
     Move forward for 1 meter
         Get current position
         Stop motors
@@ -43,9 +42,6 @@ void PerformLinearBiasCalibration(uint8 verbose)
     float y_pos;
     dist_error = LINEAR_BIAS_DISTANCE;
     
-    // Reset linear bias
-    Nvstore_WriteFloat(1.0, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->linear_bias));
-    
     Odom_GetPosition(&x_start, &y_start);
     Motor_LeftSetCntsPerSec(0);
     Motor_RightSetCntsPerSec(0);
@@ -67,19 +63,18 @@ void PerformLinearBiasCalibration(uint8 verbose)
     
     Motor_LeftSetCntsPerSec(0);
     Motor_RightSetCntsPerSec(0);
-    
-    /* Pend on reading the linear bias (or timeout 60 seconds) */
-    float linear_bias;
-    uint32 wait_time = millis();
-    while (millis() - wait_time < 60000)
-    {
-        if (Ser_IsDataReady())
-        {
-            Ser_ReadFloat(&linear_bias);
-            
-            /* Store the linear bias into EEPROM */
-            Nvstore_WriteFloat(linear_bias, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->linear_bias));
-        }
-    }
-    
 }
+
+void CalibrateLinearBias()
+{
+    // Reset linear bias
+    Nvstore_WriteFloat(1.0, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->linear_bias));
+ 
+    DoLinearBiasMotion();
+}
+
+void ValidateLinearBias()
+{
+    DoLinearBiasMotion();
+}
+

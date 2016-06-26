@@ -25,6 +25,17 @@
 #include "callin.h"
 #include "calang.h"
 
+#define NO_CMD          (0)
+#define CAL_REQUEST     (1)
+#define MOTOR_CAL_CMD   (2)
+#define PID_CAL_CMD     (3)
+#define LIN_CAL_CMD     (4)
+#define LIN_VAL_CMD     (5)
+#define ANG_CAL_CMD     (6)
+#define ANG_VAL_CMD     (7)
+#define EXIT_CMD        (8)
+
+
 //#define DEFAULT_CALIBRATION
 #ifdef DEFAULT_CALIBRATION
 static CAL_DATA_TYPE left_fwd_cal_data = {
@@ -150,127 +161,200 @@ void Cal_Start()
     I2c_SetCalibrationStatusBit(p_cal_eeprom->status);
 }
 
-static float ReadFloat()
+static uint8 GetCommand()
 {
-    while (!Ser_IsDataReady())
+    static uint8 is_cal_active = 0;
+    char value = Ser_ReadByte();
+        
+    switch (value)
     {
-        ;
-    }
-    
-    char data[10];
-    uint8 index = 0;
-    
-    while (index < 10)
-    {
-        data[index] = Ser_ReadChar();
-        if (data[index] == '\r' || data[index] == '\n')
-        {
+        case 'c':
+        case 'C':
+            if (is_cal_active) return 0;
+            is_cal_active = 1;
+            return CAL_REQUEST;
             break;
-        }
-        index++;
-    }
+        
+        case '1':
+            Ser_WriteByte(value);
+            return MOTOR_CAL_CMD;
+            break;
+        
+        case '2':
+            Ser_WriteByte(value);
+            return PID_CAL_CMD;
+            break;
+        
+        case '3':
+            Ser_WriteByte(value);
+            return LIN_CAL_CMD;
+            break;
+            
+        case '4':
+            Ser_WriteByte(value);
+            return LIN_VAL_CMD;
     
-    return (float) atof(data);
+        case '5':
+            Ser_WriteByte(value);
+            return ANG_CAL_CMD;
+            break;
+            
+        case '6':
+            Ser_WriteByte(value);
+            return ANG_VAL_CMD;
+
+        case 'x':
+        case 'X':            
+            Ser_WriteByte(value);
+            is_cal_active = 0;
+            return EXIT_CMD;
+            break;
+        
+        default:
+            return NO_CMD;
+    }    
 }
 
-static uint8 CalibrationRequested()
+static void DisplayMenu()
 {
-    uint8 result = 0;
-    if (Ser_IsDataReady())
+    Ser_PutString("\r\nWelcome to the Arlobot calibration interface.\r\n");
+    Ser_PutString("The following calibration operations are allowed:\r\n");
+    Ser_PutString("    1. Motor Calibration - creates mapping between count/sec and PWM.\r\n");
+    Ser_PutString("    2. PID Calibration - determines the PID gains that minimizes velocity error.\r\n");
+    Ser_PutString("    3. Linear Bias - moves forward 1 meter and allows user to enter a ratio to be applied as a bias in linear motion\r\n");
+    Ser_PutString("    4. Validate Linear Bias - moves forward 1 meter applying the linear bias calculated in linear bias calibration\r\n");
+    Ser_PutString("    5. Angular Bias - rotates 360 degrees and allows user to enter a ratio to be applied as a bias in angular motion\r\n");
+    Ser_PutString("    6. Validate Angular Bias - rotates 360 degrees applying the angular bias calculated in angular bias calibration\r\n");
+    Ser_PutString("\r\nEnter X to exit menu\r\n");
+    Ser_PutString("\r\n");
+    Ser_PutString("Make an entry [1-4,X]: ");
+}
+
+static float ReadResponse()
+{
+    uint8 digits[6];
+    uint8 index = 0;
+    uint8 value;
+    do
     {
-        /* The only command supported is 'cal' */
-        char data;
+        Ser_Update();
         
-        data = Ser_ReadChar();
-        if (data == 'c')
+        value = Ser_ReadByte();
+        Ser_WriteByte(value);
+        if ( (value >= '0' && value <= '9') || value == '.')
         {
-            data = Ser_ReadChar();
-            if (data == 'a')
-            {
-                data = Ser_ReadChar();
-                if (data == 'l')
-                {
-                    Ser_FlushRead();
-                    result = 1;
-                }
-            }
+            digits[index] = value;
+            index++;
         }
-    }
+    } while (index < 5);
+    
+    digits[5] = '\0';
+    
+    float result = atof((char *) digits);
     
     return result;
 }
 
-void Cal_ReadControl()
+static void DisplayBias(char *label, float bias)
+{
+    char bias_str[6];
+    char output[64];
+    
+    ftoa(bias, bias_str, 3);
+    sprintf(output, "\r\n%s bias: %s\r\n", label, bias_str);
+    Ser_PutString(output);
+}
+
+void Cal_CheckRequest()
 {    
-    if (CalibrationRequested())
+    uint8 cmd;
+    
+    do
     {
-        uint8 verbose;
-        
-        /* Print out a menu */
-        Ser_PutString("\r\nWelcome to the Arlobot calibration interface.\r\n");
-        Ser_PutString("The following calibration operations are allowed:\r\n");
-        Ser_PutString("    1. Motor Calibration - creates mapping between count/sec and PWM.\r\n");
-        Ser_PutString("    2. PID Calibration - determines the PID gains that minimizes velocity error.\r\n");
-        Ser_PutString("    3. Linear Bias - moves forward 1 meter and allows user to enter a ratio to be applied as a bias in linear motion\r\n");
-        Ser_PutString("    4. Angular Bias - rotates 360 degrees and allows user to enter a ratio to be applied as a bias in angular motion\r\n");
-        Ser_PutString("\r\n");
-        Ser_PutString("Enter a number [1-4]: ");
-        char action = Ser_ReadChar();
-        Ser_PutString("Enter output level (1-verbose, 0-None): ");
-        char level = Ser_ReadChar();
-        
-        verbose = level == '1' ? 1 : 0;
-        
-        switch (action)
+        Ser_Update();
+
+        cmd = GetCommand();
+
+        switch (cmd)
         {
-            case '1':
+            case CAL_REQUEST:
+                DisplayMenu();
+                break;
+                
+            case MOTOR_CAL_CMD:
                 ClearCalibrationStatusBit(CAL_COUNT_PER_SEC_TO_PWM_BIT);
-                PerformCountPerSecToPwmCalibration(verbose);
+                PerformCountPerSecToPwmCalibration();
                 SetCalibrationStatusBit(CAL_COUNT_PER_SEC_TO_PWM_BIT);
+                DisplayMenu();
                 break;
                 
-            case '2':
+            case PID_CAL_CMD:
                 ClearCalibrationStatusBit(CAL_PID_BIT);
-                PerformPidCalibration(verbose);
+                PerformPidCalibration();
                 SetCalibrationStatusBit(CAL_PID_BIT);
+                DisplayMenu();
                 break;
                 
-            case '3':
+            case LIN_CAL_CMD:
+                Ser_PutString("\r\nPerforming linear bias calibration\r\n");
                 ClearCalibrationStatusBit(CAL_LINEAR_BIAS_BIT);
-                PerformLinearBiasCalibration(verbose);
+                CalibrateLinearBias();
                 
-                /* Pend on reading the linear bias */
-                Ser_PutString("Enter the measured distance traveled in meters (up to 3 significant digits): ");
-                float measured_distance = ReadFloat();
-                
-                float linear_bias = 1.0 / measured_distance;
+                Ser_PutString("Enter the measured distance in meters, e.g. 1.023, (5 characters max): ");
+                float meas_dist = ReadResponse();
+                float linear_bias = 1.0 / meas_dist;
+                DisplayBias("linear", linear_bias);
                 
                 /* Store the linear bias into EEPROM */
                 Nvstore_WriteFloat(linear_bias, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->linear_bias));
                 
                 SetCalibrationStatusBit(CAL_LINEAR_BIAS_BIT);
+                Ser_PutString("Linear bias calibration complete\r\n");
+                DisplayMenu();
                 break;
                 
-            case '4':
+            case LIN_VAL_CMD:
+                /* Validate the linear bias setting */
+                Ser_PutString("\r\nValidating linear bias calibration\r\n");
+                ValidateLinearBias();
+                Ser_PutString("Linear bias validation complete\r\n");
+                break;
+                
+            case ANG_CAL_CMD:
+                Ser_PutString("\r\nPerforming angular bias calibration\r\n");
                 ClearCalibrationStatusBit(CAL_ANGULAR_BIAS_BIT);
-                PerformAngularBiasCalibration(verbose);
+                CalibrateAngularBias();
                 
-                /* Pend on reading the angular bias */
-                Ser_PutString("Enter the measured rotation in degrees (up to 3 significant digits): ");
-                float measured_rotation = ReadFloat();
+                Ser_PutString("Enter the measured rotation in degrees, e.g. 345.0, (5 characters max): ");
+                float meas_rotation = ReadResponse();
+                float angular_bias = 360 / meas_rotation;
+                DisplayBias("angular", angular_bias);
                 
-                float angular_bias = 360.0 / measured_rotation;
-
                 /* Store the angular bias into EEPROM */
                 Nvstore_WriteFloat(angular_bias, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias));
                 
                 SetCalibrationStatusBit(CAL_ANGULAR_BIAS_BIT);
+                Ser_PutString("Angular bias calibration complete\r\n");
+                DisplayMenu();
                 break;
                 
+            case ANG_VAL_CMD:
+                /* Validate the angular bias setting */
+                Ser_PutString("\r\nValidating angular bias calibration\r\n");
+                ValidateAngularBias();
+                Ser_PutString("Angular bias validation complete\r\n");
+                break;
+                
+            case EXIT_CMD:
+                Ser_PutString("\r\nExiting calibration\r\n");
+                break; 
+                
             default:
+                /* No command, so do nothing */
                 break;
         }
-    }
+    } while (cmd != EXIT_CMD && cmd != NO_CMD);
+    
 }
 
 void Cal_LeftGetMotorCalData(CAL_DATA_TYPE **fwd_cal_data, CAL_DATA_TYPE **bwd_cal_data)

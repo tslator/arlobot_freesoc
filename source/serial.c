@@ -51,17 +51,63 @@ void Ser_Start()
     }
 }
 
-void Ser_PutString(char *str)
+void Ser_Update()
 {
-    if (0u != USBUART_GetConfiguration())
-    {    
-        if (USBUART_CDCIsReady())
+    ///* Host can send double SET_INTERFACE request. */
+    if (0u != USBUART_IsConfigurationChanged())
+    {
+        /* Initialize IN endpoints when device is configured. */
+        if (0u != USBUART_GetConfiguration())
         {
-            USBUART_PutString(str);
+            /* Enumeration is done, enable OUT endpoint to receive data 
+             * from host. */
+            USBUART_CDC_Init();
         }
     }
 }
 
+void Ser_PutString(char *str)
+{
+    Ser_Update();
+    
+    if (0u != USBUART_GetConfiguration())
+    {
+        while (0u == USBUART_CDCIsReady())
+        {
+        }
+        
+        USBUART_PutString(str);
+    }
+}
+
+uint8 Ser_ReadByte()
+{
+    /* Service USB CDC when device is configured. */
+    if (0u != USBUART_GetConfiguration())
+    {
+        /* Check for input data from host. */
+        if (0u != USBUART_DataIsReady())
+        {
+            /* Read received data and re-enable OUT endpoint. */
+            return USBUART_GetChar();
+        }
+    }
+    return 0;
+}
+
+void Ser_WriteByte(uint8 value)
+{
+    if (0u != USBUART_GetConfiguration())
+    {
+        while (0u == USBUART_CDCIsReady())
+        {
+        }
+        
+        USBUART_PutChar(value);
+    }
+}
+
+#ifdef xxx
 uint8 Ser_IsDataReady()
 {
     uint8 result = 0;
@@ -74,17 +120,6 @@ uint8 Ser_IsDataReady()
     }
     
     return result;
-}
-
-void Ser_ReadFloat(float *value)
-{
-    if (0u != USBUART_GetConfiguration())
-    {    
-        if (USBUART_CDCIsReady())
-        {
-            USBUART_GetAll((uint8 *) value);
-        }
-    }
 }
 
 void Ser_ReadString(char *str)
@@ -129,5 +164,7 @@ void Ser_FlushRead()
         }
     }
 }
+#endif
+
 
 /* [] END OF FILE */

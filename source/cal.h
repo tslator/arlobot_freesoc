@@ -106,7 +106,7 @@ void Cal_RightGetMotorCalData(CAL_DATA_TYPE **fwd_cal_data, CAL_DATA_TYPE **bwd_
 CAL_PID_TYPE* Cal_LeftGetPidGains();
 CAL_PID_TYPE* Cal_RightGetPidGains();
 
-void Cal_ReadControl();
+void Cal_CheckRequest();
 
 #endif
 

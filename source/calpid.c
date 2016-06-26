@@ -1,8 +1,10 @@
+#include <stdio.h>
 #include "calpid.h"
 #include "cal.h"
 #include "serial.h"
 #include "nvstore.h"
 #include "pid.h"
+#include "utils.h"
 
 extern volatile CAL_EEPROM_TYPE *p_cal_eeprom;
 
@@ -71,11 +73,27 @@ static void StoreRightGains(float *gains)
     Nvstore_WriteFloat(gains[2], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.kd));
 }
 
+static void OutputGains(char *label, float *gains)
+{
+    char output[64];
+    char pgain_str[10];
+    char igain_str[10];
+    char dgain_str[10];
+    
+    ftoa(gains[0], pgain_str, 3);
+    ftoa(gains[1], igain_str, 3);
+    ftoa(gains[2], dgain_str, 3);
+    
+    sprintf(output, "%s - P: %s, I: %s, D: %s\r\n", label, pgain_str, igain_str, dgain_str);
+    Ser_PutString(output);
+}
+
 static void DoLeftTwiddle()
 {
     float gains[3];
     Twiddle(Pid_LeftStepInput, gains, STEP_INPUT, TIME_IN_MS);
     StoreLeftGains(gains);
+    OutputGains("Left", gains);
 }
 
 static void DoRightTwiddle()
@@ -83,9 +101,10 @@ static void DoRightTwiddle()
     float gains[3];
     Twiddle(Pid_RightStepInput, gains, STEP_INPUT, TIME_IN_MS);
     StoreRightGains(gains);
+    OutputGains("Right", gains);
 }
 
-void PerformPidCalibration(uint8 verbose)
+void PerformPidCalibration()
 /* 
     Clear PID calibration bit
     Do twiddle on left PID
@@ -95,16 +114,12 @@ void PerformPidCalibration(uint8 verbose)
     Update PID calibration bit in EEPROM
  */
 {
-    if (verbose)
-    {
-        Ser_PutString("Starting PID calibration ...\r\n");
-    }
+    Ser_PutString("\r\nPerforming pid calibration\r\n");
 
+    Ser_PutString("Left PID calibration\r\n");
     DoLeftTwiddle();
+    Ser_PutString("Right PID calibration\r\n");
     DoRightTwiddle();   
     
-    if (verbose)
-    {
-        Ser_PutString("PID Calibration complete.\r\n");
-    }
+    Ser_PutString("PID calibration complete\r\n");
 }

@@ -3,6 +3,7 @@
     
 #include <project.h>    
 
-void PerformLinearBiasCalibration(uint8 verbose);
+void CalibrateLinearBias();
+void ValidateLinearBias();
 
 #endif    

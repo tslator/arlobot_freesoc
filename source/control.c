@@ -79,7 +79,7 @@ void Control_Update()
 #endif
 
     /* Check if calibration is requested */
-    Cal_ReadControl();
+    Cal_CheckRequest();
     
     CalculateLeftRightSpeed();   
 }

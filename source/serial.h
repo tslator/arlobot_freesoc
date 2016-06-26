@@ -14,11 +14,15 @@
 
 void Ser_Init();
 void Ser_Start();
+void Ser_Update();
+
 void Ser_PutString(char *str);
-void Ser_ReadFloat(float *value);
-uint8 Ser_IsDataReady();
-void Ser_ReadString(char *str);
-char Ser_ReadChar();
-void Ser_FlushRead();
+uint8 Ser_ReadByte();
+void Ser_WriteByte(uint8 value);
+//uint8 Ser_IsDataReady();
+//void Ser_ReadString(char *str);
+//char Ser_ReadChar();
+//void Ser_FlushRead();
+
 
 /* [] END OF FILE */
