@@ -53,7 +53,7 @@ void Ser_Start()
 
 void Ser_Update()
 {
-    ///* Host can send double SET_INTERFACE request. */
+    /* Host can send double SET_INTERFACE request. */
     if (0u != USBUART_IsConfigurationChanged())
     {
         /* Initialize IN endpoints when device is configured. */
@@ -106,65 +106,5 @@ void Ser_WriteByte(uint8 value)
         USBUART_PutChar(value);
     }
 }
-
-#ifdef xxx
-uint8 Ser_IsDataReady()
-{
-    uint8 result = 0;
-    if (0u != USBUART_GetConfiguration())
-    {    
-        if (USBUART_CDCIsReady())
-        {
-            result = USBUART_DataIsReady();
-        }
-    }
-    
-    return result;
-}
-
-void Ser_ReadString(char *str)
-{
-    if (0u != USBUART_GetConfiguration())
-    {    
-        if (USBUART_CDCIsReady())
-        {
-            if (USBUART_DataIsReady())
-            {
-                USBUART_GetAll((uint8 *) str);
-            }
-        }
-    }
-}
-
-char Ser_ReadChar()
-{
-    char data = 0;
-    if (0u != USBUART_GetConfiguration())
-    {    
-        if (USBUART_CDCIsReady())
-        {
-            if (USBUART_DataIsReady())
-            {
-                data = USBUART_GetChar();
-            }
-        }
-    }
-    
-    return data;
-}
-
-void Ser_FlushRead()
-{
-    char data[10];
-    if (0u != USBUART_GetConfiguration())
-    {    
-        if (USBUART_CDCIsReady())
-        {
-            USBUART_GetAll((uint8 *) data);
-        }
-    }
-}
-#endif
-
 
 /* [] END OF FILE */

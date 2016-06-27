@@ -20,7 +20,7 @@
 #include "serial.h"
 #include "pid.h"
 #include "nvstore.h"
-#include "calcps2pwm.h"
+#include "calmotor.h"
 #include "calpid.h"
 #include "callin.h"
 #include "calang.h"
@@ -283,7 +283,7 @@ void Cal_CheckRequest()
                 
             case MOTOR_CAL_CMD:
                 ClearCalibrationStatusBit(CAL_COUNT_PER_SEC_TO_PWM_BIT);
-                PerformCountPerSecToPwmCalibration();
+                PerformMotorCalibration();
                 SetCalibrationStatusBit(CAL_COUNT_PER_SEC_TO_PWM_BIT);
                 DisplayMenu();
                 break;
@@ -387,10 +387,6 @@ CAL_PID_TYPE * Cal_LeftGetPidGains()
 CAL_PID_TYPE * Cal_RightGetPidGains()
 {
     return (CAL_PID_TYPE *) &p_cal_eeprom->right_gains;
-}
-
-void Cal_Validate()
-{
 }
 
 /* [] END OF FILE */

@@ -3,6 +3,6 @@
     
 #include <project.h>
     
-void PerformCountPerSecToPwmCalibration();    
+void PerformMotorCalibration();    
     
 #endif    

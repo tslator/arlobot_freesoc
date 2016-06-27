@@ -85,5 +85,11 @@ void CalibrateAngularBias()
 
 void ValidateAngularBias()
 {
+    /* Note: consider whether calibration should be done in both directions: CW and CCW and the average taken as the
+       actual angular bias.  There would need to be some interaction with the user to mark a new starting position
+       after the first motion.
+     */
+    
+    
     DoAngularBiasMotion();
 }

@@ -41,44 +41,38 @@
                                                                 - Bit 2: Enable/Disable Motor debug
                                                                 - Bit 3: Enable/Disable Odometry debug
                                                                 - Bit 4: Enable/Disable Sample debug
-      04           2         [calibration control]          the calibration register controls robot calibration
-                                                                - bit 0: Count/Sec to PWM
-                                                                - bit 1: PID
-                                                                - bit 2: Linear Bias
-                                                                - bit 3: Angular Bias
-                                                                - bit 7: Verbose (writes data to serial port)
         <---- Commanded Velocity ---->
-      06           4         [linear commanded velocity]    commanded linear velocity in meter/second
-      10           4         [angular commanded velocity]   commanded angular velocity in radian/second
+      04           4         [linear commanded velocity]    commanded linear velocity in meter/second
+      08           4         [angular commanded velocity]   commanded angular velocity in radian/second
     ------------------------------ Read/Write Boundary --------------------------------------------
-      14           2         [device status]                contains bits that represent the status of the Psoc device
+      12           2         [device status]                contains bits that represent the status of the Psoc device
                                                                - Bit 0: HB25 Motor Controller Initialized
-      16           2         [calibration status]           contains bits that represent the calibration state
+      14           2         [calibration status]           contains bits that represent the calibration state
                                                                - Bit 0: Count/Sec to PWM
                                                                - Bit 1: PID
                                                                - Bit 2: Linear Bias
                                                                - Bit 3: Angular Bias
            <------ Odometry ------>
-      18           4         [x distance]                   measured x distance
-      22           4         [y distance]                   measured y distance
-      26           4         [heading]                      measured heading
-      30           4         [linear velocity]              measured linear velocity
-      34           4         [angular velocity]             measured angular velocity
+      16           4         [x distance]                   measured x distance
+      20           4         [y distance]                   measured y distance
+      28           4         [heading]                      measured heading
+      32           4         [linear velocity]              measured linear velocity
+      36           4         [angular velocity]             measured angular velocity
           <------ Ultrasonic ------>
-      38          16         [front ultrasonic distance]    ultrasonic distance is an array of 
+      40          16         [front ultrasonic distance]    ultrasonic distance is an array of 
                                                             distances from the ultrasonic sensors in 
                                                             centimeters, range 2 to 500
-      54          16         [rear ultrasonic distance]     ultrasonic distance is an array of 
+      56          16         [rear ultrasonic distance]     ultrasonic distance is an array of 
                                                             distances from the ultrasonic sensors in 
                                                             centimeters, range 2 to 500
            <------ Infrared ------>
-      70           8         [infrared distance]            infrared distance is an array of distances 
+      72           8         [infrared distance]            infrared distance is an array of distances 
                                                             from the infrared sensors in centimeters, 
                                                             range 10 to 80
-      78           8         [infrared distance]            infrared distance is an array of distances 
+      80           8         [infrared distance]            infrared distance is an array of distances 
                                                             from the infrared sensors in centimeters, 
                                                             range 10 to 80
-      86           4         [heartbeat]                    used for testing the i2c communication
+      88           4         [heartbeat]                    used for testing the i2c communication
  */
 
 /* Define the portion of the I2C Slave that Read/Write */
@@ -86,7 +80,6 @@ typedef struct
 {
     uint16 device_control;
     uint16 debug_control;
-    uint16 calibration_control;
     float  linear_cmd_velocity;
     float  angular_cmd_velocity;
 } __attribute__ ((packed)) READWRITE_TYPE;
@@ -177,8 +170,7 @@ void I2c_Start()
     EZI2C_Slave_SetBuffer1(sizeof(i2c_buf), sizeof(i2c_buf.read_write), (volatile uint8 *) &i2c_buf);
     
     /* Read the calibration status from EEPROM and mirror in calibration_status */
-    i2c_buf.read_write.calibration_control = p_cal_eeprom->status;
-    //i2c_buf.read_write.calibration_control = 0x0008;
+    i2c_buf.read_only.calibration_status = p_cal_eeprom->status;
 }
 
 uint16 I2c_ReadDeviceControl()
@@ -202,19 +194,6 @@ uint16 I2c_ReadDebugControl()
     EZI2C_Slave_DisableInt();
     value = i2c_buf.read_write.debug_control;
     i2c_buf.read_write.debug_control = 0;
-    EZI2C_Slave_EnableInt();
-    
-    return value;
-}
-
-uint16 I2c_ReadCalibrationControl()
-{
-    uint16 value;
-    
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
-    value = i2c_buf.read_write.calibration_control;
-    i2c_buf.read_write.calibration_control = 0;
     EZI2C_Slave_EnableInt();
     
     return value;

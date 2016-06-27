@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "calcps2pwm.h"
+#include "calmotor.h"
 #include "motor.h"
 #include "pwm.h"
 #include "nvstore.h"
@@ -209,7 +209,7 @@ static void OutputSamples(char *label, int32 *cps_samples, uint16 *pwm_samples)
     Ser_PutString(buffer);
 }
 
-void PerformCountPerSecToPwmCalibration()
+void PerformMotorCalibration()
 /* 
     Clear Count/Sec to PWM calibration bit
     Perform left/right forward/reverse calibration

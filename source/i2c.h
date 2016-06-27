@@ -17,13 +17,9 @@
     
 #define CONTROL_DISABLE_MOTOR_BIT        (0x0001)
 #define CONTROL_CLEAR_ODOMETRY_BIT       (0x0002)
-#define CONTROL_ENABLE_CALIBRATION_BIT   (0x0004)
-#define CONTROL_VALIDATE_CALIBRATION_BIT (0x0008)
     
 
 #define STATUS_HB25_CNTRL_INIT_BIT (0x0001)
-#define STATUS_CALIBRATED_BIT      (0x0002)
-#define STATUS_CALIBRATING_BIT     (0x0004)
 
     
 
@@ -32,14 +28,12 @@ void I2c_Start();
 
 uint16 I2c_ReadDeviceControl();
 uint16 I2c_ReadDebugControl();
-uint16 I2c_ReadCalibrationControl();
 void I2c_ReadCmdVelocity(float *linear, float *angular);
 
 void I2c_SetDeviceStatusBit(uint16 bit);
 void I2c_ClearDeviceStatusBit(uint16 bit);
 void I2c_SetCalibrationStatusBit(uint16 bit);
 void I2c_ClearCalibrationStatusBit(uint16 bit);
-
 void I2c_WriteFrontUltrasonicDistance(uint8 offset, uint16 distance);
 void I2c_WriteRearUltrasonicDistance(uint8 offset, uint16 distance);
 void I2c_WriteFrontInfraredDistance(uint8 offset, uint8 distance);

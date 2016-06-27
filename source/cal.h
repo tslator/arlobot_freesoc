@@ -25,20 +25,6 @@
        bias offset.
     4. Angular Bias - under control of an external application, rotates 360 degrees, stops and waits to receive angular
        bias offset.
-    
-    
-    I think the cal module should be the central module through which all of the different calibrations are handled.
-    The control module should detect that calibration has been invoked (a non-zero value in the calibration control)
-    and call Cal_Update.
-    
-    Cal_Update will parse the calibration control and dispatch the approach calibration
-        Ex
-            if (cal_control & CAL_COUNT_PER_SEC_TO_PWM_BIT) -> perform count/sec to pwm calibration
-            if (cal_control & CAL_PID_BIT)                  -> perform PID gain calibration
-            if (cal_control & CAL_LINEAR_BIAS)              -> perform linear bias calibration
-            if (cal_control & CAL_ANGULAR_BIAS)             -> perform angular bias calibration
-    
-    
  */
     
 /* Calibration control/status bits */
@@ -98,8 +84,6 @@ volatile CAL_EEPROM_TYPE *p_cal_eeprom;
 
 void Cal_Init();
 void Cal_Start();
-void Cal_Update(uint16 status);
-void Cal_Validate();
 
 void Cal_LeftGetMotorCalData(CAL_DATA_TYPE **fwd_cal_data, CAL_DATA_TYPE **bwd_cal_data);
 void Cal_RightGetMotorCalData(CAL_DATA_TYPE **fwd_cal_data, CAL_DATA_TYPE **bwd_cal_data);
