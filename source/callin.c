@@ -67,14 +67,27 @@ void DoLinearBiasMotion()
 
 void CalibrateLinearBias()
 {
-    // Reset linear bias
+    Ser_PutString("\r\nPerforming linear bias calibration\r\n");
+                
     Nvstore_WriteFloat(1.0, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->linear_bias));
- 
+
     DoLinearBiasMotion();
+    
+    Ser_PutString("Enter the measured distance in meters (enter 5 chars), e.g., 1.023 : ");
+    float meas_dist = Cal_ReadResponse();
+    float linear_bias = 1.0 / meas_dist;
+    Cal_DisplayBias("linear", linear_bias);
+    
+    /* Store the linear bias into EEPROM */
+    Nvstore_WriteFloat(linear_bias, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->linear_bias));
+    Ser_PutString("Linear bias calibration complete\r\n");
+    
 }
 
 void ValidateLinearBias()
 {
+    Ser_PutString("\r\nValidating linear bias calibration\r\n");
     DoLinearBiasMotion();
+    Ser_PutString("Linear bias validation complete\r\n");
 }
 

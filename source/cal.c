@@ -28,12 +28,14 @@
 #define NO_CMD          (0)
 #define CAL_REQUEST     (1)
 #define MOTOR_CAL_CMD   (2)
-#define PID_CAL_CMD     (3)
-#define LIN_CAL_CMD     (4)
-#define LIN_VAL_CMD     (5)
-#define ANG_CAL_CMD     (6)
-#define ANG_VAL_CMD     (7)
-#define EXIT_CMD        (8)
+#define MOTOR_VAL_CMD   (3)
+#define PID_CAL_CMD     (4)
+#define PID_VAL_CMD     (5)
+#define LIN_CAL_CMD     (6)
+#define LIN_VAL_CMD     (7)
+#define ANG_CAL_CMD     (8)
+#define ANG_VAL_CMD     (9)
+#define EXIT_CMD        (10)
 
 
 //#define DEFAULT_CALIBRATION
@@ -179,27 +181,37 @@ static uint8 GetCommand()
             Ser_WriteByte(value);
             return MOTOR_CAL_CMD;
             break;
-        
+            
         case '2':
             Ser_WriteByte(value);
-            return PID_CAL_CMD;
+            return MOTOR_VAL_CMD;
             break;
         
         case '3':
             Ser_WriteByte(value);
-            return LIN_CAL_CMD;
+            return PID_CAL_CMD;
             break;
             
         case '4':
             Ser_WriteByte(value);
+            return PID_VAL_CMD;
+            break;
+        
+        case '5':
+            Ser_WriteByte(value);
+            return LIN_CAL_CMD;
+            break;
+            
+        case '6':
+            Ser_WriteByte(value);
             return LIN_VAL_CMD;
     
-        case '5':
+        case '7':
             Ser_WriteByte(value);
             return ANG_CAL_CMD;
             break;
             
-        case '6':
+        case '8':
             Ser_WriteByte(value);
             return ANG_VAL_CMD;
 
@@ -220,17 +232,22 @@ static void DisplayMenu()
     Ser_PutString("\r\nWelcome to the Arlobot calibration interface.\r\n");
     Ser_PutString("The following calibration operations are allowed:\r\n");
     Ser_PutString("    1. Motor Calibration - creates mapping between count/sec and PWM.\r\n");
-    Ser_PutString("    2. PID Calibration - determines the PID gains that minimizes velocity error.\r\n");
-    Ser_PutString("    3. Linear Bias - moves forward 1 meter and allows user to enter a ratio to be applied as a bias in linear motion\r\n");
-    Ser_PutString("    4. Validate Linear Bias - moves forward 1 meter applying the linear bias calculated in linear bias calibration\r\n");
-    Ser_PutString("    5. Angular Bias - rotates 360 degrees and allows user to enter a ratio to be applied as a bias in angular motion\r\n");
-    Ser_PutString("    6. Validate Angular Bias - rotates 360 degrees applying the angular bias calculated in angular bias calibration\r\n");
-    Ser_PutString("\r\nEnter X to exit menu\r\n");
+    Ser_PutString("    2. Motor Validation - operates the motors at varying velocities.\r\n");
     Ser_PutString("\r\n");
-    Ser_PutString("Make an entry [1-4,X]: ");
+    Ser_PutString("    3. PID Calibration - determines the PID gains that minimizes velocity error.\r\n");
+    Ser_PutString("    4. PID Validation - operates the motors at varying velocities.\r\n");
+    Ser_PutString("\r\n");
+    Ser_PutString("    5. Linear Bias - moves forward 1 meter and allows user to enter a ratio to be applied as a bias in linear motion\r\n");
+    Ser_PutString("    6. Validate Linear Bias - moves forward 1 meter applying the linear bias calculated in linear bias calibration\r\n");
+    Ser_PutString("\r\n");
+    Ser_PutString("    7. Angular Bias - rotates 360 degrees and allows user to enter a ratio to be applied as a bias in angular motion\r\n");
+    Ser_PutString("    8. Validate Angular Bias - rotates 360 degrees applying the angular bias calculated in angular bias calibration\r\n");
+    Ser_PutString("\r\nEnter X to exit calibration, C to enter calibration\r\n");
+    Ser_PutString("\r\n");
+    Ser_PutString("Make an entry [1-8,X]: ");
 }
 
-static float ReadResponse()
+float Cal_ReadResponse()
 {
     uint8 digits[6];
     uint8 index = 0;
@@ -255,7 +272,7 @@ static float ReadResponse()
     return result;
 }
 
-static void DisplayBias(char *label, float bias)
+void Cal_DisplayBias(char *label, float bias)
 {
     char bias_str[6];
     char output[64];
@@ -288,6 +305,24 @@ void Cal_CheckRequest()
                 DisplayMenu();
                 break;
                 
+            case MOTOR_VAL_CMD:
+                /* Check that a commanded cps results in an expected PWM based on the calibration 
+                   Choose 5 cps across the range of velocities
+                
+                ValidateMotorVelocity();
+                    - get cps range (max - min)
+                    - avoid the dead zone and max speed.  limit range to 50 to 200 cps
+                    - 200 - 50 = 150 / 5 = 30
+                    - 50, 80, 110, 140, 170, 200
+                    - run each speed for 5 seconds
+                    - print the cps, mps, and pwm values
+                
+                Validation should be done in both forward and reverse directions for both wheels
+                    - Apply the same speeds in both forward and reverse directions
+                
+                 */
+                break;
+                
             case PID_CAL_CMD:
                 ClearCalibrationStatusBit(CAL_PID_BIT);
                 PerformPidCalibration();
@@ -295,54 +330,44 @@ void Cal_CheckRequest()
                 DisplayMenu();
                 break;
                 
+            case PID_VAL_CMD:
+                /* 
+                    Validates the PID settings
+                
+                    What does it mean to validate the PID?
+                        - Ensure that both motors operate at the commanded speed
+                    What is the motors have different actual speeds for the same commanded speed?
+                        - Where can we apply a bias to correct this?
+                    If the motor velocities are correct why would this be a problem?
+                        - Could response time be a factor here?  I.E., one motor takes longer to reduce velocity error?
+                    Maybe there is another parameter to PID calibration to ensure that they have comparable response times?
+                        
+                
+                 */
+                break;
+                
             case LIN_CAL_CMD:
-                Ser_PutString("\r\nPerforming linear bias calibration\r\n");
                 ClearCalibrationStatusBit(CAL_LINEAR_BIAS_BIT);
                 CalibrateLinearBias();
-                
-                Ser_PutString("Enter the measured distance in meters, e.g. 1.023, (5 characters max): ");
-                float meas_dist = ReadResponse();
-                float linear_bias = 1.0 / meas_dist;
-                DisplayBias("linear", linear_bias);
-                
-                /* Store the linear bias into EEPROM */
-                Nvstore_WriteFloat(linear_bias, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->linear_bias));
-                
                 SetCalibrationStatusBit(CAL_LINEAR_BIAS_BIT);
-                Ser_PutString("Linear bias calibration complete\r\n");
                 DisplayMenu();
                 break;
                 
             case LIN_VAL_CMD:
-                /* Validate the linear bias setting */
-                Ser_PutString("\r\nValidating linear bias calibration\r\n");
                 ValidateLinearBias();
-                Ser_PutString("Linear bias validation complete\r\n");
+                DisplayMenu();
                 break;
                 
             case ANG_CAL_CMD:
-                Ser_PutString("\r\nPerforming angular bias calibration\r\n");
                 ClearCalibrationStatusBit(CAL_ANGULAR_BIAS_BIT);
                 CalibrateAngularBias();
-                
-                Ser_PutString("Enter the measured rotation in degrees, e.g. 345.0, (5 characters max): ");
-                float meas_rotation = ReadResponse();
-                float angular_bias = 360 / meas_rotation;
-                DisplayBias("angular", angular_bias);
-                
-                /* Store the angular bias into EEPROM */
-                Nvstore_WriteFloat(angular_bias, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias));
-                
                 SetCalibrationStatusBit(CAL_ANGULAR_BIAS_BIT);
-                Ser_PutString("Angular bias calibration complete\r\n");
                 DisplayMenu();
                 break;
                 
             case ANG_VAL_CMD:
-                /* Validate the angular bias setting */
-                Ser_PutString("\r\nValidating angular bias calibration\r\n");
                 ValidateAngularBias();
-                Ser_PutString("Angular bias validation complete\r\n");
+                DisplayMenu();
                 break;
                 
             case EXIT_CMD:

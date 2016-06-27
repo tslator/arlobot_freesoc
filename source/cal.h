@@ -93,6 +93,9 @@ CAL_PID_TYPE* Cal_LeftGetPidGains();
 CAL_PID_TYPE* Cal_RightGetPidGains();
 
 void Cal_CheckRequest();
+float Cal_ReadResponse();
+void Cal_DisplayBias(char *label, float bias);
+
 
 #endif
 

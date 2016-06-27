@@ -77,10 +77,21 @@ void DoAngularBiasMotion()
 
 void CalibrateAngularBias()
 {
-    // Reset angular bias
+    Ser_PutString("\r\nPerforming angular bias calibration\r\n");
+
     Nvstore_WriteFloat(1.0, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias));
     
     DoAngularBiasMotion();
+                
+    Ser_PutString("Enter the measured rotation in degrees (enter 5 chars), e.g., 345.0 : ");
+    float meas_rotation = Cal_ReadResponse();
+    float angular_bias = 360.0 / meas_rotation;
+    Cal_DisplayBias("angular", angular_bias);
+    
+    /* Store the angular bias into EEPROM */
+    Nvstore_WriteFloat(angular_bias, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias));
+    Ser_PutString("Angular bias calibration complete\r\n");
+    
 }
 
 void ValidateAngularBias()
@@ -90,6 +101,7 @@ void ValidateAngularBias()
        after the first motion.
      */
     
-    
+    Ser_PutString("\r\nValidating angular bias calibration\r\n");
     DoAngularBiasMotion();
+    Ser_PutString("Angular bias validation complete\r\n");
 }
