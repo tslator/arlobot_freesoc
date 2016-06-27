@@ -75,7 +75,7 @@ void Control_Update()
     
 #ifdef COMMS_DEBUG_ENABLED
     // When debug is enabled, the bitmap can be used to turn on/off specific debug, e.g., encoder, pid, odom, etc.
-    control = I2c_ReadDebugControl();
+    debug_control_enabled = I2c_ReadDebugControl();
 #endif
 
     /* Check if calibration is requested */

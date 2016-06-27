@@ -21,11 +21,11 @@
 #ifdef COMMS_DEBUG_ENABLED
 
 /* Debug enable/disable bits */
-#define DEBUG_ENCODER_ENABLE_BIT    (0)
-#define DEBUG_PID_ENABLE_BIT        (1)
-#define DEBUG_MOTOR_ENABLE_BIT      (2)
-#define DEBUG_ODOM_ENABLE_BIT       (3)
-#define DEBUG_SAMPLE_ENABLE_BIT     (4)
+#define DEBUG_ENCODER_ENABLE_BIT    (0x0001)
+#define DEBUG_PID_ENABLE_BIT        (0x0002)
+#define DEBUG_MOTOR_ENABLE_BIT      (0x0004)
+#define DEBUG_ODOM_ENABLE_BIT       (0x0008)
+#define DEBUG_SAMPLE_ENABLE_BIT     (0x0010)
     
 
 //#define LEFT_PID_DUMP_ENABLED
