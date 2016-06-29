@@ -4,5 +4,6 @@
 #include <project.h>
     
 void PerformMotorCalibration();    
-    
+void ValidateMotorVelocity();
+
 #endif    

@@ -21,19 +21,22 @@
 #ifdef COMMS_DEBUG_ENABLED
 
 /* Debug enable/disable bits */
-#define DEBUG_ENCODER_ENABLE_BIT    (0x0001)
-#define DEBUG_PID_ENABLE_BIT        (0x0002)
-#define DEBUG_MOTOR_ENABLE_BIT      (0x0004)
-#define DEBUG_ODOM_ENABLE_BIT       (0x0008)
-#define DEBUG_SAMPLE_ENABLE_BIT     (0x0010)
+#define DEBUG_LEFT_ENCODER_ENABLE_BIT   (0x0001)
+#define DEBUG_RIGHT_ENCODER_ENABLE_BIT  (0x0002)
+#define DEBUG_LEFT_PID_ENABLE_BIT       (0x0004)
+#define DEBUG_RIGHT_PID_ENABLE_BIT      (0x0008)
+#define DEBUG_LEFT_MOTOR_ENABLE_BIT     (0x0010)
+#define DEBUG_RIGHT_MOTOR_ENABLE_BIT    (0x0020)
+#define DEBUG_ODOM_ENABLE_BIT           (0x0040)
+#define DEBUG_SAMPLE_ENABLE_BIT         (0x0080)
     
 
 //#define LEFT_PID_DUMP_ENABLED
-//#define LEFT_ENC_DUMP_ENABLED
+#define LEFT_ENC_DUMP_ENABLED
 //#define RIGHT_PID_DUMP_ENABLED
-//#define RIGHT_ENC_DUMP_ENABLED
-//#define MOTOR_DUMP_ENABLED
-#define ODOM_DUMP_ENABLED
+#define RIGHT_ENC_DUMP_ENABLED
+#define MOTOR_DUMP_ENABLED
+//#define ODOM_DUMP_ENABLED
 //#define ENC_UPDATE_DELTA_ENABLED
 //#define PID_UPDATE_DELTA_ENABLED
 //#define ODOM_UPDATE_DELTA_ENABLED
@@ -63,9 +66,9 @@ char formatted_string[256];
                                     Ser_PutString(formatted_string);                                    \
                                     } while (0)
                                 
-#define ENCODER_DEBUG_CONTROL_ENABLED   (debug_control_enabled & DEBUG_ENCODER_ENABLE_BIT)
-#define PID_DEBUG_CONTROL_ENABLED       (debug_control_enabled & DEBUG_PID_ENABLE_BIT)
-#define MOTOR_DEBUG_CONTROL_ENABLED     (debug_control_enabled & DEBUG_MOTOR_ENABLE_BIT)
+#define ENCODER_DEBUG_CONTROL_ENABLED   (debug_control_enabled & DEBUG_LEFT_ENCODER_ENABLE_BIT || debug_control_enabled & DEBUG_RIGHT_ENCODER_ENABLE_BIT)
+#define PID_DEBUG_CONTROL_ENABLED       (debug_control_enabled & DEBUG_LEFT_PID_ENABLE_BIT || debug_control_enabled & DEBUG_RIGHT_PID_ENABLE_BIT)
+#define MOTOR_DEBUG_CONTROL_ENABLED     (debug_control_enabled & DEBUG_LEFT_MOTOR_ENABLE_BIT || debug_control_enabled & DEBUG_RIGHT_MOTOR_ENABLE_BIT)
 #define ODOM_DEBUG_CONTROL_ENABLED      (debug_control_enabled & DEBUG_ODOM_ENABLE_BIT)
 #define SAMPLE_DEBUG_CONTROL_ENABLED    (debug_control_enabled & DEBUG_SAMPLE_ENABLE_BIT)
 

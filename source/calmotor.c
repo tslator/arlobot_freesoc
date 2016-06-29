@@ -7,6 +7,7 @@
 #include "encoder.h"
 #include "time.h"
 #include "utils.h"
+#include "debug.h"
 
 /*
     Explantation of Count/Sec to PWM Calibration:
@@ -224,6 +225,10 @@ void PerformMotorCalibration()
 {
     Init();
     
+    uint16 last_debug_control_enabled = debug_control_enabled;
+    
+    debug_control_enabled = DEBUG_LEFT_ENCODER_ENABLE_BIT;
+    
     Ser_PutString("\r\nPerforming motor calibration\r\n");
     
     Ser_PutString("Left-Forward Calibration\r\n");
@@ -236,6 +241,8 @@ void PerformMotorCalibration()
     StoreWheelSpeedSamples(LEFT_WHEEL, BACKWARD_DIR, cps_samples, pwm_samples);
     OutputSamples("Left-Backward", cps_samples, pwm_samples);
 
+    debug_control_enabled = DEBUG_RIGHT_ENCODER_ENABLE_BIT;
+    
     Ser_PutString("Right-Forward Calibration\r\n");
     CalibrateWheelSpeed(RIGHT_WHEEL, FORWARD_DIR, 5, cps_samples, pwm_samples);
     StoreWheelSpeedSamples(RIGHT_WHEEL, FORWARD_DIR, cps_samples, pwm_samples);
@@ -250,6 +257,8 @@ void PerformMotorCalibration()
     Motor_RightSetCalibration((CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd, (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd);
     
     Ser_PutString("Motor calibration complete\r\n");
+    
+    debug_control_enabled = last_debug_control_enabled;
 }
 
 static void OutputVelocities(char *label, float cps, float mps, uint16 pwm)
@@ -295,9 +304,13 @@ void ValidateMotorVelocity()
 {
     float fwd_cps[11] = {50.0, 80.0, 110.0, 140.0, 170.0, 200.0, 170.0, 140.0, 110.0, 80.0, 50.0};
     float bwd_cps[11] = {-50.0, -80.0, -110.0, -140.0, -170.0, -200.0, -170.0, -140.0, -110.0, -80.0, -50.0};
-    
+
+    Ser_PutString("\r\nPerforming motor velocity validation\r\n");
+
     DoVelocityValidation("left-forward", fwd_cps, 11, Motor_LeftSetCntsPerSec, Motor_LeftGetPwm, Encoder_LeftGetMeterPerSec);
     DoVelocityValidation("right_forward", fwd_cps, 11, Motor_RightSetCntsPerSec, Motor_RightGetPwm, Encoder_RightGetMeterPerSec);
     DoVelocityValidation("left-backward", bwd_cps, 11, Motor_LeftSetCntsPerSec, Motor_LeftGetPwm, Encoder_LeftGetMeterPerSec);
     DoVelocityValidation("right-backward", bwd_cps, 11, Motor_RightSetCntsPerSec, Motor_RightGetPwm, Encoder_RightGetMeterPerSec);
+
+    Ser_PutString("Motor velocity validation complete\r\n");
 }

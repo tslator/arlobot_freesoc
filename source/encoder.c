@@ -20,14 +20,14 @@
 #include "diag.h"
 #include "debug.h"
 
-#ifdef  LEFT_ENC_DUMP_ENABLED
-#define LEFT_DUMP_ENC(enc)  DumpEncoder(enc)
+#ifdef  LEFT_ENC_DUMP_ENABLED     
+#define LEFT_DUMP_ENC(enc)  if (debug_control_enabled & DEBUG_LEFT_ENCODER_ENABLE_BIT) DumpEncoder(enc)
 #else
 #define LEFT_DUMP_ENC(enc)
 #endif    
 
 #ifdef RIGHT_ENC_DUMP_ENABLED
-#define RIGHT_DUMP_ENC(enc)  DumpEncoder(enc)
+#define RIGHT_DUMP_ENC(enc)  if (debug_control_enabled & DEBUG_RIGHT_ENCODER_ENABLE_BIT) DumpEncoder(enc)
 #else
 #define RIGHT_DUMP_ENC(enc)
 #endif

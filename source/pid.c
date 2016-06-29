@@ -22,13 +22,13 @@
 #include "debug.h"
 
 #ifdef LEFT_PID_DUMP_ENABLED
-#define LEFT_DUMP_PID(pid)  DumpPid(pid)
+#define LEFT_DUMP_PID(pid)  if (debug_control_enabled & DEBUG_LEFT_PID_ENABLE_BIT) DumpPid(pid)
 #else
 #define LEFT_DUMP_PID(pid)
 #endif
 
 #ifdef RIGHT_PID_DUMP_ENABLED
-#define RIGHT_DUMP_PID(pid)  DumpPid(pid)
+#define RIGHT_DUMP_PID(pid)  if (debug_control_enabled & DEBUG_RIGHT_PID_ENABLE_BIT) DumpPid(pid)
 #else
 #define RIGHT_DUMP_PID(pid)
 #endif
@@ -221,6 +221,12 @@ float Pid_RightStepInput(float *gains, float velocity, uint32 run_time)
     PIDTuningsSet(&right_pid.pid, gains[0], gains[1], gains[2]);    
     
     return StepImpulse(&right_pid, velocity, run_time);
+}
+
+void Pid_SetLeftRightTarget(GET_TARGET_TYPE left_target, GET_TARGET_TYPE right_target)
+{
+    left_pid.get_target = left_target;
+    right_pid.get_target = right_target;
 }
 
 /* [] END OF FILE */

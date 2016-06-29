@@ -19,6 +19,12 @@
 
 #define MAX_CMD_VELOCITY_TIMEOUT (2000)
 
+#define ENCODER_DEBUG_BIT   (0x0001)
+#define PID_DEBUG_BIT       (0x0002)
+#define MOTOR_DEBUG_BIT     (0x0004)
+#define ODOM_DEBUG_BIT      (0x0008)
+#define SAMPLE_DEBUG_BIT    (0x0010)
+
 /* Macro to wait for any outstanding master writes to the I2C buffer.  This ensures data integrity across the interface
  */
 #define I2C_WAIT_FOR_ACCESS()   do  \
@@ -140,6 +146,8 @@ static uint16 calibration_status;
 static uint32 last_cmd_velocity_time = 0;
 static uint32 cmd_velocity_timeout = 0;
 
+static uint16 i2c_debug;
+
 /*----------------------------------------------------------------------------------------------------------------------
 
   Static Functions
@@ -158,6 +166,7 @@ void I2c_Init()
     memset( &i2c_buf, 0, sizeof(i2c_buf));
     device_status = 0;
     calibration_status = 0;
+    i2c_debug = 0;
 }
 
 void I2c_Start()
@@ -186,7 +195,7 @@ uint16 I2c_ReadDeviceControl()
     return value;
 }
 
-uint16 I2c_ReadDebugControl()
+void I2c_ReadDebugControl()
 {
     uint16 value;
     
@@ -196,7 +205,44 @@ uint16 I2c_ReadDebugControl()
     i2c_buf.read_write.debug_control = 0;
     EZI2C_Slave_EnableInt();
     
-    return value;
+    /* Internally, there is control over debug for each encoder, pid and motor; however, that is not exposed via i2c.
+       Via the i2c interface, turning on debug for encoder, pid, and motor, turns on debug for both wheels.
+     */
+
+#ifdef COMMS_DEBUG_ENABLED
+    // When debug is enabled, the bitmap can be used to turn on/off specific debug, e.g., encoder, pid, odom, etc.
+
+    i2c_debug &= ~value;
+    i2c_debug |= value;
+    
+    debug_control_enabled = 0;
+    
+    if (i2c_debug & ENCODER_DEBUG_BIT)
+    {
+        debug_control_enabled |= DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT;
+    }
+    
+    if (i2c_debug & PID_DEBUG_BIT)
+    {
+        debug_control_enabled |= DEBUG_LEFT_PID_ENABLE_BIT | DEBUG_RIGHT_PID_ENABLE_BIT;
+    }
+    
+    if (i2c_debug & MOTOR_DEBUG_BIT)
+    {
+        debug_control_enabled |= DEBUG_LEFT_MOTOR_ENABLE_BIT | DEBUG_RIGHT_MOTOR_ENABLE_BIT;
+    }
+
+    if (i2c_debug & ODOM_DEBUG_BIT)
+    {
+        debug_control_enabled |= DEBUG_ODOM_ENABLE_BIT;
+    }
+    
+    if (i2c_debug & SAMPLE_DEBUG_BIT)
+    {
+        debug_control_enabled |= DEBUG_SAMPLE_ENABLE_BIT;
+    }
+    
+#endif
 }
 
 void I2c_ReadCmdVelocity(float *linear, float *angular)

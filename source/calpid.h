@@ -4,5 +4,6 @@
 #include <project.h>
     
 void PerformPidCalibration();    
-    
+void ValidatePid();
+
 #endif

@@ -24,6 +24,7 @@
 #include "calpid.h"
 #include "callin.h"
 #include "calang.h"
+#include "debug.h"
 
 #define NO_CMD          (0)
 #define CAL_REQUEST     (1)
@@ -229,6 +230,8 @@ static uint8 GetCommand()
 
 static void DisplayMenu()
 {
+    debug_control_enabled = 0;
+
     Ser_PutString("\r\nWelcome to the Arlobot calibration interface.\r\n");
     Ser_PutString("The following calibration operations are allowed:\r\n");
     Ser_PutString("    1. Motor Calibration - creates mapping between count/sec and PWM.\r\n");
@@ -306,21 +309,8 @@ void Cal_CheckRequest()
                 break;
                 
             case MOTOR_VAL_CMD:
-                /* Check that a commanded cps results in an expected PWM based on the calibration 
-                   Choose 5 cps across the range of velocities
-                
                 ValidateMotorVelocity();
-                    - get cps range (max - min)
-                    - avoid the dead zone and max speed.  limit range to 50 to 200 cps
-                    - 200 - 50 = 150 / 5 = 30
-                    - 50, 80, 110, 140, 170, 200
-                    - run each speed for 5 seconds
-                    - print the cps, mps, and pwm values
-                
-                Validation should be done in both forward and reverse directions for both wheels
-                    - Apply the same speeds in both forward and reverse directions
-                
-                 */
+                DisplayMenu();
                 break;
                 
             case PID_CAL_CMD:
@@ -331,19 +321,8 @@ void Cal_CheckRequest()
                 break;
                 
             case PID_VAL_CMD:
-                /* 
-                    Validates the PID settings
-                
-                    What does it mean to validate the PID?
-                        - Ensure that both motors operate at the commanded speed
-                    What is the motors have different actual speeds for the same commanded speed?
-                        - Where can we apply a bias to correct this?
-                    If the motor velocities are correct why would this be a problem?
-                        - Could response time be a factor here?  I.E., one motor takes longer to reduce velocity error?
-                    Maybe there is another parameter to PID calibration to ensure that they have comparable response times?
-                        
-                
-                 */
+                ValidatePid();
+                DisplayMenu();
                 break;
                 
             case LIN_CAL_CMD:

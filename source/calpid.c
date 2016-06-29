@@ -1,10 +1,14 @@
 #include <stdio.h>
+#include "config.h"
 #include "calpid.h"
 #include "cal.h"
 #include "serial.h"
 #include "nvstore.h"
 #include "pid.h"
 #include "utils.h"
+#include "encoder.h"
+#include "time.h"
+#include "motor.h"
 
 extern volatile CAL_EEPROM_TYPE *p_cal_eeprom;
 
@@ -122,4 +126,74 @@ void PerformPidCalibration()
     DoRightTwiddle();   
     
     Ser_PutString("PID calibration complete\r\n");
+}
+
+static float left_cmd_speed = 0.15;
+static float right_cmd_speed = 0.15;
+
+static float LeftTarget()
+{
+    return left_cmd_speed;
+}
+
+static float RightTarget()
+{
+    return right_cmd_speed;
+}
+
+void ValidatePid()
+{
+    /* 
+        Validates the PID settings
+    
+        What does it mean to validate the PID?
+            - Ensure that both motors operate at the commanded speed
+        What is the motors have different actual speeds for the same commanded speed?
+            - Where can we apply a bias to correct this?
+        If the motor velocities are correct why would this be a problem?
+            - Could response time be a factor here?  I.E., one motor takes longer to reduce velocity error?
+        Maybe there is another parameter to PID calibration to ensure that they have comparable response times?
+            
+    
+     */
+
+    float left_speed;
+    float right_speed;
+    
+    Pid_SetLeftRightTarget(LeftTarget, RightTarget);
+    left_cmd_speed = 0.15;
+    right_cmd_speed = 0.15;
+    left_speed = 0;
+    right_speed = 0;
+    
+    uint32 start_time = millis();
+    
+    while (millis() - start_time < 5000)
+    {
+        Encoder_Update();
+        Pid_Update();
+        
+        left_speed = Encoder_LeftGetMeterPerSec();
+        right_speed = Encoder_RightGetMeterPerSec();
+    }
+
+    Motor_LeftSetCntsPerSec(0);
+    Motor_RightSetCntsPerSec(0);
+    
+    /* Print the commanded and actual left/right speeds */
+    char lcs_str[10];
+    char rcs_str[10];
+    char ls_str[10];
+    char rs_str[10];
+    char output[64];
+    
+    ftoa(left_cmd_speed, lcs_str, 3);
+    ftoa(right_cmd_speed, rcs_str, 3);
+    ftoa(left_speed, ls_str, 3);
+    ftoa(right_speed, rs_str, 3);
+    
+    sprintf(output, "lcs: %s, ls: %s, rcs: %s, rs: %s\r\n", lcs_str, ls_str, rcs_str, rs_str);
+    Ser_PutString(output);
+    
+    
 }

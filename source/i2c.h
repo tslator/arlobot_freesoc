@@ -27,7 +27,7 @@ void I2c_Init();
 void I2c_Start();
 
 uint16 I2c_ReadDeviceControl();
-uint16 I2c_ReadDebugControl();
+void I2c_ReadDebugControl();
 void I2c_ReadCmdVelocity(float *linear, float *angular);
 
 void I2c_SetDeviceStatusBit(uint16 bit);
