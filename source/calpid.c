@@ -9,6 +9,7 @@
 #include "encoder.h"
 #include "time.h"
 #include "motor.h"
+#include "debug.h"
 
 extern volatile CAL_EEPROM_TYPE *p_cal_eeprom;
 
@@ -119,12 +120,14 @@ void PerformPidCalibration()
  */
 {
     Ser_PutString("\r\nPerforming pid calibration\r\n");
-
+    uint16 old_debug_control_enabled = debug_control_enabled;
     Ser_PutString("Left PID calibration\r\n");
+    debug_control_enabled = DEBUG_LEFT_PID_ENABLE_BIT;
     DoLeftTwiddle();
     Ser_PutString("Right PID calibration\r\n");
+    debug_control_enabled = DEBUG_RIGHT_PID_ENABLE_BIT;
     DoRightTwiddle();   
-    
+    debug_control_enabled = old_debug_control_enabled;
     Ser_PutString("PID calibration complete\r\n");
 }
 

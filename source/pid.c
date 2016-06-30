@@ -24,7 +24,7 @@
 #ifdef LEFT_PID_DUMP_ENABLED
 #define LEFT_DUMP_PID(pid)  if (debug_control_enabled & DEBUG_LEFT_PID_ENABLE_BIT) DumpPid(pid)
 #else
-#define LEFT_DUMP_PID(pid)
+#define  LEFT_DUMP_PID(pid)
 #endif
 
 #ifdef RIGHT_PID_DUMP_ENABLED
