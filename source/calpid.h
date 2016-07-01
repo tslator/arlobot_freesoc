@@ -3,7 +3,8 @@
     
 #include <project.h>
     
-void PerformPidCalibration();    
+void CalibratePidManual();
+void CalibratePidAuto();    
 void ValidatePid();
 
 #endif

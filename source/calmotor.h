@@ -3,7 +3,7 @@
     
 #include <project.h>
     
-void PerformMotorCalibration();    
+void CalibrateMotorVelocity();    
 void ValidateMotorVelocity();
 
 #endif    

@@ -26,17 +26,18 @@
 #include "calang.h"
 #include "debug.h"
 
-#define NO_CMD          (0)
-#define CAL_REQUEST     (1)
-#define MOTOR_CAL_CMD   (2)
-#define MOTOR_VAL_CMD   (3)
-#define PID_CAL_CMD     (4)
-#define PID_VAL_CMD     (5)
-#define LIN_CAL_CMD     (6)
-#define LIN_VAL_CMD     (7)
-#define ANG_CAL_CMD     (8)
-#define ANG_VAL_CMD     (9)
-#define EXIT_CMD        (10)
+#define NO_CMD              (0)
+#define CAL_REQUEST         (1)
+#define MOTOR_CAL_CMD       (2)
+#define MOTOR_VAL_CMD       (3)
+#define PID_CAL_MAN_CMD     (4)
+#define PID_CAL_AUTO_CMD    (5)
+#define PID_VAL_CMD         (6)
+#define LIN_CAL_CMD         (7)
+#define LIN_VAL_CMD         (8)
+#define ANG_CAL_CMD         (9)
+#define ANG_VAL_CMD         (10)
+#define EXIT_CMD            (11)
 
 
 //#define DEFAULT_CALIBRATION
@@ -190,29 +191,34 @@ static uint8 GetCommand()
         
         case '3':
             Ser_WriteByte(value);
-            return PID_CAL_CMD;
+            return PID_CAL_MAN_CMD;
             break;
             
         case '4':
             Ser_WriteByte(value);
+            return PID_CAL_AUTO_CMD;
+            break;
+            
+        case '5':
+            Ser_WriteByte(value);
             return PID_VAL_CMD;
             break;
         
-        case '5':
+        case '6':
             Ser_WriteByte(value);
             return LIN_CAL_CMD;
             break;
             
-        case '6':
+        case '7':
             Ser_WriteByte(value);
             return LIN_VAL_CMD;
     
-        case '7':
+        case '8':
             Ser_WriteByte(value);
             return ANG_CAL_CMD;
             break;
             
-        case '8':
+        case '9':
             Ser_WriteByte(value);
             return ANG_VAL_CMD;
 
@@ -237,14 +243,15 @@ static void DisplayMenu()
     Ser_PutString("    1. Motor Calibration - creates mapping between count/sec and PWM.\r\n");
     Ser_PutString("    2. Motor Validation - operates the motors at varying velocities.\r\n");
     Ser_PutString("\r\n");
-    Ser_PutString("    3. PID Calibration - determines the PID gains that minimizes velocity error.\r\n");
-    Ser_PutString("    4. PID Validation - operates the motors at varying velocities.\r\n");
+    Ser_PutString("    3. PID Manual Calibration - enter gains, execute step input, print velocity response.\r\n");
+    Ser_PutString("    4. PID Auto Calibration - determines the PID gains that minimizes velocity error.\r\n");
+    Ser_PutString("    5. PID Validation - operates the motors at varying velocities.\r\n");
     Ser_PutString("\r\n");
-    Ser_PutString("    5. Linear Bias - moves forward 1 meter and allows user to enter a ratio to be applied as a bias in linear motion\r\n");
-    Ser_PutString("    6. Validate Linear Bias - moves forward 1 meter applying the linear bias calculated in linear bias calibration\r\n");
+    Ser_PutString("    6. Linear Bias - moves forward 1 meter and allows user to enter a ratio to be applied as a bias in linear motion\r\n");
+    Ser_PutString("    7. Validate Linear Bias - moves forward 1 meter applying the linear bias calculated in linear bias calibration\r\n");
     Ser_PutString("\r\n");
-    Ser_PutString("    7. Angular Bias - rotates 360 degrees and allows user to enter a ratio to be applied as a bias in angular motion\r\n");
-    Ser_PutString("    8. Validate Angular Bias - rotates 360 degrees applying the angular bias calculated in angular bias calibration\r\n");
+    Ser_PutString("    8. Angular Bias - rotates 360 degrees and allows user to enter a ratio to be applied as a bias in angular motion\r\n");
+    Ser_PutString("    9. Validate Angular Bias - rotates 360 degrees applying the angular bias calculated in angular bias calibration\r\n");
     Ser_PutString("\r\nEnter X to exit calibration, C to enter calibration\r\n");
     Ser_PutString("\r\n");
     Ser_PutString("Make an entry [1-8,X]: ");
@@ -288,6 +295,7 @@ void Cal_DisplayBias(char *label, float bias)
 void Cal_CheckRequest()
 {    
     uint8 cmd;
+    float gains[3];
     
     do
     {
@@ -303,7 +311,7 @@ void Cal_CheckRequest()
                 
             case MOTOR_CAL_CMD:
                 ClearCalibrationStatusBit(CAL_COUNT_PER_SEC_TO_PWM_BIT);
-                PerformMotorCalibration();
+                CalibrateMotorVelocity();
                 SetCalibrationStatusBit(CAL_COUNT_PER_SEC_TO_PWM_BIT);
                 DisplayMenu();
                 break;
@@ -313,9 +321,22 @@ void Cal_CheckRequest()
                 DisplayMenu();
                 break;
                 
-            case PID_CAL_CMD:
+            case PID_CAL_MAN_CMD:
                 ClearCalibrationStatusBit(CAL_PID_BIT);
-                PerformPidCalibration();
+                Ser_PutString("\r\nEnter prop gain: ");
+                gains[0] = Cal_ReadResponse();
+                Ser_PutString("\r\nEnter integ gain: ");
+                gains[1] = Cal_ReadResponse();
+                Ser_PutString("\r\nEnter deriv gain: ");
+                gains[2] = Cal_ReadResponse();
+                CalibratePidManual(gains);
+                SetCalibrationStatusBit(CAL_PID_BIT);
+                DisplayMenu();
+                break;
+                
+            case PID_CAL_AUTO_CMD:
+                ClearCalibrationStatusBit(CAL_PID_BIT);
+                CalibratePidAuto();
                 SetCalibrationStatusBit(CAL_PID_BIT);
                 DisplayMenu();
                 break;

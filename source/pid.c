@@ -20,6 +20,7 @@
 #include "pid_controller.h"
 #include "diag.h"
 #include "debug.h"
+#include "odom.h"
 
 #ifdef LEFT_PID_DUMP_ENABLED
 #define LEFT_DUMP_PID(pid)  if (debug_control_enabled & DEBUG_LEFT_PID_ENABLE_BIT) DumpPid(pid)
@@ -57,18 +58,14 @@ typedef struct _pid_tag
     GET_MOTOR_PWM_TYPE get_pwm;
 } PID_TYPE;
 
-#define DEFAULT_KP (6.0)
-#define DEFAULT_KI (2.2)
-#define DEFAULT_KD (0.67)
 
+#define left_kp (3.55)
+#define left_ki (1.955)
+#define left_kd (0.57)
 
-#define left_kp (TUNE_KP)
-#define left_ki (TUNE_KI)
-#define left_kd (TUNE_KD)
-
-#define right_kp (TUNE_KP)
-#define right_ki (TUNE_KI)
-#define right_kd (TUNE_KD)
+#define right_kp (4.0)
+#define right_ki (1.91)
+#define right_kd (0.65)
 
 static PID_TYPE left_pid = { 
     /* name */          "left",
@@ -124,16 +121,17 @@ void Pid_Init(GET_TARGET_TYPE left_target, GET_TARGET_TYPE right_target)
     
 void Pid_Start()
 {
-    CAL_PID_TYPE *p_gains;
+    //CAL_PID_TYPE *p_gains;
     
     // Note: the PID gains are stored in EEPROM, so we don't have access to EEPROM until the EEPROM component has been 
     // started.  Pid_Start is called after Nvstore_Start.
     
-    p_gains = Cal_LeftGetPidGains();
-    PIDTuningsSet(&left_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
+    //p_gains = Cal_LeftGetPidGains();    
+    //PIDTuningsSet(&left_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
+    PIDTuningsSet(&left_pid.pid, left_kp, left_ki, left_kd);
     
-    p_gains = Cal_RightGetPidGains();
-    PIDTuningsSet(&right_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
+    //p_gains = Cal_RightGetPidGains();
+    PIDTuningsSet(&right_pid.pid, right_kp, right_ki, right_kd);
 }
 
 static void ProcessPid(PID_TYPE *pid)
@@ -177,56 +175,35 @@ void Pid_Update()
     }
 }
 
-static float StepImpulse(PID_TYPE *pid, float velocity, uint32 time_in_ms)
-/*
-    Apply the velocity to the motor
-    Update encoder and pid update
-    Quit after 5 seconds
- */
-{
-    float vel_error_sum = 0;
-    uint32 samples = 0;
-    uint32 start_time;
-    #define MIN_SAMPLE_TIME (1000)
-    
-    start_time = millis();
-    while (millis() - start_time < time_in_ms)
-    {
-        pid->set_motor(velocity);
-        Encoder_Update();
-        Pid_Update();
-        
-        if (millis() - start_time > MIN_SAMPLE_TIME)
-        {
-            float error = velocity - pid->get_encoder();
-            vel_error_sum += error * error;
-            samples++;
-        }
-    }
-
-    pid->set_motor(0);
-    CyDelay(500);
-    return vel_error_sum / samples;
-}
-
-float Pid_LeftStepInput(float *gains, float velocity, uint32 run_time)
-{
-    PIDTuningsSet(&left_pid.pid, gains[0], gains[1], gains[2]);    
-    
-    return StepImpulse(&left_pid, velocity, run_time);
-}
-
-float Pid_RightStepInput(float *gains, float velocity, uint32 run_time)
-{
-    PIDTuningsSet(&right_pid.pid, gains[0], gains[1], gains[2]);    
-    
-    return StepImpulse(&right_pid, velocity, run_time);
-}
-
 void Pid_SetLeftRightTarget(GET_TARGET_TYPE left_target, GET_TARGET_TYPE right_target)
 {
     left_pid.get_target = left_target;
     right_pid.get_target = right_target;
 }
+
+void Pid_LeftSetGains(float kp, float ki, float kd)
+{
+    PIDTuningsSet(&left_pid.pid, kp, ki, kd);
+}
+
+void Pid_RightSetGains(float kp, float ki, float kd)
+{
+    PIDTuningsSet(&right_pid.pid, kp, ki, kd);
+}
+
+void Pid_LeftGetGains(float *kp, float *ki, float *kd)
+{
+    *kp = left_pid.pid.dispKp;
+    *ki = left_pid.pid.dispKi;
+    *kd = left_pid.pid.dispKd;
+}
+
+void Pid_RightGetGains(float *kp, float *ki, float *kd)
+{
+    *kp = right_pid.pid.dispKp;
+    *ki = right_pid.pid.dispKi;
+    *kd = right_pid.pid.dispKd;
+}
+
 
 /* [] END OF FILE */

@@ -95,10 +95,14 @@ void Pid_Start();
  ------------------------------------------------------------------------------------------------*/
 void Pid_Update();
 
-float Pid_LeftStepInput(float *gains, float velocity, uint32 run_time);
-float Pid_RightStepInput(float *gains, float velocity, uint32 run_time);
-
 void Pid_SetLeftRightTarget(GET_TARGET_TYPE left_target, GET_TARGET_TYPE right_target);
+
+void Pid_LeftSetGains(float kp, float ki, float kd);
+void Pid_RightSetGains(float kp, float ki, float kd);
+
+void Pid_LeftGetGains(float *kp, float *ki, float *kd);
+void Pid_RightGetGains(float *kp, float *ki, float *kd);
+
 #endif
 
 /* [] END OF FILE */
