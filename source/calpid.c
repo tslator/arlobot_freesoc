@@ -206,24 +206,44 @@ static void DoRightManual(float *gains)
     right_cmd_speed = 0;
 }
 
-void CalibratePidManual(float *gains)
+void CalibrateLeftPid(float *gains)
 {
-    Ser_PutString("\r\nPerforming pid manual calibration \r\n");
+    Ser_PutString("\r\nPerforming left pid calibration \r\n");
     
     Pid_SetLeftRightTarget(LeftTarget, RightTarget);
     
     uint16 old_debug_control_enabled = debug_control_enabled;
+    
     Ser_PutString("Left PID calibration\r\n");
     debug_control_enabled = DEBUG_LEFT_PID_ENABLE_BIT;
     DoLeftManual(gains);
+    StoreLeftGains(gains);
 
-    //Ser_PutString("Right PID calibration\r\n");
-    //debug_control_enabled = DEBUG_RIGHT_PID_ENABLE_BIT;
-    //DoRightManual(gains);   
-    debug_control_enabled = old_debug_control_enabled;
-    Ser_PutString("PID manual calibration complete\r\n");
+    debug_control_enabled = old_debug_control_enabled;    
+    Pid_SetLeftRightTarget(Control_LeftGetCmdVelocity, Control_RightGetCmdVelocity);
+    
+    Ser_PutString("Left PID calibration complete\r\n");
 
     
+}
+
+void CalibrateRightPid(float *gains)
+{
+    Ser_PutString("\r\nPerforming right pid calibration \r\n");
+    
+    Pid_SetLeftRightTarget(LeftTarget, RightTarget);
+    
+    uint16 old_debug_control_enabled = debug_control_enabled;
+
+    Ser_PutString("Right PID calibration\r\n");
+    debug_control_enabled = DEBUG_RIGHT_PID_ENABLE_BIT;
+    DoRightManual(gains);   
+    StoreRightGains(gains);
+    
+    debug_control_enabled = old_debug_control_enabled;
+    Pid_SetLeftRightTarget(Control_LeftGetCmdVelocity, Control_RightGetCmdVelocity);
+    
+    Ser_PutString("Right PID calibration complete\r\n");
 }
 
 void CalibratePidAuto()
@@ -273,6 +293,11 @@ void ValidatePid()
     float right_speed;
     
     Pid_SetLeftRightTarget(LeftTarget, RightTarget);
+    
+    uint16 old_debug_control_enabled = debug_control_enabled;
+    
+    debug_control_enabled = DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT | DEBUG_LEFT_PID_ENABLE_BIT | DEBUG_RIGHT_PID_ENABLE_BIT | DEBUG_ODOM_ENABLE_BIT;
+    
     left_cmd_speed = 0.150;
     right_cmd_speed = 0.150;
     left_speed = 0;
@@ -299,7 +324,9 @@ void ValidatePid()
     right_cmd_speed = 0;
     Motor_LeftSetCntsPerSec(0);
     Motor_RightSetCntsPerSec(0);
+    
     Pid_SetLeftRightTarget(Control_LeftGetCmdVelocity, Control_RightGetCmdVelocity);
+    debug_control_enabled = old_debug_control_enabled;
         
     /* Print the commanded and actual left/right speeds */
     sprintf(output, "\r\nlcs: %s, ls: %s, rcs: %s, rs: %s\r\n", lcs_str, ls_str, rcs_str, rs_str);

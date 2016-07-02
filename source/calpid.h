@@ -3,8 +3,8 @@
     
 #include <project.h>
     
-void CalibratePidManual();
-void CalibratePidAuto();    
+void CalibrateLeftPid(float *gains);
+void CalibrateRightPid(float *gains);    
 void ValidatePid();
 
 #endif
