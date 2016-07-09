@@ -97,6 +97,8 @@ void Pid_Update();
 
 void Pid_SetLeftRightTarget(GET_TARGET_TYPE left_target, GET_TARGET_TYPE right_target);
 
+void Pid_Reset();
+
 void Pid_LeftSetGains(float kp, float ki, float kd);
 void Pid_RightSetGains(float kp, float ki, float kd);
 

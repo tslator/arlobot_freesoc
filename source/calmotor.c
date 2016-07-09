@@ -206,10 +206,10 @@ static void OutputSamples(char *label, int32 *cps_samples, uint16 *pwm_samples)
     
     for (ii = 0; ii < CAL_NUM_SAMPLES - 1; ++ii)
     {
-        sprintf(buffer, "%ld -> %d,", cps_samples[ii], pwm_samples[ii]);
+        sprintf(buffer, "%ld:%d ", cps_samples[ii], pwm_samples[ii]);
         Ser_PutString(buffer);
     }
-    sprintf(buffer, "%ld -> %d\r\n\r\n", cps_samples[ii], pwm_samples[ii]);
+    sprintf(buffer, "%ld:%d\r\n\r\n", cps_samples[ii], pwm_samples[ii]);
     Ser_PutString(buffer);
 }
 
@@ -313,4 +313,13 @@ void ValidateMotorVelocity()
     DoVelocityValidation("right-backward", bwd_cps, 11, Motor_RightSetCntsPerSec, Motor_RightGetPwm, Encoder_RightGetMeterPerSec);
 
     Ser_PutString("Motor velocity validation complete\r\n");
+}
+
+void PrintMotorVelocity()
+{
+    Ser_PutString("\r\n");
+    OutputSamples("Left-Forward", (int32 *) p_cal_eeprom->left_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_fwd.pwm_data);
+    OutputSamples("Left-Backward", (int32 *) p_cal_eeprom->left_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_bwd.pwm_data);
+    OutputSamples("Right-Forward", (int32 *) p_cal_eeprom->right_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_fwd.pwm_data);
+    OutputSamples("Right-Backward", (int32 *) p_cal_eeprom->right_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_bwd.pwm_data);
 }

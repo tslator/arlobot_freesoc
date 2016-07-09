@@ -20,6 +20,8 @@ void Odom_Update();
 void Odom_Reset();
 void Odom_GetPosition(float *x, float *y);
 float Odom_GetHeading();
+float Odom_GetLinearVelocity();
+float Odom_GetAngularVelocity();
 
 #endif
 

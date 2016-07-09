@@ -92,7 +92,7 @@ static void DumpEncoder(ENCODER_TYPE *enc)
     
     if (ENCODER_DEBUG_CONTROL_ENABLED)
     {
-        DEBUG_PRINT_ARG("%s enc: %s %s %s %ld %ld %ld \r\n", enc->name, avg_cps_str, avg_delta_count_str, avg_mps_str, enc->count, enc->last_count, enc->delta_count);
+        DEBUG_PRINT_ARG("%s enc: %s %s %s %ld \r\n", enc->name, avg_cps_str, avg_mps_str, avg_delta_count_str, enc->delta_count);
     }
 }
 #endif

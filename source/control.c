@@ -18,6 +18,7 @@
 #include "time.h"
 #include "utils.h"
 #include "debug.h"
+#include "pid_controller.h"
 
 /* The purpose of this module is to handle control changes to the system.
  */
@@ -31,6 +32,10 @@ static uint8 front_cliff_detect;
 static uint8 rear_cliff_detect;
 #endif
 
+static PIDControl angular_pid;
+static uint32 delta_angular_time;
+static uint32 last_angular_time;
+
 static void CalculateLeftRightSpeed()
 /* Calculate the left/right wheel speed from the commanded linear/angular velocity
  */
@@ -39,17 +44,50 @@ static void CalculateLeftRightSpeed()
     float angular;
 
     I2c_ReadCmdVelocity(&linear, &angular);
-    #ifdef CLIFF_SENSORS    
-    if ( (front_cliff_detect && linear > 0 && angular != 0) ||
-         (rear_cliff_detect && linear < 0 && angular != 0) )
+
+    /* Implement a PID using odometry as feedback
+
+        Initialize Control PID:
+            control_pid = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC}
+            PIDInit(&control_pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, PID_MIN, PID_MAX, AUTOMATIC, DIRECT); 
+
+        Process Control PID:
+            Get measured linear, angular velocity from odometry
+            Get commanded linear, angular velocity
+            Compute PID
+            Convert linear, angular to left, right velocity
+    
+        PIDSetpointSet(&control_pid, abs(angular));
+        meas_angular = Odom_GetAngularVelocity()
+        PIDInputSet(&control_pid, abs(meas_angular));
+        
+        if (PIDCompute(&control_pid))
+            Convert linear/angular to left/right velocity
+    
+    
+        Commanded Angular Velocity      Meas Angular Velocity       Error           Output
+                   0.0                          0.001               0.001           -0.001 -> left/right velocity
+    
+     */
+    
+    delta_angular_time = millis() - last_angular_time;
+    if (delta_angular_time >= 20)
     {
-        linear = 0;
-        angular = 0;
+        last_angular_time = millis();
+        
+        //dir = tgt_speed > 0 ? 1 : -1;
+        
+        PIDSetpointSet(&angular_pid, abs(angular));
+        float meas_angular = Odom_GetAngularVelocity();
+        PIDInputSet(&angular_pid, abs(meas_angular));
+        
+        if (PIDCompute(&angular_pid))
+        {
+            angular = angular_pid.output;// * dir);
+        }
+        
+        ConvertLinearAngularToDifferential(linear, angular, &left_cmd_velocity, &right_cmd_velocity);
     }
-    #endif
-    
-    ConvertLinearAngularToDifferential(linear, angular, &left_cmd_velocity, &right_cmd_velocity);
-    
 }
 
 void Control_Init()
@@ -58,6 +96,7 @@ void Control_Init()
 
 void Control_Start()
 {    
+    PIDInit(&angular_pid, 0.2, 0.0, 0.0, 0.05, 0, 1.0, AUTOMATIC, DIRECT);
 }
 
 void Control_Update()

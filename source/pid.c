@@ -40,8 +40,6 @@
 #define PID_DEBUG_DELTA(delta)
 #endif
 
-
-
 #define PID_SAMPLE_TIME_MS  SAMPLE_TIME_MS(PID_SAMPLE_RATE)
 #define PID_SAMPLE_TIME_SEC SAMPLE_TIME_SEC(PID_SAMPLE_RATE)
 
@@ -63,8 +61,8 @@ typedef struct _pid_tag
 #define left_ki (1.955)
 #define left_kd (0.57)
 
-#define right_kp (4.0)
-#define right_ki (1.91)
+#define right_kp (6.0)
+#define right_ki (1.95)
 #define right_kd (0.65)
 
 static PID_TYPE left_pid = { 
@@ -121,17 +119,18 @@ void Pid_Init(GET_TARGET_TYPE left_target, GET_TARGET_TYPE right_target)
     
 void Pid_Start()
 {
-    //CAL_PID_TYPE *p_gains;
+    CAL_PID_TYPE *p_gains;
     
     // Note: the PID gains are stored in EEPROM, so we don't have access to EEPROM until the EEPROM component has been 
     // started.  Pid_Start is called after Nvstore_Start.
     
-    //p_gains = Cal_LeftGetPidGains();    
-    //PIDTuningsSet(&left_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
-    PIDTuningsSet(&left_pid.pid, left_kp, left_ki, left_kd);
+    p_gains = Cal_LeftGetPidGains();    
+    PIDTuningsSet(&left_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
+    //PIDTuningsSet(&left_pid.pid, left_kp, left_ki, left_kd);
     
-    //p_gains = Cal_RightGetPidGains();
-    PIDTuningsSet(&right_pid.pid, right_kp, right_ki, right_kd);
+    p_gains = Cal_RightGetPidGains();
+    PIDTuningsSet(&right_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
+    //PIDTuningsSet(&right_pid.pid, right_kp, right_ki, right_kd);
 }
 
 static void ProcessPid(PID_TYPE *pid)
@@ -179,6 +178,21 @@ void Pid_SetLeftRightTarget(GET_TARGET_TYPE left_target, GET_TARGET_TYPE right_t
 {
     left_pid.get_target = left_target;
     right_pid.get_target = right_target;
+}
+
+void Pid_Reset()
+{
+    left_pid.pid.input = 0;
+    left_pid.pid.iTerm = 0;
+    left_pid.pid.lastInput = 0;
+    left_pid.pid.setpoint = 0;
+    left_pid.pid.output = 0;
+
+    right_pid.pid.input = 0;
+    right_pid.pid.iTerm = 0;
+    right_pid.pid.lastInput = 0;
+    right_pid.pid.setpoint = 0;
+    right_pid.pid.output = 0;
 }
 
 void Pid_LeftSetGains(float kp, float ki, float kd)

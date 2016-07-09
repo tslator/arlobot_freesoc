@@ -8,12 +8,61 @@
 #include "utils.h"
 #include "serial.h"
 #include "nvstore.h"
+#include "debug.h"
 
-#define TEST_ANGULAR_VEL (0.7)
-#define ANGULAR_TEST_HEADING (2*PI)
+#define ANGULAR_BIAS_VELOCITY (0.7)
+#define ANGULAR_BIAS_ANGLE (2*PI)
+#define ANGULAR_ACCELERATION (0.3)
+#define RAMP_UP_ANGLE        (ANGULAR_BIAS_ANGLE / 3.0)
 
-static float test_left_vel;
-static float test_right_vel;
+/* Note: The Encoder and PID sample rates are 20 Hz.  The sample rate for updating the linear velocity must be less 
+         than those sample rates, i.e., 10 Hz.
+*/
+#define CALANG_SAMPLE_RATE (PID_SAMPLE_RATE / 2)        
+#define CALANG_SAMPLE_TIME_MS  SAMPLE_TIME_MS(CALANG_SAMPLE_RATE)
+
+static float left_cmd_velocity;
+static float right_cmd_velocity;
+static float angular_velocity;
+static uint32 last_time;
+
+static float CalAngularLeftTarget()
+{
+    return left_cmd_velocity;
+}
+
+static float CalAngularRightTarget()
+{
+    return right_cmd_velocity;
+}
+
+static void UpdateVelocity(float heading)
+{
+    uint32 delta_time;
+    #define MAX_VELOCITY (0.14105)
+    
+    delta_time = millis() - last_time;
+    if (delta_time >= CALANG_SAMPLE_TIME_MS)
+    {
+        last_time = millis();
+    
+        /* Ramp up for the first 1/3 of the motion:
+         */
+        
+        if (abs(heading) <= RAMP_UP_ANGLE)
+        {
+            angular_velocity += ANGULAR_ACCELERATION * delta_time / 1000.0;
+            angular_velocity = min(angular_velocity, ANGULAR_BIAS_VELOCITY);
+            
+            ConvertLinearAngularToDifferential(0, angular_velocity, &left_cmd_velocity, &right_cmd_velocity);            
+        }
+        else
+        {
+            ConvertLinearAngularToDifferential(0, ANGULAR_BIAS_VELOCITY, &left_cmd_velocity, &right_cmd_velocity);            
+        }
+    }
+        
+}
 
 void DoAngularBiasMotion()
 /*
@@ -39,13 +88,26 @@ void DoAngularBiasMotion()
     float delta_heading;
     float last_heading;
     
-    ConvertLinearAngularToDifferential(0, TEST_ANGULAR_VEL, &test_left_vel, &test_right_vel);            
+    uint16 old_debug_control_enabled = debug_control_enabled;    
+    debug_control_enabled = DEBUG_ODOM_ENABLE_BIT;
     
-    turn_heading = 0;
+    last_time = millis();
+
+    left_cmd_velocity = 0;
+    right_cmd_velocity = 0;
+    angular_velocity = 0;
     Motor_LeftSetCntsPerSec(0);
     Motor_RightSetCntsPerSec(0);
-    last_heading = Odom_GetHeading();
     
+    Pid_SetLeftRightTarget(CalAngularLeftTarget, CalAngularRightTarget);
+    
+    Encoder_Reset();
+    Pid_Reset();
+    Odom_Reset();    
+    
+    turn_heading = 0;
+    last_heading = Odom_GetHeading();
+
     do
     {
         Encoder_Update();
@@ -65,14 +127,17 @@ void DoAngularBiasMotion()
 
         turn_heading += delta_heading;
         last_heading = heading;
-    
-        Motor_LeftSetMeterPerSec(test_left_vel);
-        Motor_RightSetMeterPerSec(test_right_vel);
         
-    } while (abs(turn_heading) < ANGULAR_TEST_HEADING);
+        UpdateVelocity(turn_heading);
     
+    } while (abs(turn_heading) < ANGULAR_BIAS_ANGLE);
+    
+    left_cmd_velocity = 0;
+    right_cmd_velocity = 0;
     Motor_LeftSetCntsPerSec(0);
     Motor_RightSetCntsPerSec(0);
+    
+    debug_control_enabled = old_debug_control_enabled;    
 }
 
 void CalibrateAngularBias()

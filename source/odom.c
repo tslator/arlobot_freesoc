@@ -58,7 +58,7 @@ static void DumpOdom()
     
     if (ODOM_DEBUG_CONTROL_ENABLED)
     {
-        DEBUG_PRINT_ARG("x: %s, y: %s, h: %s, l: %s, a: %s\r\n", x_dist_str, y_dist_str, heading_str, linear_str, angular_str);
+        DEBUG_PRINT_ARG("x: %s y: %s h: %s l: %s a: %s\r\n", x_dist_str, y_dist_str, heading_str, linear_str, angular_str);
     }
 }
 #endif
@@ -171,6 +171,16 @@ void Odom_GetPosition(float *x, float *y)
 float Odom_GetHeading()
 {
     return heading;
+}
+
+float Odom_GetLinearVelocity()
+{
+    return linear_speed;
+}
+
+float Odom_GetAngularVelocity()
+{
+    return angular_speed;
 }
 
 /* [] END OF FILE */

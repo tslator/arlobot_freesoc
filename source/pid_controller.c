@@ -72,8 +72,7 @@ void PIDInit(PIDControl *pid, float kp, float ki, float kd,
     PIDTuningsSet(pid, kp, ki, kd);
 }
         
-bool
-PIDCompute(PIDControl *pid) 
+bool PIDCompute(PIDControl *pid) 
 {
     float error, dInput;
 
@@ -106,8 +105,7 @@ PIDCompute(PIDControl *pid)
     return true;
 }
      
-void 
-PIDModeSet(PIDControl *pid, PIDMode mode)                                                                                                                                       
+void PIDModeSet(PIDControl *pid, PIDMode mode)                                                                                                                                       
 {
     // If the mode changed from MANUAL to AUTOMATIC
     if(pid->mode != mode && mode == AUTOMATIC)
@@ -123,8 +121,7 @@ PIDModeSet(PIDControl *pid, PIDMode mode)
     pid->mode = mode;
 }
 
-void 
-PIDOutputLimitsSet(PIDControl *pid, float min, float max) 							  							  
+void PIDOutputLimitsSet(PIDControl *pid, float min, float max) 							  							  
 {
     // Check if the parameters are valid
     if(min >= max)
@@ -144,8 +141,7 @@ PIDOutputLimitsSet(PIDControl *pid, float min, float max)
     }
 }
 
-void 
-PIDTuningsSet(PIDControl *pid, float kp, float ki, float kd)         	                                         
+void PIDTuningsSet(PIDControl *pid, float kp, float ki, float kd)         	                                         
 {
     // Check if the parameters are valid
     if(kp < 0.0f || ki < 0.0f || kd < 0.0f)
@@ -172,26 +168,22 @@ PIDTuningsSet(PIDControl *pid, float kp, float ki, float kd)
     }
 }
 
-void 
-PIDTuningKpSet(PIDControl *pid, float kp)
+void PIDTuningKpSet(PIDControl *pid, float kp)
 {
     PIDTuningsSet(pid, kp, pid->dispKi, pid->dispKd);
 }
 
-void 
-PIDTuningKiSet(PIDControl *pid, float ki)
+void PIDTuningKiSet(PIDControl *pid, float ki)
 {
     PIDTuningsSet(pid, pid->dispKp, ki, pid->dispKd);
 }
 
-void 
-PIDTuningKdSet(PIDControl *pid, float kd)
+void PIDTuningKdSet(PIDControl *pid, float kd)
 {
     PIDTuningsSet(pid, pid->dispKp, pid->dispKi, kd);
 }
 
-void 
-PIDControllerDirectionSet(PIDControl *pid, PIDDirection controllerDirection)	  									  									  									  
+void PIDControllerDirectionSet(PIDControl *pid, PIDDirection controllerDirection)	  									  									  									  
 {
     // If in automatic mode and the controller's sense of direction is reversed
     if(pid->mode == AUTOMATIC && controllerDirection == REVERSE)
@@ -205,8 +197,7 @@ PIDControllerDirectionSet(PIDControl *pid, PIDDirection controllerDirection)
     pid->controllerDirection = controllerDirection;
 }
 
-void 
-PIDSampleTimeSet(PIDControl *pid, float sampleTimeSeconds)                                                       									  									  									   
+void PIDSampleTimeSet(PIDControl *pid, float sampleTimeSeconds)                                                       									  									  									   
 {
     float ratio;
 

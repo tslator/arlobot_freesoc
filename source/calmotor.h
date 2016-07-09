@@ -5,5 +5,6 @@
     
 void CalibrateMotorVelocity();    
 void ValidateMotorVelocity();
+void PrintMotorVelocity();
 
 #endif    

@@ -61,15 +61,13 @@ typedef enum
 {
     MANUAL,
     AUTOMATIC
-}
-PIDMode;
+} PIDMode;
 
 typedef enum
 {
     DIRECT,
     REVERSE
-}
-PIDDirection;
+} PIDDirection;
 
 typedef struct
 {
@@ -140,8 +138,7 @@ typedef struct
     // AUTOMATIC: PID controller is on.
     // 
     PIDMode mode;
-}
-PIDControl;
+} PIDControl;
 
 //*********************************************************************************
 // Prototypes
@@ -171,9 +168,9 @@ PIDControl;
 // Returns:
 //      Nothing.
 // 
-extern void PIDInit(PIDControl *pid, float kp, float ki, float kd, 
-                    float sampleTimeSeconds, float minOutput, float maxOutput, 
-                    PIDMode mode, PIDDirection controllerDirection);     	
+void PIDInit(PIDControl *pid, float kp, float ki, float kd, 
+             float sampleTimeSeconds, float minOutput, float maxOutput, 
+             PIDMode mode, PIDDirection controllerDirection);     	
 
 // 
 // PID Compute
@@ -186,7 +183,7 @@ extern void PIDInit(PIDControl *pid, float kp, float ki, float kd,
 // Returns:
 //      True if in AUTOMATIC. False if in MANUAL.
 //                     
-extern bool PIDCompute(PIDControl *pid); 
+bool PIDCompute(PIDControl *pid); 
 
 // 
 // PID Mode Set
@@ -202,7 +199,7 @@ extern bool PIDCompute(PIDControl *pid);
 // Returns:
 //      Nothing.
 //              
-extern void PIDModeSet(PIDControl *pid, PIDMode mode);                                                                                                                                       
+void PIDModeSet(PIDControl *pid, PIDMode mode);                                                                                                                                       
 
 // 
 // PID Output Limits Set
@@ -216,7 +213,7 @@ extern void PIDModeSet(PIDControl *pid, PIDMode mode);
 // Returns:
 //      Nothing.
 // 
-extern void PIDOutputLimitsSet(PIDControl *pid, float min, float max); 							  							  
+void PIDOutputLimitsSet(PIDControl *pid, float min, float max); 							  							  
 
 // 
 // PID Tunings Set
@@ -230,7 +227,7 @@ extern void PIDOutputLimitsSet(PIDControl *pid, float min, float max);
 // Returns:
 //      Nothing.
 // 
-extern void PIDTuningsSet(PIDControl *pid, float kp, float ki, float kd);         	                                         
+void PIDTuningsSet(PIDControl *pid, float kp, float ki, float kd);         	                                         
 
 // 
 // PID Tuning Gain Constant P Set
@@ -242,7 +239,7 @@ extern void PIDTuningsSet(PIDControl *pid, float kp, float ki, float kd);
 // Returns:
 //      Nothing.
 // 
-extern void PIDTuningKpSet(PIDControl *pid, float kp);
+void PIDTuningKpSet(PIDControl *pid, float kp);
 
 // 
 // PID Tuning Gain Constant I Set
@@ -254,7 +251,7 @@ extern void PIDTuningKpSet(PIDControl *pid, float kp);
 // Returns:
 //      Nothing.
 // 
-extern void PIDTuningKiSet(PIDControl *pid, float ki);
+void PIDTuningKiSet(PIDControl *pid, float ki);
 
 // 
 // PID Tuning Gain Constant D Set
@@ -266,7 +263,7 @@ extern void PIDTuningKiSet(PIDControl *pid, float ki);
 // Returns:
 //      Nothing.
 // 
-extern void PIDTuningKdSet(PIDControl *pid, float kd);
+void PIDTuningKdSet(PIDControl *pid, float kd);
 
 // 
 // PID Controller Direction Set
@@ -280,8 +277,8 @@ extern void PIDTuningKdSet(PIDControl *pid, float kd);
 // Returns:
 //      Nothing.
 // 
-extern void PIDControllerDirectionSet(PIDControl *pid, 
-                                      PIDDirection controllerDirection);	  									  									  									  
+void PIDControllerDirectionSet(PIDControl *pid, 
+                               PIDDirection controllerDirection);	  									  									  									  
 
 // 
 // PID Sample Time Set
@@ -293,7 +290,7 @@ extern void PIDControllerDirectionSet(PIDControl *pid,
 // Returns:
 //      Nothing.
 // 
-extern void PIDSampleTimeSet(PIDControl *pid, float sampleTimeSeconds);                                                       									  									  									   
+void PIDSampleTimeSet(PIDControl *pid, float sampleTimeSeconds);                                                       									  									  									   
 
 // 
 // Basic Set and Get Functions for PID Parameters

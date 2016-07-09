@@ -212,6 +212,20 @@ void Motor_SetPwm(uint16 left_pwm, uint16 right_pwm)
         
 void Motor_LeftSetCntsPerSec(float cps)
 {
+    #ifdef CLIFF_SENSORS    
+    if ( (front_cliff_detect && linear > 0 && angular != 0) ||
+         (rear_cliff_detect && linear < 0 && angular != 0) )
+    {
+        linear = 0;
+        angular = 0;
+    }
+    
+    if (CliffSensorDetected(cps))
+    {
+        return;
+    }
+    #endif
+    
     calc_motor_output_from_cps(cps, &left_motor);
         
     left_motor.set_pwm(left_motor.pwm);
@@ -219,6 +233,20 @@ void Motor_LeftSetCntsPerSec(float cps)
         
 void Motor_RightSetCntsPerSec(float cps)
 {
+    #ifdef CLIFF_SENSORS    
+    if ( (front_cliff_detect && linear > 0 && angular != 0) ||
+         (rear_cliff_detect && linear < 0 && angular != 0) )
+    {
+        linear = 0;
+        angular = 0;
+    }
+    
+    if (CliffSensorDetected(cps))
+    {
+        return;
+    }
+    #endif
+    
     calc_motor_output_from_cps(cps, &right_motor);
           
     right_motor.set_pwm(right_motor.pwm);

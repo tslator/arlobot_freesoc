@@ -25,19 +25,21 @@
 #include "callin.h"
 #include "calang.h"
 #include "debug.h"
+#include "control.h"
 
-#define NO_CMD              (0)
-#define CAL_REQUEST         (1)
-#define MOTOR_CAL_CMD       (2)
-#define MOTOR_VAL_CMD       (3)
-#define PID_LEFT_CAL_CMD    (4)
-#define PID_RIGHT_CAL_CMD   (5)
-#define PID_VAL_CMD         (6)
-#define LIN_CAL_CMD         (7)
-#define LIN_VAL_CMD         (8)
-#define ANG_CAL_CMD         (9)
-#define ANG_VAL_CMD         (10)
-#define EXIT_CMD            (11)
+#define NO_CMD              '0'
+#define CAL_REQUEST         'c'
+#define MOTOR_CAL_CMD       '1'
+#define MOTOR_VAL_CMD       '2'
+#define MOTOR_DUMP_CMD      '3'
+#define PID_LEFT_CAL_CMD    '4'
+#define PID_RIGHT_CAL_CMD   '5'
+#define PID_VAL_CMD         '6'
+#define LIN_CAL_CMD         '7'
+#define LIN_VAL_CMD         '8'
+#define ANG_CAL_CMD         '9'
+#define ANG_VAL_CMD         'a'
+#define EXIT_CMD            'x'
 
 static void ClearCalibrationStatusBit(uint16 bit)
 {
@@ -82,51 +84,7 @@ static uint8 GetCommand()
         case 'C':
             if (is_cal_active) return 0;
             is_cal_active = 1;
-            return CAL_REQUEST;
             break;
-        
-        case '1':
-            Ser_WriteByte(value);
-            return MOTOR_CAL_CMD;
-            break;
-            
-        case '2':
-            Ser_WriteByte(value);
-            return MOTOR_VAL_CMD;
-            break;
-        
-        case '3':
-            Ser_WriteByte(value);
-            return PID_LEFT_CAL_CMD;
-            break;
-            
-        case '4':
-            Ser_WriteByte(value);
-            return PID_RIGHT_CAL_CMD;
-            break;
-            
-        case '5':
-            Ser_WriteByte(value);
-            return PID_VAL_CMD;
-            break;
-        
-        case '6':
-            Ser_WriteByte(value);
-            return LIN_CAL_CMD;
-            break;
-            
-        case '7':
-            Ser_WriteByte(value);
-            return LIN_VAL_CMD;
-    
-        case '8':
-            Ser_WriteByte(value);
-            return ANG_CAL_CMD;
-            break;
-            
-        case '9':
-            Ser_WriteByte(value);
-            return ANG_VAL_CMD;
 
         case 'x':
         case 'X':            
@@ -136,8 +94,10 @@ static uint8 GetCommand()
             break;
         
         default:
-            return NO_CMD;
-    }    
+            break;
+    }
+    
+    return value;
 }
 
 static void DisplayMenu()
@@ -148,16 +108,17 @@ static void DisplayMenu()
     Ser_PutString("The following calibration operations are allowed:\r\n");
     Ser_PutString("    1. Motor Calibration - creates mapping between count/sec and PWM.\r\n");
     Ser_PutString("    2. Motor Validation - operates the motors at varying velocities.\r\n");
+    Ser_PutString("    3. Motor Verification - prints the motor count/sec and PWM mapping.\r\n");
     Ser_PutString("\r\n");
-    Ser_PutString("    3. PID Left Calibration - enter gains, execute step input, print velocity response.\r\n");
-    Ser_PutString("    4. PID Right Calibration - enter gains, execute step input, print velocity response.\r\n");
-    Ser_PutString("    5. PID Validation - operates the motors at varying velocities.\r\n");
+    Ser_PutString("    4. PID Left Calibration - enter gains, execute step input, print velocity response.\r\n");
+    Ser_PutString("    5. PID Right Calibration - enter gains, execute step input, print velocity response.\r\n");
+    Ser_PutString("    6. PID Validation - operates the motors at varying velocities.\r\n");
     Ser_PutString("\r\n");
-    Ser_PutString("    6. Linear Bias - moves forward 1 meter and allows user to enter a ratio to be applied as a bias in linear motion\r\n");
-    Ser_PutString("    7. Validate Linear Bias - moves forward 1 meter applying the linear bias calculated in linear bias calibration\r\n");
+    Ser_PutString("    7. Linear Bias - moves forward 1 meter and allows user to enter a ratio to be applied as a bias in linear motion\r\n");
+    Ser_PutString("    8. Validate Linear Bias - moves forward 1 meter applying the linear bias calculated in linear bias calibration\r\n");
     Ser_PutString("\r\n");
-    Ser_PutString("    8. Angular Bias - rotates 360 degrees and allows user to enter a ratio to be applied as a bias in angular motion\r\n");
-    Ser_PutString("    9. Validate Angular Bias - rotates 360 degrees applying the angular bias calculated in angular bias calibration\r\n");
+    Ser_PutString("    9. Angular Bias - rotates 360 degrees and allows user to enter a ratio to be applied as a bias in angular motion\r\n");
+    Ser_PutString("    a. Validate Angular Bias - rotates 360 degrees applying the angular bias calculated in angular bias calibration\r\n");
     Ser_PutString("\r\nEnter X to exit calibration, C to enter calibration\r\n");
     Ser_PutString("\r\n");
     Ser_PutString("Make an entry [1-8,X]: ");
@@ -203,6 +164,8 @@ void Cal_CheckRequest()
     uint8 cmd;
     float gains[3];
     
+    uint16 old_debug_control_enabled = debug_control_enabled;    
+    
     do
     {
         Ser_Update();
@@ -224,6 +187,11 @@ void Cal_CheckRequest()
                 
             case MOTOR_VAL_CMD:
                 ValidateMotorVelocity();
+                DisplayMenu();
+                break;
+                
+            case MOTOR_DUMP_CMD:
+                PrintMotorVelocity();
                 DisplayMenu();
                 break;
                 
@@ -283,6 +251,7 @@ void Cal_CheckRequest()
                 break;
                 
             case EXIT_CMD:
+                Pid_SetLeftRightTarget(Control_LeftGetCmdVelocity, Control_RightGetCmdVelocity);
                 Ser_PutString("\r\nExiting calibration\r\n");
                 break; 
                 
@@ -292,6 +261,7 @@ void Cal_CheckRequest()
         }
     } while (cmd != EXIT_CMD && cmd != NO_CMD);
     
+    debug_control_enabled = old_debug_control_enabled;
 }
 
 void Cal_LeftGetMotorCalData(CAL_DATA_TYPE **fwd_cal_data, CAL_DATA_TYPE **bwd_cal_data)
