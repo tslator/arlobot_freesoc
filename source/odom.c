@@ -21,6 +21,16 @@
 #include "debug.h"
 #include "cal.h"
 
+
+/*
+    References:
+
+    http://rossum.sourceforge.net/papers/DiffSteer/
+    http://www-personal.umich.edu/~johannb/Papers/pos96rep.pdf
+
+ */
+
+
 #ifdef ODOM_UPDATE_DELTA_ENABLED
 #define ODOM_DEBUG_DELTA(delta) DEBUG_DELTA_TIME("odom", delta)
 #else
