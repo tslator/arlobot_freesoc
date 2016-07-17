@@ -1,0 +1,1481 @@
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 1
+
+
+   1              		.syntax unified
+   2              		.cpu cortex-m3
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 1
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.thumb
+  14              		.file	"pidutil.c"
+  15              		.text
+  16              	.Ltext0:
+  17              		.cfi_sections	.debug_frame
+  18              		.global	__aeabi_fsub
+  19              		.section	.text.DumpPid,"ax",%progbits
+  20              		.align	2
+  21              		.global	DumpPid
+  22              		.thumb
+  23              		.thumb_func
+  24              		.type	DumpPid, %function
+  25              	DumpPid:
+  26              	.LFB63:
+  27              		.file 1 "..\\source\\pidutil.c"
+   1:..\source/pidutil.c **** 
+   2:..\source/pidutil.c **** #include "pidutil.h"
+   3:..\source/pidutil.c **** #include "config.h"
+   4:..\source/pidutil.c **** #include "debug.h"
+   5:..\source/pidutil.c **** #include "utils.h"
+   6:..\source/pidutil.c **** 
+   7:..\source/pidutil.c **** #if defined (LEFT_PID_DUMP_ENABLED) || defined(RIGHT_PID_DUMP_ENABLED) || defined(CTRL_LINEAR_PID_D
+   8:..\source/pidutil.c **** void DumpPid(char *name, PIDControl *pid)
+   9:..\source/pidutil.c **** {
+  28              		.loc 1 9 0
+  29              		.cfi_startproc
+  30              		@ args = 0, pretend = 0, frame = 72
+  31              		@ frame_needed = 0, uses_anonymous_args = 0
+  32              	.LVL0:
+  33 0000 30B5     		push	{r4, r5, lr}
+  34              		.cfi_def_cfa_offset 12
+  35              		.cfi_offset 4, -12
+  36              		.cfi_offset 5, -8
+  37              		.cfi_offset 14, -4
+  38 0002 99B0     		sub	sp, sp, #100
+  39              		.cfi_def_cfa_offset 112
+  40 0004 0546     		mov	r5, r0
+  41 0006 0C46     		mov	r4, r1
+  10:..\source/pidutil.c ****     char set_point_str[10];
+  11:..\source/pidutil.c ****     char input_str[10];
+  12:..\source/pidutil.c ****     char error_str[10];
+  13:..\source/pidutil.c ****     char last_input_str[10];
+  14:..\source/pidutil.c ****     char iterm_str[10];
+  15:..\source/pidutil.c ****     char output_str[10];
+  16:..\source/pidutil.c **** 
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 2
+
+
+  17:..\source/pidutil.c ****     ftoa(pid->setpoint, set_point_str, 3);
+  42              		.loc 1 17 0
+  43 0008 486B     		ldr	r0, [r1, #52]	@ float
+  44              	.LVL1:
+  45 000a 15A9     		add	r1, sp, #84
+  46              	.LVL2:
+  47 000c 0322     		movs	r2, #3
+  48 000e FFF7FEFF 		bl	ftoa
+  49              	.LVL3:
+  18:..\source/pidutil.c ****     ftoa(pid->input, input_str, 3);
+  50              		.loc 1 18 0
+  51 0012 2068     		ldr	r0, [r4]	@ float
+  52 0014 12A9     		add	r1, sp, #72
+  53 0016 0322     		movs	r2, #3
+  54 0018 FFF7FEFF 		bl	ftoa
+  55              	.LVL4:
+  19:..\source/pidutil.c ****     ftoa(pid->setpoint - pid->input, error_str, 6);
+  56              		.loc 1 19 0
+  57 001c 606B     		ldr	r0, [r4, #52]	@ float
+  58 001e 2168     		ldr	r1, [r4]	@ float
+  59 0020 FFF7FEFF 		bl	__aeabi_fsub
+  60              	.LVL5:
+  61 0024 0FA9     		add	r1, sp, #60
+  62 0026 0622     		movs	r2, #6
+  63 0028 FFF7FEFF 		bl	ftoa
+  64              	.LVL6:
+  20:..\source/pidutil.c ****     ftoa(pid->lastInput, last_input_str, 3);
+  65              		.loc 1 20 0
+  66 002c 6068     		ldr	r0, [r4, #4]	@ float
+  67 002e 0CA9     		add	r1, sp, #48
+  68 0030 0322     		movs	r2, #3
+  69 0032 FFF7FEFF 		bl	ftoa
+  70              	.LVL7:
+  21:..\source/pidutil.c ****     ftoa(pid->iTerm, iterm_str, 6);
+  71              		.loc 1 21 0
+  72 0036 606A     		ldr	r0, [r4, #36]	@ float
+  73 0038 09A9     		add	r1, sp, #36
+  74 003a 0622     		movs	r2, #6
+  75 003c FFF7FEFF 		bl	ftoa
+  76              	.LVL8:
+  22:..\source/pidutil.c ****     ftoa(pid->output, output_str, 6);
+  77              		.loc 1 22 0
+  78 0040 A068     		ldr	r0, [r4, #8]	@ float
+  79 0042 06A9     		add	r1, sp, #24
+  80 0044 0622     		movs	r2, #6
+  81 0046 FFF7FEFF 		bl	ftoa
+  82              	.LVL9:
+  23:..\source/pidutil.c **** 
+  24:..\source/pidutil.c ****     if (PID_DEBUG_CONTROL_ENABLED)
+  83              		.loc 1 24 0
+  84 004a 0F4B     		ldr	r3, .L4
+  85 004c 1B88     		ldrh	r3, [r3]
+  86 004e 13F03C0F 		tst	r3, #60
+  87 0052 16D0     		beq	.L1
+  25:..\source/pidutil.c ****     {
+  26:..\source/pidutil.c ****         DEBUG_PRINT_ARG("%s pid: %s %s %s %s %s %s\r\n", name, set_point_str, input_str, error_str,
+  88              		.loc 1 26 0
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 3
+
+
+  89 0054 0D4C     		ldr	r4, .L4+4
+  90              	.LVL10:
+  91 0056 15AB     		add	r3, sp, #84
+  92 0058 0093     		str	r3, [sp]
+  93 005a 12AB     		add	r3, sp, #72
+  94 005c 0193     		str	r3, [sp, #4]
+  95 005e 0FAB     		add	r3, sp, #60
+  96 0060 0293     		str	r3, [sp, #8]
+  97 0062 0CAB     		add	r3, sp, #48
+  98 0064 0393     		str	r3, [sp, #12]
+  99 0066 09AB     		add	r3, sp, #36
+ 100 0068 0493     		str	r3, [sp, #16]
+ 101 006a 06AB     		add	r3, sp, #24
+ 102 006c 0593     		str	r3, [sp, #20]
+ 103 006e 2046     		mov	r0, r4
+ 104 0070 4FF48071 		mov	r1, #256
+ 105 0074 064A     		ldr	r2, .L4+8
+ 106 0076 2B46     		mov	r3, r5
+ 107 0078 FFF7FEFF 		bl	snprintf
+ 108              	.LVL11:
+ 109 007c 2046     		mov	r0, r4
+ 110 007e FFF7FEFF 		bl	Ser_PutString
+ 111              	.LVL12:
+ 112              	.L1:
+  27:..\source/pidutil.c ****     }
+  28:..\source/pidutil.c **** }
+ 113              		.loc 1 28 0
+ 114 0082 19B0     		add	sp, sp, #100
+ 115              		.cfi_def_cfa_offset 12
+ 116              		@ sp needed
+ 117 0084 30BD     		pop	{r4, r5, pc}
+ 118              	.LVL13:
+ 119              	.L5:
+ 120 0086 00BF     		.align	2
+ 121              	.L4:
+ 122 0088 00000000 		.word	debug_control_enabled
+ 123 008c 00000000 		.word	formatted_string
+ 124 0090 00000000 		.word	.LC0
+ 125              		.cfi_endproc
+ 126              	.LFE63:
+ 127              		.size	DumpPid, .-DumpPid
+ 128              		.comm	formatted_string,256,4
+ 129              		.comm	debug_control_enabled,2,2
+ 130              		.section	.rodata.str1.4,"aMS",%progbits,1
+ 131              		.align	2
+ 132              	.LC0:
+ 133 0000 25732070 		.ascii	"%s pid: %s %s %s %s %s %s\015\012\000"
+ 133      69643A20 
+ 133      25732025 
+ 133      73202573 
+ 133      20257320 
+ 134              		.text
+ 135              	.Letext0:
+ 136              		.file 2 "c:\\program files (x86)\\cypress\\psoc creator\\3.3\\psoc creator\\import\\gnu\\arm\\4.9.
+ 137              		.file 3 "c:\\program files (x86)\\cypress\\psoc creator\\3.3\\psoc creator\\import\\gnu\\arm\\4.9.
+ 138              		.file 4 "Generated_Source\\PSoC5/cytypes.h"
+ 139              		.file 5 "c:\\program files (x86)\\cypress\\psoc creator\\3.3\\psoc creator\\import\\gnu\\arm\\4.9.
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 4
+
+
+ 140              		.file 6 "..\\source\\pid_controller.h"
+ 141              		.file 7 "Generated_Source\\PSoC5/core_cm3.h"
+ 142              		.file 8 "..\\source\\debug.h"
+ 143              		.file 9 "..\\source\\utils.h"
+ 144              		.file 10 "c:\\program files (x86)\\cypress\\psoc creator\\3.3\\psoc creator\\import\\gnu\\arm\\4.9
+ 145              		.file 11 "..\\source\\serial.h"
+ 146              		.section	.debug_info,"",%progbits
+ 147              	.Ldebug_info0:
+ 148 0000 00040000 		.4byte	0x400
+ 149 0004 0400     		.2byte	0x4
+ 150 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 151 000a 04       		.byte	0x4
+ 152 000b 01       		.uleb128 0x1
+ 153 000c 0F010000 		.4byte	.LASF50
+ 154 0010 01       		.byte	0x1
+ 155 0011 71020000 		.4byte	.LASF51
+ 156 0015 A5020000 		.4byte	.LASF52
+ 157 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 158 001d 00000000 		.4byte	0
+ 159 0021 00000000 		.4byte	.Ldebug_line0
+ 160 0025 02       		.uleb128 0x2
+ 161 0026 01       		.byte	0x1
+ 162 0027 06       		.byte	0x6
+ 163 0028 DC010000 		.4byte	.LASF0
+ 164 002c 02       		.uleb128 0x2
+ 165 002d 01       		.byte	0x1
+ 166 002e 08       		.byte	0x8
+ 167 002f 70000000 		.4byte	.LASF1
+ 168 0033 02       		.uleb128 0x2
+ 169 0034 02       		.byte	0x2
+ 170 0035 05       		.byte	0x5
+ 171 0036 48020000 		.4byte	.LASF2
+ 172 003a 02       		.uleb128 0x2
+ 173 003b 02       		.byte	0x2
+ 174 003c 07       		.byte	0x7
+ 175 003d A3000000 		.4byte	.LASF3
+ 176 0041 03       		.uleb128 0x3
+ 177 0042 1F000000 		.4byte	.LASF9
+ 178 0046 02       		.byte	0x2
+ 179 0047 3F       		.byte	0x3f
+ 180 0048 4C000000 		.4byte	0x4c
+ 181 004c 02       		.uleb128 0x2
+ 182 004d 04       		.byte	0x4
+ 183 004e 05       		.byte	0x5
+ 184 004f 68020000 		.4byte	.LASF4
+ 185 0053 02       		.uleb128 0x2
+ 186 0054 04       		.byte	0x4
+ 187 0055 07       		.byte	0x7
+ 188 0056 91000000 		.4byte	.LASF5
+ 189 005a 02       		.uleb128 0x2
+ 190 005b 08       		.byte	0x8
+ 191 005c 05       		.byte	0x5
+ 192 005d 0F020000 		.4byte	.LASF6
+ 193 0061 02       		.uleb128 0x2
+ 194 0062 08       		.byte	0x8
+ 195 0063 07       		.byte	0x7
+ 196 0064 B3010000 		.4byte	.LASF7
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 5
+
+
+ 197 0068 04       		.uleb128 0x4
+ 198 0069 04       		.byte	0x4
+ 199 006a 05       		.byte	0x5
+ 200 006b 696E7400 		.ascii	"int\000"
+ 201 006f 02       		.uleb128 0x2
+ 202 0070 04       		.byte	0x4
+ 203 0071 07       		.byte	0x7
+ 204 0072 9D010000 		.4byte	.LASF8
+ 205 0076 03       		.uleb128 0x3
+ 206 0077 F3010000 		.4byte	.LASF10
+ 207 007b 03       		.byte	0x3
+ 208 007c 2C       		.byte	0x2c
+ 209 007d 41000000 		.4byte	0x41
+ 210 0081 05       		.uleb128 0x5
+ 211 0082 FB000000 		.4byte	.LASF11
+ 212 0086 04       		.byte	0x4
+ 213 0087 3901     		.2byte	0x139
+ 214 0089 3A000000 		.4byte	0x3a
+ 215 008d 02       		.uleb128 0x2
+ 216 008e 04       		.byte	0x4
+ 217 008f 04       		.byte	0x4
+ 218 0090 5C000000 		.4byte	.LASF12
+ 219 0094 02       		.uleb128 0x2
+ 220 0095 08       		.byte	0x8
+ 221 0096 04       		.byte	0x4
+ 222 0097 44000000 		.4byte	.LASF13
+ 223 009b 02       		.uleb128 0x2
+ 224 009c 01       		.byte	0x1
+ 225 009d 08       		.byte	0x8
+ 226 009e 27020000 		.4byte	.LASF14
+ 227 00a2 03       		.uleb128 0x3
+ 228 00a3 B6000000 		.4byte	.LASF15
+ 229 00a7 05       		.byte	0x5
+ 230 00a8 D4       		.byte	0xd4
+ 231 00a9 6F000000 		.4byte	0x6f
+ 232 00ad 02       		.uleb128 0x2
+ 233 00ae 04       		.byte	0x4
+ 234 00af 07       		.byte	0x7
+ 235 00b0 FB010000 		.4byte	.LASF16
+ 236 00b4 06       		.uleb128 0x6
+ 237 00b5 04       		.byte	0x4
+ 238 00b6 9B000000 		.4byte	0x9b
+ 239 00ba 06       		.uleb128 0x6
+ 240 00bb 04       		.byte	0x4
+ 241 00bc C0000000 		.4byte	0xc0
+ 242 00c0 07       		.uleb128 0x7
+ 243 00c1 9B000000 		.4byte	0x9b
+ 244 00c5 08       		.uleb128 0x8
+ 245 00c6 01       		.byte	0x1
+ 246 00c7 06       		.byte	0x6
+ 247 00c8 3D       		.byte	0x3d
+ 248 00c9 DA000000 		.4byte	0xda
+ 249 00cd 09       		.uleb128 0x9
+ 250 00ce 4B000000 		.4byte	.LASF17
+ 251 00d2 00       		.sleb128 0
+ 252 00d3 09       		.uleb128 0x9
+ 253 00d4 0E000000 		.4byte	.LASF18
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 6
+
+
+ 254 00d8 01       		.sleb128 1
+ 255 00d9 00       		.byte	0
+ 256 00da 03       		.uleb128 0x3
+ 257 00db 52020000 		.4byte	.LASF19
+ 258 00df 06       		.byte	0x6
+ 259 00e0 40       		.byte	0x40
+ 260 00e1 C5000000 		.4byte	0xc5
+ 261 00e5 08       		.uleb128 0x8
+ 262 00e6 01       		.byte	0x1
+ 263 00e7 06       		.byte	0x6
+ 264 00e8 43       		.byte	0x43
+ 265 00e9 FA000000 		.4byte	0xfa
+ 266 00ed 09       		.uleb128 0x9
+ 267 00ee 61020000 		.4byte	.LASF20
+ 268 00f2 00       		.sleb128 0
+ 269 00f3 09       		.uleb128 0x9
+ 270 00f4 CF010000 		.4byte	.LASF21
+ 271 00f8 01       		.sleb128 1
+ 272 00f9 00       		.byte	0
+ 273 00fa 03       		.uleb128 0x3
+ 274 00fb 3B020000 		.4byte	.LASF22
+ 275 00ff 06       		.byte	0x6
+ 276 0100 46       		.byte	0x46
+ 277 0101 E5000000 		.4byte	0xe5
+ 278 0105 0A       		.uleb128 0xa
+ 279 0106 3C       		.byte	0x3c
+ 280 0107 06       		.byte	0x6
+ 281 0108 48       		.byte	0x48
+ 282 0109 CE010000 		.4byte	0x1ce
+ 283 010d 0B       		.uleb128 0xb
+ 284 010e 85000000 		.4byte	.LASF23
+ 285 0112 06       		.byte	0x6
+ 286 0113 4D       		.byte	0x4d
+ 287 0114 8D000000 		.4byte	0x8d
+ 288 0118 00       		.byte	0
+ 289 0119 0B       		.uleb128 0xb
+ 290 011a 1D020000 		.4byte	.LASF24
+ 291 011e 06       		.byte	0x6
+ 292 011f 52       		.byte	0x52
+ 293 0120 8D000000 		.4byte	0x8d
+ 294 0124 04       		.byte	0x4
+ 295 0125 0B       		.uleb128 0xb
+ 296 0126 5A020000 		.4byte	.LASF25
+ 297 012a 06       		.byte	0x6
+ 298 012b 57       		.byte	0x57
+ 299 012c 8D000000 		.4byte	0x8d
+ 300 0130 08       		.byte	0x8
+ 301 0131 0B       		.uleb128 0xb
+ 302 0132 18000000 		.4byte	.LASF26
+ 303 0136 06       		.byte	0x6
+ 304 0137 5D       		.byte	0x5d
+ 305 0138 8D000000 		.4byte	0x8d
+ 306 013c 0C       		.byte	0xc
+ 307 013d 0B       		.uleb128 0xb
+ 308 013e 07000000 		.4byte	.LASF27
+ 309 0142 06       		.byte	0x6
+ 310 0143 5E       		.byte	0x5e
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 7
+
+
+ 311 0144 8D000000 		.4byte	0x8d
+ 312 0148 10       		.byte	0x10
+ 313 0149 0B       		.uleb128 0xb
+ 314 014a 00000000 		.4byte	.LASF28
+ 315 014e 06       		.byte	0x6
+ 316 014f 5F       		.byte	0x5f
+ 317 0150 8D000000 		.4byte	0x8d
+ 318 0154 14       		.byte	0x14
+ 319 0155 0B       		.uleb128 0xb
+ 320 0156 F1000000 		.4byte	.LASF29
+ 321 015a 06       		.byte	0x6
+ 322 015b 65       		.byte	0x65
+ 323 015c 8D000000 		.4byte	0x8d
+ 324 0160 18       		.byte	0x18
+ 325 0161 0B       		.uleb128 0xb
+ 326 0162 D1000000 		.4byte	.LASF30
+ 327 0166 06       		.byte	0x6
+ 328 0167 66       		.byte	0x66
+ 329 0168 8D000000 		.4byte	0x8d
+ 330 016c 1C       		.byte	0x1c
+ 331 016d 0B       		.uleb128 0xb
+ 332 016e BD000000 		.4byte	.LASF31
+ 333 0172 06       		.byte	0x6
+ 334 0173 67       		.byte	0x67
+ 335 0174 8D000000 		.4byte	0x8d
+ 336 0178 20       		.byte	0x20
+ 337 0179 0B       		.uleb128 0xb
+ 338 017a 8B000000 		.4byte	.LASF32
+ 339 017e 06       		.byte	0x6
+ 340 017f 6C       		.byte	0x6c
+ 341 0180 8D000000 		.4byte	0x8d
+ 342 0184 24       		.byte	0x24
+ 343 0185 0B       		.uleb128 0xb
+ 344 0186 E8010000 		.4byte	.LASF33
+ 345 018a 06       		.byte	0x6
+ 346 018b 72       		.byte	0x72
+ 347 018c 8D000000 		.4byte	0x8d
+ 348 0190 28       		.byte	0x28
+ 349 0191 0B       		.uleb128 0xb
+ 350 0192 7E000000 		.4byte	.LASF34
+ 351 0196 06       		.byte	0x6
+ 352 0197 77       		.byte	0x77
+ 353 0198 8D000000 		.4byte	0x8d
+ 354 019c 2C       		.byte	0x2c
+ 355 019d 0B       		.uleb128 0xb
+ 356 019e 3D000000 		.4byte	.LASF35
+ 357 01a2 06       		.byte	0x6
+ 358 01a3 78       		.byte	0x78
+ 359 01a4 8D000000 		.4byte	0x8d
+ 360 01a8 30       		.byte	0x30
+ 361 01a9 0B       		.uleb128 0xb
+ 362 01aa AA010000 		.4byte	.LASF36
+ 363 01ae 06       		.byte	0x6
+ 364 01af 7D       		.byte	0x7d
+ 365 01b0 8D000000 		.4byte	0x8d
+ 366 01b4 34       		.byte	0x34
+ 367 01b5 0B       		.uleb128 0xb
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 8
+
+
+ 368 01b6 D4020000 		.4byte	.LASF37
+ 369 01ba 06       		.byte	0x6
+ 370 01bb 84       		.byte	0x84
+ 371 01bc FA000000 		.4byte	0xfa
+ 372 01c0 38       		.byte	0x38
+ 373 01c1 0B       		.uleb128 0xb
+ 374 01c2 CA010000 		.4byte	.LASF38
+ 375 01c6 06       		.byte	0x6
+ 376 01c7 8C       		.byte	0x8c
+ 377 01c8 DA000000 		.4byte	0xda
+ 378 01cc 39       		.byte	0x39
+ 379 01cd 00       		.byte	0
+ 380 01ce 03       		.uleb128 0x3
+ 381 01cf 32000000 		.4byte	.LASF39
+ 382 01d3 06       		.byte	0x6
+ 383 01d4 8D       		.byte	0x8d
+ 384 01d5 05010000 		.4byte	0x105
+ 385 01d9 0C       		.uleb128 0xc
+ 386 01da E9000000 		.4byte	.LASF53
+ 387 01de 01       		.byte	0x1
+ 388 01df 08       		.byte	0x8
+ 389 01e0 00000000 		.4byte	.LFB63
+ 390 01e4 94000000 		.4byte	.LFE63-.LFB63
+ 391 01e8 01       		.uleb128 0x1
+ 392 01e9 9C       		.byte	0x9c
+ 393 01ea 61030000 		.4byte	0x361
+ 394 01ee 0D       		.uleb128 0xd
+ 395 01ef CF020000 		.4byte	.LASF40
+ 396 01f3 01       		.byte	0x1
+ 397 01f4 08       		.byte	0x8
+ 398 01f5 B4000000 		.4byte	0xb4
+ 399 01f9 00000000 		.4byte	.LLST0
+ 400 01fd 0E       		.uleb128 0xe
+ 401 01fe 70696400 		.ascii	"pid\000"
+ 402 0202 01       		.byte	0x1
+ 403 0203 08       		.byte	0x8
+ 404 0204 61030000 		.4byte	0x361
+ 405 0208 2C000000 		.4byte	.LLST1
+ 406 020c 0F       		.uleb128 0xf
+ 407 020d 62000000 		.4byte	.LASF41
+ 408 0211 01       		.byte	0x1
+ 409 0212 0A       		.byte	0xa
+ 410 0213 67030000 		.4byte	0x367
+ 411 0217 02       		.uleb128 0x2
+ 412 0218 91       		.byte	0x91
+ 413 0219 64       		.sleb128 -28
+ 414 021a 0F       		.uleb128 0xf
+ 415 021b 9B020000 		.4byte	.LASF42
+ 416 021f 01       		.byte	0x1
+ 417 0220 0B       		.byte	0xb
+ 418 0221 67030000 		.4byte	0x367
+ 419 0225 02       		.uleb128 0x2
+ 420 0226 91       		.byte	0x91
+ 421 0227 58       		.sleb128 -40
+ 422 0228 0F       		.uleb128 0xf
+ 423 0229 C7000000 		.4byte	.LASF43
+ 424 022d 01       		.byte	0x1
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 9
+
+
+ 425 022e 0C       		.byte	0xc
+ 426 022f 67030000 		.4byte	0x367
+ 427 0233 02       		.uleb128 0x2
+ 428 0234 91       		.byte	0x91
+ 429 0235 4C       		.sleb128 -52
+ 430 0236 0F       		.uleb128 0xf
+ 431 0237 2C020000 		.4byte	.LASF44
+ 432 023b 01       		.byte	0x1
+ 433 023c 0D       		.byte	0xd
+ 434 023d 67030000 		.4byte	0x367
+ 435 0241 02       		.uleb128 0x2
+ 436 0242 91       		.byte	0x91
+ 437 0243 40       		.sleb128 -64
+ 438 0244 0F       		.uleb128 0xf
+ 439 0245 52000000 		.4byte	.LASF45
+ 440 0249 01       		.byte	0x1
+ 441 024a 0E       		.byte	0xe
+ 442 024b 67030000 		.4byte	0x367
+ 443 024f 03       		.uleb128 0x3
+ 444 0250 91       		.byte	0x91
+ 445 0251 B47F     		.sleb128 -76
+ 446 0253 0F       		.uleb128 0xf
+ 447 0254 04020000 		.4byte	.LASF46
+ 448 0258 01       		.byte	0x1
+ 449 0259 0F       		.byte	0xf
+ 450 025a 67030000 		.4byte	0x367
+ 451 025e 03       		.uleb128 0x3
+ 452 025f 91       		.byte	0x91
+ 453 0260 A87F     		.sleb128 -88
+ 454 0262 10       		.uleb128 0x10
+ 455 0263 12000000 		.4byte	.LVL3
+ 456 0267 BA030000 		.4byte	0x3ba
+ 457 026b 7B020000 		.4byte	0x27b
+ 458 026f 11       		.uleb128 0x11
+ 459 0270 01       		.uleb128 0x1
+ 460 0271 52       		.byte	0x52
+ 461 0272 01       		.uleb128 0x1
+ 462 0273 33       		.byte	0x33
+ 463 0274 11       		.uleb128 0x11
+ 464 0275 01       		.uleb128 0x1
+ 465 0276 51       		.byte	0x51
+ 466 0277 02       		.uleb128 0x2
+ 467 0278 91       		.byte	0x91
+ 468 0279 64       		.sleb128 -28
+ 469 027a 00       		.byte	0
+ 470 027b 10       		.uleb128 0x10
+ 471 027c 1C000000 		.4byte	.LVL4
+ 472 0280 BA030000 		.4byte	0x3ba
+ 473 0284 94020000 		.4byte	0x294
+ 474 0288 11       		.uleb128 0x11
+ 475 0289 01       		.uleb128 0x1
+ 476 028a 52       		.byte	0x52
+ 477 028b 01       		.uleb128 0x1
+ 478 028c 33       		.byte	0x33
+ 479 028d 11       		.uleb128 0x11
+ 480 028e 01       		.uleb128 0x1
+ 481 028f 51       		.byte	0x51
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 10
+
+
+ 482 0290 02       		.uleb128 0x2
+ 483 0291 91       		.byte	0x91
+ 484 0292 58       		.sleb128 -40
+ 485 0293 00       		.byte	0
+ 486 0294 10       		.uleb128 0x10
+ 487 0295 2C000000 		.4byte	.LVL6
+ 488 0299 BA030000 		.4byte	0x3ba
+ 489 029d AD020000 		.4byte	0x2ad
+ 490 02a1 11       		.uleb128 0x11
+ 491 02a2 01       		.uleb128 0x1
+ 492 02a3 52       		.byte	0x52
+ 493 02a4 01       		.uleb128 0x1
+ 494 02a5 36       		.byte	0x36
+ 495 02a6 11       		.uleb128 0x11
+ 496 02a7 01       		.uleb128 0x1
+ 497 02a8 51       		.byte	0x51
+ 498 02a9 02       		.uleb128 0x2
+ 499 02aa 91       		.byte	0x91
+ 500 02ab 4C       		.sleb128 -52
+ 501 02ac 00       		.byte	0
+ 502 02ad 10       		.uleb128 0x10
+ 503 02ae 36000000 		.4byte	.LVL7
+ 504 02b2 BA030000 		.4byte	0x3ba
+ 505 02b6 C6020000 		.4byte	0x2c6
+ 506 02ba 11       		.uleb128 0x11
+ 507 02bb 01       		.uleb128 0x1
+ 508 02bc 52       		.byte	0x52
+ 509 02bd 01       		.uleb128 0x1
+ 510 02be 33       		.byte	0x33
+ 511 02bf 11       		.uleb128 0x11
+ 512 02c0 01       		.uleb128 0x1
+ 513 02c1 51       		.byte	0x51
+ 514 02c2 02       		.uleb128 0x2
+ 515 02c3 91       		.byte	0x91
+ 516 02c4 40       		.sleb128 -64
+ 517 02c5 00       		.byte	0
+ 518 02c6 10       		.uleb128 0x10
+ 519 02c7 40000000 		.4byte	.LVL8
+ 520 02cb BA030000 		.4byte	0x3ba
+ 521 02cf E0020000 		.4byte	0x2e0
+ 522 02d3 11       		.uleb128 0x11
+ 523 02d4 01       		.uleb128 0x1
+ 524 02d5 52       		.byte	0x52
+ 525 02d6 01       		.uleb128 0x1
+ 526 02d7 36       		.byte	0x36
+ 527 02d8 11       		.uleb128 0x11
+ 528 02d9 01       		.uleb128 0x1
+ 529 02da 51       		.byte	0x51
+ 530 02db 03       		.uleb128 0x3
+ 531 02dc 91       		.byte	0x91
+ 532 02dd B47F     		.sleb128 -76
+ 533 02df 00       		.byte	0
+ 534 02e0 10       		.uleb128 0x10
+ 535 02e1 4A000000 		.4byte	.LVL9
+ 536 02e5 BA030000 		.4byte	0x3ba
+ 537 02e9 FA020000 		.4byte	0x2fa
+ 538 02ed 11       		.uleb128 0x11
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 11
+
+
+ 539 02ee 01       		.uleb128 0x1
+ 540 02ef 52       		.byte	0x52
+ 541 02f0 01       		.uleb128 0x1
+ 542 02f1 36       		.byte	0x36
+ 543 02f2 11       		.uleb128 0x11
+ 544 02f3 01       		.uleb128 0x1
+ 545 02f4 51       		.byte	0x51
+ 546 02f5 03       		.uleb128 0x3
+ 547 02f6 91       		.byte	0x91
+ 548 02f7 A87F     		.sleb128 -88
+ 549 02f9 00       		.byte	0
+ 550 02fa 10       		.uleb128 0x10
+ 551 02fb 7C000000 		.4byte	.LVL11
+ 552 02ff D5030000 		.4byte	0x3d5
+ 553 0303 50030000 		.4byte	0x350
+ 554 0307 11       		.uleb128 0x11
+ 555 0308 01       		.uleb128 0x1
+ 556 0309 53       		.byte	0x53
+ 557 030a 02       		.uleb128 0x2
+ 558 030b 75       		.byte	0x75
+ 559 030c 00       		.sleb128 0
+ 560 030d 11       		.uleb128 0x11
+ 561 030e 01       		.uleb128 0x1
+ 562 030f 52       		.byte	0x52
+ 563 0310 05       		.uleb128 0x5
+ 564 0311 03       		.byte	0x3
+ 565 0312 00000000 		.4byte	.LC0
+ 566 0316 11       		.uleb128 0x11
+ 567 0317 01       		.uleb128 0x1
+ 568 0318 51       		.byte	0x51
+ 569 0319 03       		.uleb128 0x3
+ 570 031a 0A       		.byte	0xa
+ 571 031b 0001     		.2byte	0x100
+ 572 031d 11       		.uleb128 0x11
+ 573 031e 01       		.uleb128 0x1
+ 574 031f 50       		.byte	0x50
+ 575 0320 02       		.uleb128 0x2
+ 576 0321 74       		.byte	0x74
+ 577 0322 00       		.sleb128 0
+ 578 0323 11       		.uleb128 0x11
+ 579 0324 02       		.uleb128 0x2
+ 580 0325 7D       		.byte	0x7d
+ 581 0326 14       		.sleb128 20
+ 582 0327 03       		.uleb128 0x3
+ 583 0328 91       		.byte	0x91
+ 584 0329 A87F     		.sleb128 -88
+ 585 032b 11       		.uleb128 0x11
+ 586 032c 02       		.uleb128 0x2
+ 587 032d 7D       		.byte	0x7d
+ 588 032e 10       		.sleb128 16
+ 589 032f 03       		.uleb128 0x3
+ 590 0330 91       		.byte	0x91
+ 591 0331 B47F     		.sleb128 -76
+ 592 0333 11       		.uleb128 0x11
+ 593 0334 02       		.uleb128 0x2
+ 594 0335 7D       		.byte	0x7d
+ 595 0336 0C       		.sleb128 12
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 12
+
+
+ 596 0337 02       		.uleb128 0x2
+ 597 0338 91       		.byte	0x91
+ 598 0339 40       		.sleb128 -64
+ 599 033a 11       		.uleb128 0x11
+ 600 033b 02       		.uleb128 0x2
+ 601 033c 7D       		.byte	0x7d
+ 602 033d 08       		.sleb128 8
+ 603 033e 02       		.uleb128 0x2
+ 604 033f 91       		.byte	0x91
+ 605 0340 4C       		.sleb128 -52
+ 606 0341 11       		.uleb128 0x11
+ 607 0342 02       		.uleb128 0x2
+ 608 0343 7D       		.byte	0x7d
+ 609 0344 04       		.sleb128 4
+ 610 0345 02       		.uleb128 0x2
+ 611 0346 91       		.byte	0x91
+ 612 0347 58       		.sleb128 -40
+ 613 0348 11       		.uleb128 0x11
+ 614 0349 02       		.uleb128 0x2
+ 615 034a 7D       		.byte	0x7d
+ 616 034b 00       		.sleb128 0
+ 617 034c 02       		.uleb128 0x2
+ 618 034d 91       		.byte	0x91
+ 619 034e 64       		.sleb128 -28
+ 620 034f 00       		.byte	0
+ 621 0350 12       		.uleb128 0x12
+ 622 0351 82000000 		.4byte	.LVL12
+ 623 0355 F6030000 		.4byte	0x3f6
+ 624 0359 11       		.uleb128 0x11
+ 625 035a 01       		.uleb128 0x1
+ 626 035b 50       		.byte	0x50
+ 627 035c 02       		.uleb128 0x2
+ 628 035d 74       		.byte	0x74
+ 629 035e 00       		.sleb128 0
+ 630 035f 00       		.byte	0
+ 631 0360 00       		.byte	0
+ 632 0361 06       		.uleb128 0x6
+ 633 0362 04       		.byte	0x4
+ 634 0363 CE010000 		.4byte	0x1ce
+ 635 0367 13       		.uleb128 0x13
+ 636 0368 9B000000 		.4byte	0x9b
+ 637 036c 77030000 		.4byte	0x377
+ 638 0370 14       		.uleb128 0x14
+ 639 0371 AD000000 		.4byte	0xad
+ 640 0375 09       		.byte	0x9
+ 641 0376 00       		.byte	0
+ 642 0377 15       		.uleb128 0x15
+ 643 0378 02010000 		.4byte	.LASF47
+ 644 037c 07       		.byte	0x7
+ 645 037d 5506     		.2byte	0x655
+ 646 037f 83030000 		.4byte	0x383
+ 647 0383 16       		.uleb128 0x16
+ 648 0384 76000000 		.4byte	0x76
+ 649 0388 17       		.uleb128 0x17
+ 650 0389 85020000 		.4byte	.LASF48
+ 651 038d 08       		.byte	0x8
+ 652 038e 32       		.byte	0x32
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 13
+
+
+ 653 038f 81000000 		.4byte	0x81
+ 654 0393 05       		.uleb128 0x5
+ 655 0394 03       		.byte	0x3
+ 656 0395 00000000 		.4byte	debug_control_enabled
+ 657 0399 13       		.uleb128 0x13
+ 658 039a 9B000000 		.4byte	0x9b
+ 659 039e A9030000 		.4byte	0x3a9
+ 660 03a2 14       		.uleb128 0x14
+ 661 03a3 AD000000 		.4byte	0xad
+ 662 03a7 FF       		.byte	0xff
+ 663 03a8 00       		.byte	0
+ 664 03a9 17       		.uleb128 0x17
+ 665 03aa E8020000 		.4byte	.LASF49
+ 666 03ae 08       		.byte	0x8
+ 667 03af 33       		.byte	0x33
+ 668 03b0 99030000 		.4byte	0x399
+ 669 03b4 05       		.uleb128 0x5
+ 670 03b5 03       		.byte	0x3
+ 671 03b6 00000000 		.4byte	formatted_string
+ 672 03ba 18       		.uleb128 0x18
+ 673 03bb D7010000 		.4byte	.LASF54
+ 674 03bf 09       		.byte	0x9
+ 675 03c0 3C       		.byte	0x3c
+ 676 03c1 D5030000 		.4byte	0x3d5
+ 677 03c5 19       		.uleb128 0x19
+ 678 03c6 8D000000 		.4byte	0x8d
+ 679 03ca 19       		.uleb128 0x19
+ 680 03cb B4000000 		.4byte	0xb4
+ 681 03cf 19       		.uleb128 0x19
+ 682 03d0 68000000 		.4byte	0x68
+ 683 03d4 00       		.byte	0
+ 684 03d5 1A       		.uleb128 0x1a
+ 685 03d6 29000000 		.4byte	.LASF55
+ 686 03da 0A       		.byte	0xa
+ 687 03db 0C01     		.2byte	0x10c
+ 688 03dd 68000000 		.4byte	0x68
+ 689 03e1 F6030000 		.4byte	0x3f6
+ 690 03e5 19       		.uleb128 0x19
+ 691 03e6 B4000000 		.4byte	0xb4
+ 692 03ea 19       		.uleb128 0x19
+ 693 03eb A2000000 		.4byte	0xa2
+ 694 03ef 19       		.uleb128 0x19
+ 695 03f0 BA000000 		.4byte	0xba
+ 696 03f4 1B       		.uleb128 0x1b
+ 697 03f5 00       		.byte	0
+ 698 03f6 1C       		.uleb128 0x1c
+ 699 03f7 DB000000 		.4byte	.LASF56
+ 700 03fb 0B       		.byte	0xb
+ 701 03fc 13       		.byte	0x13
+ 702 03fd 19       		.uleb128 0x19
+ 703 03fe B4000000 		.4byte	0xb4
+ 704 0402 00       		.byte	0
+ 705 0403 00       		.byte	0
+ 706              		.section	.debug_abbrev,"",%progbits
+ 707              	.Ldebug_abbrev0:
+ 708 0000 01       		.uleb128 0x1
+ 709 0001 11       		.uleb128 0x11
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 14
+
+
+ 710 0002 01       		.byte	0x1
+ 711 0003 25       		.uleb128 0x25
+ 712 0004 0E       		.uleb128 0xe
+ 713 0005 13       		.uleb128 0x13
+ 714 0006 0B       		.uleb128 0xb
+ 715 0007 03       		.uleb128 0x3
+ 716 0008 0E       		.uleb128 0xe
+ 717 0009 1B       		.uleb128 0x1b
+ 718 000a 0E       		.uleb128 0xe
+ 719 000b 55       		.uleb128 0x55
+ 720 000c 17       		.uleb128 0x17
+ 721 000d 11       		.uleb128 0x11
+ 722 000e 01       		.uleb128 0x1
+ 723 000f 10       		.uleb128 0x10
+ 724 0010 17       		.uleb128 0x17
+ 725 0011 00       		.byte	0
+ 726 0012 00       		.byte	0
+ 727 0013 02       		.uleb128 0x2
+ 728 0014 24       		.uleb128 0x24
+ 729 0015 00       		.byte	0
+ 730 0016 0B       		.uleb128 0xb
+ 731 0017 0B       		.uleb128 0xb
+ 732 0018 3E       		.uleb128 0x3e
+ 733 0019 0B       		.uleb128 0xb
+ 734 001a 03       		.uleb128 0x3
+ 735 001b 0E       		.uleb128 0xe
+ 736 001c 00       		.byte	0
+ 737 001d 00       		.byte	0
+ 738 001e 03       		.uleb128 0x3
+ 739 001f 16       		.uleb128 0x16
+ 740 0020 00       		.byte	0
+ 741 0021 03       		.uleb128 0x3
+ 742 0022 0E       		.uleb128 0xe
+ 743 0023 3A       		.uleb128 0x3a
+ 744 0024 0B       		.uleb128 0xb
+ 745 0025 3B       		.uleb128 0x3b
+ 746 0026 0B       		.uleb128 0xb
+ 747 0027 49       		.uleb128 0x49
+ 748 0028 13       		.uleb128 0x13
+ 749 0029 00       		.byte	0
+ 750 002a 00       		.byte	0
+ 751 002b 04       		.uleb128 0x4
+ 752 002c 24       		.uleb128 0x24
+ 753 002d 00       		.byte	0
+ 754 002e 0B       		.uleb128 0xb
+ 755 002f 0B       		.uleb128 0xb
+ 756 0030 3E       		.uleb128 0x3e
+ 757 0031 0B       		.uleb128 0xb
+ 758 0032 03       		.uleb128 0x3
+ 759 0033 08       		.uleb128 0x8
+ 760 0034 00       		.byte	0
+ 761 0035 00       		.byte	0
+ 762 0036 05       		.uleb128 0x5
+ 763 0037 16       		.uleb128 0x16
+ 764 0038 00       		.byte	0
+ 765 0039 03       		.uleb128 0x3
+ 766 003a 0E       		.uleb128 0xe
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 15
+
+
+ 767 003b 3A       		.uleb128 0x3a
+ 768 003c 0B       		.uleb128 0xb
+ 769 003d 3B       		.uleb128 0x3b
+ 770 003e 05       		.uleb128 0x5
+ 771 003f 49       		.uleb128 0x49
+ 772 0040 13       		.uleb128 0x13
+ 773 0041 00       		.byte	0
+ 774 0042 00       		.byte	0
+ 775 0043 06       		.uleb128 0x6
+ 776 0044 0F       		.uleb128 0xf
+ 777 0045 00       		.byte	0
+ 778 0046 0B       		.uleb128 0xb
+ 779 0047 0B       		.uleb128 0xb
+ 780 0048 49       		.uleb128 0x49
+ 781 0049 13       		.uleb128 0x13
+ 782 004a 00       		.byte	0
+ 783 004b 00       		.byte	0
+ 784 004c 07       		.uleb128 0x7
+ 785 004d 26       		.uleb128 0x26
+ 786 004e 00       		.byte	0
+ 787 004f 49       		.uleb128 0x49
+ 788 0050 13       		.uleb128 0x13
+ 789 0051 00       		.byte	0
+ 790 0052 00       		.byte	0
+ 791 0053 08       		.uleb128 0x8
+ 792 0054 04       		.uleb128 0x4
+ 793 0055 01       		.byte	0x1
+ 794 0056 0B       		.uleb128 0xb
+ 795 0057 0B       		.uleb128 0xb
+ 796 0058 3A       		.uleb128 0x3a
+ 797 0059 0B       		.uleb128 0xb
+ 798 005a 3B       		.uleb128 0x3b
+ 799 005b 0B       		.uleb128 0xb
+ 800 005c 01       		.uleb128 0x1
+ 801 005d 13       		.uleb128 0x13
+ 802 005e 00       		.byte	0
+ 803 005f 00       		.byte	0
+ 804 0060 09       		.uleb128 0x9
+ 805 0061 28       		.uleb128 0x28
+ 806 0062 00       		.byte	0
+ 807 0063 03       		.uleb128 0x3
+ 808 0064 0E       		.uleb128 0xe
+ 809 0065 1C       		.uleb128 0x1c
+ 810 0066 0D       		.uleb128 0xd
+ 811 0067 00       		.byte	0
+ 812 0068 00       		.byte	0
+ 813 0069 0A       		.uleb128 0xa
+ 814 006a 13       		.uleb128 0x13
+ 815 006b 01       		.byte	0x1
+ 816 006c 0B       		.uleb128 0xb
+ 817 006d 0B       		.uleb128 0xb
+ 818 006e 3A       		.uleb128 0x3a
+ 819 006f 0B       		.uleb128 0xb
+ 820 0070 3B       		.uleb128 0x3b
+ 821 0071 0B       		.uleb128 0xb
+ 822 0072 01       		.uleb128 0x1
+ 823 0073 13       		.uleb128 0x13
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 16
+
+
+ 824 0074 00       		.byte	0
+ 825 0075 00       		.byte	0
+ 826 0076 0B       		.uleb128 0xb
+ 827 0077 0D       		.uleb128 0xd
+ 828 0078 00       		.byte	0
+ 829 0079 03       		.uleb128 0x3
+ 830 007a 0E       		.uleb128 0xe
+ 831 007b 3A       		.uleb128 0x3a
+ 832 007c 0B       		.uleb128 0xb
+ 833 007d 3B       		.uleb128 0x3b
+ 834 007e 0B       		.uleb128 0xb
+ 835 007f 49       		.uleb128 0x49
+ 836 0080 13       		.uleb128 0x13
+ 837 0081 38       		.uleb128 0x38
+ 838 0082 0B       		.uleb128 0xb
+ 839 0083 00       		.byte	0
+ 840 0084 00       		.byte	0
+ 841 0085 0C       		.uleb128 0xc
+ 842 0086 2E       		.uleb128 0x2e
+ 843 0087 01       		.byte	0x1
+ 844 0088 3F       		.uleb128 0x3f
+ 845 0089 19       		.uleb128 0x19
+ 846 008a 03       		.uleb128 0x3
+ 847 008b 0E       		.uleb128 0xe
+ 848 008c 3A       		.uleb128 0x3a
+ 849 008d 0B       		.uleb128 0xb
+ 850 008e 3B       		.uleb128 0x3b
+ 851 008f 0B       		.uleb128 0xb
+ 852 0090 27       		.uleb128 0x27
+ 853 0091 19       		.uleb128 0x19
+ 854 0092 11       		.uleb128 0x11
+ 855 0093 01       		.uleb128 0x1
+ 856 0094 12       		.uleb128 0x12
+ 857 0095 06       		.uleb128 0x6
+ 858 0096 40       		.uleb128 0x40
+ 859 0097 18       		.uleb128 0x18
+ 860 0098 9642     		.uleb128 0x2116
+ 861 009a 19       		.uleb128 0x19
+ 862 009b 01       		.uleb128 0x1
+ 863 009c 13       		.uleb128 0x13
+ 864 009d 00       		.byte	0
+ 865 009e 00       		.byte	0
+ 866 009f 0D       		.uleb128 0xd
+ 867 00a0 05       		.uleb128 0x5
+ 868 00a1 00       		.byte	0
+ 869 00a2 03       		.uleb128 0x3
+ 870 00a3 0E       		.uleb128 0xe
+ 871 00a4 3A       		.uleb128 0x3a
+ 872 00a5 0B       		.uleb128 0xb
+ 873 00a6 3B       		.uleb128 0x3b
+ 874 00a7 0B       		.uleb128 0xb
+ 875 00a8 49       		.uleb128 0x49
+ 876 00a9 13       		.uleb128 0x13
+ 877 00aa 02       		.uleb128 0x2
+ 878 00ab 17       		.uleb128 0x17
+ 879 00ac 00       		.byte	0
+ 880 00ad 00       		.byte	0
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 17
+
+
+ 881 00ae 0E       		.uleb128 0xe
+ 882 00af 05       		.uleb128 0x5
+ 883 00b0 00       		.byte	0
+ 884 00b1 03       		.uleb128 0x3
+ 885 00b2 08       		.uleb128 0x8
+ 886 00b3 3A       		.uleb128 0x3a
+ 887 00b4 0B       		.uleb128 0xb
+ 888 00b5 3B       		.uleb128 0x3b
+ 889 00b6 0B       		.uleb128 0xb
+ 890 00b7 49       		.uleb128 0x49
+ 891 00b8 13       		.uleb128 0x13
+ 892 00b9 02       		.uleb128 0x2
+ 893 00ba 17       		.uleb128 0x17
+ 894 00bb 00       		.byte	0
+ 895 00bc 00       		.byte	0
+ 896 00bd 0F       		.uleb128 0xf
+ 897 00be 34       		.uleb128 0x34
+ 898 00bf 00       		.byte	0
+ 899 00c0 03       		.uleb128 0x3
+ 900 00c1 0E       		.uleb128 0xe
+ 901 00c2 3A       		.uleb128 0x3a
+ 902 00c3 0B       		.uleb128 0xb
+ 903 00c4 3B       		.uleb128 0x3b
+ 904 00c5 0B       		.uleb128 0xb
+ 905 00c6 49       		.uleb128 0x49
+ 906 00c7 13       		.uleb128 0x13
+ 907 00c8 02       		.uleb128 0x2
+ 908 00c9 18       		.uleb128 0x18
+ 909 00ca 00       		.byte	0
+ 910 00cb 00       		.byte	0
+ 911 00cc 10       		.uleb128 0x10
+ 912 00cd 898201   		.uleb128 0x4109
+ 913 00d0 01       		.byte	0x1
+ 914 00d1 11       		.uleb128 0x11
+ 915 00d2 01       		.uleb128 0x1
+ 916 00d3 31       		.uleb128 0x31
+ 917 00d4 13       		.uleb128 0x13
+ 918 00d5 01       		.uleb128 0x1
+ 919 00d6 13       		.uleb128 0x13
+ 920 00d7 00       		.byte	0
+ 921 00d8 00       		.byte	0
+ 922 00d9 11       		.uleb128 0x11
+ 923 00da 8A8201   		.uleb128 0x410a
+ 924 00dd 00       		.byte	0
+ 925 00de 02       		.uleb128 0x2
+ 926 00df 18       		.uleb128 0x18
+ 927 00e0 9142     		.uleb128 0x2111
+ 928 00e2 18       		.uleb128 0x18
+ 929 00e3 00       		.byte	0
+ 930 00e4 00       		.byte	0
+ 931 00e5 12       		.uleb128 0x12
+ 932 00e6 898201   		.uleb128 0x4109
+ 933 00e9 01       		.byte	0x1
+ 934 00ea 11       		.uleb128 0x11
+ 935 00eb 01       		.uleb128 0x1
+ 936 00ec 31       		.uleb128 0x31
+ 937 00ed 13       		.uleb128 0x13
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 18
+
+
+ 938 00ee 00       		.byte	0
+ 939 00ef 00       		.byte	0
+ 940 00f0 13       		.uleb128 0x13
+ 941 00f1 01       		.uleb128 0x1
+ 942 00f2 01       		.byte	0x1
+ 943 00f3 49       		.uleb128 0x49
+ 944 00f4 13       		.uleb128 0x13
+ 945 00f5 01       		.uleb128 0x1
+ 946 00f6 13       		.uleb128 0x13
+ 947 00f7 00       		.byte	0
+ 948 00f8 00       		.byte	0
+ 949 00f9 14       		.uleb128 0x14
+ 950 00fa 21       		.uleb128 0x21
+ 951 00fb 00       		.byte	0
+ 952 00fc 49       		.uleb128 0x49
+ 953 00fd 13       		.uleb128 0x13
+ 954 00fe 2F       		.uleb128 0x2f
+ 955 00ff 0B       		.uleb128 0xb
+ 956 0100 00       		.byte	0
+ 957 0101 00       		.byte	0
+ 958 0102 15       		.uleb128 0x15
+ 959 0103 34       		.uleb128 0x34
+ 960 0104 00       		.byte	0
+ 961 0105 03       		.uleb128 0x3
+ 962 0106 0E       		.uleb128 0xe
+ 963 0107 3A       		.uleb128 0x3a
+ 964 0108 0B       		.uleb128 0xb
+ 965 0109 3B       		.uleb128 0x3b
+ 966 010a 05       		.uleb128 0x5
+ 967 010b 49       		.uleb128 0x49
+ 968 010c 13       		.uleb128 0x13
+ 969 010d 3F       		.uleb128 0x3f
+ 970 010e 19       		.uleb128 0x19
+ 971 010f 3C       		.uleb128 0x3c
+ 972 0110 19       		.uleb128 0x19
+ 973 0111 00       		.byte	0
+ 974 0112 00       		.byte	0
+ 975 0113 16       		.uleb128 0x16
+ 976 0114 35       		.uleb128 0x35
+ 977 0115 00       		.byte	0
+ 978 0116 49       		.uleb128 0x49
+ 979 0117 13       		.uleb128 0x13
+ 980 0118 00       		.byte	0
+ 981 0119 00       		.byte	0
+ 982 011a 17       		.uleb128 0x17
+ 983 011b 34       		.uleb128 0x34
+ 984 011c 00       		.byte	0
+ 985 011d 03       		.uleb128 0x3
+ 986 011e 0E       		.uleb128 0xe
+ 987 011f 3A       		.uleb128 0x3a
+ 988 0120 0B       		.uleb128 0xb
+ 989 0121 3B       		.uleb128 0x3b
+ 990 0122 0B       		.uleb128 0xb
+ 991 0123 49       		.uleb128 0x49
+ 992 0124 13       		.uleb128 0x13
+ 993 0125 3F       		.uleb128 0x3f
+ 994 0126 19       		.uleb128 0x19
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 19
+
+
+ 995 0127 02       		.uleb128 0x2
+ 996 0128 18       		.uleb128 0x18
+ 997 0129 00       		.byte	0
+ 998 012a 00       		.byte	0
+ 999 012b 18       		.uleb128 0x18
+ 1000 012c 2E       		.uleb128 0x2e
+ 1001 012d 01       		.byte	0x1
+ 1002 012e 3F       		.uleb128 0x3f
+ 1003 012f 19       		.uleb128 0x19
+ 1004 0130 03       		.uleb128 0x3
+ 1005 0131 0E       		.uleb128 0xe
+ 1006 0132 3A       		.uleb128 0x3a
+ 1007 0133 0B       		.uleb128 0xb
+ 1008 0134 3B       		.uleb128 0x3b
+ 1009 0135 0B       		.uleb128 0xb
+ 1010 0136 27       		.uleb128 0x27
+ 1011 0137 19       		.uleb128 0x19
+ 1012 0138 3C       		.uleb128 0x3c
+ 1013 0139 19       		.uleb128 0x19
+ 1014 013a 01       		.uleb128 0x1
+ 1015 013b 13       		.uleb128 0x13
+ 1016 013c 00       		.byte	0
+ 1017 013d 00       		.byte	0
+ 1018 013e 19       		.uleb128 0x19
+ 1019 013f 05       		.uleb128 0x5
+ 1020 0140 00       		.byte	0
+ 1021 0141 49       		.uleb128 0x49
+ 1022 0142 13       		.uleb128 0x13
+ 1023 0143 00       		.byte	0
+ 1024 0144 00       		.byte	0
+ 1025 0145 1A       		.uleb128 0x1a
+ 1026 0146 2E       		.uleb128 0x2e
+ 1027 0147 01       		.byte	0x1
+ 1028 0148 3F       		.uleb128 0x3f
+ 1029 0149 19       		.uleb128 0x19
+ 1030 014a 03       		.uleb128 0x3
+ 1031 014b 0E       		.uleb128 0xe
+ 1032 014c 3A       		.uleb128 0x3a
+ 1033 014d 0B       		.uleb128 0xb
+ 1034 014e 3B       		.uleb128 0x3b
+ 1035 014f 05       		.uleb128 0x5
+ 1036 0150 27       		.uleb128 0x27
+ 1037 0151 19       		.uleb128 0x19
+ 1038 0152 49       		.uleb128 0x49
+ 1039 0153 13       		.uleb128 0x13
+ 1040 0154 3C       		.uleb128 0x3c
+ 1041 0155 19       		.uleb128 0x19
+ 1042 0156 01       		.uleb128 0x1
+ 1043 0157 13       		.uleb128 0x13
+ 1044 0158 00       		.byte	0
+ 1045 0159 00       		.byte	0
+ 1046 015a 1B       		.uleb128 0x1b
+ 1047 015b 18       		.uleb128 0x18
+ 1048 015c 00       		.byte	0
+ 1049 015d 00       		.byte	0
+ 1050 015e 00       		.byte	0
+ 1051 015f 1C       		.uleb128 0x1c
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 20
+
+
+ 1052 0160 2E       		.uleb128 0x2e
+ 1053 0161 01       		.byte	0x1
+ 1054 0162 3F       		.uleb128 0x3f
+ 1055 0163 19       		.uleb128 0x19
+ 1056 0164 03       		.uleb128 0x3
+ 1057 0165 0E       		.uleb128 0xe
+ 1058 0166 3A       		.uleb128 0x3a
+ 1059 0167 0B       		.uleb128 0xb
+ 1060 0168 3B       		.uleb128 0x3b
+ 1061 0169 0B       		.uleb128 0xb
+ 1062 016a 27       		.uleb128 0x27
+ 1063 016b 19       		.uleb128 0x19
+ 1064 016c 3C       		.uleb128 0x3c
+ 1065 016d 19       		.uleb128 0x19
+ 1066 016e 00       		.byte	0
+ 1067 016f 00       		.byte	0
+ 1068 0170 00       		.byte	0
+ 1069              		.section	.debug_loc,"",%progbits
+ 1070              	.Ldebug_loc0:
+ 1071              	.LLST0:
+ 1072 0000 00000000 		.4byte	.LVL0
+ 1073 0004 0A000000 		.4byte	.LVL1
+ 1074 0008 0100     		.2byte	0x1
+ 1075 000a 50       		.byte	0x50
+ 1076 000b 0A000000 		.4byte	.LVL1
+ 1077 000f 86000000 		.4byte	.LVL13
+ 1078 0013 0100     		.2byte	0x1
+ 1079 0015 55       		.byte	0x55
+ 1080 0016 86000000 		.4byte	.LVL13
+ 1081 001a 94000000 		.4byte	.LFE63
+ 1082 001e 0400     		.2byte	0x4
+ 1083 0020 F3       		.byte	0xf3
+ 1084 0021 01       		.uleb128 0x1
+ 1085 0022 50       		.byte	0x50
+ 1086 0023 9F       		.byte	0x9f
+ 1087 0024 00000000 		.4byte	0
+ 1088 0028 00000000 		.4byte	0
+ 1089              	.LLST1:
+ 1090 002c 00000000 		.4byte	.LVL0
+ 1091 0030 0C000000 		.4byte	.LVL2
+ 1092 0034 0100     		.2byte	0x1
+ 1093 0036 51       		.byte	0x51
+ 1094 0037 0C000000 		.4byte	.LVL2
+ 1095 003b 56000000 		.4byte	.LVL10
+ 1096 003f 0100     		.2byte	0x1
+ 1097 0041 54       		.byte	0x54
+ 1098 0042 56000000 		.4byte	.LVL10
+ 1099 0046 94000000 		.4byte	.LFE63
+ 1100 004a 0400     		.2byte	0x4
+ 1101 004c F3       		.byte	0xf3
+ 1102 004d 01       		.uleb128 0x1
+ 1103 004e 51       		.byte	0x51
+ 1104 004f 9F       		.byte	0x9f
+ 1105 0050 00000000 		.4byte	0
+ 1106 0054 00000000 		.4byte	0
+ 1107              		.section	.debug_aranges,"",%progbits
+ 1108 0000 1C000000 		.4byte	0x1c
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 21
+
+
+ 1109 0004 0200     		.2byte	0x2
+ 1110 0006 00000000 		.4byte	.Ldebug_info0
+ 1111 000a 04       		.byte	0x4
+ 1112 000b 00       		.byte	0
+ 1113 000c 0000     		.2byte	0
+ 1114 000e 0000     		.2byte	0
+ 1115 0010 00000000 		.4byte	.LFB63
+ 1116 0014 94000000 		.4byte	.LFE63-.LFB63
+ 1117 0018 00000000 		.4byte	0
+ 1118 001c 00000000 		.4byte	0
+ 1119              		.section	.debug_ranges,"",%progbits
+ 1120              	.Ldebug_ranges0:
+ 1121 0000 00000000 		.4byte	.LFB63
+ 1122 0004 94000000 		.4byte	.LFE63
+ 1123 0008 00000000 		.4byte	0
+ 1124 000c 00000000 		.4byte	0
+ 1125              		.section	.debug_line,"",%progbits
+ 1126              	.Ldebug_line0:
+ 1127 0000 34020000 		.section	.debug_str,"MS",%progbits,1
+ 1127      02001702 
+ 1127      00000201 
+ 1127      FB0E0D00 
+ 1127      01010101 
+ 1128              	.LASF28:
+ 1129 0000 64697370 		.ascii	"dispKd\000"
+ 1129      4B6400
+ 1130              	.LASF27:
+ 1131 0007 64697370 		.ascii	"dispKi\000"
+ 1131      4B6900
+ 1132              	.LASF18:
+ 1133 000e 4155544F 		.ascii	"AUTOMATIC\000"
+ 1133      4D415449 
+ 1133      4300
+ 1134              	.LASF26:
+ 1135 0018 64697370 		.ascii	"dispKp\000"
+ 1135      4B7000
+ 1136              	.LASF9:
+ 1137 001f 5F5F696E 		.ascii	"__int32_t\000"
+ 1137      7433325F 
+ 1137      7400
+ 1138              	.LASF55:
+ 1139 0029 736E7072 		.ascii	"snprintf\000"
+ 1139      696E7466 
+ 1139      00
+ 1140              	.LASF39:
+ 1141 0032 50494443 		.ascii	"PIDControl\000"
+ 1141      6F6E7472 
+ 1141      6F6C00
+ 1142              	.LASF35:
+ 1143 003d 6F75744D 		.ascii	"outMax\000"
+ 1143      617800
+ 1144              	.LASF13:
+ 1145 0044 646F7562 		.ascii	"double\000"
+ 1145      6C6500
+ 1146              	.LASF17:
+ 1147 004b 4D414E55 		.ascii	"MANUAL\000"
+ 1147      414C00
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 22
+
+
+ 1148              	.LASF45:
+ 1149 0052 69746572 		.ascii	"iterm_str\000"
+ 1149      6D5F7374 
+ 1149      7200
+ 1150              	.LASF12:
+ 1151 005c 666C6F61 		.ascii	"float\000"
+ 1151      7400
+ 1152              	.LASF41:
+ 1153 0062 7365745F 		.ascii	"set_point_str\000"
+ 1153      706F696E 
+ 1153      745F7374 
+ 1153      7200
+ 1154              	.LASF1:
+ 1155 0070 756E7369 		.ascii	"unsigned char\000"
+ 1155      676E6564 
+ 1155      20636861 
+ 1155      7200
+ 1156              	.LASF34:
+ 1157 007e 6F75744D 		.ascii	"outMin\000"
+ 1157      696E00
+ 1158              	.LASF23:
+ 1159 0085 696E7075 		.ascii	"input\000"
+ 1159      7400
+ 1160              	.LASF32:
+ 1161 008b 69546572 		.ascii	"iTerm\000"
+ 1161      6D00
+ 1162              	.LASF5:
+ 1163 0091 6C6F6E67 		.ascii	"long unsigned int\000"
+ 1163      20756E73 
+ 1163      69676E65 
+ 1163      6420696E 
+ 1163      7400
+ 1164              	.LASF3:
+ 1165 00a3 73686F72 		.ascii	"short unsigned int\000"
+ 1165      7420756E 
+ 1165      7369676E 
+ 1165      65642069 
+ 1165      6E7400
+ 1166              	.LASF15:
+ 1167 00b6 73697A65 		.ascii	"size_t\000"
+ 1167      5F7400
+ 1168              	.LASF31:
+ 1169 00bd 616C7465 		.ascii	"alteredKd\000"
+ 1169      7265644B 
+ 1169      6400
+ 1170              	.LASF43:
+ 1171 00c7 6572726F 		.ascii	"error_str\000"
+ 1171      725F7374 
+ 1171      7200
+ 1172              	.LASF30:
+ 1173 00d1 616C7465 		.ascii	"alteredKi\000"
+ 1173      7265644B 
+ 1173      6900
+ 1174              	.LASF56:
+ 1175 00db 5365725F 		.ascii	"Ser_PutString\000"
+ 1175      50757453 
+ 1175      7472696E 
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 23
+
+
+ 1175      6700
+ 1176              	.LASF53:
+ 1177 00e9 44756D70 		.ascii	"DumpPid\000"
+ 1177      50696400 
+ 1178              	.LASF29:
+ 1179 00f1 616C7465 		.ascii	"alteredKp\000"
+ 1179      7265644B 
+ 1179      7000
+ 1180              	.LASF11:
+ 1181 00fb 75696E74 		.ascii	"uint16\000"
+ 1181      313600
+ 1182              	.LASF47:
+ 1183 0102 49544D5F 		.ascii	"ITM_RxBuffer\000"
+ 1183      52784275 
+ 1183      66666572 
+ 1183      00
+ 1184              	.LASF50:
+ 1185 010f 474E5520 		.ascii	"GNU C 4.9.3 20150303 (release) [ARM/embedded-4_9-br"
+ 1185      4320342E 
+ 1185      392E3320 
+ 1185      32303135 
+ 1185      30333033 
+ 1186 0142 616E6368 		.ascii	"anch revision 221220] -mcpu=cortex-m3 -mthumb -g -O"
+ 1186      20726576 
+ 1186      6973696F 
+ 1186      6E203232 
+ 1186      31323230 
+ 1187 0175 67202D66 		.ascii	"g -ffunction-sections -ffat-lto-objects\000"
+ 1187      66756E63 
+ 1187      74696F6E 
+ 1187      2D736563 
+ 1187      74696F6E 
+ 1188              	.LASF8:
+ 1189 019d 756E7369 		.ascii	"unsigned int\000"
+ 1189      676E6564 
+ 1189      20696E74 
+ 1189      00
+ 1190              	.LASF36:
+ 1191 01aa 73657470 		.ascii	"setpoint\000"
+ 1191      6F696E74 
+ 1191      00
+ 1192              	.LASF7:
+ 1193 01b3 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 1193      206C6F6E 
+ 1193      6720756E 
+ 1193      7369676E 
+ 1193      65642069 
+ 1194              	.LASF38:
+ 1195 01ca 6D6F6465 		.ascii	"mode\000"
+ 1195      00
+ 1196              	.LASF21:
+ 1197 01cf 52455645 		.ascii	"REVERSE\000"
+ 1197      52534500 
+ 1198              	.LASF54:
+ 1199 01d7 66746F61 		.ascii	"ftoa\000"
+ 1199      00
+ 1200              	.LASF0:
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 24
+
+
+ 1201 01dc 7369676E 		.ascii	"signed char\000"
+ 1201      65642063 
+ 1201      68617200 
+ 1202              	.LASF33:
+ 1203 01e8 73616D70 		.ascii	"sampleTime\000"
+ 1203      6C655469 
+ 1203      6D6500
+ 1204              	.LASF10:
+ 1205 01f3 696E7433 		.ascii	"int32_t\000"
+ 1205      325F7400 
+ 1206              	.LASF16:
+ 1207 01fb 73697A65 		.ascii	"sizetype\000"
+ 1207      74797065 
+ 1207      00
+ 1208              	.LASF46:
+ 1209 0204 6F757470 		.ascii	"output_str\000"
+ 1209      75745F73 
+ 1209      747200
+ 1210              	.LASF6:
+ 1211 020f 6C6F6E67 		.ascii	"long long int\000"
+ 1211      206C6F6E 
+ 1211      6720696E 
+ 1211      7400
+ 1212              	.LASF24:
+ 1213 021d 6C617374 		.ascii	"lastInput\000"
+ 1213      496E7075 
+ 1213      7400
+ 1214              	.LASF14:
+ 1215 0227 63686172 		.ascii	"char\000"
+ 1215      00
+ 1216              	.LASF44:
+ 1217 022c 6C617374 		.ascii	"last_input_str\000"
+ 1217      5F696E70 
+ 1217      75745F73 
+ 1217      747200
+ 1218              	.LASF22:
+ 1219 023b 50494444 		.ascii	"PIDDirection\000"
+ 1219      69726563 
+ 1219      74696F6E 
+ 1219      00
+ 1220              	.LASF2:
+ 1221 0248 73686F72 		.ascii	"short int\000"
+ 1221      7420696E 
+ 1221      7400
+ 1222              	.LASF19:
+ 1223 0252 5049444D 		.ascii	"PIDMode\000"
+ 1223      6F646500 
+ 1224              	.LASF25:
+ 1225 025a 6F757470 		.ascii	"output\000"
+ 1225      757400
+ 1226              	.LASF20:
+ 1227 0261 44495245 		.ascii	"DIRECT\000"
+ 1227      435400
+ 1228              	.LASF4:
+ 1229 0268 6C6F6E67 		.ascii	"long int\000"
+ 1229      20696E74 
+ 1229      00
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\cc3tI0lw.s 			page 25
+
+
+ 1230              	.LASF51:
+ 1231 0271 2E2E5C73 		.ascii	"..\\source\\pidutil.c\000"
+ 1231      6F757263 
+ 1231      655C7069 
+ 1231      64757469 
+ 1231      6C2E6300 
+ 1232              	.LASF48:
+ 1233 0285 64656275 		.ascii	"debug_control_enabled\000"
+ 1233      675F636F 
+ 1233      6E74726F 
+ 1233      6C5F656E 
+ 1233      61626C65 
+ 1234              	.LASF42:
+ 1235 029b 696E7075 		.ascii	"input_str\000"
+ 1235      745F7374 
+ 1235      7200
+ 1236              	.LASF52:
+ 1237 02a5 443A5C70 		.ascii	"D:\\projects\\arlobot_freesoc\\freesoc.cydsn\000"
+ 1237      726F6A65 
+ 1237      6374735C 
+ 1237      61726C6F 
+ 1237      626F745F 
+ 1238              	.LASF40:
+ 1239 02cf 6E616D65 		.ascii	"name\000"
+ 1239      00
+ 1240              	.LASF37:
+ 1241 02d4 636F6E74 		.ascii	"controllerDirection\000"
+ 1241      726F6C6C 
+ 1241      65724469 
+ 1241      72656374 
+ 1241      696F6E00 
+ 1242              	.LASF49:
+ 1243 02e8 666F726D 		.ascii	"formatted_string\000"
+ 1243      61747465 
+ 1243      645F7374 
+ 1243      72696E67 
+ 1243      00
+ 1244              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 4.9.3 20150303 (release) [ARM/embedded-4_9-br

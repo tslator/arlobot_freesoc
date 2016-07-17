@@ -56,7 +56,7 @@ int main()
     Time_Init();
     Encoder_Init();
     Motor_Init();
-    Pid_Init(Control_LeftGetCmdVelocity, Control_RightGetCmdVelocity);
+    Pid_Init();
     Odom_Init();
     Ultrasonic_Init();
     Infrared_Init();
@@ -102,6 +102,9 @@ int main()
         //Infrared_Update();
         /* Diagnostic update */
         Diag_Update();
+        
+        /* Handle calibration request */
+        Cal_Update();
         
         /* Keep the serial connection active */
         Ser_Update();

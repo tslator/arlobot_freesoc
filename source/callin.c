@@ -26,6 +26,57 @@ static float left_cmd_velocity;
 static float right_cmd_velocity;
 static uint32 last_time;
 
+/* The purpose of linear calibration will be to set the gains for the linear velocity PID.  The linear velocity PID
+   operates from within control and ensures that the commanded linear velocity is followed.  Its not clear at this
+   point how useful the linear velocity PID will be.  Each wheel has a PID controller whose purpose is to drive the
+   wheel at the specified velocity.  However, after left/right PID calibration the motor velocities are close but
+   they vary +/-.  Possibily the linear velocity PID could smooth the variations.  The velocity returned by odometry
+   is an average.  Its not clear if that will help or hurt.  The motion here will include a ramp up to prevent wheel
+   slipage.  Tracking will be done via the x distance parameter of odometry.
+ 
+   Is it correct to say, that if the robot doesn't move the correct distance it is because it is not traveling at the
+   expected speed?  This isn't a timed motion, e.g., move at 0.1 m/s for 10 seconds to get 1 meter.  We're relying on
+   the accuracy of the encoding to tell us how far we've traveled.  Maybe there doesn't need to be a linear pid, just
+   a linear bias?
+ 
+   The calibration the linear velocity PID, the following is done:
+ 
+   Linear Velocity PID
+   1. Set the linear gains (try 0, 0, 0 to start)
+   2. Move the robot forward 1 meter
+   3. If the robot travel is less than or greater than 1 meter repeat.
+   Note: Each iteration will reverse the direction of the robot, e.g., forward 1 meter, reverse 1 meter, forward 1 meter, etc,
+   so it is necessary to re-align the robot before each run (or not if you have plenty of room).
+
+ */
+
+
+uint8 CalLin_Init(CAL_STAGE_TYPE stage)
+{
+    return CAL_OK;
+}
+
+uint8 CalLin_Start(CAL_STAGE_TYPE stage)
+{
+    return CAL_OK;
+}
+
+uint8 CalLin_Update(CAL_STAGE_TYPE stage)
+{
+    return CAL_COMPLETE;
+}
+
+uint8 CalLin_Stop(CAL_STAGE_TYPE stage)
+{
+    return CAL_OK;
+}
+
+uint8 CalLin_Results(CAL_STAGE_TYPE stage)
+{
+    return CAL_OK;
+}
+
+
 static float CalLinearLeftTarget()
 {
     return left_cmd_velocity;

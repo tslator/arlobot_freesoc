@@ -13,56 +13,13 @@
 #include "control.h"
 #include "odom.h"
 
-extern volatile CAL_EEPROM_TYPE *p_cal_eeprom;
-
-static float left_cmd_speed;
-static float right_cmd_speed;
-
-
-typedef float (*RUN_TYPE)(float *gains, float velocity, uint32 sample_delay, uint32 run_time);
-
 #define STEP_VELOCITY_PERCENT  (0.8)    // 80% of maximum velocity
 
-static float LeftTarget()
-{
-    return left_cmd_speed;
-}
+extern volatile CAL_EEPROM_TYPE *p_cal_eeprom;
 
-static float RightTarget()
-{
-    return right_cmd_speed;
-}
-
-static float StepImpulse(GET_ENCODER_TYPE get_encoder, float velocity, uint32 sample_delay, uint32 time_in_ms)
-/* Apply a step input velocity to the motor and measure/print the encoder, pid and odometry generated */
-{
-    float vel_error_sum = 0;
-    uint32 samples = 0;
-    uint32 start_time;
-
-    Motor_LeftSetCntsPerSec(0);
-    Motor_RightSetCntsPerSec(0);
-
-    start_time = millis();
-    while (millis() - start_time < time_in_ms)
-    {
-        Encoder_Update();
-        Pid_Update();
-        Odom_Update();
-        
-        if (millis() - start_time > sample_delay)
-        {
-            float error = velocity - get_encoder();
-            vel_error_sum += error * error;
-            samples++;
-        }
-    }
-
-    Motor_LeftSetCntsPerSec(0);
-    Motor_RightSetCntsPerSec(0);
-    
-    return vel_error_sum / samples;
-}
+static uint32 start_time;
+static uint32 run_time = 5000;
+static uint16 old_debug_control_enabled;
 
 static void OutputGains(char *label, float *gains)
 {
@@ -79,7 +36,6 @@ static void OutputGains(char *label, float *gains)
     Ser_PutString(output);
 }
 
-
 static void StoreLeftGains(float *gains)
 {
     Nvstore_WriteFloat(gains[0], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.kp));
@@ -92,42 +48,6 @@ static void StoreRightGains(float *gains)
     Nvstore_WriteFloat(gains[0], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.kp));
     Nvstore_WriteFloat(gains[1], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.ki));
     Nvstore_WriteFloat(gains[2], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.kd));
-}
-
-static float LeftStepInput(float *gains, float velocity, uint32 sample_delay, uint32 run_time)
-{
-    OutputGains("Left", gains);
-    
-    Encoder_Reset();
-    Pid_Reset();
-    Odom_Reset();
-    
-    Pid_LeftSetGains(gains[0], gains[1], gains[2]);    
-    
-    float result = StepImpulse(Encoder_LeftGetMeterPerSec, velocity, sample_delay, run_time);
-
-    Pid_LeftGetGains(&gains[0], &gains[1], &gains[2]);
-    OutputGains("Left", gains);
-    
-    return result;
-}
-
-static float RightStepInput(float *gains, float velocity, uint32 sample_delay, uint32 run_time)
-{
-    OutputGains("Right", gains);    
-
-    Encoder_Reset();
-    Pid_Reset();
-    Odom_Reset();
-    
-    Pid_RightSetGains(gains[0], gains[1], gains[2]);    
-    
-    float result = StepImpulse(Encoder_RightGetMeterPerSec, velocity, sample_delay, run_time);
-    
-    Pid_RightGetGains(&gains[0], &gains[1], &gains[2]);    
-    OutputGains("Right", gains);    
-    
-    return result;    
 }
 
 static float GetStepVelocity()
@@ -158,32 +78,107 @@ static float GetStepVelocity()
     return (float) max_cps * METER_PER_COUNT * STEP_VELOCITY_PERCENT;
 }
 
-static void DoLeftManual(float *gains)
+uint8 CalPid_Init(CAL_STAGE_TYPE stage, void *params)
 {
+    CAL_PID_PARAMS *p_pid_params = (CAL_PID_PARAMS *)params;
+    char banner[64];
+
+    sprintf(banner, "\r\n%s PID calibration\r\n", p_pid_params->name);
+    Ser_PutString(banner);
+#ifdef XXX
+    old_debug_control_enabled = debug_control_enabled;
     debug_control_enabled = DEBUG_LEFT_PID_ENABLE_BIT;// | DEBUG_LEFT_ENCODER_ENABLE_BIT;
-    
-    
-    left_cmd_speed = GetStepVelocity();
-    right_cmd_speed = 0;
 
-    float error = LeftStepInput(gains, left_cmd_speed, 0, 5000);
-    
-    left_cmd_speed = 0;
-    right_cmd_speed = 0;
-
+    Cal_SetLeftRightVelocity(0, 0);
+    Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
+#endif
+    return CAL_OK;
 }
 
-static void DoRightManual(float *gains)
+uint8 CalPid_Start(CAL_STAGE_TYPE stage, void *params)
 {
-    debug_control_enabled = DEBUG_RIGHT_PID_ENABLE_BIT;// | DEBUG_RIGHT_ENCODER_ENABLE_BIT;
-    
-    left_cmd_speed = 0;
-    right_cmd_speed = GetStepVelocity();
+    float gains[3];
+    CAL_PID_PARAMS *p_pid_params = (CAL_PID_PARAMS *)params;
 
-    float error = RightStepInput(gains, right_cmd_speed, 0, 5000);
+    Ser_PutString("\r\nEnter proportional gain: ");
+    gains[0] = Cal_ReadResponse();
+    Ser_PutString("\r\nEnter integral gain: ");
+    gains[1] = Cal_ReadResponse();
+    Ser_PutString("\r\nEnter derivative gain: ");
+    gains[2] = Cal_ReadResponse();
+#ifdef XXX
+    Encoder_Reset();
+    Pid_Reset();
+    Odom_Reset();
+
+    if( p_pid_params->wheel == LEFT_WHEEL )
+    {
+        Pid_LeftSetGains(gains[0], gains[1], gains[2]);    
+    }
+    else
+    {
+        Pid_RightSetGains(gains[0], gains[1], gains[2]);
+    }
+
+    Ser_PutString("\r\nCalibrating ");
+
+    start_time = millis();
+
+    if (p_pid_params->wheel == LEFT_WHEEL)
+    {
+        Cal_SetLeftRightVelocity(GetStepVelocity(), 0)
+    }
+    else
+    {
+        Cal_SetLeftRightVelocity(0, GetStepVelocity())
+    }
+#endif
+    return CAL_OK;
+}
+
+uint8 CalPid_Update(CAL_STAGE_TYPE stage, void *params)
+{
+    if (millis() - start_time < run_time)
+    {
+        Ser_PutString(".");
+        return CAL_OK;
+    }
+
+    Ser_PutString(" Complete!\r\n");
+    return CAL_COMPLETE;
+}
+
+uint8 CalPid_Stop(CAL_STAGE_TYPE stage, void *params)
+{
+    char output[64];
+    CAL_PID_PARAMS *p_pid_params = (CAL_PID_PARAMS *)params;
+#ifdef XXX
 
     left_cmd_speed = 0;
     right_cmd_speed = 0;
+
+    if( p_pid_params->wheel == LEFT_WHEEL )
+    {
+        StoreLeftGains(gains);
+    }
+    else
+    {
+        StoreRightGains(gains);
+    }
+
+    Pid_SetLeftRightTarget(Control_LeftGetCmdVelocity, Control_RightGetCmdVelocity);
+    debug_control_enabled = old_debug_control_enabled;   
+#endif
+    sprintf(output, "\r\n%s PID calibration complete\r\n", p_pid_params->name);
+    Ser_PutString(output);
+
+    return CAL_OK;
+}
+
+uint8 CalPid_Results(CAL_STAGE_TYPE stage, void *params)
+{
+    Ser_PutString("\r\nPrinting PID calibration results\r\n");
+    return CAL_OK;
 }
 
 void CalibrateLeftPid(float *gains)
@@ -335,6 +330,7 @@ void ValidatePid()
 #define TIME_IN_MS  (2000)  // millisecond
 #define NUM_GAINS   (3)
 
+typedef float (*RUN_TYPE)(float *gains, float velocity, uint32 sample_delay, uint32 run_time);
 
 static void Twiddle(RUN_TYPE run, float *gains, float velocity, uint32 run_time)
 {
@@ -414,4 +410,101 @@ void CalibratePidAuto()
     debug_control_enabled = old_debug_control_enabled;
     Ser_PutString("PID auto calibration complete\r\n");
 }    
+
+static float StepImpulse(GET_ENCODER_TYPE get_encoder, float velocity, uint32 sample_delay, uint32 time_in_ms)
+/* Apply a step input velocity to the motor and measure/print the encoder, pid and odometry generated */
+{
+    float vel_error_sum = 0;
+    uint32 samples = 0;
+    uint32 start_time;
+
+    Motor_LeftSetCntsPerSec(0);
+    Motor_RightSetCntsPerSec(0);
+
+    start_time = millis();
+    while (millis() - start_time < time_in_ms)
+    {
+        Encoder_Update();
+        Pid_Update();
+        Odom_Update();
+        
+        if (millis() - start_time > sample_delay)
+        {
+            float error = velocity - get_encoder();
+            vel_error_sum += error * error;
+            samples++;
+        }
+    }
+
+    Motor_LeftSetCntsPerSec(0);
+    Motor_RightSetCntsPerSec(0);
+    
+    return vel_error_sum / samples;
+}
+
+static float LeftStepInput(float *gains, float velocity, uint32 sample_delay, uint32 run_time)
+{
+    OutputGains("Left", gains);
+    
+    Encoder_Reset();
+    Pid_Reset();
+    Odom_Reset();
+    
+    Pid_LeftSetGains(gains[0], gains[1], gains[2]);    
+    
+    float result = StepImpulse(Encoder_LeftGetMeterPerSec, velocity, sample_delay, run_time);
+
+    Pid_LeftGetGains(&gains[0], &gains[1], &gains[2]);
+    OutputGains("Left", gains);
+    
+    return result;
+}
+
+static float RightStepInput(float *gains, float velocity, uint32 sample_delay, uint32 run_time)
+{
+    OutputGains("Right", gains);    
+
+    Encoder_Reset();
+    Pid_Reset();
+    Odom_Reset();
+    
+    Pid_RightSetGains(gains[0], gains[1], gains[2]);    
+    
+    float result = StepImpulse(Encoder_RightGetMeterPerSec, velocity, sample_delay, run_time);
+    
+    Pid_RightGetGains(&gains[0], &gains[1], &gains[2]);    
+    OutputGains("Right", gains);    
+    
+    return result;    
+}
+
+static void DoLeftManual(float *gains)
+{
+    debug_control_enabled = DEBUG_LEFT_PID_ENABLE_BIT;// | DEBUG_LEFT_ENCODER_ENABLE_BIT;
+    
+    
+    left_cmd_speed = GetStepVelocity();
+    right_cmd_speed = 0;
+
+    float error = LeftStepInput(gains, left_cmd_speed, 0, 5000);
+    
+    left_cmd_speed = 0;
+    right_cmd_speed = 0;
+
+}
+
+static void DoRightManual(float *gains)
+{
+    debug_control_enabled = DEBUG_RIGHT_PID_ENABLE_BIT;// | DEBUG_RIGHT_ENCODER_ENABLE_BIT;
+    
+    left_cmd_speed = 0;
+    right_cmd_speed = GetStepVelocity();
+
+    float error = RightStepInput(gains, right_cmd_speed, 0, 5000);
+
+    left_cmd_speed = 0;
+    right_cmd_speed = 0;
+}
+
+
 #endif

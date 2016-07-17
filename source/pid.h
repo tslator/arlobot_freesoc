@@ -79,7 +79,7 @@
  Parameters: None
  Return: None
  ------------------------------------------------------------------------------------------------*/
-void Pid_Init(GET_TARGET_TYPE left_target, GET_TARGET_TYPE right_target);
+void Pid_Init();
 
 /*------------------------------------------------------------------------------------------------
  Description: Starts the PID controller
@@ -96,8 +96,11 @@ void Pid_Start();
 void Pid_Update();
 
 void Pid_SetLeftRightTarget(GET_TARGET_TYPE left_target, GET_TARGET_TYPE right_target);
+void Pid_RestoreLeftRightTarget();
 
 void Pid_Reset();
+
+void Pid_Disable(uint8 disable);
 
 void Pid_LeftSetGains(float kp, float ki, float kd);
 void Pid_RightSetGains(float kp, float ki, float kd);

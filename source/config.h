@@ -21,11 +21,11 @@
  */
 #define USE_FTOA
     
-typedef float (*GET_TARGET_TYPE)();
-typedef float (*GET_ENCODER_TYPE)();
-typedef int16 (*GET_MOTOR_TYPE)();
-typedef void (*SET_MOTOR_TYPE)(float cps);
-typedef uint16 (*GET_MOTOR_PWM_TYPE)();
+typedef float (*GET_TARGET_FUNC_TYPE)();
+typedef float (*GET_ENCODER_FUNC_TYPE)();
+typedef int16 (*GET_MOTOR_FUNC_TYPE)();
+typedef void (*SET_MOTOR_FUNC_TYPE)(float cps);
+typedef uint16 (*GET_MOTOR_PWM_FUNC_TYPE)();
 
 typedef enum {LEFT_WHEEL, RIGHT_WHEEL} WHEEL_TYPE;
 typedef enum {FORWARD_DIR, BACKWARD_DIR} DIR_TYPE;
@@ -87,8 +87,8 @@ Sample Rates
 #define ENC_SAMPLE_RATE     (20) /* Hz */
 #define PID_SAMPLE_RATE     (20) /* Hz */
 #define ODOM_SAMPLE_RATE    (20) /* Hz */
-#define HEARTBEAT_RATE      (2)  /* Hz */
-#define CONTROL_RATE        (10) /* Hz */
+#define HEARTBEAT_RATE       (2) /* Hz */
+#define CTRL_VELOCITY_RATE  (10) /* Hz */
 
 /* The following defines and macro provide a mechanism to distribute the sampling across the main loop, i.e., keep the
    sampling from happening all of the same time, by introducing a one-time initial delay or sampling offset.

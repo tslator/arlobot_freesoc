@@ -14,10 +14,14 @@
 #define CONTROL_H
 
 #include <project.h>
+    
+typedef void (*COMMAND_FUNC_TYPE)(float *linear, float *angular);
 
 void Control_Init();
 void Control_Start();
 void Control_Update();
+void Control_SetCommandVelocityFunc(COMMAND_FUNC_TYPE cmd);
+void Control_RestoreCommandVelocityFunction();
 float Control_LeftGetCmdVelocity();
 float Control_RightGetCmdVelocity();
 

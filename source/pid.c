@@ -21,17 +21,19 @@
 #include "diag.h"
 #include "debug.h"
 #include "odom.h"
+#include "control.h"
+#include "pidutil.h"
 
 #ifdef LEFT_PID_DUMP_ENABLED
-#define LEFT_DUMP_PID(pid)  if (debug_control_enabled & DEBUG_LEFT_PID_ENABLE_BIT) DumpPid(pid)
+#define LEFT_DUMP_PID()  if (debug_control_enabled & DEBUG_LEFT_PID_ENABLE_BIT) DumpPid(left_pid.name, &left_pid.pid)
 #else
-#define  LEFT_DUMP_PID(pid)
+#define  LEFT_DUMP_PID()
 #endif
 
 #ifdef RIGHT_PID_DUMP_ENABLED
-#define RIGHT_DUMP_PID(pid)  if (debug_control_enabled & DEBUG_RIGHT_PID_ENABLE_BIT) DumpPid(pid)
+#define RIGHT_DUMP_PID()  if (debug_control_enabled & DEBUG_RIGHT_PID_ENABLE_BIT) DumpPid(right_pid.name, &right_pid.pid)
 #else
-#define RIGHT_DUMP_PID(pid)
+#define RIGHT_DUMP_PID()
 #endif
 
 #ifdef PID_UPDATE_DELTA_ENABLED
@@ -50,10 +52,10 @@ typedef struct _pid_tag
 {
     char name[6];
     PIDControl pid;
-    GET_TARGET_TYPE get_target;
-    GET_ENCODER_TYPE get_encoder;
-    SET_MOTOR_TYPE set_motor;
-    GET_MOTOR_PWM_TYPE get_pwm;
+    GET_TARGET_FUNC_TYPE get_target;
+    GET_ENCODER_FUNC_TYPE get_encoder;
+    SET_MOTOR_FUNC_TYPE set_motor;
+    GET_MOTOR_PWM_FUNC_TYPE get_pwm;
 } PID_TYPE;
 
 
@@ -83,35 +85,14 @@ static PID_TYPE right_pid = {
     /* get_pwm */       Motor_RightGetPwm
 };
 
-#if defined (LEFT_PID_DUMP_ENABLED) || defined(RIGHT_PID_DUMP_ENABLED)
-static void DumpPid(PID_TYPE *pid)
+static uint8 pid_disabled;
+
+
+void Pid_Init()
 {
-    char set_point_str[10];
-    char input_str[10];
-    char error_str[10];
-    char last_input_str[10];
-    char iterm_str[10];
-    char output_str[10];
-
-    ftoa(pid->pid.setpoint, set_point_str, 3);
-    ftoa(pid->pid.input, input_str, 3);
-    ftoa(pid->pid.setpoint - pid->pid.input, error_str, 6);
-    ftoa(pid->pid.lastInput, last_input_str, 3);
-    ftoa(pid->pid.iTerm, iterm_str, 6);
-    ftoa(pid->pid.output, output_str, 6);
-
-    if (PID_DEBUG_CONTROL_ENABLED)
-    {
-        DEBUG_PRINT_ARG("%s pid: %s %s %s %s %s %s %d \r\n", pid->name, set_point_str, input_str, error_str, last_input_str, iterm_str, output_str, pid->get_pwm());
-    }
-}
-#endif
-
-void Pid_Init(GET_TARGET_TYPE left_target, GET_TARGET_TYPE right_target)
-{
-    
-    left_pid.get_target = left_target;
-    right_pid.get_target = right_target;
+    pid_disabled = 0;
+    left_pid.get_target = Control_LeftGetCmdVelocity;
+    right_pid.get_target = Control_RightGetCmdVelocity;
     
     PIDInit(&left_pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, PID_MIN, PID_MAX, AUTOMATIC, DIRECT); 
     PIDInit(&right_pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, PID_MIN, PID_MAX, AUTOMATIC, DIRECT); 
@@ -159,6 +140,11 @@ void Pid_Update()
     static uint8 pid_sched_offset_applied = 0;
     uint32 delta_time;
     
+    if (pid_disabled)
+    {
+        return;
+    }
+    
     delta_time = millis() - last_update_time;
     PID_DEBUG_DELTA(delta_time);
     if (delta_time >= PID_SAMPLE_TIME_MS)
@@ -169,15 +155,21 @@ void Pid_Update()
         
         ProcessPid(&left_pid);
         ProcessPid(&right_pid);
-        LEFT_DUMP_PID(&left_pid);
-        RIGHT_DUMP_PID(&right_pid);
+        LEFT_DUMP_PID();
+        RIGHT_DUMP_PID();
     }
 }
 
-void Pid_SetLeftRightTarget(GET_TARGET_TYPE left_target, GET_TARGET_TYPE right_target)
+void Pid_SetLeftRightTarget(GET_TARGET_FUNC_TYPE left_target, GET_TARGET_FUNC_TYPE right_target)
 {
     left_pid.get_target = left_target;
     right_pid.get_target = right_target;
+}
+
+void Pid_RestoreLeftRightTarget()
+{
+    left_pid.get_target = Control_LeftGetCmdVelocity;
+    right_pid.get_target = Control_RightGetCmdVelocity;
 }
 
 void Pid_Reset()
@@ -193,6 +185,17 @@ void Pid_Reset()
     right_pid.pid.lastInput = 0;
     right_pid.pid.setpoint = 0;
     right_pid.pid.output = 0;
+}
+
+void Pid_Disable(uint8 disable)
+{
+    if (pid_disabled && !disable)
+    {
+        Pid_Reset();
+    }
+    
+    pid_disabled = disable;
+    
 }
 
 void Pid_LeftSetGains(float kp, float ki, float kd)

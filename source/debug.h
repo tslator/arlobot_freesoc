@@ -21,25 +21,30 @@
 #ifdef COMMS_DEBUG_ENABLED
 
 /* Debug enable/disable bits */
-#define DEBUG_LEFT_ENCODER_ENABLE_BIT   (0x0001)
-#define DEBUG_RIGHT_ENCODER_ENABLE_BIT  (0x0002)
-#define DEBUG_LEFT_PID_ENABLE_BIT       (0x0004)
-#define DEBUG_RIGHT_PID_ENABLE_BIT      (0x0008)
-#define DEBUG_LEFT_MOTOR_ENABLE_BIT     (0x0010)
-#define DEBUG_RIGHT_MOTOR_ENABLE_BIT    (0x0020)
-#define DEBUG_ODOM_ENABLE_BIT           (0x0040)
-#define DEBUG_SAMPLE_ENABLE_BIT         (0x0080)
+#define DEBUG_LEFT_ENCODER_ENABLE_BIT       (0x0001)
+#define DEBUG_RIGHT_ENCODER_ENABLE_BIT      (0x0002)
+#define DEBUG_LEFT_PID_ENABLE_BIT           (0x0004)
+#define DEBUG_RIGHT_PID_ENABLE_BIT          (0x0008)
+#define DEBUG_CTRL_LINEAR_PID_ENABLE_BIT    (0x0010)
+#define DEBUG_CTRL_ANGULAR_PID_ENABLE_BIT   (0x0020)
+#define DEBUG_LEFT_MOTOR_ENABLE_BIT         (0x0040)
+#define DEBUG_RIGHT_MOTOR_ENABLE_BIT        (0x0080)
+#define DEBUG_ODOM_ENABLE_BIT               (0x0100)
+#define DEBUG_SAMPLE_ENABLE_BIT             (0x0200)
     
 
 #define LEFT_PID_DUMP_ENABLED
 #define LEFT_ENC_DUMP_ENABLED
 #define RIGHT_PID_DUMP_ENABLED
 #define RIGHT_ENC_DUMP_ENABLED
+#define CTRL_LINEAR_PID_DUMP_ENABLED
+#define CTRL_ANGULAR_PID_DUMP_ENABLED
 #define MOTOR_DUMP_ENABLED
 #define ODOM_DUMP_ENABLED
 //#define ENC_UPDATE_DELTA_ENABLED
 //#define PID_UPDATE_DELTA_ENABLED
 //#define ODOM_UPDATE_DELTA_ENABLED
+//#define CTRL_UPDATE_DELTA_ENABLED
 //#define MAIN_LOOP_DELTA_ENABLED
     
 uint16 debug_control_enabled;
@@ -67,7 +72,10 @@ char formatted_string[256];
                                     } while (0)
                                 
 #define ENCODER_DEBUG_CONTROL_ENABLED   (debug_control_enabled & DEBUG_LEFT_ENCODER_ENABLE_BIT || debug_control_enabled & DEBUG_RIGHT_ENCODER_ENABLE_BIT)
-#define PID_DEBUG_CONTROL_ENABLED       (debug_control_enabled & DEBUG_LEFT_PID_ENABLE_BIT || debug_control_enabled & DEBUG_RIGHT_PID_ENABLE_BIT)
+#define PID_DEBUG_CONTROL_ENABLED       (debug_control_enabled & DEBUG_LEFT_PID_ENABLE_BIT ||        \
+                                         debug_control_enabled & DEBUG_RIGHT_PID_ENABLE_BIT ||       \
+                                         debug_control_enabled & DEBUG_CTRL_LINEAR_PID_ENABLE_BIT || \
+                                         debug_control_enabled & DEBUG_CTRL_ANGULAR_PID_ENABLE_BIT)
 #define MOTOR_DEBUG_CONTROL_ENABLED     (debug_control_enabled & DEBUG_LEFT_MOTOR_ENABLE_BIT || debug_control_enabled & DEBUG_RIGHT_MOTOR_ENABLE_BIT)
 #define ODOM_DEBUG_CONTROL_ENABLED      (debug_control_enabled & DEBUG_ODOM_ENABLE_BIT)
 #define SAMPLE_DEBUG_CONTROL_ENABLED    (debug_control_enabled & DEBUG_SAMPLE_ENABLE_BIT)
@@ -97,11 +105,14 @@ char formatted_string[256];
 #undef LEFT_ENC_DUMP_ENABLED
 #undef RIGHT_PID_DUMP_ENABLED
 #undef RIGHT_ENC_DUMP_ENABLED
+#undef CTRL_LINEAR_PID_DUMP_ENABLED
+#undef CTRL_ANGULAR_PID_DUMP_ENABLED
 #undef MOTOR_DUMP_ENABLED
 #undef ODOM_DUMP_ENABLED
 #undef ENC_UPDATE_DELTA_ENABLED
 #undef PID_UPDATE_DELTA_ENABLED
 #undef ODOM_UPDATE_DELTA_ENABLED
+#undef CTRL_UPDATE_DELTA_ENABLED
 #undef MAIN_LOOP_DELTA_ENABLED
     
 #undef ENCODER_DEBUG_CONTROL_ENABLED

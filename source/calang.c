@@ -26,6 +26,46 @@ static float right_cmd_velocity;
 static float angular_velocity;
 static uint32 last_time;
 
+/* The purpose of angular calibration will be to set the gains for the angular velocity PID.  The angular velocity PID
+   operates from within control and ensures that the commanded angular velocity is followed.  The calibration the angular
+   velocity PID, the following is done:
+ 
+   The calibration the angular velocity PID, the following is done:
+ 
+   Angular Velocity PID
+   1. Set the angular gains (try 0, 0, 0 to start)
+   2. Move the robot forward 1 meter
+   3. If the robot veers off left or right then re-align the robot and repeat
+   Note: Each iteration will reverse the direction of the robot, e.g., forward 1 meter, reverse 1 meter, forward 1 meter, etc,
+   so it is necessary to re-align the robot before each run (or not if you have plenty of room).
+
+ */
+
+uint8 CalAng_Init(CAL_STAGE_TYPE stage)
+{
+    return CAL_OK;
+}
+
+uint8 CalAng_Start(CAL_STAGE_TYPE stage)
+{
+    return CAL_OK;
+}
+
+uint8 CalAng_Update(CAL_STAGE_TYPE stage)
+{
+    return CAL_COMPLETE;
+}
+
+uint8 CalAng_Stop(CAL_STAGE_TYPE stage)
+{
+    return CAL_OK;
+}
+
+uint8 CalAng_Results(CAL_STAGE_TYPE stage)
+{
+}
+
+
 static float CalAngularLeftTarget()
 {
     return left_cmd_velocity;
