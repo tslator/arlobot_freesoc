@@ -24,6 +24,8 @@ void Control_SetCommandVelocityFunc(COMMAND_FUNC_TYPE cmd);
 void Control_RestoreCommandVelocityFunction();
 float Control_LeftGetCmdVelocity();
 float Control_RightGetCmdVelocity();
+void Control_LinearSetGains(float kp, float ki, float kd);
+void Control_AngularSetGains(float kp, float ki, float kd);
 
 
 #endif

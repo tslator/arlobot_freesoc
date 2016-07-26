@@ -4,12 +4,10 @@
 #include <project.h>    
 #include "cal.h"    
     
-uint8 CalAng_Init(CAL_STAGE_TYPE stage);
-uint8 CalAng_Start(CAL_STAGE_TYPE stage);
-uint8 CalAng_Update(CAL_STAGE_TYPE stage);
-uint8 CalAng_Stop(CAL_STAGE_TYPE stage);
-uint8 CalAng_Results(CAL_STAGE_TYPE stage);
-    
+CALIBRATION_TYPE *CalAng_Calibration;
+
+void CalAng_Init();
+
 void CalibrateAngularBias();
 void ValidateAngularBias();
     

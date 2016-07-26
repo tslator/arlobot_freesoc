@@ -21,6 +21,21 @@
 #define CALANG_SAMPLE_RATE (PID_SAMPLE_RATE / 2)        
 #define CALANG_SAMPLE_TIME_MS  SAMPLE_TIME_MS(CALANG_SAMPLE_RATE)
 
+static uint8 Init(CAL_STAGE_TYPE stage, void *params);
+static uint8 Start(CAL_STAGE_TYPE stage, void *params);
+static uint8 Update(CAL_STAGE_TYPE stage, void *params);
+static uint8 Stop(CAL_STAGE_TYPE stage, void *params);
+static uint8 Results(CAL_STAGE_TYPE stage, void *params);
+
+static CALIBRATION_TYPE angular_calibration = {CAL_INIT_STATE,
+                                               CAL_CALIBRATE_STAGE,
+                                               0,
+                                               Init,
+                                               Start,
+                                               Update,
+                                               Stop,
+                                               Results};
+
 static float left_cmd_velocity;
 static float right_cmd_velocity;
 static float angular_velocity;
@@ -41,30 +56,30 @@ static uint32 last_time;
 
  */
 
-uint8 CalAng_Init(CAL_STAGE_TYPE stage)
+static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 {
     return CAL_OK;
 }
 
-uint8 CalAng_Start(CAL_STAGE_TYPE stage)
+static uint8 Start(CAL_STAGE_TYPE stage, void *params)
 {
     return CAL_OK;
 }
 
-uint8 CalAng_Update(CAL_STAGE_TYPE stage)
+static uint8 Update(CAL_STAGE_TYPE stage, void *params)
 {
     return CAL_COMPLETE;
 }
 
-uint8 CalAng_Stop(CAL_STAGE_TYPE stage)
+static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
 {
     return CAL_OK;
 }
 
-uint8 CalAng_Results(CAL_STAGE_TYPE stage)
+static uint8 Results(CAL_STAGE_TYPE stage, void *params)
 {
+    return CAL_OK;
 }
-
 
 static float CalAngularLeftTarget()
 {
@@ -74,6 +89,11 @@ static float CalAngularLeftTarget()
 static float CalAngularRightTarget()
 {
     return right_cmd_velocity;
+}
+
+void CalAng_Init()
+{
+    CalAng_Calibration = &angular_calibration;
 }
 
 static void UpdateVelocity(float heading)
@@ -94,11 +114,11 @@ static void UpdateVelocity(float heading)
             angular_velocity += ANGULAR_ACCELERATION * delta_time / 1000.0;
             angular_velocity = min(angular_velocity, ANGULAR_BIAS_VELOCITY);
             
-            ConvertLinearAngularToDifferential(0, angular_velocity, &left_cmd_velocity, &right_cmd_velocity);            
+            UniToDiff(0, angular_velocity, &left_cmd_velocity, &right_cmd_velocity);            
         }
         else
         {
-            ConvertLinearAngularToDifferential(0, ANGULAR_BIAS_VELOCITY, &left_cmd_velocity, &right_cmd_velocity);            
+            UniToDiff(0, ANGULAR_BIAS_VELOCITY, &left_cmd_velocity, &right_cmd_velocity);            
         }
     }
         

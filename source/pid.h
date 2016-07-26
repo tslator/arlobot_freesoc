@@ -95,12 +95,12 @@ void Pid_Start();
  ------------------------------------------------------------------------------------------------*/
 void Pid_Update();
 
-void Pid_SetLeftRightTarget(GET_TARGET_TYPE left_target, GET_TARGET_TYPE right_target);
+void Pid_SetLeftRightTarget(GET_TARGET_FUNC_TYPE left_target, GET_TARGET_FUNC_TYPE right_target);
 void Pid_RestoreLeftRightTarget();
 
 void Pid_Reset();
 
-void Pid_Disable(uint8 disable);
+void Pid_Enable(uint8 enable);
 
 void Pid_LeftSetGains(float kp, float ki, float kd);
 void Pid_RightSetGains(float kp, float ki, float kd);

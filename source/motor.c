@@ -282,7 +282,7 @@ void Motor_Stop()
     right_motor.enable(HB25_DISABLE);
 }
 
-static int32 CollectCpsPwmSamples(MOTOR_TYPE *motor, GET_ENCODER_TYPE encoder, uint8 num_avg_iter)
+static int32 CollectCpsPwmSamples(MOTOR_TYPE *motor, GET_ENCODER_FUNC_TYPE encoder, uint8 num_avg_iter)
 {
     uint8 ii;
     float cnts_per_sec_sum;
@@ -326,10 +326,10 @@ void Motor_CollectPwmCpsSamples(WHEEL_TYPE wheel, uint8 reverse_pwm, uint8 num_a
 {
     uint8 index;
     MOTOR_TYPE *motor;
-    GET_ENCODER_TYPE encoder;
+    GET_ENCODER_FUNC_TYPE encoder;
 
-    motor = (wheel == LEFT_WHEEL) ? &left_motor : &right_motor;
-    encoder = (wheel == LEFT_WHEEL) ? Encoder_LeftGetCntsPerSec : Encoder_RightGetCntsPerSec;
+    motor = (wheel == WHEEL_LEFT) ? &left_motor : &right_motor;
+    encoder = (wheel == WHEEL_LEFT) ? Encoder_LeftGetCntsPerSec : Encoder_RightGetCntsPerSec;
     motor->pwm = PWM_STOP;
     motor->set_pwm(motor->pwm);
     CyDelay(500);

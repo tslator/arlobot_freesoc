@@ -4,14 +4,9 @@
 #include <project.h>
 #include "cal.h"
 
-uint8 CalMotor_Init(CAL_STAGE_TYPE stage, void *params);
-uint8 CalMotor_Start(CAL_STAGE_TYPE stage, void *params);
-uint8 CalMotor_Update(CAL_STAGE_TYPE stage, void *params);
-uint8 CalMotor_Stop(CAL_STAGE_TYPE stage, void *params);
-uint8 CalMotor_Results(CAL_STAGE_TYPE stage, void *params);
+CALIBRATION_TYPE *CalMotor_Calibration;
+CALIBRATION_TYPE *CalMotor_Validation;
     
-void CalibrateMotorVelocity();    
-void ValidateMotorVelocity();
-void PrintMotorVelocity();
-
+void CalMotor_Init();    
+    
 #endif    

@@ -37,7 +37,6 @@
 #define LEFT_ENC_DUMP_ENABLED
 #define RIGHT_PID_DUMP_ENABLED
 #define RIGHT_ENC_DUMP_ENABLED
-#define CTRL_LINEAR_PID_DUMP_ENABLED
 #define CTRL_ANGULAR_PID_DUMP_ENABLED
 #define MOTOR_DUMP_ENABLED
 #define ODOM_DUMP_ENABLED
@@ -74,7 +73,6 @@ char formatted_string[256];
 #define ENCODER_DEBUG_CONTROL_ENABLED   (debug_control_enabled & DEBUG_LEFT_ENCODER_ENABLE_BIT || debug_control_enabled & DEBUG_RIGHT_ENCODER_ENABLE_BIT)
 #define PID_DEBUG_CONTROL_ENABLED       (debug_control_enabled & DEBUG_LEFT_PID_ENABLE_BIT ||        \
                                          debug_control_enabled & DEBUG_RIGHT_PID_ENABLE_BIT ||       \
-                                         debug_control_enabled & DEBUG_CTRL_LINEAR_PID_ENABLE_BIT || \
                                          debug_control_enabled & DEBUG_CTRL_ANGULAR_PID_ENABLE_BIT)
 #define MOTOR_DEBUG_CONTROL_ENABLED     (debug_control_enabled & DEBUG_LEFT_MOTOR_ENABLE_BIT || debug_control_enabled & DEBUG_RIGHT_MOTOR_ENABLE_BIT)
 #define ODOM_DEBUG_CONTROL_ENABLED      (debug_control_enabled & DEBUG_ODOM_ENABLE_BIT)
@@ -106,7 +104,6 @@ char formatted_string[256];
 #undef RIGHT_PID_DUMP_ENABLED
 #undef RIGHT_ENC_DUMP_ENABLED
 #undef CTRL_LINEAR_PID_DUMP_ENABLED
-#undef CTRL_ANGULAR_PID_DUMP_ENABLED
 #undef MOTOR_DUMP_ENABLED
 #undef ODOM_DUMP_ENABLED
 #undef ENC_UPDATE_DELTA_ENABLED

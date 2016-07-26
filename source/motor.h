@@ -17,6 +17,9 @@
 #include "config.h"
 #include "cal.h"
 
+typedef void (*SET_MOTOR_FUNC_TYPE)(float cps);
+typedef uint16 (*GET_MOTOR_PWM_FUNC_TYPE)();
+    
 void Motor_Init();
 void Motor_Start();
 void Motor_Stop();

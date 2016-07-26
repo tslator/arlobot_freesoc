@@ -15,6 +15,8 @@
 
 #include <project.h>
 
+typedef float (*GET_ENCODER_FUNC_TYPE)();
+    
 void Encoder_Init();
 void Encoder_Start();
 void Encoder_Update();
@@ -30,6 +32,9 @@ int32 Encoder_RightGetCount();
 
 float Encoder_LeftGetDeltaCount();
 float Encoder_RightGetDeltaCount();
+
+float Encoder_LeftGetDist();
+float Encoder_RightGetDist();
 
 void Encoder_Reset();
 

@@ -25,19 +25,18 @@
  */
 
 #ifdef CTRL_LINEAR_PID_DUMP_ENABLED
-#define LIN_DUMP_PID()  if (debug_control_enabled & DEBUG_CTRL_LINEAR_PID_ENABLE_BIT) DumpPid("clin", &linear_pid)
+#define LINEAR_DUMP_PID()  if (debug_control_enabled & DEBUG_CTRL_LINEAR_PID_ENABLE_BIT) DumpPid("clin", &linear_pid)
 #else
-#define LIN_DUMP_PID()
+#define LINEAR_DUMP_PID()
 #endif
 
 #ifdef CTRL_ANGULAR_PID_DUMP_ENABLED
-#define ANG_DUMP_PID()  if (debug_control_enabled & DEBUG_CTRL_ANGULAR_PID_ENABLE_BIT) DumpPid("cang", &angular_pid)
+#define ANGULAR_DUMP_PID()  if (debug_control_enabled & DEBUG_CTRL_ANGULAR_PID_ENABLE_BIT) DumpPid("cang", &angular_pid)
 #else
-#define ANG_DUMP_PID()
+#define ANGULAR_DUMP_PID()
 #endif
 
-
-#define CTRL_VELOCITY_SAMPLE_TIME_MS  SAMPLE_TIME_MS(CTRL_VELOCITY_RATE)
+#define CTRL_VELOCITY_SAMPLE_TIME_MS SAMPLE_TIME_MS(CTRL_VELOCITY_RATE)
 #define CTRL_VELOCITY_SAMPLE_TIME_SEC SAMPLE_TIME_SEC(CTRL_VELOCITY_RATE)
 
 #ifdef CTRL_UPDATE_DELTA_ENABLED
@@ -46,42 +45,37 @@
 #define CTRL_DEBUG_DELTA(delta)
 #endif
 
-#define LIN_PID_MIN (0.0)
-#define LIN_PID_MAX (1.0)
-#define ANG_PID_MIN (0.0)
-#define ANG_PID_MAX (1.0)
+#define LINEAR_PID_MIN (-1.0)
+#define LINEAR_PID_MAX (1.0)
 
+#define ANGULAR_PID_MIN (-0.5)
+#define ANGULAR_PID_MAX (0.5)
 
 static COMMAND_FUNC_TYPE control_cmd_velocity;
+static uint32 last_update_time;
 
-static PIDControl angular_pid;
 static PIDControl linear_pid;
+static PIDControl angular_pid;
 static uint32 last_update_time;
 
 static float left_cmd_velocity;
 static float right_cmd_velocity;
 
-#ifdef CLIFF_SENSORS    
-static uint8 front_cliff_detect;
-static uint8 rear_cliff_detect;
-#endif
-
-
-static void ProcessPid(PIDControl *pid, float tgt_speed, float meas_speed)
+static void ProcessPid(PIDControl *pid, float sample_time, float target, float meas)
 {
     int8 dir;
     
-    dir = tgt_speed > 0 ? 1 : -1;
+    dir = target > 0 ? 1 : -1;
     
-    PIDSetpointSet(pid, abs(tgt_speed));
-    PIDInputSet(pid, abs(meas_speed));
+    PIDSampleTimeSet(pid, sample_time);
+    PIDSetpointSet(pid, abs(target));
+    PIDInputSet(pid, abs(meas));
     
     if (PIDCompute(pid))
     {
         pid->output *= dir;
     }
 }
-
 
 static void UpdateSpeed()
 /* Calculate the left/right wheel speed from the commanded linear/angular velocity
@@ -90,8 +84,8 @@ static void UpdateSpeed()
     static uint32 last_update_time = 0;
     float linear;
     float angular;
-    float odom_linear;
-    float odom_angular;
+    float meas_linear;
+    float meas_angular;
     uint32 delta_time;
 
     control_cmd_velocity(&linear, &angular);
@@ -106,33 +100,39 @@ static void UpdateSpeed()
     delta_time = millis() - last_update_time;        
     CTRL_DEBUG_DELTA(delta_time);
     
-    if (last_update_time == 0 || delta_time >= CTRL_VELOCITY_SAMPLE_TIME_MS)
-    {    
+    if (delta_time > CTRL_VELOCITY_SAMPLE_TIME_MS)
+    {
         last_update_time = millis();
         
-        odom_linear = Odom_GetLinearVelocity();
-        odom_angular = Odom_GetAngularVelocity();
-
-        ProcessPid(&linear_pid, linear, odom_linear);
-        ProcessPid(&angular_pid, angular, odom_angular);
+        meas_linear = Odom_GetLinearVelocity();
+        meas_angular = Odom_GetAngularVelocity();
         
-        LIN_DUMP_PID();
-        ANG_DUMP_PID();
-     
+        ProcessPid(&linear_pid, (float) delta_time, linear, meas_linear);
+        ProcessPid(&angular_pid, (float) delta_time, angular, meas_angular);
+        
+        LINEAR_DUMP_PID();
+        ANGULAR_DUMP_PID();
+
+        UniToDiff(linear_pid.output, angular_pid.output, &left_cmd_velocity, &right_cmd_velocity);
     }
 
-    ConvertLinearAngularToDifferential(linear_pid.output, angular_pid.output, &left_cmd_velocity, &right_cmd_velocity);        
 }
 
 void Control_Init()
 {
     control_cmd_velocity = I2c_ReadCmdVelocity;
+    PIDInit(&linear_pid, 0.0, 0.0, 0.0, CTRL_VELOCITY_SAMPLE_TIME_SEC, LINEAR_PID_MIN, LINEAR_PID_MAX, AUTOMATIC, DIRECT);
+    PIDInit(&angular_pid, 0.0, 0.0, 0.0, CTRL_VELOCITY_SAMPLE_TIME_SEC, ANGULAR_PID_MIN, ANGULAR_PID_MAX, AUTOMATIC, DIRECT);
 }
 
 void Control_Start()
-{    
-    PIDInit(&linear_pid, 0.2, 0.0, 0.0, CTRL_VELOCITY_SAMPLE_TIME_SEC, LIN_PID_MIN, LIN_PID_MAX, AUTOMATIC, DIRECT);
-    PIDInit(&angular_pid, 0.2, 0.0, 0.0, CTRL_VELOCITY_SAMPLE_TIME_SEC, ANG_PID_MIN, ANG_PID_MAX, AUTOMATIC, DIRECT);
+{   
+    CAL_PID_TYPE *p_gains;
+
+    p_gains = Cal_LinearGetPidGains();
+    PIDTuningsSet(&linear_pid, p_gains->kp, p_gains->ki, p_gains->kd);
+    p_gains = Cal_AngularGetPidGains();
+    PIDTuningsSet(&angular_pid, p_gains->kp, p_gains->ki, p_gains->kd);    
 }
 
 void Control_Update()
@@ -171,6 +171,16 @@ float Control_LeftGetCmdVelocity()
 float Control_RightGetCmdVelocity()
 {
     return right_cmd_velocity;
+}
+
+void Control_LinearSetGains(float kp, float ki, float kd)
+{
+    PIDTuningsSet(&linear_pid, kp, ki, kd);
+}
+
+void Control_AngularSetGains(float kp, float ki, float kd)
+{
+    PIDTuningsSet(&angular_pid, kp, ki, kd);
 }
 
 /* [] END OF FILE */

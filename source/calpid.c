@@ -15,11 +15,65 @@
 
 #define STEP_VELOCITY_PERCENT  (0.8)    // 80% of maximum velocity
 
+static uint8 Init(CAL_STAGE_TYPE stage, void *params);
+static uint8 Start(CAL_STAGE_TYPE stage, void *params);
+static uint8 Update(CAL_STAGE_TYPE stage, void *params);
+static uint8 Stop(CAL_STAGE_TYPE stage, void *params);
+static uint8 Results(CAL_STAGE_TYPE stage, void *params);
+
 extern volatile CAL_EEPROM_TYPE *p_cal_eeprom;
 
 static uint32 start_time;
-static uint32 run_time = 5000;
 static uint16 old_debug_control_enabled;
+
+typedef enum {PID_TYPE_LEFT, PID_TYPE_RIGHT, PID_TYPE_LINEAR, PID_TYPE_ANGULAR} PID_TYPE;
+
+typedef struct cal_pid_params_tag
+{
+    char name[6];
+    PID_TYPE pid_type;
+    uint32 run_time;
+} CAL_PID_PARAMS;
+
+static CAL_PID_PARAMS left_pid_params = {"left", PID_TYPE_LEFT, 5000};
+static CAL_PID_PARAMS right_pid_params = {"right", PID_TYPE_RIGHT, 5000};
+static CAL_PID_PARAMS linear_pid_params = {"clin", PID_TYPE_LINEAR, 5000};
+static CAL_PID_PARAMS angular_pid_params = {"cang", PID_TYPE_ANGULAR, 5000};
+
+static CALIBRATION_TYPE left_pid_calibration = {CAL_INIT_STATE,
+                                                CAL_CALIBRATE_STAGE,
+                                                &left_pid_params,
+                                                Init,
+                                                Start,
+                                                Update,
+                                                Stop,
+                                                Results};
+
+static CALIBRATION_TYPE right_pid_calibration = {CAL_INIT_STATE,
+                                                 CAL_CALIBRATE_STAGE,
+                                                 &right_pid_params,
+                                                 Init,
+                                                 Start,
+                                                 Update,
+                                                 Stop,
+                                                 Results};
+
+static CALIBRATION_TYPE linear_pid_calibration = {CAL_INIT_STATE,
+                                                 CAL_CALIBRATE_STAGE,
+                                                 &linear_pid_params,
+                                                 Init,
+                                                 Start,
+                                                 Update,
+                                                 Stop,
+                                                 Results};
+static CALIBRATION_TYPE angular_pid_calibration = {CAL_INIT_STATE,
+                                                 CAL_CALIBRATE_STAGE,
+                                                 &angular_pid_params,
+                                                 Init,
+                                                 Start,
+                                                 Update,
+                                                 Stop,
+                                                 Results};
 
 static void OutputGains(char *label, float *gains)
 {
@@ -50,6 +104,20 @@ static void StoreRightGains(float *gains)
     Nvstore_WriteFloat(gains[2], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.kd));
 }
 
+static void StoreLinearGains(float *gains)
+{
+    Nvstore_WriteFloat(gains[0], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->linear_gains.kp));
+    Nvstore_WriteFloat(gains[1], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->linear_gains.ki));
+    Nvstore_WriteFloat(gains[2], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->linear_gains.kd));
+}
+
+static void StoreAngularGains(float *gains)
+{
+    Nvstore_WriteFloat(gains[0], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_gains.kp));
+    Nvstore_WriteFloat(gains[1], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_gains.ki));
+    Nvstore_WriteFloat(gains[2], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_gains.kd));
+}
+
 static float GetStepVelocity()
 /* The step input velocity is 80% of maximum wheel velocity.
    Maximum wheel velocity is determined by wheel calibration.  We take the min of all maximums, e.g., left forward max,
@@ -78,7 +146,7 @@ static float GetStepVelocity()
     return (float) max_cps * METER_PER_COUNT * STEP_VELOCITY_PERCENT;
 }
 
-uint8 CalPid_Init(CAL_STAGE_TYPE stage, void *params)
+static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 {
     CAL_PID_PARAMS *p_pid_params = (CAL_PID_PARAMS *)params;
     char banner[64];
@@ -95,7 +163,7 @@ uint8 CalPid_Init(CAL_STAGE_TYPE stage, void *params)
     return CAL_OK;
 }
 
-uint8 CalPid_Start(CAL_STAGE_TYPE stage, void *params)
+static uint8 Start(CAL_STAGE_TYPE stage, void *params)
 {
     float gains[3];
     CAL_PID_PARAMS *p_pid_params = (CAL_PID_PARAMS *)params;
@@ -106,67 +174,95 @@ uint8 CalPid_Start(CAL_STAGE_TYPE stage, void *params)
     gains[1] = Cal_ReadResponse();
     Ser_PutString("\r\nEnter derivative gain: ");
     gains[2] = Cal_ReadResponse();
+    Ser_PutString("\r\n");
+
 #ifdef XXX
     Encoder_Reset();
     Pid_Reset();
     Odom_Reset();
 
-    if( p_pid_params->wheel == LEFT_WHEEL )
+    switch (p_pid_params->pid_type)
     {
-        Pid_LeftSetGains(gains[0], gains[1], gains[2]);    
+        case PID_TYPE_LEFT:
+            Pid_LeftSetGains(gains[0], gains[1], gains[2]);
+            Cal_SetLeftRightVelocity(GetStepVelocity(), 0)
+            break;
+            
+        case PID_TYPE_RIGHT:
+            Pid_RightSetGains(gains[0], gains[1], gains[2]);
+            Cal_SetLeftRightVelocity(0, GetStepVelocity())
+            break;
+            
+        case PID_TYPE_ANGULAR:
+            {
+            float left, right;
+            /* We need to have left/right PID gains set per left/right PID calibration */
+            Control_AngularSetGains(gains[0], gains[1], gains[2]);
+            UniToDiff(0.150, 0, &left, &right);
+            Cal_SetLeftRightVelocity(left, right);
+            }
+            break;
+            
+        case PID_TYPE_LINEAR:
+            {
+            float left, right;
+            /* We need to have left/right and angular PID gains set per left/right PID calibration */
+            Control_LinearSetGains(gains[0], gains[1], gains[2]);
+            UniToDiff(0, 0.1, &left, &right);
+            Cal_SetLeftRightVelocity(left, right);
+            }
+            break;            
     }
-    else
-    {
-        Pid_RightSetGains(gains[0], gains[1], gains[2]);
-    }
-
+            
     Ser_PutString("\r\nCalibrating ");
 
-    start_time = millis();
 
-    if (p_pid_params->wheel == LEFT_WHEEL)
-    {
-        Cal_SetLeftRightVelocity(GetStepVelocity(), 0)
-    }
-    else
-    {
-        Cal_SetLeftRightVelocity(0, GetStepVelocity())
-    }
 #endif
+    start_time = millis();
     return CAL_OK;
 }
 
-uint8 CalPid_Update(CAL_STAGE_TYPE stage, void *params)
+static uint8 Update(CAL_STAGE_TYPE stage, void *params)
 {
-    if (millis() - start_time < run_time)
+    CAL_PID_PARAMS *p_pid_params = (CAL_PID_PARAMS *) params;
+    
+    if (millis() - start_time < p_pid_params->run_time)
     {
-        Ser_PutString(".");
         return CAL_OK;
     }
 
-    Ser_PutString(" Complete!\r\n");
     return CAL_COMPLETE;
 }
 
-uint8 CalPid_Stop(CAL_STAGE_TYPE stage, void *params)
+static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
 {
     char output[64];
     CAL_PID_PARAMS *p_pid_params = (CAL_PID_PARAMS *)params;
 #ifdef XXX
 
-    left_cmd_speed = 0;
-    right_cmd_speed = 0;
+    Cal_SetLeftRightVelocity(0, 0)
 
-    if( p_pid_params->wheel == LEFT_WHEEL )
+    switch (p_pid_params->pid_type)
     {
-        StoreLeftGains(gains);
-    }
-    else
-    {
-        StoreRightGains(gains);
+        case PID_TYPE_LEFT:
+            StoreLeftGains(gains);
+            break;
+            
+        case PID_TYPE_RIGHT:
+            StoreRightGains(gains);
+            break;
+            
+        case PID_TYPE_LINEAR:
+            StoreLinearGains(gains);
+            break;
+            
+        case PID_TYPE_ANGULAR:
+            StoreAngularGains(gains);
+            break;
     }
 
-    Pid_SetLeftRightTarget(Control_LeftGetCmdVelocity, Control_RightGetCmdVelocity);
+    Pid_RestoreLeftRightTarget();
+    
     debug_control_enabled = old_debug_control_enabled;   
 #endif
     sprintf(output, "\r\n%s PID calibration complete\r\n", p_pid_params->name);
@@ -175,153 +271,36 @@ uint8 CalPid_Stop(CAL_STAGE_TYPE stage, void *params)
     return CAL_OK;
 }
 
-uint8 CalPid_Results(CAL_STAGE_TYPE stage, void *params)
+static uint8 Results(CAL_STAGE_TYPE stage, void *params)
 {
+    CAL_PID_PARAMS *p_pid_params = (CAL_PID_PARAMS *)params;
+    
     Ser_PutString("\r\nPrinting PID calibration results\r\n");
+    
+    switch (p_pid_params->pid_type)
+    {
+        case PID_TYPE_LEFT:
+            break;
+        
+        case PID_TYPE_RIGHT:
+            break;
+        
+        case PID_TYPE_LINEAR:
+            break;
+        
+        case PID_TYPE_ANGULAR:
+            break;
+    }
+    
     return CAL_OK;
 }
 
-void CalibrateLeftPid(float *gains)
+void CalPid_Init()
 {
-    Ser_PutString("\r\nLeft PID calibration\r\n");
-    
-    Pid_SetLeftRightTarget(LeftTarget, RightTarget);
-    
-    uint16 old_debug_control_enabled = debug_control_enabled;
-    debug_control_enabled = DEBUG_LEFT_PID_ENABLE_BIT;
-    
-    DoLeftManual(gains);
-    StoreLeftGains(gains);
-
-    debug_control_enabled = old_debug_control_enabled;    
-    Pid_SetLeftRightTarget(Control_LeftGetCmdVelocity, Control_RightGetCmdVelocity);
-    
-    Ser_PutString("Left PID calibration complete\r\n");
-
-    
-}
-
-void CalibrateRightPid(float *gains)
-{
-    Ser_PutString("\r\nRight PID calibration\r\n");
-    
-    Pid_SetLeftRightTarget(LeftTarget, RightTarget);
-    
-    uint16 old_debug_control_enabled = debug_control_enabled;
-    debug_control_enabled = DEBUG_RIGHT_PID_ENABLE_BIT;
-    
-    DoRightManual(gains);   
-    StoreRightGains(gains);
-    
-    debug_control_enabled = old_debug_control_enabled;
-    Pid_SetLeftRightTarget(Control_LeftGetCmdVelocity, Control_RightGetCmdVelocity);
-    
-    Ser_PutString("Right PID calibration complete\r\n");
-}
-
-static void WriteSpeeds(float left, float right, float delta_speed)
-{
-    char left_str[10];
-    char right_str[10];
-    char delta_speed_str[10];
-    char output[64];
-    
-    ftoa(left, left_str, 3);
-    ftoa(right, right_str, 3);
-    ftoa(delta_speed, delta_speed_str, 3);
-    
-    sprintf(output, "%s %s %s\r\n", left_str, right_str, delta_speed_str);
-    Ser_PutString(output);
-}
-
-void ValidatePid()
-{
-    /* 
-        Validates the PID settings
-    
-        What does it mean to validate the PID?
-            - Ensure that both motors operate at the commanded speed
-        What is the motors have different actual speeds for the same commanded speed?
-            - Where can we apply a bias to correct this?
-        If the motor velocities are correct why would this be a problem?
-            - Could response time be a factor here?  I.E., one motor takes longer to reduce velocity error?
-        Maybe there is another parameter to PID calibration to ensure that they have comparable response times?
-            
-    
-     */
-    float left_speed;
-    float right_speed;
-    uint8 ii;
-    
-    Pid_SetLeftRightTarget(LeftTarget, RightTarget);
-    
-    uint16 old_debug_control_enabled = debug_control_enabled;
-    
-    debug_control_enabled = 0;//DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT | DEBUG_LEFT_PID_ENABLE_BIT | DEBUG_RIGHT_PID_ENABLE_BIT | DEBUG_ODOM_ENABLE_BIT;
-
-    left_cmd_speed = 0;
-    right_cmd_speed = 0;
-    
-    float delta_speed = 0.150 / 10;
-    
-    /* Ramp up to the velocity */
-    for (ii = 0; ii < 10; ++ii)
-    {
-        left_cmd_speed += delta_speed;
-        right_cmd_speed += delta_speed;
-        uint32 start_time = millis();
-        
-        while (millis() - start_time < 200)
-        {            
-            Encoder_Update();
-            Pid_Update();
-            Odom_Update();
-            left_speed = Encoder_LeftGetMeterPerSec();
-            right_speed = Encoder_RightGetMeterPerSec();                
-            WriteSpeeds(left_speed, right_speed, left_speed - right_speed);
-        }
-    }
-    
-    left_cmd_speed = 0.150;
-    right_cmd_speed = 0.150;
-    
-    uint32 start_time = millis();
-    
-    while (millis() - start_time < 5000)
-    {
-        Encoder_Update();
-        Pid_Update();
-        Odom_Update();
-        
-        left_speed = Encoder_LeftGetMeterPerSec();
-        right_speed = Encoder_RightGetMeterPerSec();                
-        WriteSpeeds(left_speed, right_speed, left_speed - right_speed);
-    }
-    
-    /* Ramp down to 0 */
-    for (ii = 0; ii < 10; ++ii)
-    {
-        left_cmd_speed -= delta_speed;
-        right_cmd_speed -= delta_speed;
-        uint32 start_time = millis();
-        
-        while (millis() - start_time < 200)
-        {            
-            Encoder_Update();
-            Pid_Update();
-            Odom_Update();
-            left_speed = Encoder_LeftGetMeterPerSec();
-            right_speed = Encoder_RightGetMeterPerSec();                
-            WriteSpeeds(left_speed, right_speed, left_speed - right_speed);
-        }
-    }
-    left_cmd_speed = 0;
-    right_cmd_speed = 0;
-    Motor_LeftSetCntsPerSec(0);
-    Motor_RightSetCntsPerSec(0);
-    
-    Pid_SetLeftRightTarget(Control_LeftGetCmdVelocity, Control_RightGetCmdVelocity);
-    debug_control_enabled = old_debug_control_enabled;
+    CalPid_LeftCalibration = &left_pid_calibration;
+    CalPid_RightCalibration = &right_pid_calibration;
+    CalPid_LinearCalibration = &linear_pid_calibration;
+    CalPid_AngularCalibration = &angular_pid_calibration;    
 }
 
 #ifdef TWIDDLE

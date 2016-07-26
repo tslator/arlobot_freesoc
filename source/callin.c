@@ -22,9 +22,24 @@
 #define CALLIN_SAMPLE_RATE (PID_SAMPLE_RATE / 2)        
 #define CALLIN_SAMPLE_TIME_MS  SAMPLE_TIME_MS(CALLIN_SAMPLE_RATE)
 
+static uint8 Init(CAL_STAGE_TYPE stage, void *params);
+static uint8 Start(CAL_STAGE_TYPE stage, void *params);
+static uint8 Update(CAL_STAGE_TYPE stage, void *params);
+static uint8 Stop(CAL_STAGE_TYPE stage, void *params);
+static uint8 Results(CAL_STAGE_TYPE stage, void *params);
+
 static float left_cmd_velocity;
 static float right_cmd_velocity;
 static uint32 last_time;
+
+static CALIBRATION_TYPE linear_calibration = {CAL_INIT_STATE,
+                                              CAL_CALIBRATE_STAGE,
+                                              0,
+                                              Init,
+                                              Start,
+                                              Update,
+                                              Stop,
+                                              Results};
 
 /* The purpose of linear calibration will be to set the gains for the linear velocity PID.  The linear velocity PID
    operates from within control and ensures that the commanded linear velocity is followed.  Its not clear at this
@@ -51,27 +66,27 @@ static uint32 last_time;
  */
 
 
-uint8 CalLin_Init(CAL_STAGE_TYPE stage)
+static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 {
     return CAL_OK;
 }
 
-uint8 CalLin_Start(CAL_STAGE_TYPE stage)
+static uint8 Start(CAL_STAGE_TYPE stage, void *params)
 {
     return CAL_OK;
 }
 
-uint8 CalLin_Update(CAL_STAGE_TYPE stage)
+static uint8 Update(CAL_STAGE_TYPE stage, void *params)
 {
     return CAL_COMPLETE;
 }
 
-uint8 CalLin_Stop(CAL_STAGE_TYPE stage)
+static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
 {
     return CAL_OK;
 }
 
-uint8 CalLin_Results(CAL_STAGE_TYPE stage)
+static uint8 Results(CAL_STAGE_TYPE stage, void *params)
 {
     return CAL_OK;
 }
@@ -85,6 +100,11 @@ static float CalLinearLeftTarget()
 static float CalLinearRightTarget()
 {
     return right_cmd_velocity;
+}
+
+void CalLin_Init()
+{
+    CalLin_Calibration = &linear_calibration;
 }
 
 static void UpdateVelocity(float distance)

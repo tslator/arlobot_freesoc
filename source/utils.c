@@ -214,10 +214,42 @@ void BinaryRangeSearch(int32 search, int32 *data_points, uint8 num_points, uint8
    }
 }
 
-void ConvertLinearAngularToDifferential(float linear, float angular, float *left_cmd_velocity, float *right_cmd_velocity)
+void UniToDiff(float linear, float angular, float *left, float *right)
+/*
+    Vr = (2*V + W*L)/(2*R)
+    Vl = (2*V + W*L)/(2*R)
+    where 
+        Vr - the velocity of the right wheel
+        Vl - the velocity of the left wheel
+        V - the linear velocity
+        W - the angular velocity
+        L - the separation of the left and right wheels
+        R - the radius of the wheel
+*/
 {
+    /*
     *left_cmd_velocity = linear - (angular * TRACK_WIDTH)/2;
     *right_cmd_velocity = linear + (angular * TRACK_WIDTH)/2;
+    */
+    *left = (2*linear - angular*TRACK_WIDTH)/WHEEL_DIAMETER;
+    *right = (2*linear + angular*TRACK_WIDTH)/WHEEL_DIAMETER;
 }
 
+void DiffToUni(float left, float right, float *linear, float *angular)
+/*
+    V = R/2 * (Vr + Vl)
+    W = R/L * (Vr - Vl)
+    where
+        V - the linear velocity
+        W - the angular velocity
+        L - the separation of the left and right wheels
+        R - the radius of the wheel
+        Vr - the velocity of the right wheel
+        Vl - the velocity of the left wheel
+*/
+{
+    *linear = WHEEL_RADIUS * (right + left) / 2;
+    *angular = WHEEL_RADIUS * (right - left) / TRACK_WIDTH;
+    
+}
 /* [] END OF FILE */

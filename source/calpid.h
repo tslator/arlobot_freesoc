@@ -4,22 +4,12 @@
 #include <project.h>
 #include "config.h"
 #include "cal.h"
-    
-typedef struct cal_pid_params_tag
-{
-    char name[6];
-    WHEEL_TYPE wheel;
-} CAL_PID_PARAMS;
 
+CALIBRATION_TYPE *CalPid_LeftCalibration;
+CALIBRATION_TYPE *CalPid_RightCalibration;
+CALIBRATION_TYPE *CalPid_LinearCalibration;
+CALIBRATION_TYPE *CalPid_AngularCalibration;
 
-uint8 CalPid_Init(CAL_STAGE_TYPE stage, void *params);
-uint8 CalPid_Start(CAL_STAGE_TYPE stage, void *params);
-uint8 CalPid_Update(CAL_STAGE_TYPE stage, void *params);
-uint8 CalPid_Stop(CAL_STAGE_TYPE stage, void *params);
-uint8 CalPid_Results(CAL_STAGE_TYPE stage, void *params);
-
-void CalibrateLeftPid(float *gains);
-void CalibrateRightPid(float *gains);    
-void ValidatePid();
+void CalPid_Init();
 
 #endif

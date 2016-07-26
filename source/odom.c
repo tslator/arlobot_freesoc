@@ -97,6 +97,26 @@ void calc_odom(uint32 delta_time)
             Requires: left/right delta count, left/right speed and track width
  */
 {
+#ifdef ALTERNATE_USING_CONTROL_ROBOT_EQS
+    uint32 l_count = Encoder_LeftGetCount();
+    uint32 r_count = Encoder_RightGetCount();
+    
+    uint32 l_diff = l_count - last_l_count;
+    uint32 r_diff = r_count - last_r_count;
+    
+    float l_dist = l_diff * METER_PER_COUNT;
+    float r_dist = l_diff * METER_PER_COUNT;
+    theta += delta_time*(r_dist - l_dist)/TRACK_WIDTH;
+    float c_dist = (l_dist + r_dist)/2;
+    x_dist += c_dist*cos(theta)*delta_time;
+    y_dist += c_dist*sin(theta)*delta_time;
+    l_vel = Encoder_LeftGetMeterPerSec();
+    r_vel = Encoder_RightGetMeterPerSec();
+    lin_vel = (r_vel + l_vel)/2;
+    ang_vel = (r_vel - l_vel)/TRACK_WIDTH;
+    last_l_count = l_count;
+    last_r_count = r_count;
+#else    
     float left_speed;
     float right_speed;
     float delta_heading;
@@ -106,11 +126,12 @@ void calc_odom(uint32 delta_time)
     float delta_left_dist;
     float delta_right_dist;
     
+    
     left_speed = Encoder_LeftGetMeterPerSec();
     right_speed = Encoder_RightGetMeterPerSec();
     
     delta_left_dist = left_speed * delta_time / 1000;
-    delta_right_dist = right_speed * delta_time / 1000;
+    delta_right_dist = right_speed * delta_time / 1000;        
         
     /* Calculate heading, limit heading to -Pi <= heading < Pi, and update
                                     radian
@@ -121,15 +142,8 @@ void calc_odom(uint32 delta_time)
     heading += delta_heading;
 
     // Constrain heading to -Pi to Pi
-    if (heading > PI)
-    {
-        heading -= 2*PI;
-    }
-    else if (heading <= -PI)
-    {
-        heading += 2*PI;
-    }
-
+    constrain_angle(heading);
+    
     // Calculate x/y distance and update
     delta_dist = 0.5 * (delta_left_dist + delta_right_dist) * p_cal_eeprom->linear_bias;
     delta_x_dist = delta_dist * cos(heading);
@@ -138,8 +152,12 @@ void calc_odom(uint32 delta_time)
     x_dist += delta_x_dist;
     y_dist += delta_y_dist;
     
-    linear_speed = constrain((right_speed + left_speed) / 2, MIN_LINEAR_VELOCITY, MAX_LINEAR_VELOCITY);
-    angular_speed = constrain((right_speed - left_speed) / TRACK_WIDTH, MIN_ANGULAR_VELOCITY, MAX_ANGULAR_VELOCITY);
+    //linear_speed = constrain((right_speed + left_speed) / 2, MIN_LINEAR_VELOCITY, MAX_LINEAR_VELOCITY);
+    //angular_speed = constrain((right_speed - left_speed) / TRACK_WIDTH, MIN_ANGULAR_VELOCITY, MAX_ANGULAR_VELOCITY);
+    DiffToUni(left_speed, right_speed, &linear_speed, &angular_speed);
+    linear_speed = constrain(linear_speed, MIN_LINEAR_VELOCITY, MAX_LINEAR_VELOCITY);
+    angular_speed = constrain(angular_speed, MIN_ANGULAR_VELOCITY, MAX_ANGULAR_VELOCITY);
+#endif    
 }
 
 void Odom_Update()

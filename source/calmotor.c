@@ -24,6 +24,11 @@
 
  */
 
+static uint8 Init(CAL_STAGE_TYPE stage, void *params);
+static uint8 Start(CAL_STAGE_TYPE stage, void *params);
+static uint8 Update(CAL_STAGE_TYPE stage, void *params);
+static uint8 Stop(CAL_STAGE_TYPE stage, void *params);
+static uint8 Results(CAL_STAGE_TYPE stage, void *params);
 
 static int32 cps_samples[CAL_NUM_SAMPLES];
 static uint16 pwm_samples[CAL_NUM_SAMPLES];
@@ -35,12 +40,23 @@ static CAL_DATA_TYPE * WHEEL_DIR_TO_CAL_DATA[2][2];
 static float fwd_cps_validate[11] = {50.0, 80.0, 110.0, 140.0, 170.0, 200.0, 170.0, 140.0, 110.0, 80.0, 50.0};
 static float bwd_cps_validate[11] = {-50.0, -80.0, -110.0, -140.0, -170.0, -200.0, -170.0, -140.0, -110.0, -80.0, -50.0};
 
-static void Init()
+
+static CALIBRATION_TYPE motor_calibration = {CAL_INIT_STATE, 
+                                             CAL_CALIBRATE_STAGE,
+                                             0,
+                                             Init, 
+                                             Start, 
+                                             Update, 
+                                             Stop, 
+                                             Results };
+
+
+static void InitMotorCal()
 {
-    WHEEL_DIR_TO_CAL_DATA[LEFT_WHEEL][FORWARD_DIR] = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_fwd;
-    WHEEL_DIR_TO_CAL_DATA[LEFT_WHEEL][BACKWARD_DIR] = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd;
-    WHEEL_DIR_TO_CAL_DATA[RIGHT_WHEEL][FORWARD_DIR] = (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd;
-    WHEEL_DIR_TO_CAL_DATA[RIGHT_WHEEL][BACKWARD_DIR] = (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd;
+    WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_fwd;
+    WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd;
+    WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd;
+    WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd;
 }
 
 static void CalculatePwmSamples(WHEEL_TYPE wheel, DIR_TYPE dir, uint16 *pwm_samples, uint8 *reverse_pwm)
@@ -72,9 +88,9 @@ static void CalculatePwmSamples(WHEEL_TYPE wheel, DIR_TYPE dir, uint16 *pwm_samp
     uint16 pwm_end;
     uint16 pwm_step;
     
-    if (wheel == LEFT_WHEEL)
+    if (wheel == WHEEL_LEFT)
     {
-        if (dir == FORWARD_DIR)
+        if (dir == DIR_FORWARD)
         {
             pwm_start = LEFT_PWM_STOP;
             pwm_end = LEFT_PWM_FULL_FORWARD;
@@ -97,7 +113,7 @@ static void CalculatePwmSamples(WHEEL_TYPE wheel, DIR_TYPE dir, uint16 *pwm_samp
     }
     else
     {
-        if (dir == FORWARD_DIR)
+        if (dir == DIR_FORWARD)
         {
             pwm_start = RIGHT_PWM_STOP;
             pwm_end = RIGHT_PWM_FULL_FORWARD;
@@ -217,7 +233,16 @@ static void OutputSamples(char *label, int32 *cps_samples, uint16 *pwm_samples)
     Ser_PutString(buffer);
 }
 
-static void OutputVelocities(char *label, float cps, float mps, uint16 pwm)
+static void PrintAllMotorParams()
+{
+    Ser_PutString("\r\n");
+    OutputSamples("Left-Forward", (int32 *) p_cal_eeprom->left_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_fwd.pwm_data);
+    OutputSamples("Left-Backward", (int32 *) p_cal_eeprom->left_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_bwd.pwm_data);
+    OutputSamples("Right-Forward", (int32 *) p_cal_eeprom->right_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_fwd.pwm_data);
+    OutputSamples("Right-Backward", (int32 *) p_cal_eeprom->right_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_bwd.pwm_data);
+}
+
+static void PrintVelocityParams(char *label, float cps, float mps, uint16 pwm)
 {
     char cps_str[10];
     char mps_str[10];
@@ -230,7 +255,7 @@ static void OutputVelocities(char *label, float cps, float mps, uint16 pwm)
     Ser_PutString(output);
 }
 
-static void DoVelocityValidation(char *label, float *cps, uint8 num_cps, void (*set_speed)(float), uint16 (*get_pwm)(), float (*get_mps)())
+static void DoVelocityValidation(char *label, float *cps, uint8 num_cps, SET_MOTOR_FUNC_TYPE set_speed, GET_MOTOR_PWM_FUNC_TYPE get_pwm, GET_ENCODER_FUNC_TYPE get_mps)
 {
     uint8 ii;
     uint16 pwm;
@@ -250,25 +275,25 @@ static void DoVelocityValidation(char *label, float *cps, uint8 num_cps, void (*
             mps = get_mps();
         }
         
-        OutputVelocities(label, cps[ii], mps, pwm);
+        PrintVelocityParams(label, cps[ii], mps, pwm);
     }
     
     set_speed(0);
 }
 
-uint8 CalMotor_Init(CAL_STAGE_TYPE stage, void *params)
+static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 {
     params = params;
     switch (stage)
     {
         case CAL_CALIBRATE_STAGE:
             Ser_PutString("\r\nInitialize motor calibration\r\n");
-            WHEEL_DIR_TO_CAL_DATA[LEFT_WHEEL][FORWARD_DIR] = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_fwd;
-            WHEEL_DIR_TO_CAL_DATA[LEFT_WHEEL][BACKWARD_DIR] = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd;
-            WHEEL_DIR_TO_CAL_DATA[RIGHT_WHEEL][FORWARD_DIR] = (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd;
-            WHEEL_DIR_TO_CAL_DATA[RIGHT_WHEEL][BACKWARD_DIR] = (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd;
+            WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_fwd;
+            WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd;
+            WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd;
+            WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd;
             
-            Pid_Disable(0);
+            Pid_Enable(FALSE);
             break;
             
         case CAL_VALIDATE_STAGE:
@@ -278,7 +303,7 @@ uint8 CalMotor_Init(CAL_STAGE_TYPE stage, void *params)
     return CAL_OK;    
 }
 
-uint8 CalMotor_Start(CAL_STAGE_TYPE stage, void *params)
+static uint8 Start(CAL_STAGE_TYPE stage, void *params)
 {
     params = params;
     
@@ -296,7 +321,7 @@ uint8 CalMotor_Start(CAL_STAGE_TYPE stage, void *params)
     return CAL_OK;
 }
 
-uint8 CalMotor_Update(CAL_STAGE_TYPE stage, void *params)
+static uint8 Update(CAL_STAGE_TYPE stage, void *params)
 {
     uint16 last_debug_control_enabled;
 
@@ -311,27 +336,28 @@ uint8 CalMotor_Update(CAL_STAGE_TYPE stage, void *params)
 #ifdef XXX
             debug_control_enabled = DEBUG_LEFT_ENCODER_ENABLE_BIT;
 
-            CalibrateWheelSpeed(LEFT_WHEEL, FORWARD_DIR, 5, cps_samples, pwm_samples);
-            StoreWheelSpeedSamples(LEFT_WHEEL, FORWARD_DIR, cps_samples, pwm_samples);
+            CalibrateWheelSpeed(WHEEL_LEFT, DIR_FORWARD, 5, cps_samples, pwm_samples);
+            StoreWheelSpeedSamples(WHEEL_LEFT, DIR_FORWARD, cps_samples, pwm_samples);
 #endif
             Ser_PutString("Left-Backward Calibration\r\n");
 #ifdef XXX
-            CalibrateWheelSpeed(LEFT_WHEEL, BACKWARD_DIR, 5, cps_samples, pwm_samples);
-            StoreWheelSpeedSamples(LEFT_WHEEL, BACKWARD_DIR, cps_samples, pwm_samples);
+            CalibrateWheelSpeed(WHEEL_LEFT, DIR_BACKWARD, 5, cps_samples, pwm_samples);
+            StoreWheelSpeedSamples(WHEEL_LEFT, DIR_BACKWARD, cps_samples, pwm_samples);
 #endif
             Ser_PutString("Right-Forward Calibration\r\n");
 #ifdef XXX
             debug_control_enabled = DEBUG_RIGHT_ENCODER_ENABLE_BIT;                    
-            CalibrateWheelSpeed(RIGHT_WHEEL, FORWARD_DIR, 5, cps_samples, pwm_samples);
-            StoreWheelSpeedSamples(RIGHT_WHEEL, FORWARD_DIR, cps_samples, pwm_samples);
+            CalibrateWheelSpeed(WHEEL_RIGHT, DIR_FORWARD, 5, cps_samples, pwm_samples);
+            StoreWheelSpeedSamples(WHEEL_RIGHT, DIR_FORWARD, cps_samples, pwm_samples);
 #endif
             Ser_PutString("Right-Backward Calibration\r\n");
 #ifdef XXX
-            CalibrateWheelSpeed(RIGHT_WHEEL, BACKWARD_DIR, 5, cps_samples, pwm_samples);
-            StoreWheelSpeedSamples(RIGHT_WHEEL, BACKWARD_DIR, cps_samples, pwm_samples);
+            CalibrateWheelSpeed(WHEEL_RIGHT, DIR_BACKWARD, 5, cps_samples, pwm_samples);
+            StoreWheelSpeedSamples(WHEEL_RIGHT, DIR_BACKWARD, cps_samples, pwm_samples);
 
             debug_control_enabled = last_debug_control_enabled;
 #endif
+            return CAL_COMPLETE;
             break;
             
         case CAL_VALIDATE_STAGE:
@@ -345,7 +371,7 @@ uint8 CalMotor_Update(CAL_STAGE_TYPE stage, void *params)
     return CAL_OK;
 }
 
-uint8 CalMotor_Stop(CAL_STAGE_TYPE stage, void *params)
+static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
 {
     params = params;
     
@@ -365,83 +391,24 @@ uint8 CalMotor_Stop(CAL_STAGE_TYPE stage, void *params)
     return CAL_OK;
 }
 
-void PrintMotorVelocity()
+static uint8 Results(CAL_STAGE_TYPE stage, void *params)
 {
-    Ser_PutString("\r\n");
-    OutputSamples("Left-Forward", (int32 *) p_cal_eeprom->left_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_fwd.pwm_data);
-    OutputSamples("Left-Backward", (int32 *) p_cal_eeprom->left_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_bwd.pwm_data);
-    OutputSamples("Right-Forward", (int32 *) p_cal_eeprom->right_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_fwd.pwm_data);
-    OutputSamples("Right-Backward", (int32 *) p_cal_eeprom->right_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_bwd.pwm_data);
-}
-
-uint8 CalMotor_Results(CAL_STAGE_TYPE stage, void *params)
-{
-#ifdef XXX
-    stage = stage;
-    params = params;
-    PrintMotorVelocity();
-#endif
-    Ser_PutString("\r\nPrinting motor calibration results\r\n");
+    switch (stage)
+    {
+        case CAL_CALIBRATE_STAGE:
+            Ser_PutString("\r\nPrinting motor calibration results\r\n");
+            PrintAllMotorParams();
+            break;
+        
+        case CAL_VALIDATE_STAGE:
+            break;
+    }
     return CAL_OK;
 }
 
-void CalibrateMotorVelocity()
-/* 
-    Clear Count/Sec to PWM calibration bit
-    Perform left/right forward/reverse calibration
-    If verbose then write results to serial port
-    Store calibration data to EEPROM
-    Set Count/Sec to PWM calibration bit
-    Update Count/Sec to PWM calibration bit in EEPROM
- */
+void CalMotor_Init()
 {
-    Init();
-    
-    uint16 last_debug_control_enabled = debug_control_enabled;
-    
-    debug_control_enabled = DEBUG_LEFT_ENCODER_ENABLE_BIT;
-    
-    Ser_PutString("\r\nPerforming motor calibration\r\n");
-    
-    Ser_PutString("Left-Forward Calibration\r\n");
-    CalibrateWheelSpeed(LEFT_WHEEL, FORWARD_DIR, 5, cps_samples, pwm_samples);
-    StoreWheelSpeedSamples(LEFT_WHEEL, FORWARD_DIR, cps_samples, pwm_samples);
-    OutputSamples("Left-Forward", cps_samples, pwm_samples);
-
-    Ser_PutString("Left-Backward Calibration\r\n");
-    CalibrateWheelSpeed(LEFT_WHEEL, BACKWARD_DIR, 5, cps_samples, pwm_samples);
-    StoreWheelSpeedSamples(LEFT_WHEEL, BACKWARD_DIR, cps_samples, pwm_samples);
-    OutputSamples("Left-Backward", cps_samples, pwm_samples);
-
-    debug_control_enabled = DEBUG_RIGHT_ENCODER_ENABLE_BIT;
-    
-    Ser_PutString("Right-Forward Calibration\r\n");
-    CalibrateWheelSpeed(RIGHT_WHEEL, FORWARD_DIR, 5, cps_samples, pwm_samples);
-    StoreWheelSpeedSamples(RIGHT_WHEEL, FORWARD_DIR, cps_samples, pwm_samples);
-    OutputSamples("Right-Forward", cps_samples, pwm_samples);
-
-    Ser_PutString("Right-Backward Calibration\r\n");
-    CalibrateWheelSpeed(RIGHT_WHEEL, BACKWARD_DIR, 5, cps_samples, pwm_samples);
-    StoreWheelSpeedSamples(RIGHT_WHEEL, BACKWARD_DIR, cps_samples, pwm_samples);
-    OutputSamples("Right-Backward", cps_samples, pwm_samples);
-
-    Motor_LeftSetCalibration((CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_fwd, (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd);
-    Motor_RightSetCalibration((CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd, (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd);
-    
-    Ser_PutString("Motor calibration complete\r\n");
-    
-    debug_control_enabled = last_debug_control_enabled;
+    CalMotor_Calibration = &motor_calibration;
+    CalMotor_Validation = &motor_calibration;
 }
 
-void ValidateMotorVelocity()
-{
-
-    Ser_PutString("\r\nPerforming motor velocity validation\r\n");
-
-    DoVelocityValidation("left-forward", fwd_cps_validate, 11, Motor_LeftSetCntsPerSec, Motor_LeftGetPwm, Encoder_LeftGetMeterPerSec);
-    DoVelocityValidation("right_forward", fwd_cps_validate, 11, Motor_RightSetCntsPerSec, Motor_RightGetPwm, Encoder_RightGetMeterPerSec);
-    DoVelocityValidation("left-backward", bwd_cps_validate, 11, Motor_LeftSetCntsPerSec, Motor_LeftGetPwm, Encoder_LeftGetMeterPerSec);
-    DoVelocityValidation("right-backward", bwd_cps_validate, 11, Motor_RightSetCntsPerSec, Motor_RightGetPwm, Encoder_RightGetMeterPerSec);
-
-    Ser_PutString("Motor velocity validation complete\r\n");
-}

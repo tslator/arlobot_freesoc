@@ -85,12 +85,12 @@ static PID_TYPE right_pid = {
     /* get_pwm */       Motor_RightGetPwm
 };
 
-static uint8 pid_disabled;
+static uint8 pid_enabled;
 
 
 void Pid_Init()
 {
-    pid_disabled = 0;
+    pid_enabled = 0;
     left_pid.get_target = Control_LeftGetCmdVelocity;
     right_pid.get_target = Control_RightGetCmdVelocity;
     
@@ -140,11 +140,6 @@ void Pid_Update()
     static uint8 pid_sched_offset_applied = 0;
     uint32 delta_time;
     
-    if (pid_disabled)
-    {
-        return;
-    }
-    
     delta_time = millis() - last_update_time;
     PID_DEBUG_DELTA(delta_time);
     if (delta_time >= PID_SAMPLE_TIME_MS)
@@ -187,15 +182,17 @@ void Pid_Reset()
     right_pid.pid.output = 0;
 }
 
-void Pid_Disable(uint8 disable)
+void Pid_Enable(uint8 enable)
 {
-    if (pid_disabled && !disable)
+    PIDMode mode = MANUAL;
+    
+    if (enable)
     {
-        Pid_Reset();
+        mode = AUTOMATIC;
     }
     
-    pid_disabled = disable;
-    
+    PIDModeSet(&left_pid.pid, mode);
+    PIDModeSet(&right_pid.pid, mode);
 }
 
 void Pid_LeftSetGains(float kp, float ki, float kd)

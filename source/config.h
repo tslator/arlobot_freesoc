@@ -22,13 +22,9 @@
 #define USE_FTOA
     
 typedef float (*GET_TARGET_FUNC_TYPE)();
-typedef float (*GET_ENCODER_FUNC_TYPE)();
-typedef int16 (*GET_MOTOR_FUNC_TYPE)();
-typedef void (*SET_MOTOR_FUNC_TYPE)(float cps);
-typedef uint16 (*GET_MOTOR_PWM_FUNC_TYPE)();
 
-typedef enum {LEFT_WHEEL, RIGHT_WHEEL} WHEEL_TYPE;
-typedef enum {FORWARD_DIR, BACKWARD_DIR} DIR_TYPE;
+typedef enum {WHEEL_LEFT, WHEEL_RIGHT, WHEEL_BOTH} WHEEL_TYPE;
+typedef enum {DIR_FORWARD, DIR_BACKWARD} DIR_TYPE;
     
     
 /*---------------------------------------------------------------------------------------------------------------------- 
@@ -59,9 +55,11 @@ typedef enum {FORWARD_DIR, BACKWARD_DIR} DIR_TYPE;
 #define LAST_REAR_INFRARED_SENSOR (NUM_REAR_INFRARED_SENSORS - 1)    
 
 #define PI (3.1415926535897932384626433832795)
-#define WHEEL_DIAMETER (0.1524)
+#define WHEEL_RADIUS   (0.0762)
+#define WHEEL_DIAMETER (2 * WHEEL_RADIUS)
 #define TRACK_WIDTH (0.403)             // meter
-#define METER_PER_REVOLUTION (0.4787)   // meter
+#define PI_D (PI * WHEEL_DIAMETER)
+#define METER_PER_REVOLUTION (PI_D)   // meter
 #define COUNT_PER_REVOLUTION (36.0 * 4)  /* 36 teeth per revolution (4x encoder) */
 #define METER_PER_COUNT (METER_PER_REVOLUTION/COUNT_PER_REVOLUTION)
 #define COUNT_PER_METER (COUNTS_PER_REVOLUTION/METER_PER_REVOLUTION)
@@ -88,7 +86,7 @@ Sample Rates
 #define PID_SAMPLE_RATE     (20) /* Hz */
 #define ODOM_SAMPLE_RATE    (20) /* Hz */
 #define HEARTBEAT_RATE       (2) /* Hz */
-#define CTRL_VELOCITY_RATE  (10) /* Hz */
+#define CTRL_VELOCITY_RATE  (15) /* Hz */
 
 /* The following defines and macro provide a mechanism to distribute the sampling across the main loop, i.e., keep the
    sampling from happening all of the same time, by introducing a one-time initial delay or sampling offset.
@@ -96,17 +94,6 @@ Sample Rates
 #define ENC_SCHED_OFFSET    (7)  /* ms */
 #define PID_SCHED_OFFSET    (19)  /* ms */
 #define ODOM_SCHED_OFFSET   (11)  /* ms */
-
-#define APPLY_SCHED_OFFSET(offset, applied) do {                        \
-                                                if (!applied)           \
-                                                {                       \
-                                                    applied = 1;        \
-                                                    CyDelay(offset);    \
-                                                }                       \
-                                            } while (0);
-
-
-
 
 
 #define CAL_LINEAR_SCALE_CORRECTION (1.085)
