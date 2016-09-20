@@ -10,6 +10,9 @@
  * ========================================
 */
 
+/*---------------------------------------------------------------------------------------------------
+ * Includes
+ *-------------------------------------------------------------------------------------------------*/    
 #include "odom.h"
 #include "config.h"
 #include "encoder.h"
@@ -27,10 +30,14 @@
 
     http://rossum.sourceforge.net/papers/DiffSteer/
     http://www-personal.umich.edu/~johannb/Papers/pos96rep.pdf
+    Add a reference to Control of Mobile Robots
 
  */
 
 
+/*---------------------------------------------------------------------------------------------------
+ * Macros
+ *-------------------------------------------------------------------------------------------------*/    
 #ifdef ODOM_UPDATE_DELTA_ENABLED
 #define ODOM_DEBUG_DELTA(delta) DEBUG_DELTA_TIME("odom", delta)
 #else
@@ -45,58 +52,106 @@
 
 #define ODOM_SAMPLE_TIME_MS  SAMPLE_TIME_MS(ODOM_SAMPLE_RATE)
 
-static float heading;
-static float x_dist;
-static float y_dist;
-static float linear_speed;
-static float angular_speed;
+/*---------------------------------------------------------------------------------------------------
+ * Variables
+ *-------------------------------------------------------------------------------------------------*/    
+static float left_speed;
+static float right_speed;
+static float left_delta_dist;
+static float right_delta_dist;
+
+/*---------------------------------------------------------------------------------------------------
+ * Functions
+ *-------------------------------------------------------------------------------------------------*/    
 
 #ifdef ODOM_DUMP_ENABLED
+/*---------------------------------------------------------------------------------------------------
+ * Name: Nvstore_Start
+ * Description: Starts the EEPROM component used for storing calibration information.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static void DumpOdom()
 {
-    char x_dist_str[10];
-    char y_dist_str[10];
-    char heading_str[10];
-    char linear_str[10];
-    char angular_str[10];
+    char left_speed_str[10];
+    char right_speed_str[10];
+    char left_delta_dist_str[10];
+    char right_delta_dist_str[10];
     
-    ftoa(x_dist, x_dist_str, 3);
-    ftoa(y_dist, y_dist_str, 3);
-    ftoa(heading, heading_str, 3);
-    ftoa(linear_speed, linear_str, 3);
-    ftoa(angular_speed, angular_str, 3);
+    ftoa(left_speed, left_speed_str, 3);
+    ftoa(right_speed, right_speed_str, 3);
+    ftoa(left_delta_dist, left_delta_dist_str, 3);
+    ftoa(right_delta_dist, right_delta_dist_str, 3);
     
     if (ODOM_DEBUG_CONTROL_ENABLED)
     {
-        DEBUG_PRINT_ARG("x: %s y: %s h: %s l: %s a: %s\r\n", x_dist_str, y_dist_str, heading_str, linear_str, angular_str);
+        DEBUG_PRINT_ARG("ls: %s rs: %s ld: %s rd: %s\r\n", left_speed_str, right_speed_str, left_delta_dist_str, right_delta_dist_str);
     }
 }
 #endif
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Nvstore_Start
+ * Description: Starts the EEPROM component used for storing calibration information.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Odom_Init()
 {
-    heading = 0;
-    x_dist = 0;
-    y_dist = 0;
-    linear_speed = 0;
-    angular_speed = 0;
+    left_speed = 0;
+    right_speed = 0;
+    left_delta_dist = 0;
+    right_delta_dist = 0;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Nvstore_Start
+ * Description: Starts the EEPROM component used for storing calibration information.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Odom_Start()
 {
 }
 
-void calc_odom(uint32 delta_time)
-/*
-    Calculate the following:
-        heading
-            Requires: left/right delta count
-        x/y distance
-            Requires: heading and dist per count
-        linear/angular velocity
-            Requires: left/right delta count, left/right speed and track width
- */
+#define NO_HEADING_CALC
+/*---------------------------------------------------------------------------------------------------
+ * Name: CalculateOdometry
+ * Description: Calculates the odometry fields on each sample period.
+ * Parameters: delta_time - the number of milliseconds between each call.
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+static void CalculateOdometry(uint32 delta_time)
 {
+#ifdef NO_HEADING_CALC
+    // Propose different values to be returned for odometry
+    // left speed, right speed, delta left dist, delta right dist
+    //
+    // There doesn't seem to be a good reason to calculate heading, linear and angular velocity on the controller
+    // I think that this was done previously because there was only a laptop and the propeller board.  However, in this
+    // architecture there is the psoc, rpi, and PC.  The rpi is capable of making this calculations every 100ms or 
+    // maybe even faster.
+    
+    static float last_left_dist;
+    static float last_right_dist;
+    float left_dist;
+    float right_dist;
+    
+    left_speed = Encoder_LeftGetMeterPerSec();
+    right_speed = Encoder_RightGetCntsPerSec();
+    left_dist = Encoder_LeftGetDist();
+    right_dist = Encoder_RightGetDist();
+    
+    left_delta_dist = left_dist - last_left_dist;
+    right_delta_dist = right_dist - last_right_dist;
+    
+    last_left_dist = left_dist;
+    last_right_dist = right_dist;
+#endif    
 #ifdef ALTERNATE_USING_CONTROL_ROBOT_EQS
     uint32 l_count = Encoder_LeftGetCount();
     uint32 r_count = Encoder_RightGetCount();
@@ -116,7 +171,8 @@ void calc_odom(uint32 delta_time)
     ang_vel = (r_vel - l_vel)/TRACK_WIDTH;
     last_l_count = l_count;
     last_r_count = r_count;
-#else    
+#endif
+#ifdef ORIGINAL_FROM_ARLOBOT_ON_PARALLAX
     float left_speed;
     float right_speed;
     float delta_heading;
@@ -160,6 +216,14 @@ void calc_odom(uint32 delta_time)
 #endif    
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Odom_Update
+ * Description: Updates the odometry fields.  This function is called from the main loop and enforces
+ *              the sampling period for reporting odometry.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Odom_Update()
 {
     static uint32 last_odom_time = 0;
@@ -174,41 +238,26 @@ void Odom_Update()
         
         APPLY_SCHED_OFFSET(ODOM_SCHED_OFFSET, odom_sched_offset_applied);
         
-        calc_odom(delta_time);
-        I2c_WriteOdom(x_dist, y_dist, heading, linear_speed, angular_speed);
+        CalculateOdometry(delta_time);
+        I2c_WriteOdom(left_speed, right_speed, left_delta_dist, right_delta_dist);
         DUMP_ODOM();
     }
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Odom_Reset
+ * Description: Resets the odometry fields and updates them in the I2C interface.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Odom_Reset()
 {
-    heading = 0;
-    x_dist = 0;
-    y_dist = 0;
-    linear_speed = 0;
-    angular_speed = 0;
-    I2c_WriteOdom(x_dist, y_dist, heading, linear_speed, angular_speed);
-}
-
-void Odom_GetPosition(float *x, float *y)
-{
-    *x = x_dist;
-    *y = y_dist;
-}
-
-float Odom_GetHeading()
-{
-    return heading;
-}
-
-float Odom_GetLinearVelocity()
-{
-    return linear_speed;
-}
-
-float Odom_GetAngularVelocity()
-{
-    return angular_speed;
+    left_speed = 0;
+    right_speed = 0;
+    left_delta_dist = 0;
+    right_delta_dist = 0;
+    I2c_WriteOdom(left_speed, right_speed, left_delta_dist, right_delta_dist);
 }
 
 /* [] END OF FILE */

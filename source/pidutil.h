@@ -4,8 +4,6 @@
 #include <project.h>
 #include "pid_controller.h"
     
-void DumpPid(char *name, PIDControl *pid);
-    
-
+void DumpPid(char *name, PIDControl *pid, uint16 pwm);
     
 #endif

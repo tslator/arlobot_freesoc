@@ -10,6 +10,9 @@
  * ========================================
 */
 
+/*---------------------------------------------------------------------------------------------------
+ * Includes
+ *-------------------------------------------------------------------------------------------------*/    
 #include "i2c.h"
 #include "time.h"
 #include "config.h"
@@ -17,19 +20,30 @@
 #include "debug.h"
 #include "cal.h"
 
-#define MAX_CMD_VELOCITY_TIMEOUT (2000)
 
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/    
 #define ENCODER_DEBUG_BIT   (0x0001)
 #define PID_DEBUG_BIT       (0x0002)
 #define MOTOR_DEBUG_BIT     (0x0004)
 #define ODOM_DEBUG_BIT      (0x0008)
 #define SAMPLE_DEBUG_BIT    (0x0010)
 
+/*---------------------------------------------------------------------------------------------------
+ * Macros
+ *-------------------------------------------------------------------------------------------------*/    
+
 /* Macro to wait for any outstanding master writes to the I2C buffer.  This ensures data integrity across the interface
  */
 #define I2C_WAIT_FOR_ACCESS()   do  \
                                 {   \
                                 } while (0 !=  EZI2C_Slave_GetActivity())
+                                    
+
+/*---------------------------------------------------------------------------------------------------
+ * Types
+ *-------------------------------------------------------------------------------------------------*/
 /*
     I2C Communication Data Layout
 
@@ -37,10 +51,10 @@
       00           2         [device control]               the control register supports 
                                                                 - Bit 0: disable the HB25 motors
                                                                 - Bit 1: clear odometry (which includes the following:
-                                                                    x,y distances
-                                                                    heading
-                                                                    linear,angular velocity
+                                                                    left/right speed
+                                                                    left/right delta distance
                                                                     encoder counts
+                                                                - Bit 2: clear calibration
       02           2         [debug control]                the debug register supports
                                                                 - Bit 0: Enable/Disable Encoder Debug
                                                                 - Bit 1: Enable/Disable PID debug
@@ -48,37 +62,28 @@
                                                                 - Bit 3: Enable/Disable Odometry debug
                                                                 - Bit 4: Enable/Disable Sample debug
         <---- Commanded Velocity ---->
-      04           4         [linear commanded velocity]    commanded linear velocity in meter/second
-      08           4         [angular commanded velocity]   commanded angular velocity in radian/second
+      04           4         [left wheel velocity]          commanded left wheel velocity in meter/second
+      08           4         [right wheel velocity]         commanded right wheel velocity in meter/second
     ------------------------------ Read/Write Boundary --------------------------------------------
       12           2         [device status]                contains bits that represent the status of the Psoc device
                                                                - Bit 0: HB25 Motor Controller Initialized
       14           2         [calibration status]           contains bits that represent the calibration state
                                                                - Bit 0: Count/Sec to PWM
                                                                - Bit 1: PID
-                                                               - Bit 2: Linear Bias
-                                                               - Bit 3: Angular Bias
            <------ Odometry ------>
-      16           4         [x distance]                   measured x distance
-      20           4         [y distance]                   measured y distance
-      28           4         [heading]                      measured heading
-      32           4         [linear velocity]              measured linear velocity
-      36           4         [angular velocity]             measured angular velocity
+      16           4         [left speed]                   measured left speed
+      20           4         [right speed]                  measured right speed
+      28           4         [left delta distance]          measured delta left distance 
+      32           4         [right delta distance]         measured delta right distance 
           <------ Ultrasonic ------>
-      40          16         [front ultrasonic distance]    ultrasonic distance is an array of 
+      36          64         [ultrasonic distance]          ultrasonic distance is an array of 
                                                             distances from the ultrasonic sensors in 
-                                                            centimeters, range 2 to 500
-      56          16         [rear ultrasonic distance]     ultrasonic distance is an array of 
-                                                            distances from the ultrasonic sensors in 
-                                                            centimeters, range 2 to 500
+                                                            meters, range 0.02 to 4
            <------ Infrared ------>
-      72           8         [infrared distance]            infrared distance is an array of distances 
-                                                            from the infrared sensors in centimeters, 
-                                                            range 10 to 80
-      80           8         [infrared distance]            infrared distance is an array of distances 
-                                                            from the infrared sensors in centimeters, 
-                                                            range 10 to 80
-      88           4         [heartbeat]                    used for testing the i2c communication
+     100          64         [infrared distance]            infrared distance is an array of distances 
+                                                            from the infrared sensors in meters, 
+                                                            range 0.1 to 0.8
+     164           4         [heartbeat]                    used for testing the i2c communication
  */
 
 /* Define the portion of the I2C Slave that Read/Write */
@@ -86,8 +91,8 @@ typedef struct
 {
     uint16 device_control;
     uint16 debug_control;
-    float  linear_cmd_velocity;
-    float  angular_cmd_velocity;
+    float  left_cmd_velocity;
+    float  right_cmd_velocity;
 } __attribute__ ((packed)) READWRITE_TYPE;
 
 /* Define the odometry structure for communicating the position, heading and velocity of the wheel 
@@ -95,25 +100,22 @@ typedef struct
  */
 typedef struct
 {
-    float x_dist;
-    float y_dist;
-    float heading;
-    float linear_velocity;
-    float angular_velocity;
+    float left_speed;
+    float right_speed;
+    float left_delta_dist;
+    float right_delta_dist;
 } __attribute__ ((packed)) ODOMETRY;
 
 /* Define the structure for ultrasonic sensors */
 typedef struct
 {
-    uint16 front[NUM_FRONT_ULTRASONIC_SENSORS];
-    uint16 rear[NUM_REAR_ULTRASONIC_SENSORS];
+    float dist[NUM_ULTRASONIC_SENSORS];
 } __attribute__ ((packed)) ULTRASONIC;
 
 /* Define the structure for infrared sensors */
 typedef struct
 {
-    uint8 front[NUM_FRONT_INFRARED_SENSORS];
-    uint8 rear[NUM_REAR_INFRARED_SENSORS];
+    float dist[NUM_INFRARED_SENSORS];
 } __attribute__((packed)) INFRARED;
 
 /* Define the I2C Slave that Read Only */
@@ -148,19 +150,17 @@ static uint32 cmd_velocity_timeout = 0;
 
 static uint16 i2c_debug;
 
-/*----------------------------------------------------------------------------------------------------------------------
+/*--------------------------------------------------------------------------------------------------
+ * Functions
+ *-------------------------------------------------------------------------------------------------*/
 
-  Static Functions
-
- ---------------------------------------------------------------------------------------------------------------------*/
-
-
-/*----------------------------------------------------------------------------------------------------------------------
-
-  Public Functions
-
- ---------------------------------------------------------------------------------------------------------------------*/
-
+/*---------------------------------------------------------------------------------------------------
+ * Name: I2c_Init
+ * Description: Initializes the I2C memory buffer and module variables
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void I2c_Init()
 {
     memset( &i2c_buf, 0, sizeof(i2c_buf));
@@ -169,6 +169,13 @@ void I2c_Init()
     i2c_debug = 0;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: I2c_Start
+ * Description: Starts the I2C slave component and sets the I2C read/write buffer.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void I2c_Start()
 {
     /* Note: The start routine must be called before the set buffer routine.  Start applies the customizations settings
@@ -177,11 +184,15 @@ void I2c_Start()
      */
     EZI2C_Slave_Start();
     EZI2C_Slave_SetBuffer1(sizeof(i2c_buf), sizeof(i2c_buf.read_write), (volatile uint8 *) &i2c_buf);
-    
-    /* Read the calibration status from EEPROM and mirror in calibration_status */
-    i2c_buf.read_only.calibration_status = p_cal_eeprom->status;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: I2c_ReadDeviceControl
+ * Description: Accessor function used to read the device control status.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 uint16 I2c_ReadDeviceControl()
 {
     uint16 value;
@@ -195,6 +206,13 @@ uint16 I2c_ReadDeviceControl()
     return value;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: I2c_ReadDebugControl
+ * Description: Accessor function used to read the debug control status.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void I2c_ReadDebugControl()
 {
     uint16 value;
@@ -245,11 +263,18 @@ void I2c_ReadDebugControl()
 #endif
 }
 
-void I2c_ReadCmdVelocity(float *linear, float *angular)
+/*---------------------------------------------------------------------------------------------------
+ * Name: I2c_ReadCmdVelocity
+ * Description: Accessor function used to read the commanded left/right wheel velocity.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+void I2c_ReadCmdVelocity(float *left, float *right, uint32 *timeout)
 {
     /* GetActivity() returns the status of the I2C activity: write, read, busy, or error
        Wrt to I2C writes, only the first 12 bytes can be written to.  Of those 12 bytes, 2 are for the control register,
-       2 are for the calibration register, and 8 are for the commanded velocity (linear and angular).  The commanded 
+       2 are for the calibration register, and 8 are for the commanded velocity (left and right).  The commanded 
        velocity will always be written to more often than the control and calibration registers, so checking for write
        status is reasonably good way to know if we have received any recent velocity commands.
     
@@ -272,22 +297,23 @@ void I2c_ReadCmdVelocity(float *linear, float *angular)
         last_cmd_velocity_time = millis();
     }
 
-    *linear = 0;
-    *angular = 0;
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
+    *left = i2c_buf.read_write.left_cmd_velocity;
+    *right = i2c_buf.read_write.left_cmd_velocity;
+    EZI2C_Slave_EnableInt();
     
-    if (cmd_velocity_timeout < MAX_CMD_VELOCITY_TIMEOUT)
-    {
-        I2C_WAIT_FOR_ACCESS();
-        EZI2C_Slave_DisableInt();
-        *linear = i2c_buf.read_write.linear_cmd_velocity;
-        *angular = i2c_buf.read_write.angular_cmd_velocity;
-        EZI2C_Slave_EnableInt();
-    }
+    *timeout = cmd_velocity_timeout;
     
-    *linear = max(MIN_LINEAR_VELOCITY, min(*linear, MAX_LINEAR_VELOCITY));
-    *angular = max(MIN_ANGULAR_VELOCITY, min(*angular, MAX_ANGULAR_VELOCITY));
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: I2c_SetDeviceStatusBit
+ * Description: Accessor function used to set a bit in the device status.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void I2c_SetDeviceStatusBit(uint16 bit)
 {
     device_status |= bit;
@@ -297,6 +323,13 @@ void I2c_SetDeviceStatusBit(uint16 bit)
     EZI2C_Slave_EnableInt();
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: I2c_ClearDeviceStatusBit
+ * Description: Accessor function used to clear a bit in the device status.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void I2c_ClearDeviceStatusBit(uint16 bit)
 {
     device_status &= ~bit;
@@ -306,15 +339,29 @@ void I2c_ClearDeviceStatusBit(uint16 bit)
     EZI2C_Slave_EnableInt();
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: I2c_SetCalibrationStatusBit
+ * Description: Accessor function used to set a bit in the calibration status.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void I2c_SetCalibrationStatusBit(uint16 bit)
 {
     calibration_status |= bit;
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
-    i2c_buf.read_only.device_status = calibration_status;
+    i2c_buf.read_only.calibration_status = calibration_status;
     EZI2C_Slave_EnableInt();
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: I2c_ClearCalibrationStatusBit
+ * Description: Accessor function used to clear a bit in the calibration status.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void I2c_ClearCalibrationStatusBit(uint16 bit)
 {
     calibration_status &= ~bit;
@@ -324,74 +371,97 @@ void I2c_ClearCalibrationStatusBit(uint16 bit)
     EZI2C_Slave_EnableInt();
 }
 
-void I2c_WriteOdom(float x_dist, float y_dist, float heading, float linear_speed, float angular_speed)
+/*---------------------------------------------------------------------------------------------------
+ * Name: I2c_SetCalibrationStatus
+ * Description: Accessor function used to initialize the calibration status as read from non-volatile
+ *              storage.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+void I2c_SetCalibrationStatus(uint16 status)
+{
+    calibration_status = status;
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
+    i2c_buf.read_only.calibration_status = calibration_status;
+    EZI2C_Slave_EnableInt();    
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: I2c_WriteOdom
+ * Description: Accessor function used to write odometry values to I2C
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+void I2c_WriteOdom(float left_speed, float right_speed, float left_delta_dist, float right_delta_dist)
 {
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
-    i2c_buf.read_only.odom.x_dist = x_dist;
+    i2c_buf.read_only.odom.left_speed = left_speed;
     EZI2C_Slave_EnableInt();
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
-    i2c_buf.read_only.odom.y_dist = y_dist;
+    i2c_buf.read_only.odom.right_speed = right_speed;
     EZI2C_Slave_EnableInt();
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
-    i2c_buf.read_only.odom.heading = heading;
+    i2c_buf.read_only.odom.left_delta_dist = left_delta_dist;
     EZI2C_Slave_EnableInt();
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
-    i2c_buf.read_only.odom.linear_velocity = linear_speed;
+    i2c_buf.read_only.odom.right_delta_dist = right_delta_dist;
     EZI2C_Slave_EnableInt();
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: I2c_WriteInfraredDistances
+ * Description: Accessor function used to write the current infrared distance values to I2C.
+ * Parameters: offset - an offset into the ir.dist array.  The array is partitioned into front and
+ *             read distance values such that the front values are written to the first 8 entries
+ *             and the rear values are written to the last 8 entries.
+ *             distances - array of distance values
+ *             num_entries - the number of entries in the array.  Typically will be a constant
+ *             derived from the configuration of the number of sensors, e.g., 8 per call.
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+void I2c_WriteInfraredDistances(uint8 offset, float* distances, uint8 num_entries)
+{
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
-    i2c_buf.read_only.odom.angular_velocity = angular_speed;
+    memcpy(&i2c_buf.read_only.ir.dist[offset], distances, num_entries);
     EZI2C_Slave_EnableInt();
 }
 
-void I2c_WriteFrontUltrasonicDistance(uint8 offset, uint16 distance)
+/*---------------------------------------------------------------------------------------------------
+ * Name: I2c_WriteUltrasonicDistances
+ * Description: Accessor function used to write the current infrared distance values to I2C.
+ * Parameters: offset - an offset into the us.dist array.  The array is partitioned into front and
+ *             read distance values such that the front values are written to the first 8 entries
+ *             and the rear values are written to the last 8 entries.
+ *             distances - array of distance values
+ *             num_entries - the number of entries in the array.  Typically will be a constant
+ *             derived from the configuration of the number of sensors, e.g., 8 per call.
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+void I2c_WriteUltrasonicDistances(uint8 offset, float* distances, uint8 num_entries)
 {
-    if (offset >= FIRST_FRONT_ULTRASONIC_SENSOR && offset <= LAST_FRONT_ULTRASONIC_SENSOR)
-    {
-        I2C_WAIT_FOR_ACCESS();
-        EZI2C_Slave_DisableInt();
-        i2c_buf.read_only.us.front[offset] = distance;
-        EZI2C_Slave_EnableInt();
-    }
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
+    memcpy(&i2c_buf.read_only.us.dist[offset], distances, num_entries);
+    EZI2C_Slave_EnableInt();
 }
 
-void I2c_WriteRearUltrasonicDistance(uint8 offset, uint16 distance)
-{
-    if (offset >= FIRST_REAR_ULTRASONIC_SENSOR && offset <= LAST_REAR_ULTRASONIC_SENSOR)
-    {
-        I2C_WAIT_FOR_ACCESS();
-        EZI2C_Slave_DisableInt();
-        i2c_buf.read_only.us.rear[offset] = distance;
-        EZI2C_Slave_EnableInt();
-    }            
-}
-
-void I2c_WriteFrontInfraredDistance(uint8 offset, uint8 distance)
-{
-    if (offset >= FIRST_REAR_INFRARED_SENSOR && offset <= LAST_REAR_INFRARED_SENSOR)
-    {
-        I2C_WAIT_FOR_ACCESS();
-        EZI2C_Slave_DisableInt();
-        i2c_buf.read_only.ir.front[offset] = distance;
-        EZI2C_Slave_EnableInt();
-    }
-}
-
-void I2c_WriteRearInfraredDistance(uint8 offset, uint8 distance)
-{
-    if (offset >= FIRST_REAR_INFRARED_SENSOR && offset <= LAST_REAR_INFRARED_SENSOR)
-    {
-        I2C_WAIT_FOR_ACCESS();
-        EZI2C_Slave_DisableInt();
-        i2c_buf.read_only.ir.rear[offset] = distance;
-        EZI2C_Slave_EnableInt();
-    }            
-}
-
+/*---------------------------------------------------------------------------------------------------
+ * Name: I2c_UpdateHeartbeat
+ * Description: Accessor function used to write the current heartbeat value to I2C.
+ * Parameters: counter - the current heartbeat counter value.
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void I2c_UpdateHeartbeat(uint32 counter)
 {
     I2C_WAIT_FOR_ACCESS();

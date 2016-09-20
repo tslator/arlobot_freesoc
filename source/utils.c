@@ -252,4 +252,30 @@ void DiffToUni(float left, float right, float *linear, float *angular)
     *angular = WHEEL_RADIUS * (right - left) / TRACK_WIDTH;
     
 }
+
+int16 Interpolate(int16 x, int16 x1, int16 x2, uint16 y1, uint16 y2)
+{
+    /* Y = ( ( X - X1 )( Y2 - Y1) / ( X2 - X1) ) + Y1 */
+
+    /* We are not guaranteed to not have duplicates in the array.
+       Handle the cases where the values may be equal so we don't divide by zero and so we return a reasonble pwm value.
+     */
+    if (x1 == x2)
+    {
+        if (y2 == y1)
+        {
+            return y1;
+        }
+        else
+        {
+            return (y2 - y1)/2 + y1;
+        }
+    }
+    
+    return ((x - x1)*((int16) y2 - (int16) y1))/(x2 - x1) + (int16) y1;
+}
+
+#define MPS_TO_CPS(mps) (mps / METER_PER_COUNT)
+#define CPS_TO_MPS(cps) (cps * METER_PER_COUNT)
+
 /* [] END OF FILE */

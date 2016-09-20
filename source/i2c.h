@@ -13,36 +13,38 @@
 #ifndef I2C_H
 #define I2C_H
 
+/*---------------------------------------------------------------------------------------------------
+ * Includes
+ *-------------------------------------------------------------------------------------------------*/    
 #include <project.h>
     
-#define CONTROL_DISABLE_MOTOR_BIT        (0x0001)
-#define CONTROL_CLEAR_ODOMETRY_BIT       (0x0002)
-    
-
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/    
 #define STATUS_HB25_CNTRL_INIT_BIT (0x0001)
 
     
-
+/*---------------------------------------------------------------------------------------------------
+ * Functions
+ *-------------------------------------------------------------------------------------------------*/    
 void I2c_Init();
 void I2c_Start();
 
 uint16 I2c_ReadDeviceControl();
 void I2c_ReadDebugControl();
-void I2c_ReadCmdVelocity(float *linear, float *angular);
+void I2c_ReadCmdVelocity(float *left, float *right, uint32 *timeout);
 
 void I2c_SetDeviceStatusBit(uint16 bit);
 void I2c_ClearDeviceStatusBit(uint16 bit);
 void I2c_SetCalibrationStatusBit(uint16 bit);
 void I2c_ClearCalibrationStatusBit(uint16 bit);
-void I2c_WriteFrontUltrasonicDistance(uint8 offset, uint16 distance);
-void I2c_WriteRearUltrasonicDistance(uint8 offset, uint16 distance);
-void I2c_WriteFrontInfraredDistance(uint8 offset, uint8 distance);
-void I2c_WriteRearInfraredDistance(uint8 offset, uint8 distance);
-void I2c_WriteOdom(float x_dist, float y_dist, float heading, float linear_speed, float angular_speed);
+void I2c_SetCalibrationStatus(uint16 status);
+void I2c_WriteUltrasonicDistances(uint8 offset, float* distances, uint8 num_entries);
+void I2c_WriteInfraredDistances(uint8 offset, float* distances, uint8 num_entries);
+
+void I2c_WriteOdom(float left_speed, float right_speed, float left_delta_dist, float right_delta_dist);
 
 void I2c_UpdateHeartbeat(uint32 counter);
-
-
 
 #endif
 

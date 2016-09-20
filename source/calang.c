@@ -9,6 +9,7 @@
 #include "serial.h"
 #include "nvstore.h"
 #include "debug.h"
+#include "pwm.h"
 
 #define ANGULAR_BIAS_VELOCITY (0.7)
 #define ANGULAR_BIAS_ANGLE (2*PI)
@@ -156,8 +157,7 @@ void DoAngularBiasMotion()
     left_cmd_velocity = 0;
     right_cmd_velocity = 0;
     angular_velocity = 0;
-    Motor_LeftSetCntsPerSec(0);
-    Motor_RightSetCntsPerSec(0);
+    Motor_SetPwm(PWM_STOP, PWM_STOP);
     
     Pid_SetLeftRightTarget(CalAngularLeftTarget, CalAngularRightTarget);
     
@@ -194,8 +194,7 @@ void DoAngularBiasMotion()
     
     left_cmd_velocity = 0;
     right_cmd_velocity = 0;
-    Motor_LeftSetCntsPerSec(0);
-    Motor_RightSetCntsPerSec(0);
+    Motor_SetPwm(PWM_STOP, PWM_STOP);
     
     debug_control_enabled = old_debug_control_enabled;    
 }

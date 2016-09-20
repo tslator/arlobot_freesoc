@@ -13,11 +13,17 @@
 #ifndef COMMS_DEBUG_H
 #define COMMS_DEBUG_H
 
+/*---------------------------------------------------------------------------------------------------
+ * Includes
+ *-------------------------------------------------------------------------------------------------*/
 #include <project.h>
 #include <stdio.h>
 #include "config.h"
 #include "serial.h"
 
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/
 #ifdef COMMS_DEBUG_ENABLED
 
 /* Debug enable/disable bits */
@@ -25,28 +31,27 @@
 #define DEBUG_RIGHT_ENCODER_ENABLE_BIT      (0x0002)
 #define DEBUG_LEFT_PID_ENABLE_BIT           (0x0004)
 #define DEBUG_RIGHT_PID_ENABLE_BIT          (0x0008)
-#define DEBUG_CTRL_LINEAR_PID_ENABLE_BIT    (0x0010)
-#define DEBUG_CTRL_ANGULAR_PID_ENABLE_BIT   (0x0020)
-#define DEBUG_LEFT_MOTOR_ENABLE_BIT         (0x0040)
-#define DEBUG_RIGHT_MOTOR_ENABLE_BIT        (0x0080)
-#define DEBUG_ODOM_ENABLE_BIT               (0x0100)
-#define DEBUG_SAMPLE_ENABLE_BIT             (0x0200)
+#define DEBUG_LEFT_MOTOR_ENABLE_BIT         (0x0010)
+#define DEBUG_RIGHT_MOTOR_ENABLE_BIT        (0x0020)
+#define DEBUG_ODOM_ENABLE_BIT               (0x0040)
+#define DEBUG_SAMPLE_ENABLE_BIT             (0x0080)
     
 
+/* The following defines enable "dump" logging methods for each feature */
 #define LEFT_PID_DUMP_ENABLED
 #define LEFT_ENC_DUMP_ENABLED
 #define RIGHT_PID_DUMP_ENABLED
 #define RIGHT_ENC_DUMP_ENABLED
-#define CTRL_ANGULAR_PID_DUMP_ENABLED
 #define MOTOR_DUMP_ENABLED
 #define ODOM_DUMP_ENABLED
+
+/* The following defines enable "cycle" logging for each feature */
 //#define ENC_UPDATE_DELTA_ENABLED
 //#define PID_UPDATE_DELTA_ENABLED
 //#define ODOM_UPDATE_DELTA_ENABLED
 //#define CTRL_UPDATE_DELTA_ENABLED
 //#define MAIN_LOOP_DELTA_ENABLED
     
-uint16 debug_control_enabled;
 char formatted_string[256];
 
 #define NONE    0x00
@@ -73,7 +78,8 @@ char formatted_string[256];
 #define ENCODER_DEBUG_CONTROL_ENABLED   (debug_control_enabled & DEBUG_LEFT_ENCODER_ENABLE_BIT || debug_control_enabled & DEBUG_RIGHT_ENCODER_ENABLE_BIT)
 #define PID_DEBUG_CONTROL_ENABLED       (debug_control_enabled & DEBUG_LEFT_PID_ENABLE_BIT ||        \
                                          debug_control_enabled & DEBUG_RIGHT_PID_ENABLE_BIT ||       \
-                                         debug_control_enabled & DEBUG_CTRL_ANGULAR_PID_ENABLE_BIT)
+                                         debug_control_enabled & DEBUG_CTRL_LINEAR_PID_ENABLE_BIT || \
+                                         debug_control_enabled & DEBUG_CTRL_ANGULAR_PID_ENABLE_BIT )
 #define MOTOR_DEBUG_CONTROL_ENABLED     (debug_control_enabled & DEBUG_LEFT_MOTOR_ENABLE_BIT || debug_control_enabled & DEBUG_RIGHT_MOTOR_ENABLE_BIT)
 #define ODOM_DEBUG_CONTROL_ENABLED      (debug_control_enabled & DEBUG_ODOM_ENABLE_BIT)
 #define SAMPLE_DEBUG_CONTROL_ENABLED    (debug_control_enabled & DEBUG_SAMPLE_ENABLE_BIT)
@@ -125,8 +131,16 @@ char formatted_string[256];
 #define DEBUG_DELTA_TIME(name, delta)
 
 #endif
+
+/*---------------------------------------------------------------------------------------------------
+ * Variables
+ *-------------------------------------------------------------------------------------------------*/    
+uint16 debug_control_enabled;
     
 
+/*---------------------------------------------------------------------------------------------------
+ * Functions
+ *-------------------------------------------------------------------------------------------------*/    
 void Debug_Init();
 void Debug_Start();
 

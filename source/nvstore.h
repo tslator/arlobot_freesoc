@@ -1,8 +1,27 @@
-#include <project.h>
+/* ========================================
+ *
+ * Copyright YOUR COMPANY, THE YEAR
+ * All Rights Reserved
+ * UNPUBLISHED, LICENSED SOFTWARE.
+ *
+ * CONFIDENTIAL AND PROPRIETARY INFORMATION
+ * WHICH IS THE PROPERTY OF your company.
+ *
+ * ========================================
+*/
 
 #ifndef NVSTORE_H
 #define NVSTORE_H
 
+/*---------------------------------------------------------------------------------------------------
+ * Includes
+ *-------------------------------------------------------------------------------------------------*/    
+#include <project.h>
+
+
+/*---------------------------------------------------------------------------------------------------
+ * Macros
+ *-------------------------------------------------------------------------------------------------*/    
 /* EEPROM Storage layout:
  
     2048 total bytes (128 rows of 16 bytes)
@@ -18,8 +37,15 @@
         
 #define NVSTORE_CAL_EEPROM_BASE                 ((volatile CAL_EEPROM_TYPE *) CYDEV_EE_BASE);
 #define NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(addr) ((uint16)((uint8 *)addr - (uint8 *) CYDEV_EE_BASE))
+
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/    
 #define NVSTORE_CAL_EEPROM_SIZE                 (1280)
 
+/*---------------------------------------------------------------------------------------------------
+ * Functions
+ *-------------------------------------------------------------------------------------------------*/    
 void Nvstore_Init();
 void Nvstore_Start();
 void Nvstore_WriteBytes(uint8 *bytes, uint16 num_bytes, uint16 offset);

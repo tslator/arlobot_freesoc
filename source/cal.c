@@ -27,6 +27,7 @@
 #include "debug.h"
 #include "control.h"
 
+/* Calibration interface commands */
 #define NO_CMD              '0'
 #define CAL_REQUEST         'c'
 #define VAL_REQUEST         'v'
@@ -36,30 +37,18 @@
 #define MOTOR_CAL_CMD       '1'
 #define PID_LEFT_CAL_CMD    '2'
 #define PID_RIGHT_CAL_CMD   '3'
-#define LIN_PID_CAL_CMD     '4'
-#define ANG_PID_CAL_CMD     '5'
-#define LIN_BIAS_CAL_CMD    '6'
-#define ANG_BIAS_CAL_CMD    '7'
 
 #define MOTOR_VAL_CMD       '1'
 #define PID_VAL_CMD         '2'
-#define LIN_VAL_CMD         '3'
-#define ANG_VAL_CMD         '4'
 
 #define MOTOR_LEFT_DISP_CMD  '1'
 #define MOTOR_RIGHT_DISP_CMD '2'
 #define PID_DISP_CMD         '3'
-#define BIAS_DISP_CMD        '4'
-#define ALL_DISP_CMD         '5'
+#define ALL_DISP_CMD         '4'
 
 
 typedef enum {UI_STATE_INIT, UI_STATE_CALIBRATION, UI_STATE_VALIDATION, UI_STATE_SETTINGS, UI_STATE_EXIT} UI_STATE_ENUM;
 
-
-static CALIBRATION_TYPE ctrl_linear_pid_calibration = {};
-static CALIBRATION_TYPE ctrl_angular_pid_calibration = {};
-static CALIBRATION_TYPE linear_bias_calibration = {};
-static CALIBRATION_TYPE angular_bias_calibration = {};
 
 static UI_STATE_ENUM ui_state;
 
@@ -68,8 +57,6 @@ static CALIBRATION_TYPE *active_val;
 
 static float left_cmd_velocity;
 static float right_cmd_velocity;
-
-static UI_STATE_ENUM ui_state;
 
 static float LeftTarget()
 {
@@ -81,53 +68,78 @@ static float RightTarget()
     return right_cmd_velocity;
 }
 
-static void ClearCalibrationStatusBit(uint16 bit)
+void ClearCalibrationStatusBit(uint16 bit)
 {
     uint16 status = p_cal_eeprom->status &= ~bit;
     Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
     I2c_ClearCalibrationStatusBit(bit);
 }
 
-static void SetCalibrationStatusBit(uint16 bit)
+void SetCalibrationStatusBit(uint16 bit)
 {
     uint16 status = p_cal_eeprom->status | bit;
     Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
     I2c_SetCalibrationStatusBit(bit);   
 }
 
+
+/* Calibration Print Routines */
+static void PrintSamples(char *label, int32 *cps_samples, uint16 *pwm_samples)
+{
+    uint8 ii;
+    char  buffer[100];
+    char label_str[20];
+    
+    sprintf(label_str, "%s\r\n", label);
+    Ser_PutString(label_str);
+    
+    for (ii = 0; ii < CAL_NUM_SAMPLES - 1; ++ii)
+    {
+        sprintf(buffer, "%ld:%d ", cps_samples[ii], pwm_samples[ii]);
+        Ser_PutString(buffer);
+    }
+    sprintf(buffer, "%ld:%d\r\n\r\n", cps_samples[ii], pwm_samples[ii]);
+    Ser_PutString(buffer);
+}
+
 static void DisplayCalMenu()
 {
-    debug_control_enabled = 0;
-
     Ser_PutString("\r\nWelcome to the Arlobot calibration interface.\r\n");
     Ser_PutString("The following calibration operations are allowed:\r\n");
     Ser_PutString("    1. Motor Calibration - creates mapping between count/sec and PWM.\r\n");
     Ser_PutString("    2. PID Left Calibration - enter gains, execute step input, print velocity response.\r\n");
     Ser_PutString("    3. PID Right Calibration - enter gains, execute step input, print velocity response.\r\n");
-    Ser_PutString("    4. Linear PID Calibration - moves forward 1 meter and allows user to enter a ratio to be applied as a bias in linear motion\r\n");
-    Ser_PutString("    5. Angular PID Calibration - moves forward 1 meter applying the linear bias calculated in linear bias calibration\r\n");
-    Ser_PutString("    6. Linear Bias - moves forward 1 meter and allows user to enter a ratio to be applied as a bias in linear motion\r\n");
-    Ser_PutString("    7. Angular Bias - moves forward 1 meter applying the linear bias calculated in linear bias calibration\r\n");
     Ser_PutString("\r\n");
     Ser_PutString("\r\nEnter X to exit calibration\r\n");
     Ser_PutString("\r\n");
-    Ser_PutString("Make an entry [1-7,X]: ");
+    Ser_PutString("Make an entry [1-3,X]: ");
 }
 
 static void DisplayValMenu()
 {
-    debug_control_enabled = 0;
-
     Ser_PutString("\r\nWelcome to the Arlobot validation interface.\r\n");
     Ser_PutString("The following validation operations are allowed:\r\n");
     Ser_PutString("    1. Motor Validation - operates the motors at varying velocities.\r\n");
     Ser_PutString("    2. Left/Right/Control PID Validation - operates the motors at varying velocities, moves in a straight line and rotates in place.\r\n");
-    Ser_PutString("    3. Linear Bias Validation - moves forward 1 meter and allows user to enter a ratio to be applied as a bias in linear motion\r\n");
-    Ser_PutString("    4. Angular Bias Validation - moves forward 1 meter applying the linear bias calculated in linear bias calibration\r\n");
     Ser_PutString("\r\n");
     Ser_PutString("\r\nEnter X to exit validation\r\n");
     Ser_PutString("\r\n");
-    Ser_PutString("Make an entry [1-4,X]: ");
+    Ser_PutString("Make an entry [1-2,X]: ");
+}
+
+static void DisplayMenu(CAL_STAGE_TYPE stage)
+{
+    debug_control_enabled = 0;
+    
+    if (stage == CAL_CALIBRATION_STAGE)
+    {
+        DisplayCalMenu();
+    }
+    else if (stage == CAL_VALIDATION_STAGE)
+    {
+        DisplayValMenu();
+    }
+
 }
 
 static void DisplaySettingsMenu()
@@ -136,9 +148,8 @@ static void DisplaySettingsMenu()
     Ser_PutString("The following settings can be displayed\r\n");
     Ser_PutString("    1. Left Motor Calibration\r\n");
     Ser_PutString("    2. Right Motor Calibration\r\n");
-    Ser_PutString("    3. PID Gains: left pid, right pid, linear pid, angular pid\r\n");
-    Ser_PutString("    4. Linear/Angular Bias\r\n");
-    Ser_PutString("    5. Display All\r\n");
+    Ser_PutString("    3. PID Gains: left pid and right pid\r\n");
+    Ser_PutString("    4. Display All\r\n");
     Ser_PutString("\r\n");
     Ser_PutString("\r\nEnter X to exit validation\r\n");
     Ser_PutString("\r\n");
@@ -148,7 +159,49 @@ static void DisplaySettingsMenu()
 static void DisplayExit()
 {
     Ser_PutString("\r\nExiting Arlobot calibration/validation interface.");
-    Ser_PutString("\r\nType 'C' to enter calibration, 'V' to enter validation, 'S' to display settings\r\n");
+    Ser_PutString("\r\nType 'C' to enter calibration, 'V' to enter validation, 'D' to display settings\r\n");
+}
+
+static void ProcessSettings(uint8 cmd)
+{
+    switch (cmd)
+    {
+        case MOTOR_LEFT_DISP_CMD:
+            Ser_WriteByte(cmd);
+            Ser_PutString("\r\nDisplaying left motor calibration: count/sec, pwm mapping");
+            Ser_PutString("\r\n");
+            PrintSamples("Left-Forward", (int32 *) p_cal_eeprom->left_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_fwd.pwm_data);
+            PrintSamples("Left-Backward", (int32 *) p_cal_eeprom->left_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_bwd.pwm_data);
+            Ser_PutString("\r\n");
+            
+            DisplaySettingsMenu();
+            break;
+            
+        case MOTOR_RIGHT_DISP_CMD:
+            Ser_WriteByte(cmd);
+            Ser_PutString("\r\nDisplaying right motor calibration: count/sec, pwm mapping");
+            Ser_PutString("\r\n");
+            PrintSamples("Right-Forward", (int32 *) p_cal_eeprom->right_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_fwd.pwm_data);
+            PrintSamples("Right-Backward", (int32 *) p_cal_eeprom->right_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_bwd.pwm_data);
+            Ser_PutString("\r\n");
+            
+            DisplaySettingsMenu();
+            break;
+            
+        case PID_DISP_CMD:
+            Ser_WriteByte(cmd);
+            Ser_PutString("\r\nDisplaying all PID gains: left, right");
+            Ser_PutString("\r\n");
+            DisplaySettingsMenu();
+            break;
+            
+        case ALL_DISP_CMD:
+            Ser_WriteByte(cmd);
+            Ser_PutString("\r\nDisplaying all calibration/settings");
+            Ser_PutString("\r\n");
+            DisplaySettingsMenu();
+            break;        
+    }
 }
 
 static uint8 GetCommand()
@@ -167,8 +220,8 @@ static uint8 GetCommand()
             value = VAL_REQUEST;
             break;
             
-        case 's':
-        case 'S':
+        case 'd':
+        case 'D':
             value = SETTING_REQUEST;
             break;
 
@@ -187,6 +240,7 @@ static CALIBRATION_TYPE* GetCalibration(uint8 cmd)
     {
         case MOTOR_CAL_CMD:
             Ser_WriteByte(cmd);
+            CalMotor_Validation->stage = CAL_CALIBRATE_STAGE;
             CalMotor_Calibration->state = CAL_INIT_STATE;
             return CalMotor_Calibration;
             
@@ -199,38 +253,51 @@ static CALIBRATION_TYPE* GetCalibration(uint8 cmd)
         case PID_RIGHT_CAL_CMD:
             Ser_WriteByte(cmd);
             CalPid_RightCalibration->state = CAL_INIT_STATE;
+            CalPid_LeftCalibration->params = (void *) PID_TYPE_RIGHT; 
             return CalPid_RightCalibration;
             break;
 
-        case LIN_PID_CAL_CMD:
-            Ser_WriteByte(cmd);
-            CalPid_LinearCalibration->state = CAL_INIT_STATE;
-            return CalPid_LinearCalibration;
-            break;
-        
-        case ANG_PID_CAL_CMD:
-            Ser_WriteByte(cmd);
-            CalPid_AngularCalibration->state = CAL_INIT_STATE;
-            return CalPid_AngularCalibration;
-            break;
-        
-        case LIN_BIAS_CAL_CMD:
-            Ser_WriteByte(cmd);
-            CalAng_Calibration->state = CAL_INIT_STATE;
-            return CalAng_Calibration;
-            break;
-        
-        case ANG_BIAS_CAL_CMD:
-            Ser_WriteByte(cmd);
-            CalAng_Calibration->state = CAL_INIT_STATE;
-            return CalAng_Calibration;
-            break;
-        
         default:
             break;
     }
     
     return (CALIBRATION_TYPE *) 0;
+}
+
+static CALIBRATION_TYPE* GetValidation(uint8 cmd)
+{
+    switch (cmd)
+    {
+        case MOTOR_VAL_CMD:
+            Ser_WriteByte(cmd);
+            Ser_PutString("\r\nPerforming Motor Validation by operating the motors at varying velocities.\r\n");
+            CalMotor_Validation->stage = CAL_VALIDATE_STAGE;
+            CalMotor_Validation->state = CAL_INIT_STATE;
+            return (CALIBRATION_TYPE *) CalMotor_Validation;
+            break;
+            
+        case PID_VAL_CMD:
+            Ser_WriteByte(cmd);
+            Ser_PutString("\r\nPerforming Left/Right PID Validation by operating the motors at varying velocities.\r\n");
+            return (CALIBRATION_TYPE *) 1;
+            break;
+                    
+        default:            
+            break;
+
+    }
+    
+    return (CALIBRATION_TYPE *) 0;
+}
+
+static void HandleError(CALIBRATION_TYPE *cal)
+{
+    char outbuf[64];
+    
+    /* Maybe more can go here, but for now, just print an error */
+    
+    sprintf(outbuf, "Error processing stage %s, state %s", CAL_STAGE_TO_STRING(cal->stage), CAL_STATE_TO_STRING(cal->state));
+    Ser_PutString(outbuf);
 }
 
 static void ProcessCalibration(CALIBRATION_TYPE *cal)
@@ -247,7 +314,7 @@ static void ProcessCalibration(CALIBRATION_TYPE *cal)
             }
             else
             {
-                /* Handle the error */
+                HandleError(cal);
             }
             break;
             
@@ -259,7 +326,7 @@ static void ProcessCalibration(CALIBRATION_TYPE *cal)
             }
             else
             {
-                /* Handle the error */
+                HandleError(cal);
             }
             break;
             
@@ -272,7 +339,7 @@ static void ProcessCalibration(CALIBRATION_TYPE *cal)
             }
             else
             {
-                /* Handle the error */
+                HandleError(cal);
             }
             break;
             
@@ -284,7 +351,7 @@ static void ProcessCalibration(CALIBRATION_TYPE *cal)
             }
             else
             {
-                /* Handle the error */
+                HandleError(cal);
             }
             break;
             
@@ -296,7 +363,7 @@ static void ProcessCalibration(CALIBRATION_TYPE *cal)
             }
             else
             {
-                /* Handle the error */
+                HandleError(cal);
             }
             break;
             
@@ -305,101 +372,15 @@ static void ProcessCalibration(CALIBRATION_TYPE *cal)
             if (active_cal)
             {
                 active_cal = (CALIBRATION_TYPE *) 0;
-                DisplayCalMenu();
+                DisplayMenu(cal->stage);
             }
             break;
     }
 }
 
-static CALIBRATION_TYPE* GetValidation(uint8 cmd)
-{
-    switch (cmd)
-    {
-        case MOTOR_VAL_CMD:
-            Ser_WriteByte(cmd);
-            Ser_PutString("\r\nPerforming Motor Validation by operating the motors at varying velocities.\r\n");
-            CalMotor_Validation->state = CAL_INIT_STATE;
-            return (CALIBRATION_TYPE *) CalMotor_Validation;
-            break;
-            
-        case PID_VAL_CMD:
-            Ser_WriteByte(cmd);
-            Ser_PutString("\r\nPerforming Left/Right PID Validation by operating the motors at varying velocities.\r\n");
-            Ser_PutString("\r\nPerforming Control PID Validation by driving in a straight line, rotating left/right 360 degrees.\r\n");
-            return (CALIBRATION_TYPE *) 1;
-            break;
-        
-        case LIN_VAL_CMD:
-            Ser_WriteByte(cmd);
-            Ser_PutString("\r\nPerforming Linear Bias Validation by moving forward 1 meter then moving backward 1 meter, returning to the original position\r\n");
-            return (CALIBRATION_TYPE *) 1;
-            break;
-            
-        case ANG_VAL_CMD:
-            Ser_WriteByte(cmd);
-            Ser_PutString("\r\nPerforming Angular Bias Validation by rotating right 360 degrees then rotating left 360 degress, returning to the original position\r\n");
-            return (CALIBRATION_TYPE *) 1;
-            break;
-
-            
-        default:            
-            break;
-
-    }
-    
-    return (CALIBRATION_TYPE *) 0;
-}
-
-static void ProcessValidation(CALIBRATION_TYPE *val)
-{
-    if (active_val)
-    {
-        active_val = (CALIBRATION_TYPE *) 0;
-        DisplayValMenu();
-    }
-}
-
-static void ProcessSettings(uint8 cmd)
-{
-    switch (cmd)
-    {
-        case MOTOR_LEFT_DISP_CMD:
-            Ser_WriteByte(cmd);
-            Ser_PutString("\r\nDisplaying left motor calibration: count/sec, pwm mapping");
-            Ser_PutString("\r\n");
-            DisplaySettingsMenu();
-            break;
-            
-        case MOTOR_RIGHT_DISP_CMD:
-            Ser_WriteByte(cmd);
-            Ser_PutString("\r\nDisplaying right motor calibration: count/sec, pwm mapping");
-            Ser_PutString("\r\n");
-            DisplaySettingsMenu();
-            break;
-            
-        case PID_DISP_CMD:
-            Ser_WriteByte(cmd);
-            Ser_PutString("\r\nDisplaying all PID gains: left, right, linear, and angular");
-            Ser_PutString("\r\n");
-            DisplaySettingsMenu();
-            break;
-            
-        case BIAS_DISP_CMD:
-            Ser_WriteByte(cmd);
-            Ser_PutString("\r\nDisplaying linear and angular bias settings");
-            Ser_PutString("\r\n");
-            DisplaySettingsMenu();
-            break;
-            
-        case ALL_DISP_CMD:
-            Ser_WriteByte(cmd);
-            Ser_PutString("\r\nDisplaying all calibration/settings");
-            Ser_PutString("\r\n");
-            DisplaySettingsMenu();
-            break;        
-    }
-}
-
+/*----------------------------------------------------------------------------------------------------------------------
+ * Module Interface Routines
+ *---------------------------------------------------------------------------------------------------------------------*/
 void Cal_Init()
 {
     p_cal_eeprom = NVSTORE_CAL_EEPROM_BASE;
@@ -408,8 +389,6 @@ void Cal_Init()
     
     CalMotor_Init();
     CalPid_Init();
-    CalLin_Init();
-    CalAng_Init();
 }
 
 void Cal_Start()
@@ -422,7 +401,8 @@ void Cal_Start()
     //Nvstore_WriteFloat(1.07, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->linear_bias));
     //Nvstore_WriteFloat(1.0625, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias));
 
-    I2c_SetCalibrationStatusBit(p_cal_eeprom->status);
+    uint16 status = p_cal_eeprom->status;
+    I2c_SetCalibrationStatus(status);        
 }
 
 void Cal_Update()
@@ -437,7 +417,7 @@ void Cal_Update()
         STATE_INIT - waiting for command to engage one of the above functionalities.  
             If command is 'c'|'C', then enter STATE_CALIBRATION
             If command is 'v'|'V', then enter STATE_VALIDATION
-            If command is 's'|'S', then enter STATE_SETTINGS
+            If command is 'd'|'D', then enter STATE_SETTINGS
             If command is 'x'|'X', then return to STATE_INIT
 
         STATE_CALIBRATION - waiting for calibration commands (as shown in calibration menu)
@@ -490,6 +470,7 @@ void Cal_Update()
                 
             if (active_cal)
             {
+                Control_OverrideDebug(TRUE);
                 ProcessCalibration(active_cal);
             }                        
             
@@ -527,6 +508,7 @@ void Cal_Update()
 
         case UI_STATE_EXIT:
             DisplayExit();
+            Control_OverrideDebug(FALSE);
             ui_state = UI_STATE_INIT;
             break;
             
@@ -584,20 +566,72 @@ CAL_PID_TYPE * Cal_RightGetPidGains()
     return (CAL_PID_TYPE *) &p_cal_eeprom->right_gains;
 }
 
-CAL_PID_TYPE* Cal_LinearGetPidGains()
-{
-    return (CAL_PID_TYPE*) &p_cal_eeprom->linear_gains;
-}
-
-CAL_PID_TYPE* Cal_AngularGetPidGains()
-{
-    return (CAL_PID_TYPE*) &p_cal_eeprom->angular_gains;
-}
-
 void Cal_SetLeftRightVelocity(float left, float right)
 {
+    char left_str[10];
+    char right_str[10];
+    char outbuf[64];
+    
+    ftoa(left, left_str, 6);
+    ftoa(right, right_str, 6);
+    sprintf(outbuf, "SetLeftRightVelocity: %s %s\r\n", left_str, right_str);
+    Ser_PutString(outbuf);
+    
     left_cmd_velocity = left;
     right_cmd_velocity = right;
+}
+
+static uint16 CalcPwm(int32 cps, int32 *cps_data, uint16 *pwm_data, uint8 data_size)
+{   
+    uint16 pwm = PWM_STOP;
+    uint8 lower = 0;
+    uint8 upper = 0;
+    char outbuf[64];
+
+    if (cps > 0 || cps < 0)
+    {
+        BinaryRangeSearch(cps, cps_data, data_size, &lower, &upper);
+        
+        pwm = Interpolate(cps, cps_data[lower], cps_data[upper], pwm_data[lower], pwm_data[upper]);
+
+        //sprintf(outbuf, "cps: %ld, pwm: %d\r\n", cps, pwm);
+        //Ser_PutString(outbuf);
+        
+        return constrain(pwm, MIN_PWM_VALUE, MAX_PWM_VALUE);
+    }
+
+    return pwm;
+}
+
+uint16 Cal_CpsToPwm(WHEEL_TYPE wheel, float cps)
+{
+    uint16 pwm;
+    
+    
+    pwm = PWM_STOP;
+    
+    /* The conversion from CPS to PWM is valid only when calibration has been performed */
+    
+    if (p_cal_eeprom->status & CAL_MOTOR_BIT)
+    {
+    
+        CAL_DATA_TYPE *p_cal_data = WHEEL_DIR_TO_CAL_DATA[wheel][cps > 0 ? 0 : 1];
+        
+        cps = constrain((int32)(cps * p_cal_data->cps_scale), p_cal_data->cps_min, p_cal_data->cps_max);
+        pwm = CalcPwm(cps, &p_cal_data->cps_data[0], &p_cal_data->pwm_data[0], CAL_DATA_SIZE);
+    }
+    else
+    {
+        Ser_PutString("Motor calibration status not set\r\n");
+    }
+
+    return pwm;
+}
+
+void Cal_Clear()
+{
+    ClearCalibrationStatusBit(CAL_MOTOR_BIT); // Clear Count to PWM calibration
+    ClearCalibrationStatusBit(CAL_PID_BIT); // Clear PID calibration
 }
 
 /*-------------------------------------------------------------------------------*/

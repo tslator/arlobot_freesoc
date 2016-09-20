@@ -10,6 +10,9 @@
  * ========================================
 */
 
+#ifndef SERIAL_H
+#define SERIAL_H
+
 #include <project.h>
 
 void Ser_Init();
@@ -20,5 +23,6 @@ void Ser_PutString(char *str);
 uint8 Ser_ReadByte();
 void Ser_WriteByte(uint8 value);
 
+#endif
 
 /* [] END OF FILE */

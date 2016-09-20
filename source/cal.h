@@ -49,18 +49,11 @@
        A single PID controllers have been added to maintain angular velocity based on the odometry.  The 
        gains for the PID need to be calibrated.  Likely though, only Kp will be needed.
        
-    4. Linear Bias - moves 1 meter forward, stops and waits to receive the actual linear distance (in meters), calculates
-       the linear bias and stores in EEPROM.  The linear bias is applied to the delta distance calculation in odometry.
-       
-    5. Angular Bias - rotates 360 degrees, stops and waits to receive the actual rotation (in degrees), calculates the 
-       angular bias and stores in EEPROM.  The angular bias is applied to the delta heading calculation in odometry.
  */
     
 /* Calibration control/status bits */
 #define CAL_MOTOR_BIT           (0x0001)
 #define CAL_PID_BIT             (0x0002)
-#define CAL_LINEAR_BIAS_BIT     (0x0004)
-#define CAL_ANGULAR_BIAS_BIT    (0x0008)
 #define CAL_VERBOSE_BIT         (0x0080)
     
 #define CAL_SCALE_FACTOR (100)
@@ -71,6 +64,12 @@
 
 typedef enum {CAL_INIT_STATE, CAL_START_STATE, CAL_RUNNING_STATE, CAL_STOP_STATE, CAL_RESULTS_STATE, CAL_DONE_STATE} CAL_STATE_TYPE;
 typedef enum {CAL_CALIBRATE_STAGE, CAL_VALIDATE_STAGE } CAL_STAGE_TYPE;
+
+char* cal_stage_to_string[] = {"CALIBRATION", "VALIDATE"};
+char* cal_state_to_string[] = {"INIT STATE", "START STATE", "RUNNING STATE", "STOP STATE", "RESULTS STATE", "DONE STATE"};
+
+#define CAL_STAGE_TO_STRING(stage) cal_stage_to_string[stage]
+#define CAL_STATE_TO_STRING(state) cal_state_to_string[state]
 
 typedef uint8 (*INIT_FUNC_TYPE)(CAL_STAGE_TYPE stage, void *params);
 typedef uint8 (*START_FUNC_TYPE)(CAL_STAGE_TYPE stage, void *params);
@@ -101,9 +100,6 @@ void Cal_Update();
 
 float Cal_ReadResponse();
 
-void Cal_LeftGetMotorCalData(CAL_DATA_TYPE **fwd_cal_data, CAL_DATA_TYPE **bwd_cal_data);
-void Cal_RightGetMotorCalData(CAL_DATA_TYPE **fwd_cal_data, CAL_DATA_TYPE **bwd_cal_data);
-
 CAL_PID_TYPE* Cal_LeftGetPidGains();
 CAL_PID_TYPE* Cal_RightGetPidGains();
 CAL_PID_TYPE* Cal_LinearGetPidGains();
@@ -112,7 +108,12 @@ CAL_PID_TYPE* Cal_AngularGetPidGains();
 
 void Cal_SetLeftRightVelocity(float left, float right);
 
+uint16 Cal_CpsToPwm(WHEEL_TYPE wheel, float cps);
 
+void Cal_Clear();
+
+void ClearCalibrationStatusBit(uint16 bit);
+void SetCalibrationStatusBit(uint16 bit);
 
 #endif
 

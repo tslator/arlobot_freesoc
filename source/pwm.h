@@ -10,6 +10,9 @@
  * ========================================
 */
 
+#ifndef PWM_H
+#define PWM_H
+
 #include <project.h>
 
 /* Note: While technically the motors are reverse relative to each other, it is clearer to hide this difference from
@@ -49,6 +52,6 @@
 #define RIGHT_PWM_FULL_BACKWARD     (MAX_PWM_VALUE)
 #define RIGHT_PWM_BACKWARD_DOMAIN   (RIGHT_PWM_FULL_BACKWARD - RIGHT_PWM_STOP)
     
-
+#endif
 
 /* [] END OF FILE */

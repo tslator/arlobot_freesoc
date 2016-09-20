@@ -60,12 +60,12 @@ typedef enum {DIR_FORWARD, DIR_BACKWARD} DIR_TYPE;
 #define TRACK_WIDTH (0.403)             // meter
 #define PI_D (PI * WHEEL_DIAMETER)
 #define METER_PER_REVOLUTION (PI_D)   // meter
-#define COUNT_PER_REVOLUTION (36.0 * 4)  /* 36 teeth per revolution (4x encoder) */
+#define ENCODER_TICK_PER_REVOLUTION (500)
+#define COUNT_PER_REVOLUTION (ENCODER_TICK_PER_REVOLUTION * 4)  /* encoder tick per revolution times 4x encoder (quadrature encoding) */
 #define METER_PER_COUNT (METER_PER_REVOLUTION/COUNT_PER_REVOLUTION)
 #define COUNT_PER_METER (COUNTS_PER_REVOLUTION/METER_PER_REVOLUTION)
 #define RADIAN_PER_COUNT (PI * (WHEEL_DIAMETER/(TRACK_WIDTH*COUNT_PER_REVOLUTION)))
 #define RADIAN_PER_METER (PI * (WHEEL_DIAMETER/(TRACK_WIDTH*METER_PER_REVOLUTION)))
-
 
 
 // Note: These are the theoretical values, so it may be prudent to back these down to more conservative values
@@ -77,13 +77,21 @@ typedef enum {DIR_FORWARD, DIR_BACKWARD} DIR_TYPE;
 #define MIN_ANGULAR_VELOCITY    (-MAX_RADIAN_PER_SECOND)
 #define MAX_ANGULAR_VELOCITY    (MAX_RADIAN_PER_SECOND)
 
+#define MAX_WHEEL_RPM       (95)
+#define WHEEL_CIRCUMFERENCE (2 * PI * WHEEL_RADIUS)
+#define MAX_WHEEL_VELOCITY  (MAX_WHEEL_RPM * WHEEL_CIRCUMFERENCE)/60
+#define MIN_LEFT_VELOCITY   (-MAX_WHEEL_VELOCITY)
+#define MAX_LEFT_VELOCITY   (MAX_WHEEL_VELOCITY)
+#define MIN_RIGHT_VELOCITY   (-MAX_WHEEL_VELOCITY)
+#define MAX_RIGHT_VELOCITY   (MAX_WHEEL_VELOCITY)
+
 /*----------------------------------------------------------------------------------------------------------------------
 
 Sample Rates
 
 ----------------------------------------------------------------------------------------------------------------------*/
 #define ENC_SAMPLE_RATE     (20) /* Hz */
-#define PID_SAMPLE_RATE     (20) /* Hz */
+#define PID_SAMPLE_RATE     (15) /* Hz */
 #define ODOM_SAMPLE_RATE    (20) /* Hz */
 #define HEARTBEAT_RATE       (2) /* Hz */
 #define CTRL_VELOCITY_RATE  (15) /* Hz */

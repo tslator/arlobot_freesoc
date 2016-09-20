@@ -9,6 +9,7 @@
 #include "serial.h"
 #include "nvstore.h"
 #include "debug.h"
+#include "pwm.h"
 
 #define LINEAR_BIAS_DISTANCE (1.0)
 #define LINEAR_BIAS_VELOCITY (0.150)
@@ -169,8 +170,7 @@ void DoLinearBiasMotion()
 
     left_cmd_velocity = 0;
     right_cmd_velocity = 0;
-    Motor_LeftSetCntsPerSec(0);
-    Motor_RightSetCntsPerSec(0);
+    Motor_SetPwm(PWM_STOP, PWM_STOP);
     
     Pid_SetLeftRightTarget(CalLinearLeftTarget, CalLinearRightTarget);
     
@@ -197,8 +197,7 @@ void DoLinearBiasMotion()
     
     left_cmd_velocity = 0;
     right_cmd_velocity = 0;
-    Motor_LeftSetCntsPerSec(0);
-    Motor_RightSetCntsPerSec(0);
+    Motor_SetPwm(PWM_STOP, PWM_STOP);
 
     debug_control_enabled = old_debug_control_enabled;
 }

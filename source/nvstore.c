@@ -1,12 +1,46 @@
+/* ========================================
+ *
+ * Copyright YOUR COMPANY, THE YEAR
+ * All Rights Reserved
+ * UNPUBLISHED, LICENSED SOFTWARE.
+ *
+ * CONFIDENTIAL AND PROPRIETARY INFORMATION
+ * WHICH IS THE PROPERTY OF your company.
+ *
+ * ========================================
+*/
+
+
+/*---------------------------------------------------------------------------------------------------
+ * Includes
+ *-------------------------------------------------------------------------------------------------*/    
 #include "nvstore.h"
 #include "assert.h"
 #include "utils.h"
 
 
+/*---------------------------------------------------------------------------------------------------
+ * Functions
+ *-------------------------------------------------------------------------------------------------*/    
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: Nvstore_Init
+ * Description: Initializes module variables
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Nvstore_Init()
 {
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Nvstore_Start
+ * Description: Starts the EEPROM component used for storing calibration information.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Nvstore_Start()
 {
     EEPROM_Start();
@@ -15,6 +49,16 @@ void Nvstore_Start()
     //EEPROM_EraseSector(1);
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Nvstore_WriteBytes
+ * Description: Writes the specified number of bytes to the location given in offset.  
+ *              Note: paging is handled within this routine.
+ * Parameters: bytes - pointer to array of bytes to be written
+ *             num_bytes - the number of bytes to be written
+ *             offset - the offset from the base address of non-volatile storage
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Nvstore_WriteBytes(uint8 *bytes, uint16 num_bytes, uint16 offset)
 {
     uint16 ii;
@@ -78,6 +122,14 @@ void Nvstore_WriteBytes(uint8 *bytes, uint16 num_bytes, uint16 offset)
     assert(num_bytes == 0);    
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Nvstore_WriteUint16
+ * Description: Writes the specified 16-bit value to the location given in offset.
+ * Parameters: value - a 16-bit value to be written
+ *             offset - the offset from the base address of non-volatile storage
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Nvstore_WriteUint16(uint16 value, uint16 offset)
 {
     uint8 bytes[sizeof(uint16)];
@@ -87,6 +139,14 @@ void Nvstore_WriteUint16(uint16 value, uint16 offset)
     EEPROM_WriteByte(bytes[1], offset+1);
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Nvstore_WriteFloat
+ * Description: Writes the specified float value to the location given in offset.
+ * Parameters: value - a floating point value to be written
+ *             offset - the offset from the base address of non-volatile storage
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Nvstore_WriteFloat(float value, uint16 offset)
 {
     uint8 ii;

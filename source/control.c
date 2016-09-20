@@ -1,6 +1,6 @@
 /* ========================================
  *
- * Copyright YOUR COMPANY, THE YEAR
+ * Copyright Earl Software, 2016
  * All Rights Reserved
  * UNPUBLISHED, LICENSED SOFTWARE.
  *
@@ -10,134 +10,79 @@
  * ========================================
 */
 
+/* The purpose of this module is to handle changes in control of the system.
+ */
+
+
+
+/*---------------------------------------------------------------------------------------------------
+ * Includes
+ *-------------------------------------------------------------------------------------------------*/
 #include "control.h"
 #include "i2c.h"
 #include "motor.h"
 #include "cal.h"
-#include "odom.h"
 #include "time.h"
 #include "utils.h"
+#include "odom.h"
 #include "debug.h"
-#include "pid_controller.h"
-#include "pidutil.h"
 
-/* The purpose of this module is to handle control changes to the system.
- */
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/
+#define MAX_CMD_VELOCITY_TIMEOUT (2000)
 
-#ifdef CTRL_LINEAR_PID_DUMP_ENABLED
-#define LINEAR_DUMP_PID()  if (debug_control_enabled & DEBUG_CTRL_LINEAR_PID_ENABLE_BIT) DumpPid("clin", &linear_pid)
-#else
-#define LINEAR_DUMP_PID()
-#endif
 
-#ifdef CTRL_ANGULAR_PID_DUMP_ENABLED
-#define ANGULAR_DUMP_PID()  if (debug_control_enabled & DEBUG_CTRL_ANGULAR_PID_ENABLE_BIT) DumpPid("cang", &angular_pid)
-#else
-#define ANGULAR_DUMP_PID()
-#endif
+/*---------------------------------------------------------------------------------------------------
+ * Types
+ *-------------------------------------------------------------------------------------------------*/
 
-#define CTRL_VELOCITY_SAMPLE_TIME_MS SAMPLE_TIME_MS(CTRL_VELOCITY_RATE)
-#define CTRL_VELOCITY_SAMPLE_TIME_SEC SAMPLE_TIME_SEC(CTRL_VELOCITY_RATE)
-
-#ifdef CTRL_UPDATE_DELTA_ENABLED
-#define CTRL_DEBUG_DELTA(delta)  DEBUG_DELTA_TIME("ctrl", delta)
-#else
-#define CTRL_DEBUG_DELTA(delta)
-#endif
-
-#define LINEAR_PID_MIN (-1.0)
-#define LINEAR_PID_MAX (1.0)
-
-#define ANGULAR_PID_MIN (-0.5)
-#define ANGULAR_PID_MAX (0.5)
-
+/*---------------------------------------------------------------------------------------------------
+ * Variables
+ *-------------------------------------------------------------------------------------------------*/
 static COMMAND_FUNC_TYPE control_cmd_velocity;
-static uint32 last_update_time;
-
-static PIDControl linear_pid;
-static PIDControl angular_pid;
-static uint32 last_update_time;
-
 static float left_cmd_velocity;
 static float right_cmd_velocity;
+static uint8 debug_override;
 
-static void ProcessPid(PIDControl *pid, float sample_time, float target, float meas)
-{
-    int8 dir;
-    
-    dir = target > 0 ? 1 : -1;
-    
-    PIDSampleTimeSet(pid, sample_time);
-    PIDSetpointSet(pid, abs(target));
-    PIDInputSet(pid, abs(meas));
-    
-    if (PIDCompute(pid))
-    {
-        pid->output *= dir;
-    }
-}
-
-static void UpdateSpeed()
-/* Calculate the left/right wheel speed from the commanded linear/angular velocity
- */
-{
-    static uint32 last_update_time = 0;
-    float linear;
-    float angular;
-    float meas_linear;
-    float meas_angular;
-    uint32 delta_time;
-
-    control_cmd_velocity(&linear, &angular);
-
-    /* Implements a PID for linear and angular velocity using odometry as feedback
-    
-       This is needed to couple the left/right PIDs that control wheel velocity,
-       necessary to keep the robot moving in a straight line.
-
-     */
-        
-    delta_time = millis() - last_update_time;        
-    CTRL_DEBUG_DELTA(delta_time);
-    
-    if (delta_time > CTRL_VELOCITY_SAMPLE_TIME_MS)
-    {
-        last_update_time = millis();
-        
-        meas_linear = Odom_GetLinearVelocity();
-        meas_angular = Odom_GetAngularVelocity();
-        
-        ProcessPid(&linear_pid, (float) delta_time, linear, meas_linear);
-        ProcessPid(&angular_pid, (float) delta_time, angular, meas_angular);
-        
-        LINEAR_DUMP_PID();
-        ANGULAR_DUMP_PID();
-
-        UniToDiff(linear_pid.output, angular_pid.output, &left_cmd_velocity, &right_cmd_velocity);
-    }
-
-}
-
+/*---------------------------------------------------------------------------------------------------
+ * Name: Control_Init
+ * Description: Performs initialization of module variables.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/ 
 void Control_Init()
 {
     control_cmd_velocity = I2c_ReadCmdVelocity;
-    PIDInit(&linear_pid, 0.0, 0.0, 0.0, CTRL_VELOCITY_SAMPLE_TIME_SEC, LINEAR_PID_MIN, LINEAR_PID_MAX, AUTOMATIC, DIRECT);
-    PIDInit(&angular_pid, 0.0, 0.0, 0.0, CTRL_VELOCITY_SAMPLE_TIME_SEC, ANGULAR_PID_MIN, ANGULAR_PID_MAX, AUTOMATIC, DIRECT);
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Control_Start
+ * Description: Performs actions to activate objects that operate independently of this module.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/ 
 void Control_Start()
 {   
-    CAL_PID_TYPE *p_gains;
-
-    p_gains = Cal_LinearGetPidGains();
-    PIDTuningsSet(&linear_pid, p_gains->kp, p_gains->ki, p_gains->kd);
-    p_gains = Cal_AngularGetPidGains();
-    PIDTuningsSet(&angular_pid, p_gains->kp, p_gains->ki, p_gains->kd);    
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Control_Update
+ * Description: Reads and evaluates the current control state as received from the I2C module.
+ *              Operations include stopping the motors, reseting odometry, clearing calibration,
+ *              enabling/disabling debug and monitoring safety timer.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/ 
 void Control_Update()
 {
-    uint16 control = I2c_ReadDeviceControl();
+    uint32 timeout;
+    uint16 control;
+    
+    control = I2c_ReadDeviceControl();
     if (control & CONTROL_DISABLE_MOTOR_BIT)
     {
         Motor_Stop();
@@ -147,40 +92,116 @@ void Control_Update()
     {
         Odom_Reset();
     }
-
-    I2c_ReadDebugControl();
     
-    UpdateSpeed();   
+    if (control & CONTROL_CLEAR_CALIBRATION)
+    {
+        Cal_Clear();
+    }
+
+    if (!debug_override)
+    {
+        I2c_ReadDebugControl();
+    }
+    
+    control_cmd_velocity(&left_cmd_velocity, &right_cmd_velocity, &timeout);
+    
+    // Used to override I2C commands (debug)
+    //left_cmd_velocity = 0;
+    //right_cmd_velocity = 0;
+    //UniToDiff(0.150, 0, &left_cmd_velocity, &right_cmd_velocity);
+        
+    if (timeout > MAX_CMD_VELOCITY_TIMEOUT)
+    {
+        left_cmd_velocity = 0;
+        right_cmd_velocity = 0;
+    }
+    else
+    {
+        left_cmd_velocity = max(MIN_LEFT_VELOCITY, min(left_cmd_velocity, MAX_LEFT_VELOCITY));
+        right_cmd_velocity = max(MIN_RIGHT_VELOCITY, min(right_cmd_velocity, MAX_RIGHT_VELOCITY));
+    }
+    
+    /* Here seems like a reasonable place to evaluate safety, e.g., can we execute the requested speed change safely
+       without running into something or falling into a hole (or down stairs).
+    
+       The only thing in consideration at the moment is cliff sensors which are IR sensors which point at a 45 degree
+       angle downward.  These will be connected to a voltage comparator and will issue an interrupt if there is a trigger.
+    
+       The main loop typically runs no longer than about 40ms, so if that is sufficient to detect and stop the robot
+       then checking safety here seems like a good solution.  Something like:
+    
+       if (IsSafe())
+       {
+           UpdateSpeed(); 
+       }
+
+       Safety should also be proactive and stop the robot when an unsafe condition occurs.  The motors will stop after
+       2 seconds but it might be better to immediate zero out the robot velocity (in the i2c module)
+    
+    */    
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Control_SetCommandVelocityFunc
+ * Description: Method for setting the function from which left/right velocity values are obtained.
+ *              The purpose of this function is to allow calibration to override the setting so that
+ *              left/right velocity can be injected from the calibration modules.  The default method 
+ *              is I2c_ReadCmdVelocity.  
+ * Parameters: cmd - a pointer to a command function type
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/ 
 void Control_SetCommandVelocityFunc(COMMAND_FUNC_TYPE cmd)
 {
     control_cmd_velocity = cmd;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Control_RestoreCommandVelocityFunc
+ * Description: Method for restoring the default function for obtaining left/right velocity values  
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/ 
 void Control_RestoreCommandVelocityFunc()
 {
     control_cmd_velocity = I2c_ReadCmdVelocity;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Control_LeftGetCmdVelocity
+ * Description: Accessor function used to return the left commanded velocity.  
+ * Parameters: None
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/ 
 float Control_LeftGetCmdVelocity()
 {
     return left_cmd_velocity;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Control_RightGetCmdVelocity
+ * Description: Accessor function used to return the right commanded velocity.  
+ * Parameters: None
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/ 
 float Control_RightGetCmdVelocity()
 {
     return right_cmd_velocity;
 }
 
-void Control_LinearSetGains(float kp, float ki, float kd)
+/*---------------------------------------------------------------------------------------------------
+ * Name: Control_OverrideDebug
+ * Description: Function used to override the debug mask.  Used primarily during calibration.
+ * Parameters: override : boolean - used to disable the debug mask settings specified via I2C.
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/ 
+void Control_OverrideDebug(uint8 override)
 {
-    PIDTuningsSet(&linear_pid, kp, ki, kd);
-}
-
-void Control_AngularSetGains(float kp, float ki, float kd)
-{
-    PIDTuningsSet(&angular_pid, kp, ki, kd);
+    debug_override = override;
 }
 
 /* [] END OF FILE */

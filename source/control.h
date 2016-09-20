@@ -13,10 +13,26 @@
 #ifndef CONTROL_H
 #define CONTROL_H
 
+/*---------------------------------------------------------------------------------------------------
+ * Includes
+ *-------------------------------------------------------------------------------------------------*/
 #include <project.h>
     
-typedef void (*COMMAND_FUNC_TYPE)(float *linear, float *angular);
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/
+#define CONTROL_DISABLE_MOTOR_BIT        (0x0001)
+#define CONTROL_CLEAR_ODOMETRY_BIT       (0x0002)
+#define CONTROL_CLEAR_CALIBRATION        (0x0004)
+    
+/*---------------------------------------------------------------------------------------------------
+ * Types
+ *-------------------------------------------------------------------------------------------------*/
+typedef void (*COMMAND_FUNC_TYPE)(float *left, float *right, uint32 *timeout);
 
+/*---------------------------------------------------------------------------------------------------
+ * Functions
+ *-------------------------------------------------------------------------------------------------*/
 void Control_Init();
 void Control_Start();
 void Control_Update();
@@ -24,9 +40,7 @@ void Control_SetCommandVelocityFunc(COMMAND_FUNC_TYPE cmd);
 void Control_RestoreCommandVelocityFunction();
 float Control_LeftGetCmdVelocity();
 float Control_RightGetCmdVelocity();
-void Control_LinearSetGains(float kp, float ki, float kd);
-void Control_AngularSetGains(float kp, float ki, float kd);
-
+void Control_OverrideDebug(uint8 override);
 
 #endif
 

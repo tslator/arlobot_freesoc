@@ -10,6 +10,22 @@
 #include "debug.h"
 #include "pid.h"
 
+
+#define MAX_MOTOR_CAL_ITERATION (3)
+#define MOTOR_VALIDATION_LOWER_BOUND_PERCENTAGE (0.2)
+#define MOTOR_VALIDATION_UPPER_BOUND_PERCENTAGE (0.8)
+
+/* For motor validation, 11 points were determined to be sufficient to validate the range 
+ * When selecting a different range, choose an odd number so that the middle value is the
+ * peak of the triangle
+ */
+#define MID_SAMPLE_OFFSET (5)
+#define NEXT_SAMPLE_OFFSET (MID_SAMPLE_OFFSET + 1)
+#define PREV_SAMPLE_OFFSET (MID_SAMPLE_OFFSET - 1)
+#define NUM_FORWARD_SAMPLES (MID_SAMPLE_OFFSET)
+#define NUM_BACKWARD_SAMPLES (MID_SAMPLE_OFFSET)
+    
+
 /*
     Explanation of Count/Sec to PWM Calibration:
 
@@ -35,10 +51,9 @@ static uint16 pwm_samples[CAL_NUM_SAMPLES];
 static int32 cps_sum[CAL_NUM_SAMPLES];
 static CAL_DATA_TYPE cal_data;
 
-static CAL_DATA_TYPE * WHEEL_DIR_TO_CAL_DATA[2][2];
 
-static float fwd_cps_validate[11] = {50.0, 80.0, 110.0, 140.0, 170.0, 200.0, 170.0, 140.0, 110.0, 80.0, 50.0};
-static float bwd_cps_validate[11] = {-50.0, -80.0, -110.0, -140.0, -170.0, -200.0, -170.0, -140.0, -110.0, -80.0, -50.0};
+static float fwd_cps_validate[11] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+static float bwd_cps_validate[11] = {-0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0};
 
 
 static CALIBRATION_TYPE motor_calibration = {CAL_INIT_STATE, 
@@ -50,13 +65,51 @@ static CALIBRATION_TYPE motor_calibration = {CAL_INIT_STATE,
                                              Stop, 
                                              Results };
 
-
-static void InitMotorCal()
+static void CalculateValidationValues()
+/* This routine calculates a series of count/second values in a triangle profile (slow, fast, slow).  It uses the motor
+   calibration data to determine a range  of forward and reverse values for each wheel.  The routine is called from
+   motor validation to confirm that motor calibration conversion from count/second to pwm is reasonably accurate.
+ */
 {
-    WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_fwd;
-    WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd;
-    WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd;
-    WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd;
+    uint8 ii;
+    char outbuf[64];
+    char str_val[10];
+    
+    if (p_cal_eeprom->status & CAL_MOTOR_BIT)
+    {
+    
+        float left_forward_cps_max = p_cal_eeprom->left_motor_fwd.cps_max / p_cal_eeprom->left_motor_fwd.cps_scale;
+        float right_forward_cps_max = p_cal_eeprom->right_motor_fwd.cps_max / p_cal_eeprom->right_motor_fwd.cps_scale;
+        float left_backward_cps_min = p_cal_eeprom->left_motor_bwd.cps_min / p_cal_eeprom->left_motor_bwd.cps_scale;
+        float right_backward_cps_min = p_cal_eeprom->right_motor_bwd.cps_min / p_cal_eeprom->right_motor_bwd.cps_scale;
+
+        float forward_cps_max = min(left_forward_cps_max, right_forward_cps_max);
+        /* Note: Backward values are negative */
+        float backward_cps_max = max(left_backward_cps_min, right_backward_cps_min);
+        
+        float fwd_cps_start = MOTOR_VALIDATION_LOWER_BOUND_PERCENTAGE * forward_cps_max;
+        float fwd_cps_end = MOTOR_VALIDATION_UPPER_BOUND_PERCENTAGE * forward_cps_max;
+        float bwd_cps_start = MOTOR_VALIDATION_LOWER_BOUND_PERCENTAGE * backward_cps_max;
+        float bwd_cps_end = MOTOR_VALIDATION_UPPER_BOUND_PERCENTAGE * backward_cps_max;
+        
+        float fwd_cps_delta = (fwd_cps_end - fwd_cps_start)/NUM_FORWARD_SAMPLES;
+        float bwd_cps_delta = (bwd_cps_end - bwd_cps_start)/NUM_BACKWARD_SAMPLES;
+        
+        fwd_cps_validate[MID_SAMPLE_OFFSET] = forward_cps_max;
+        bwd_cps_validate[MID_SAMPLE_OFFSET] = backward_cps_max;
+        
+        for (ii = 0; ii < MID_SAMPLE_OFFSET; ++ii)
+        {
+            fwd_cps_validate[ii] = (fwd_cps_start + fwd_cps_delta * ii);
+            bwd_cps_validate[ii] = (bwd_cps_start + bwd_cps_delta * ii);
+        }
+        
+        for (ii = 0; ii < MID_SAMPLE_OFFSET; ++ii)
+        {
+            fwd_cps_validate[NEXT_SAMPLE_OFFSET + ii] = fwd_cps_validate[PREV_SAMPLE_OFFSET - ii];
+            bwd_cps_validate[NEXT_SAMPLE_OFFSET + ii] = bwd_cps_validate[PREV_SAMPLE_OFFSET - ii];
+        }
+    }
 }
 
 static void CalculatePwmSamples(WHEEL_TYPE wheel, DIR_TYPE dir, uint16 *pwm_samples, uint8 *reverse_pwm)
@@ -157,8 +210,8 @@ static void CalculateAvgCpsSamples(int32 *cps_sum, uint8 num_runs, int32 *avg_cp
 static void CalculateMinMaxCpsSample(int32 *samples, uint8 num_samples, int32 *min, int32 *max)
 {
     uint8 ii;
-    *min = 65535;
-    *max = -65535;
+    *min = 2147483647;
+    *max = -2147483648;    
     
     for (ii = 0; ii < num_samples; ++ii)
     {
@@ -171,6 +224,75 @@ static void CalculateMinMaxCpsSample(int32 *samples, uint8 num_samples, int32 *m
             *min = samples[ii];
         }
     }
+}
+
+static int32 CollectCpsPwmSamples(SET_MOTOR_PWM_FUNC_TYPE set_pwm, GET_ENCODER_FUNC_TYPE cnts_per_sec, uint16 pwm, uint8 num_avg_iter)
+{
+    uint8 ii;
+    float cnts_per_sec_sum;
+    float enc_cnts_per_sec;
+    uint16 iterations;
+    
+    cnts_per_sec_sum = 0;
+    num_avg_iter *= 5;
+    iterations = num_avg_iter + 5;
+    set_pwm(pwm);
+    for ( ii = 0; ii < iterations; ++ii)
+    {
+        Encoder_Update();
+        if (ii >= 5)
+        {
+            enc_cnts_per_sec = cnts_per_sec();        
+            cnts_per_sec_sum += enc_cnts_per_sec * CAL_SCALE_FACTOR;
+        }
+        CyDelay(10);
+    }
+    
+    return (int32) cnts_per_sec_sum / num_avg_iter;
+}
+
+static void CollectPwmCpsSamples(WHEEL_TYPE wheel, uint8 reverse_pwm, uint8 num_avg_iter, uint16 *pwm_samples, int32 *cps_samples)
+{
+    uint8 index;
+    SET_MOTOR_PWM_FUNC_TYPE set_pwm;
+    RAMP_DOWN_PWM_FUNC_TYPE ramp_down;
+    GET_ENCODER_FUNC_TYPE get_cps;    
+
+    set_pwm   = (wheel == WHEEL_LEFT) ? Motor_LeftSetPwm : Motor_RightSetPwm;
+    ramp_down = (wheel == WHEEL_LEFT) ? Motor_LeftRampDown : Motor_RightRampDown;
+    get_cps   = (wheel == WHEEL_LEFT) ? Encoder_LeftGetCntsPerSec : Encoder_RightGetCntsPerSec;
+    
+    set_pwm(PWM_STOP);
+    CyDelay(500);
+    Encoder_Reset();
+
+    /* Note: The pwm samples are loaded in ascending order wrt to the pwm value, e.g., 1500 .. 200 forward, 1000 .. 1500
+       This is so the interpolation will work without any special handling.  However, when calculating the CPS, it is 
+       necessary to apply the pwm values in reverse order when collecting CPS values in the 1000 to 1500 range so that
+       the motor moves in from stop to full speed.
+    
+       This range is in the backward direction on the left wheel and the forward direction on the right wheel.
+     */
+    memset(cps_samples, 0, CAL_NUM_SAMPLES * sizeof(int32));
+    
+    if (reverse_pwm)
+{
+        for ( index = 0; index < CAL_NUM_SAMPLES; ++index)
+        {
+            uint8 offset = CAL_NUM_SAMPLES - 1 - index;
+            cps_samples[offset] = CollectCpsPwmSamples(set_pwm, get_cps, pwm_samples[offset], num_avg_iter);
+        }
+}
+    else
+    {
+        for ( index = 0; index < CAL_NUM_SAMPLES; ++index)
+        {
+            cps_samples[index] = CollectCpsPwmSamples(set_pwm, get_cps, pwm_samples[index], num_avg_iter);
+        }
+    }
+    
+    ramp_down(1000);
+    set_pwm(PWM_STOP);
 }
 
 static void CalibrateWheelSpeed(WHEEL_TYPE wheel, DIR_TYPE dir, uint8 num_runs, int32 *cps_samples, uint16 *pwm_samples)
@@ -195,7 +317,7 @@ static void CalibrateWheelSpeed(WHEEL_TYPE wheel, DIR_TYPE dir, uint8 num_runs, 
     
     for (run = 0; run < num_runs; ++run)
     {
-        Motor_CollectPwmCpsSamples(wheel, reverse_pwm, num_avg_iter, pwm_samples, cps_samples);
+        CollectPwmCpsSamples(wheel, reverse_pwm, num_avg_iter, pwm_samples, cps_samples);
         AddSamplesToSum(cps_samples, cps_sum);
     }
     
@@ -215,32 +337,15 @@ static void StoreWheelSpeedSamples(WHEEL_TYPE wheel, DIR_TYPE dir, int32 *cps_sa
     Nvstore_WriteBytes((uint8 *) &cal_data, sizeof(cal_data), offset);
 }
 
-static void OutputSamples(char *label, int32 *cps_samples, uint16 *pwm_samples)
-{
-    uint8 ii;
-    char  buffer[100];
-    char label_str[20];
-    
-    sprintf(label_str, "%s\r\n", label);
-    Ser_PutString(label_str);
-    
-    for (ii = 0; ii < CAL_NUM_SAMPLES - 1; ++ii)
-    {
-        sprintf(buffer, "%ld:%d ", cps_samples[ii], pwm_samples[ii]);
-        Ser_PutString(buffer);
-    }
-    sprintf(buffer, "%ld:%d\r\n\r\n", cps_samples[ii], pwm_samples[ii]);
-    Ser_PutString(buffer);
-}
-
 static void PrintAllMotorParams()
 {
     Ser_PutString("\r\n");
-    OutputSamples("Left-Forward", (int32 *) p_cal_eeprom->left_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_fwd.pwm_data);
-    OutputSamples("Left-Backward", (int32 *) p_cal_eeprom->left_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_bwd.pwm_data);
-    OutputSamples("Right-Forward", (int32 *) p_cal_eeprom->right_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_fwd.pwm_data);
-    OutputSamples("Right-Backward", (int32 *) p_cal_eeprom->right_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_bwd.pwm_data);
+    PrintSamples("Left-Backward", (int32 *) p_cal_eeprom->left_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_bwd.pwm_data);
+    PrintSamples("Left-Forward", (int32 *) p_cal_eeprom->left_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_fwd.pwm_data);
+    PrintSamples("Right-Backward", (int32 *) p_cal_eeprom->right_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_bwd.pwm_data);
+    PrintSamples("Right-Forward", (int32 *) p_cal_eeprom->right_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_fwd.pwm_data);
 }
+
 
 static void PrintVelocityParams(char *label, float cps, float mps, uint16 pwm)
 {
@@ -255,19 +360,43 @@ static void PrintVelocityParams(char *label, float cps, float mps, uint16 pwm)
     Ser_PutString(output);
 }
 
-static void DoVelocityValidation(char *label, float *cps, uint8 num_cps, SET_MOTOR_FUNC_TYPE set_speed, GET_MOTOR_PWM_FUNC_TYPE get_pwm, GET_ENCODER_FUNC_TYPE get_mps)
+static void DoVelocityValidation(char *label, float *cps, uint8 num_cps, WHEEL_TYPE wheel)
 {
     uint8 ii;
     uint16 pwm;
     uint32 start_time;
     float mps = 0.0;
+    SET_MOTOR_PWM_FUNC_TYPE set_pwm;
+    GET_MOTOR_PWM_FUNC_TYPE get_pwm;
+    GET_ENCODER_FUNC_TYPE get_mps;
+    char outbuf[64];
+    char str_val[10];
     
-    set_speed(0);
+    switch (wheel)
+    {
+        case WHEEL_LEFT:
+            set_pwm = Motor_LeftSetPwm;
+            get_pwm = Motor_LeftGetPwm;
+            get_mps = Encoder_LeftGetMeterPerSec;
+            break;
+
+        case WHEEL_RIGHT:
+            set_pwm = Motor_RightSetPwm;
+            get_pwm = Motor_RightGetPwm;
+            get_mps = Encoder_RightGetMeterPerSec;
+            break;
+        
+        case WHEEL_BOTH:
+        default:
+            return;
+    }
+    
+    set_pwm(PWM_STOP);
     
     for (ii = 0; ii < num_cps; ++ii)
     {
-        set_speed(cps[ii]);
-        pwm = get_pwm();
+        pwm = Cal_CpsToPwm(wheel, cps[ii]);
+        set_pwm(pwm);
         start_time = millis();
         while (millis() - start_time < 2000)
         {
@@ -275,11 +404,15 @@ static void DoVelocityValidation(char *label, float *cps, uint8 num_cps, SET_MOT
             mps = get_mps();
         }
         
-        PrintVelocityParams(label, cps[ii], mps, pwm);
+        PrintVelocityParams(label, cps[ii], mps, get_pwm());
     }
     
-    set_speed(0);
+    set_pwm(PWM_STOP);
 }
+
+/*----------------------------------------------------------------------------------------------------------------------
+ * Calibration Interface Routines
+ *---------------------------------------------------------------------------------------------------------------------*/
 
 static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 {
@@ -287,16 +420,14 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
     switch (stage)
     {
         case CAL_CALIBRATE_STAGE:
-            Ser_PutString("\r\nInitialize motor calibration\r\n");
-            WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_fwd;
-            WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd;
-            WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd;
-            WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd;
-            
+            Ser_PutString("\r\nInitialize motor calibration\r\n");            
             Pid_Enable(FALSE);
             break;
             
         case CAL_VALIDATE_STAGE:
+            Ser_PutString("\r\nInitialize motor validation\r\n");
+            Pid_Enable(FALSE);
+            CalculateValidationValues();
             break;
     }
     
@@ -333,38 +464,34 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
     {
         case CAL_CALIBRATE_STAGE:
             Ser_PutString("Left-Forward Calibration\r\n");
-#ifdef XXX
             debug_control_enabled = DEBUG_LEFT_ENCODER_ENABLE_BIT;
 
-            CalibrateWheelSpeed(WHEEL_LEFT, DIR_FORWARD, 5, cps_samples, pwm_samples);
+            CalibrateWheelSpeed(WHEEL_LEFT, DIR_FORWARD, MAX_MOTOR_CAL_ITERATION, cps_samples, pwm_samples);
             StoreWheelSpeedSamples(WHEEL_LEFT, DIR_FORWARD, cps_samples, pwm_samples);
-#endif
+            
             Ser_PutString("Left-Backward Calibration\r\n");
-#ifdef XXX
-            CalibrateWheelSpeed(WHEEL_LEFT, DIR_BACKWARD, 5, cps_samples, pwm_samples);
+            CalibrateWheelSpeed(WHEEL_LEFT, DIR_BACKWARD, MAX_MOTOR_CAL_ITERATION, cps_samples, pwm_samples);
             StoreWheelSpeedSamples(WHEEL_LEFT, DIR_BACKWARD, cps_samples, pwm_samples);
-#endif
+            
             Ser_PutString("Right-Forward Calibration\r\n");
-#ifdef XXX
             debug_control_enabled = DEBUG_RIGHT_ENCODER_ENABLE_BIT;                    
-            CalibrateWheelSpeed(WHEEL_RIGHT, DIR_FORWARD, 5, cps_samples, pwm_samples);
+            CalibrateWheelSpeed(WHEEL_RIGHT, DIR_FORWARD, MAX_MOTOR_CAL_ITERATION, cps_samples, pwm_samples);
             StoreWheelSpeedSamples(WHEEL_RIGHT, DIR_FORWARD, cps_samples, pwm_samples);
-#endif
+            
             Ser_PutString("Right-Backward Calibration\r\n");
-#ifdef XXX
-            CalibrateWheelSpeed(WHEEL_RIGHT, DIR_BACKWARD, 5, cps_samples, pwm_samples);
+            CalibrateWheelSpeed(WHEEL_RIGHT, DIR_BACKWARD, MAX_MOTOR_CAL_ITERATION, cps_samples, pwm_samples);
             StoreWheelSpeedSamples(WHEEL_RIGHT, DIR_BACKWARD, cps_samples, pwm_samples);
 
             debug_control_enabled = last_debug_control_enabled;
-#endif
             return CAL_COMPLETE;
             break;
             
         case CAL_VALIDATE_STAGE:
-            DoVelocityValidation("left-forward", fwd_cps_validate, 11, Motor_LeftSetCntsPerSec, Motor_LeftGetPwm, Encoder_LeftGetMeterPerSec);
-            DoVelocityValidation("right_forward", fwd_cps_validate, 11, Motor_RightSetCntsPerSec, Motor_RightGetPwm, Encoder_RightGetMeterPerSec);
-            DoVelocityValidation("left-backward", bwd_cps_validate, 11, Motor_LeftSetCntsPerSec, Motor_LeftGetPwm, Encoder_LeftGetMeterPerSec);
-            DoVelocityValidation("right-backward", bwd_cps_validate, 11, Motor_RightSetCntsPerSec, Motor_RightGetPwm, Encoder_RightGetMeterPerSec);
+            DoVelocityValidation("left-forward", fwd_cps_validate, 11, WHEEL_LEFT);
+            DoVelocityValidation("right-forward", fwd_cps_validate, 11, WHEEL_RIGHT);
+            DoVelocityValidation("left-backward", bwd_cps_validate, 11, WHEEL_LEFT);
+            DoVelocityValidation("right-backward", bwd_cps_validate, 11, WHEEL_RIGHT);
+            return CAL_COMPLETE;
             break;
     }
     
@@ -378,14 +505,11 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
     switch (stage)
     {
         case CAL_CALIBRATE_STAGE:
-            Ser_PutString("Updating motor calibration\r\n");
-#ifdef XXX
-            Motor_LeftSetCalibration((CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_fwd, (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd);
-            Motor_RightSetCalibration((CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd, (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd);
-#endif            
             Ser_PutString("Motor calibration complete\r\n");
+            SetCalibrationStatusBit(CAL_MOTOR_BIT);
+            break;
         case CAL_VALIDATE_STAGE:
-            Ser_PutString("Motor calibration complete\r\n");
+            Ser_PutString("Motor validation complete\r\n");
             break;
     }
     return CAL_OK;
@@ -401,14 +525,25 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
             break;
         
         case CAL_VALIDATE_STAGE:
+            Ser_PutString("\r\nPrinting motor validation results\r\n");
+            /* I think what we want here is a kind of analysis that shows how close the count/sec and pwm values are */
+            //Val_PrintAllMotorParams();
             break;
     }
     return CAL_OK;
 }
 
-void CalMotor_Init()
+v/*----------------------------------------------------------------------------------------------------------------------
+ * Module Interface Routines
+ *---------------------------------------------------------------------------------------------------------------------*/
+oid CalMotor_Init()
 {
+    WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_fwd;
+    WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd;
+    WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd;
+    WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd;
+    
     CalMotor_Calibration = &motor_calibration;
-    CalMotor_Validation = &motor_calibration;
+    CalMotor_Validation = &motor_calibration;    
 }
 

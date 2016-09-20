@@ -10,6 +10,9 @@
  * ========================================
 */
 
+/*---------------------------------------------------------------------------------------------------
+ * Includes
+ *-------------------------------------------------------------------------------------------------*/    
 #include <stdlib.h>
 #include <stdio.h>
 #include "config.h"
@@ -20,6 +23,9 @@
 #include "diag.h"
 #include "debug.h"
 
+/*---------------------------------------------------------------------------------------------------
+ * Macros
+ *-------------------------------------------------------------------------------------------------*/    
 #ifdef  LEFT_ENC_DUMP_ENABLED     
 #define LEFT_DUMP_ENC(enc)  if (debug_control_enabled & DEBUG_LEFT_ENCODER_ENABLE_BIT) DumpEncoder(enc)
 #else
@@ -38,10 +44,16 @@
 #define ENC_DEBUG_DELTA(delta)
 #endif    
 
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/    
 #define ENC_SAMPLE_TIME_MS  SAMPLE_TIME_MS(ENC_SAMPLE_RATE)
 #define ENC_SAMPLE_TIME_SEC SAMPLE_TIME_SEC(ENC_SAMPLE_RATE)
 
 
+/*---------------------------------------------------------------------------------------------------
+ * Types
+ *-------------------------------------------------------------------------------------------------*/    
 typedef int32 (*READ_ENCODER_COUNTER_TYPE)();
 typedef void (*WRITE_ENCODER_COUNTER_TYPE)(int32);
 typedef void (*WRITE_OUTPUT_TYPE)(int16 mmps);
@@ -62,6 +74,9 @@ typedef struct _encoder_tag
     WRITE_ENCODER_COUNTER_TYPE write_counter;
 } ENCODER_TYPE;
 
+/*---------------------------------------------------------------------------------------------------
+ * Variables
+ *-------------------------------------------------------------------------------------------------*/    
 static ENCODER_TYPE left_enc = {
     /* name */              "left",
     /* count/speed */       0, 0, 0, 0, 0, 0,
@@ -83,7 +98,14 @@ static ENCODER_TYPE right_enc = {
 };
 
 #if defined (LEFT_ENC_DUMP_ENABLED) || defined (RIGHT_ENC_DUMP_ENABLED)
-static void DumpEncoder(ENCODER_TYPE *enc)
+/*---------------------------------------------------------------------------------------------------
+ * Name: DumpEncoder
+ * Description: Dumps the current state of the encoder to the serial port
+ * Parameters: enc - encoder type (either left or right) for which data will be dumped
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+ static void DumpEncoder(ENCODER_TYPE *enc)
 {
     char avg_cps_str[10];
     char avg_delta_count_str[10];
@@ -102,6 +124,15 @@ static void DumpEncoder(ENCODER_TYPE *enc)
 }
 #endif
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Encoder_Sample
+ * Description: Updates the relevant encoder fields.  The function is called at the sampling
+ *              rate defined for the encoder.
+ * Parameters: enc - encoder type (either left or right) for which data will be dumped
+ *             delta_time - number of milliseconds since the last call
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static void Encoder_Sample(ENCODER_TYPE *enc, uint32 delta_time)
 {
     enc->count = (int32) enc->read_counter();
@@ -119,6 +150,13 @@ static void Encoder_Sample(ENCODER_TYPE *enc, uint32 delta_time)
     enc->dist += PI_D * enc->avg_delta_count/COUNT_PER_REVOLUTION;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Encoder_Init
+ * Description: Initializes the encoder structures
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Encoder_Init()
 {
     left_enc.count = 0;
@@ -147,6 +185,13 @@ void Encoder_Init()
     
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Encoder_Start
+ * Description: Starts the left/right quadrature encoder components and initializes the counter.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Encoder_Start()
 {
     Left_QuadDec_Start();
@@ -155,6 +200,14 @@ void Encoder_Start()
     right_enc.write_counter(0);
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Encoder_Update
+ * Description: Updates the encoder calculations and fields.  This routine is called from the main
+ *              loop.  Internally, it enforces the encoder sampling rate.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Encoder_Update()
 {
     static uint32 last_update_time = 0;
@@ -176,71 +229,171 @@ void Encoder_Update()
     }                    
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Encoder_LeftGetCntsPerSec
+ * Description: Returns the average left encoder count/second
+ * Parameters: None
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 float Encoder_LeftGetCntsPerSec()
 {
     return left_enc.avg_cps;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Encoder_RightGetCntsPerSec
+ * Description: Returns the average right encoder count/second
+ * Parameters: None
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 float Encoder_RightGetCntsPerSec()
 {
     return right_enc.avg_cps;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Encoder_GetCntsPerSec
+ * Description: Returns the average center count/second.  Note, this is the count/second as viewed
+ *              from the center point of the robot between the left and right wheels.
+ * Parameters: None
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 float Encoder_GetCntsPerSec()
 {
     return (left_enc.avg_cps + right_enc.avg_cps) / 2;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Encoder_LeftGetMeterPerSec
+ * Description: Returns the average left meter/second.
+ * Parameters: None
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 float Encoder_LeftGetMeterPerSec()
 {
     return left_enc.avg_mps;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Encoder_RightGetMeterPerSec
+ * Description: Returns the average right meter/second.
+ * Parameters: None
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 float Encoder_RightGetMeterPerSec()
 {
     return right_enc.avg_mps;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Encoder_GetMeterPerSec
+ * Description: Returns the average center meter/second.  Note, this is the meter/second as viewed
+ *              from the center point of the robot between the left and right wheels.
+ * Parameters: None
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 float Encoder_GetMeterPerSec()
 {
     return (left_enc.avg_mps + right_enc.avg_mps) / 2;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Encoder_LeftGetCount
+ * Description: Returns the the left encoder count.
+ * Parameters: None
+ * Return: int32
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 int32 Encoder_LeftGetCount()
 {
     return left_enc.read_counter();
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Encoder_RightGetCount
+ * Description: Returns the right encoder count.
+ * Parameters: None
+ * Return: int32
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 int32 Encoder_RightGetCount()
 {
     return right_enc.read_counter();
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Encoder_LeftGetDeltaCount
+ * Description: Returns the left encoder average delta count.
+ * Parameters: None
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 float Encoder_LeftGetDeltaCount()
 {
     return left_enc.avg_delta_count;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Encoder_RightGetDeltaCount
+ * Description: Returns the right encoder average delta count.
+ * Parameters: None
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 float Encoder_RightGetDeltaCount()
 {
     return right_enc.avg_delta_count;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Encoder_LeftGetDist
+ * Description: Returns the left wheel distance (in meters).
+ * Parameters: None
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 float Encoder_LeftGetDist()
 {
     return left_enc.dist;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Encoder_RightGetDist
+ * Description: Returns the right wheel distance (in meters).
+ * Parameters: None
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 float Encoder_RightGetDist()
 {
     return right_enc.dist;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Encoder_GetDist
+ * Description: Returns the distance (in meters) traveled by the center of the robot.
+ * Parameters: None
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 float Encoder_GetDist()
 {
     return (left_enc.dist + right_enc.dist) / 2;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Encoder_Reset
+ * Description: Resets the left/right encoder fields.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Encoder_Reset()
 {
     left_enc.write_counter(0);

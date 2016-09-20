@@ -41,6 +41,7 @@
                                    else if (angle <= -PI) \
                                        angle += 2*PI;     \
                                } while (0);
+// Note: An alternate way to constrain an angle is to atan2(sin(theta), cos(theta))                               
 
     
 #define APPLY_SCHED_OFFSET(offset, applied) do {                        \
@@ -85,6 +86,8 @@ void BinaryRangeSearch(int32 search, int32 *data_points, uint8 num_points, uint8
 
 void UniToDiff(float linear, float angular, float *left, float *right);
 void DiffToUni(float left, float right, float *linear, float *angular);
+
+int16 Interpolate(int16 x, int16 x1, int16 x2, uint16 y1, uint16 y2);
 
 #define DEGREES_TO_RADIANS(d)   (d * PI / 180)
 #define RADIANS_TO_DEGREES(r)   (r * 180 / PI)

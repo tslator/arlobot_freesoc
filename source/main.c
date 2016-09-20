@@ -9,6 +9,7 @@
  *
  * ========================================
 */
+
 #include <stdio.h>
 #include <project.h>
 #include "debug.h"
@@ -24,6 +25,7 @@
 #include "infrared.h"
 #include "cal.h"
 #include "nvstore.h"
+#include "spi.h"
 
 #ifdef MAIN_LOOP_DELTA_ENABLED
 static uint32 main_loop_delta;
@@ -58,8 +60,9 @@ int main()
     Motor_Init();
     Pid_Init();
     Odom_Init();
-    Ultrasonic_Init();
-    Infrared_Init();
+    Spi_Init();
+    //Ultrasonic_Init();
+    //Infrared_Init();
 
     Nvstore_Start();
     Ser_Start();
@@ -71,9 +74,7 @@ int main()
     Motor_Start();
     Pid_Start();
     Odom_Start();
-    //Ultrasonic_Start();
-    // Note: There is a problem with the infrared implementation and interrupts that needs to be fixed.
-    //Infrared_Start();
+    Spi_Start();
 
     DEBUG_PRINT_STR("Hello, my name is ArloSoc!\r\n");
     DEBUG_PRINT_STR("I am the microcontroller for Arlobot.\r\n");
@@ -90,19 +91,19 @@ int main()
         
         /* Update any control changes */
         Control_Update();
+        
         /* Update encoder-related values */
         Encoder_Update();
         /* Apply the velocity command to PID */
         Pid_Update();
         /* Update the odometry calculation */
         Odom_Update();
-        /* Calculate Ultrasonic distances and send out I2C */
-        //Ultrasonic_Update();
-        /* Calculate Infrared distances and send out I2C */
-        //Infrared_Update();
-        /* Diagnostic update */
-        Diag_Update();
         
+        /* Read the SPI devices */
+        Spi_Update();
+        
+        /* Diagnostic update */
+        Diag_Update();        
         /* Handle calibration request */
         Cal_Update();
         
