@@ -165,7 +165,7 @@ void Encoder_Init()
     left_enc.avg_delta_count = 0;
     left_enc.dist = 0.0;
     left_enc.delta_count_ma.last = 0;
-    left_enc.delta_count_ma.n = 3;
+    left_enc.delta_count_ma.n = 20;
     left_enc.avg_cps_ma.last = 0;
     left_enc.avg_cps_ma.n = 10;
     left_enc.avg_cps = 0;
@@ -177,7 +177,7 @@ void Encoder_Init()
     right_enc.avg_delta_count = 0;
     right_enc.dist = 0.0;
     right_enc.delta_count_ma.last = 0;
-    right_enc.delta_count_ma.n = 3;
+    right_enc.delta_count_ma.n = 20;
     right_enc.avg_cps_ma.last = 0;
     right_enc.avg_cps_ma.n = 10;
     right_enc.avg_cps = 0;

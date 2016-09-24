@@ -65,8 +65,8 @@
 typedef enum {CAL_INIT_STATE, CAL_START_STATE, CAL_RUNNING_STATE, CAL_STOP_STATE, CAL_RESULTS_STATE, CAL_DONE_STATE} CAL_STATE_TYPE;
 typedef enum {CAL_CALIBRATE_STAGE, CAL_VALIDATE_STAGE } CAL_STAGE_TYPE;
 
-char* cal_stage_to_string[] = {"CALIBRATION", "VALIDATE"};
-char* cal_state_to_string[] = {"INIT STATE", "START STATE", "RUNNING STATE", "STOP STATE", "RESULTS STATE", "DONE STATE"};
+extern char* cal_stage_to_string[];
+extern char* cal_state_to_string[];
 
 #define CAL_STAGE_TO_STRING(stage) cal_stage_to_string[stage]
 #define CAL_STATE_TO_STRING(state) cal_state_to_string[state]
@@ -114,6 +114,10 @@ void Cal_Clear();
 
 void ClearCalibrationStatusBit(uint16 bit);
 void SetCalibrationStatusBit(uint16 bit);
+
+void Cal_PrintSamples(char *label, int32 *cps_samples, uint16 *pwm_samples);
+void Cal_PrintGains(char *label, float *gains);
+
 
 #endif
 

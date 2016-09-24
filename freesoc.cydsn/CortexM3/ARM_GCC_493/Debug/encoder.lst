@@ -1,4 +1,4 @@
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 1
 
 
    1              		.syntax unified
@@ -47,107 +47,141 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
   10:..\source/encoder.c ****  * ========================================
   11:..\source/encoder.c **** */
   12:..\source/encoder.c **** 
-  13:..\source/encoder.c **** #include <stdlib.h>
-  14:..\source/encoder.c **** #include <stdio.h>
-  15:..\source/encoder.c **** #include "config.h"
-  16:..\source/encoder.c **** #include "encoder.h"
-  17:..\source/encoder.c **** #include "utils.h"
-  18:..\source/encoder.c **** #include "time.h"
-  19:..\source/encoder.c **** #include "i2c.h"
-  20:..\source/encoder.c **** #include "diag.h"
-  21:..\source/encoder.c **** #include "debug.h"
-  22:..\source/encoder.c **** 
-  23:..\source/encoder.c **** #ifdef  LEFT_ENC_DUMP_ENABLED     
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 2
+  13:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+  14:..\source/encoder.c ****  * Includes
+  15:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+  16:..\source/encoder.c **** #include <stdlib.h>
+  17:..\source/encoder.c **** #include <stdio.h>
+  18:..\source/encoder.c **** #include "config.h"
+  19:..\source/encoder.c **** #include "encoder.h"
+  20:..\source/encoder.c **** #include "utils.h"
+  21:..\source/encoder.c **** #include "time.h"
+  22:..\source/encoder.c **** #include "i2c.h"
+  23:..\source/encoder.c **** #include "diag.h"
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 2
 
 
-  24:..\source/encoder.c **** #define LEFT_DUMP_ENC(enc)  if (debug_control_enabled & DEBUG_LEFT_ENCODER_ENABLE_BIT) DumpEncoder(
-  25:..\source/encoder.c **** #else
-  26:..\source/encoder.c **** #define LEFT_DUMP_ENC(enc)
-  27:..\source/encoder.c **** #endif    
-  28:..\source/encoder.c **** 
-  29:..\source/encoder.c **** #ifdef RIGHT_ENC_DUMP_ENABLED
-  30:..\source/encoder.c **** #define RIGHT_DUMP_ENC(enc)  if (debug_control_enabled & DEBUG_RIGHT_ENCODER_ENABLE_BIT) DumpEncode
+  24:..\source/encoder.c **** #include "debug.h"
+  25:..\source/encoder.c **** 
+  26:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+  27:..\source/encoder.c ****  * Macros
+  28:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+  29:..\source/encoder.c **** #ifdef  LEFT_ENC_DUMP_ENABLED     
+  30:..\source/encoder.c **** #define LEFT_DUMP_ENC(enc)  if (debug_control_enabled & DEBUG_LEFT_ENCODER_ENABLE_BIT) DumpEncoder(
   31:..\source/encoder.c **** #else
-  32:..\source/encoder.c **** #define RIGHT_DUMP_ENC(enc)
-  33:..\source/encoder.c **** #endif
+  32:..\source/encoder.c **** #define LEFT_DUMP_ENC(enc)
+  33:..\source/encoder.c **** #endif    
   34:..\source/encoder.c **** 
-  35:..\source/encoder.c **** #ifdef ENC_UPDATE_DELTA_ENABLED
-  36:..\source/encoder.c **** #define ENC_DEBUG_DELTA(delta) DEBUG_DELTA_TIME("enc", delta)
+  35:..\source/encoder.c **** #ifdef RIGHT_ENC_DUMP_ENABLED
+  36:..\source/encoder.c **** #define RIGHT_DUMP_ENC(enc)  if (debug_control_enabled & DEBUG_RIGHT_ENCODER_ENABLE_BIT) DumpEncode
   37:..\source/encoder.c **** #else
-  38:..\source/encoder.c **** #define ENC_DEBUG_DELTA(delta)
-  39:..\source/encoder.c **** #endif    
+  38:..\source/encoder.c **** #define RIGHT_DUMP_ENC(enc)
+  39:..\source/encoder.c **** #endif
   40:..\source/encoder.c **** 
-  41:..\source/encoder.c **** #define ENC_SAMPLE_TIME_MS  SAMPLE_TIME_MS(ENC_SAMPLE_RATE)
-  42:..\source/encoder.c **** #define ENC_SAMPLE_TIME_SEC SAMPLE_TIME_SEC(ENC_SAMPLE_RATE)
-  43:..\source/encoder.c **** 
-  44:..\source/encoder.c **** 
-  45:..\source/encoder.c **** typedef int32 (*READ_ENCODER_COUNTER_TYPE)();
-  46:..\source/encoder.c **** typedef void (*WRITE_ENCODER_COUNTER_TYPE)(int32);
-  47:..\source/encoder.c **** typedef void (*WRITE_OUTPUT_TYPE)(int16 mmps);
-  48:..\source/encoder.c **** 
-  49:..\source/encoder.c **** typedef struct _encoder_tag
-  50:..\source/encoder.c **** {
-  51:..\source/encoder.c ****     char name[6];
-  52:..\source/encoder.c ****     int32 count;
-  53:..\source/encoder.c ****     int32 last_count;
-  54:..\source/encoder.c ****     int32 delta_count;
-  55:..\source/encoder.c ****     float avg_delta_count;
-  56:..\source/encoder.c ****     float avg_cps;
-  57:..\source/encoder.c ****     float avg_mps;
-  58:..\source/encoder.c ****     float dist;
-  59:..\source/encoder.c ****     MOVING_AVERAGE_FLOAT_TYPE delta_count_ma;
-  60:..\source/encoder.c ****     MOVING_AVERAGE_FLOAT_TYPE avg_cps_ma;
-  61:..\source/encoder.c ****     READ_ENCODER_COUNTER_TYPE read_counter;
-  62:..\source/encoder.c ****     WRITE_ENCODER_COUNTER_TYPE write_counter;
-  63:..\source/encoder.c **** } ENCODER_TYPE;
-  64:..\source/encoder.c **** 
-  65:..\source/encoder.c **** static ENCODER_TYPE left_enc = {
-  66:..\source/encoder.c ****     /* name */              "left",
-  67:..\source/encoder.c ****     /* count/speed */       0, 0, 0, 0, 0, 0,
-  68:..\source/encoder.c ****     /* dist */              0.0,
-  69:..\source/encoder.c ****     /* count ma */          {0, 0},
-  70:..\source/encoder.c ****     /* cps ma */            {0, 0},
-  71:..\source/encoder.c ****     /* get enc count */     Left_QuadDec_GetCounter,
-  72:..\source/encoder.c ****     /* set enc count */     Left_QuadDec_SetCounter,
-  73:..\source/encoder.c **** };
-  74:..\source/encoder.c **** 
-  75:..\source/encoder.c **** static ENCODER_TYPE right_enc = {
-  76:..\source/encoder.c ****     /* name */              "right",
-  77:..\source/encoder.c ****     /* count/speed */       0, 0, 0, 0, 0, 0,
-  78:..\source/encoder.c ****     /* dist */              0.0,
-  79:..\source/encoder.c ****     /* count ma */          {0, 0},
-  80:..\source/encoder.c ****     /* cps ma */            {0, 0},
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 3
+  41:..\source/encoder.c **** #ifdef ENC_UPDATE_DELTA_ENABLED
+  42:..\source/encoder.c **** #define ENC_DEBUG_DELTA(delta) DEBUG_DELTA_TIME("enc", delta)
+  43:..\source/encoder.c **** #else
+  44:..\source/encoder.c **** #define ENC_DEBUG_DELTA(delta)
+  45:..\source/encoder.c **** #endif    
+  46:..\source/encoder.c **** 
+  47:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+  48:..\source/encoder.c ****  * Constants
+  49:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+  50:..\source/encoder.c **** #define ENC_SAMPLE_TIME_MS  SAMPLE_TIME_MS(ENC_SAMPLE_RATE)
+  51:..\source/encoder.c **** #define ENC_SAMPLE_TIME_SEC SAMPLE_TIME_SEC(ENC_SAMPLE_RATE)
+  52:..\source/encoder.c **** 
+  53:..\source/encoder.c **** 
+  54:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+  55:..\source/encoder.c ****  * Types
+  56:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+  57:..\source/encoder.c **** typedef int32 (*READ_ENCODER_COUNTER_TYPE)();
+  58:..\source/encoder.c **** typedef void (*WRITE_ENCODER_COUNTER_TYPE)(int32);
+  59:..\source/encoder.c **** typedef void (*WRITE_OUTPUT_TYPE)(int16 mmps);
+  60:..\source/encoder.c **** 
+  61:..\source/encoder.c **** typedef struct _encoder_tag
+  62:..\source/encoder.c **** {
+  63:..\source/encoder.c ****     char name[6];
+  64:..\source/encoder.c ****     int32 count;
+  65:..\source/encoder.c ****     int32 last_count;
+  66:..\source/encoder.c ****     int32 delta_count;
+  67:..\source/encoder.c ****     float avg_delta_count;
+  68:..\source/encoder.c ****     float avg_cps;
+  69:..\source/encoder.c ****     float avg_mps;
+  70:..\source/encoder.c ****     float dist;
+  71:..\source/encoder.c ****     MOVING_AVERAGE_FLOAT_TYPE delta_count_ma;
+  72:..\source/encoder.c ****     MOVING_AVERAGE_FLOAT_TYPE avg_cps_ma;
+  73:..\source/encoder.c ****     READ_ENCODER_COUNTER_TYPE read_counter;
+  74:..\source/encoder.c ****     WRITE_ENCODER_COUNTER_TYPE write_counter;
+  75:..\source/encoder.c **** } ENCODER_TYPE;
+  76:..\source/encoder.c **** 
+  77:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+  78:..\source/encoder.c ****  * Variables
+  79:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+  80:..\source/encoder.c **** static ENCODER_TYPE left_enc = {
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 3
 
 
-  81:..\source/encoder.c ****     /* get enc count */     Right_QuadDec_GetCounter,
-  82:..\source/encoder.c ****     /* set enc count */     Right_QuadDec_SetCounter,
-  83:..\source/encoder.c **** };
-  84:..\source/encoder.c **** 
-  85:..\source/encoder.c **** #if defined (LEFT_ENC_DUMP_ENABLED) || defined (RIGHT_ENC_DUMP_ENABLED)
-  86:..\source/encoder.c **** static void DumpEncoder(ENCODER_TYPE *enc)
-  87:..\source/encoder.c **** {
-  88:..\source/encoder.c ****     char avg_cps_str[10];
-  89:..\source/encoder.c ****     char avg_delta_count_str[10];
-  90:..\source/encoder.c ****     char avg_mps_str[10];
-  91:..\source/encoder.c ****     char dist_str[10];
-  92:..\source/encoder.c ****     
-  93:..\source/encoder.c ****     ftoa(enc->avg_cps, avg_cps_str, 3);
-  94:..\source/encoder.c ****     ftoa(enc->avg_delta_count, avg_delta_count_str, 3);
-  95:..\source/encoder.c ****     ftoa(enc->avg_mps, avg_mps_str, 3);
-  96:..\source/encoder.c ****     ftoa(enc->dist, dist_str, 3);
-  97:..\source/encoder.c ****     
-  98:..\source/encoder.c ****     if (ENCODER_DEBUG_CONTROL_ENABLED)
-  99:..\source/encoder.c ****     {
- 100:..\source/encoder.c ****         DEBUG_PRINT_ARG("%s enc: %s %s %s %ld %s\r\n", enc->name, avg_cps_str, avg_mps_str, avg_del
- 101:..\source/encoder.c ****     }
- 102:..\source/encoder.c **** }
- 103:..\source/encoder.c **** #endif
- 104:..\source/encoder.c **** 
- 105:..\source/encoder.c **** static void Encoder_Sample(ENCODER_TYPE *enc, uint32 delta_time)
- 106:..\source/encoder.c **** {
-  35              		.loc 1 106 0
+  81:..\source/encoder.c ****     /* name */              "left",
+  82:..\source/encoder.c ****     /* count/speed */       0, 0, 0, 0, 0, 0,
+  83:..\source/encoder.c ****     /* dist */              0.0,
+  84:..\source/encoder.c ****     /* count ma */          {0, 0},
+  85:..\source/encoder.c ****     /* cps ma */            {0, 0},
+  86:..\source/encoder.c ****     /* get enc count */     Left_QuadDec_GetCounter,
+  87:..\source/encoder.c ****     /* set enc count */     Left_QuadDec_SetCounter,
+  88:..\source/encoder.c **** };
+  89:..\source/encoder.c **** 
+  90:..\source/encoder.c **** static ENCODER_TYPE right_enc = {
+  91:..\source/encoder.c ****     /* name */              "right",
+  92:..\source/encoder.c ****     /* count/speed */       0, 0, 0, 0, 0, 0,
+  93:..\source/encoder.c ****     /* dist */              0.0,
+  94:..\source/encoder.c ****     /* count ma */          {0, 0},
+  95:..\source/encoder.c ****     /* cps ma */            {0, 0},
+  96:..\source/encoder.c ****     /* get enc count */     Right_QuadDec_GetCounter,
+  97:..\source/encoder.c ****     /* set enc count */     Right_QuadDec_SetCounter,
+  98:..\source/encoder.c **** };
+  99:..\source/encoder.c **** 
+ 100:..\source/encoder.c **** #if defined (LEFT_ENC_DUMP_ENABLED) || defined (RIGHT_ENC_DUMP_ENABLED)
+ 101:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+ 102:..\source/encoder.c ****  * Name: DumpEncoder
+ 103:..\source/encoder.c ****  * Description: Dumps the current state of the encoder to the serial port
+ 104:..\source/encoder.c ****  * Parameters: enc - encoder type (either left or right) for which data will be dumped
+ 105:..\source/encoder.c ****  * Return: None
+ 106:..\source/encoder.c ****  * 
+ 107:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+ 108:..\source/encoder.c ****  static void DumpEncoder(ENCODER_TYPE *enc)
+ 109:..\source/encoder.c **** {
+ 110:..\source/encoder.c ****     char avg_cps_str[10];
+ 111:..\source/encoder.c ****     char avg_delta_count_str[10];
+ 112:..\source/encoder.c ****     char avg_mps_str[10];
+ 113:..\source/encoder.c ****     char dist_str[10];
+ 114:..\source/encoder.c ****     
+ 115:..\source/encoder.c ****     ftoa(enc->avg_cps, avg_cps_str, 3);
+ 116:..\source/encoder.c ****     ftoa(enc->avg_delta_count, avg_delta_count_str, 3);
+ 117:..\source/encoder.c ****     ftoa(enc->avg_mps, avg_mps_str, 3);
+ 118:..\source/encoder.c ****     ftoa(enc->dist, dist_str, 3);
+ 119:..\source/encoder.c ****     
+ 120:..\source/encoder.c ****     if (ENCODER_DEBUG_CONTROL_ENABLED)
+ 121:..\source/encoder.c ****     {
+ 122:..\source/encoder.c ****         DEBUG_PRINT_ARG("%s enc: %s %s %s %ld %s\r\n", enc->name, avg_cps_str, avg_mps_str, avg_del
+ 123:..\source/encoder.c ****     }
+ 124:..\source/encoder.c **** }
+ 125:..\source/encoder.c **** #endif
+ 126:..\source/encoder.c **** 
+ 127:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+ 128:..\source/encoder.c ****  * Name: Encoder_Sample
+ 129:..\source/encoder.c ****  * Description: Updates the relevant encoder fields.  The function is called at the sampling
+ 130:..\source/encoder.c ****  *              rate defined for the encoder.
+ 131:..\source/encoder.c ****  * Parameters: enc - encoder type (either left or right) for which data will be dumped
+ 132:..\source/encoder.c ****  *             delta_time - number of milliseconds since the last call
+ 133:..\source/encoder.c ****  * Return: None
+ 134:..\source/encoder.c ****  * 
+ 135:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+ 136:..\source/encoder.c **** static void Encoder_Sample(ENCODER_TYPE *enc, uint32 delta_time)
+ 137:..\source/encoder.c **** {
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 4
+
+
+  35              		.loc 1 137 0
   36              		.cfi_startproc
   37              		@ args = 0, pretend = 0, frame = 0
   38              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -162,26 +196,23 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
   47              		.cfi_offset 14, -4
   48 0002 0446     		mov	r4, r0
   49 0004 0E46     		mov	r6, r1
- 107:..\source/encoder.c ****     enc->count = (int32) enc->read_counter();
-  50              		.loc 1 107 0
+ 138:..\source/encoder.c ****     enc->count = (int32) enc->read_counter();
+  50              		.loc 1 138 0
   51 0006 436B     		ldr	r3, [r0, #52]
   52 0008 9847     		blx	r3
   53              	.LVL1:
   54 000a A060     		str	r0, [r4, #8]
- 108:..\source/encoder.c ****     enc->delta_count = enc->count - enc->last_count;
-  55              		.loc 1 108 0
+ 139:..\source/encoder.c ****     enc->delta_count = enc->count - enc->last_count;
+  55              		.loc 1 139 0
   56 000c E368     		ldr	r3, [r4, #12]
   57 000e C31A     		subs	r3, r0, r3
   58 0010 2361     		str	r3, [r4, #16]
- 109:..\source/encoder.c ****     enc->last_count = enc->count;
-  59              		.loc 1 109 0
+ 140:..\source/encoder.c ****     enc->last_count = enc->count;
+  59              		.loc 1 140 0
   60 0012 E060     		str	r0, [r4, #12]
- 110:..\source/encoder.c ****     
- 111:..\source/encoder.c ****     enc->avg_delta_count = MovingAverageFloat(&enc->delta_count_ma, enc->delta_count);
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 4
-
-
-  61              		.loc 1 111 0
+ 141:..\source/encoder.c ****     
+ 142:..\source/encoder.c ****     enc->avg_delta_count = MovingAverageFloat(&enc->delta_count_ma, enc->delta_count);
+  61              		.loc 1 142 0
   62 0014 04F12405 		add	r5, r4, #36
   63 0018 1846     		mov	r0, r3
   64 001a FFF7FEFF 		bl	__aeabi_i2f
@@ -191,9 +222,9 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
   68 0022 FFF7FEFF 		bl	MovingAverageFloat
   69              	.LVL3:
   70 0026 6061     		str	r0, [r4, #20]	@ float
- 112:..\source/encoder.c ****     
- 113:..\source/encoder.c ****     float cps = ((enc->avg_delta_count * MS_IN_SEC) / (float) delta_time);
-  71              		.loc 1 113 0
+ 143:..\source/encoder.c ****     
+ 144:..\source/encoder.c ****     float cps = ((enc->avg_delta_count * MS_IN_SEC) / (float) delta_time);
+  71              		.loc 1 144 0
   72 0028 1D49     		ldr	r1, .L3+16
   73 002a FFF7FEFF 		bl	__aeabi_fmul
   74              	.LVL4:
@@ -207,17 +238,20 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
   82              	.LVL6:
   83 003e 0146     		mov	r1, r0
   84              	.LVL7:
- 114:..\source/encoder.c ****     
- 115:..\source/encoder.c ****     enc->avg_cps = MovingAverageFloat(&enc->avg_cps_ma, cps);
-  85              		.loc 1 115 0
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 5
+
+
+ 145:..\source/encoder.c ****     
+ 146:..\source/encoder.c ****     enc->avg_cps = MovingAverageFloat(&enc->avg_cps_ma, cps);
+  85              		.loc 1 146 0
   86 0040 04F12C00 		add	r0, r4, #44
   87              	.LVL8:
   88 0044 FFF7FEFF 		bl	MovingAverageFloat
   89              	.LVL9:
   90 0048 A061     		str	r0, [r4, #24]	@ float
- 116:..\source/encoder.c ****     
- 117:..\source/encoder.c ****     enc->avg_mps = enc->avg_cps * METER_PER_COUNT;
-  91              		.loc 1 117 0
+ 147:..\source/encoder.c ****     
+ 148:..\source/encoder.c ****     enc->avg_mps = enc->avg_cps * METER_PER_COUNT;
+  91              		.loc 1 148 0
   92 004a FFF7FEFF 		bl	__aeabi_f2d
   93              	.LVL10:
   94 004e 10A3     		adr	r3, .L3
@@ -227,9 +261,9 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
   98 0058 FFF7FEFF 		bl	__aeabi_d2f
   99              	.LVL12:
  100 005c E061     		str	r0, [r4, #28]	@ float
- 118:..\source/encoder.c ****     
- 119:..\source/encoder.c ****     enc->dist += PI_D * enc->avg_delta_count/COUNT_PER_REVOLUTION;
- 101              		.loc 1 119 0
+ 149:..\source/encoder.c ****     
+ 150:..\source/encoder.c ****     enc->dist += PI_D * enc->avg_delta_count/COUNT_PER_REVOLUTION;
+ 101              		.loc 1 150 0
  102 005e 6069     		ldr	r0, [r4, #20]	@ float
  103 0060 FFF7FEFF 		bl	__aeabi_f2d
  104              	.LVL13:
@@ -238,9 +272,6 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  107 006a FFF7FEFF 		bl	__aeabi_dmul
  108              	.LVL14:
  109 006e 0022     		movs	r2, #0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 5
-
-
  110 0070 0C4B     		ldr	r3, .L3+20
  111 0072 FFF7FEFF 		bl	__aeabi_ddiv
  112              	.LVL15:
@@ -267,6 +298,9 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  133 0098 72D38A80 		.word	-2138385550
  134 009c 4FA4DE3F 		.word	1071555663
  135 00a0 00007A44 		.word	1148846080
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 6
+
+
  136 00a4 00409F40 		.word	1084178432
  137              		.cfi_endproc
  138              	.LFE64:
@@ -278,8 +312,8 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  144              		.type	DumpEncoder, %function
  145              	DumpEncoder:
  146              	.LFB63:
-  87:..\source/encoder.c ****     char avg_cps_str[10];
- 147              		.loc 1 87 0
+ 109:..\source/encoder.c ****     char avg_cps_str[10];
+ 147              		.loc 1 109 0
  148              		.cfi_startproc
  149              		@ args = 0, pretend = 0, frame = 48
  150              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -292,46 +326,46 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  157 0002 93B0     		sub	sp, sp, #76
  158              		.cfi_def_cfa_offset 88
  159 0004 0446     		mov	r4, r0
-  93:..\source/encoder.c ****     ftoa(enc->avg_delta_count, avg_delta_count_str, 3);
- 160              		.loc 1 93 0
+ 115:..\source/encoder.c ****     ftoa(enc->avg_delta_count, avg_delta_count_str, 3);
+ 160              		.loc 1 115 0
  161 0006 8069     		ldr	r0, [r0, #24]	@ float
  162              	.LVL22:
  163 0008 0FA9     		add	r1, sp, #60
  164 000a 0322     		movs	r2, #3
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 6
-
-
  165 000c FFF7FEFF 		bl	ftoa
  166              	.LVL23:
-  94:..\source/encoder.c ****     ftoa(enc->avg_mps, avg_mps_str, 3);
- 167              		.loc 1 94 0
+ 116:..\source/encoder.c ****     ftoa(enc->avg_mps, avg_mps_str, 3);
+ 167              		.loc 1 116 0
  168 0010 6069     		ldr	r0, [r4, #20]	@ float
  169 0012 0CA9     		add	r1, sp, #48
  170 0014 0322     		movs	r2, #3
  171 0016 FFF7FEFF 		bl	ftoa
  172              	.LVL24:
-  95:..\source/encoder.c ****     ftoa(enc->dist, dist_str, 3);
- 173              		.loc 1 95 0
+ 117:..\source/encoder.c ****     ftoa(enc->dist, dist_str, 3);
+ 173              		.loc 1 117 0
  174 001a E069     		ldr	r0, [r4, #28]	@ float
  175 001c 09A9     		add	r1, sp, #36
  176 001e 0322     		movs	r2, #3
  177 0020 FFF7FEFF 		bl	ftoa
  178              	.LVL25:
-  96:..\source/encoder.c ****     
- 179              		.loc 1 96 0
+ 118:..\source/encoder.c ****     
+ 179              		.loc 1 118 0
  180 0024 206A     		ldr	r0, [r4, #32]	@ float
  181 0026 06A9     		add	r1, sp, #24
  182 0028 0322     		movs	r2, #3
  183 002a FFF7FEFF 		bl	ftoa
  184              	.LVL26:
-  98:..\source/encoder.c ****     {
- 185              		.loc 1 98 0
+ 120:..\source/encoder.c ****     {
+ 185              		.loc 1 120 0
  186 002e 0E4B     		ldr	r3, .L8
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 7
+
+
  187 0030 1B88     		ldrh	r3, [r3]
  188 0032 13F0030F 		tst	r3, #3
  189 0036 14D0     		beq	.L5
- 100:..\source/encoder.c ****     }
- 190              		.loc 1 100 0
+ 122:..\source/encoder.c ****     }
+ 190              		.loc 1 122 0
  191 0038 0C4D     		ldr	r5, .L8+4
  192 003a 0FAB     		add	r3, sp, #60
  193 003c 0093     		str	r3, [sp]
@@ -353,14 +387,11 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  209 005e FFF7FEFF 		bl	Ser_PutString
  210              	.LVL28:
  211              	.L5:
- 102:..\source/encoder.c **** #endif
- 212              		.loc 1 102 0
+ 124:..\source/encoder.c **** #endif
+ 212              		.loc 1 124 0
  213 0062 13B0     		add	sp, sp, #76
  214              		.cfi_def_cfa_offset 12
  215              		@ sp needed
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 7
-
-
  216 0064 30BD     		pop	{r4, r5, pc}
  217              	.LVL29:
  218              	.L9:
@@ -380,11 +411,21 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  232              		.type	Encoder_Init, %function
  233              	Encoder_Init:
  234              	.LFB65:
- 120:..\source/encoder.c **** }
- 121:..\source/encoder.c **** 
- 122:..\source/encoder.c **** void Encoder_Init()
- 123:..\source/encoder.c **** {
- 235              		.loc 1 123 0
+ 151:..\source/encoder.c **** }
+ 152:..\source/encoder.c **** 
+ 153:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+ 154:..\source/encoder.c ****  * Name: Encoder_Init
+ 155:..\source/encoder.c ****  * Description: Initializes the encoder structures
+ 156:..\source/encoder.c ****  * Parameters: None
+ 157:..\source/encoder.c ****  * Return: None
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 8
+
+
+ 158:..\source/encoder.c ****  * 
+ 159:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+ 160:..\source/encoder.c **** void Encoder_Init()
+ 161:..\source/encoder.c **** {
+ 235              		.loc 1 161 0
  236              		.cfi_startproc
  237              		@ args = 0, pretend = 0, frame = 0
  238              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -392,84 +433,84 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  240 0000 10B4     		push	{r4}
  241              		.cfi_def_cfa_offset 4
  242              		.cfi_offset 4, -4
- 124:..\source/encoder.c ****     left_enc.count = 0;
- 243              		.loc 1 124 0
+ 162:..\source/encoder.c ****     left_enc.count = 0;
+ 243              		.loc 1 162 0
  244 0002 0F4B     		ldr	r3, .L12
  245 0004 0021     		movs	r1, #0
  246 0006 9960     		str	r1, [r3, #8]
- 125:..\source/encoder.c ****     left_enc.last_count = 0;
- 247              		.loc 1 125 0
+ 163:..\source/encoder.c ****     left_enc.last_count = 0;
+ 247              		.loc 1 163 0
  248 0008 D960     		str	r1, [r3, #12]
- 126:..\source/encoder.c ****     left_enc.delta_count = 0;
- 249              		.loc 1 126 0
+ 164:..\source/encoder.c ****     left_enc.delta_count = 0;
+ 249              		.loc 1 164 0
  250 000a 1961     		str	r1, [r3, #16]
- 127:..\source/encoder.c ****     left_enc.avg_delta_count = 0;
- 251              		.loc 1 127 0
+ 165:..\source/encoder.c ****     left_enc.avg_delta_count = 0;
+ 251              		.loc 1 165 0
  252 000c 0022     		movs	r2, #0
  253 000e 5A61     		str	r2, [r3, #20]	@ float
- 128:..\source/encoder.c ****     left_enc.dist = 0.0;
- 254              		.loc 1 128 0
+ 166:..\source/encoder.c ****     left_enc.dist = 0.0;
+ 254              		.loc 1 166 0
  255 0010 1A62     		str	r2, [r3, #32]	@ float
- 129:..\source/encoder.c ****     left_enc.delta_count_ma.last = 0;
- 256              		.loc 1 129 0
+ 167:..\source/encoder.c ****     left_enc.delta_count_ma.last = 0;
+ 256              		.loc 1 167 0
  257 0012 9A62     		str	r2, [r3, #40]	@ float
- 130:..\source/encoder.c ****     left_enc.delta_count_ma.n = 3;
- 258              		.loc 1 130 0
+ 168:..\source/encoder.c ****     left_enc.delta_count_ma.n = 20;
+ 258              		.loc 1 168 0
  259 0014 0B4C     		ldr	r4, .L12+4
  260 0016 5C62     		str	r4, [r3, #36]	@ float
- 131:..\source/encoder.c ****     left_enc.avg_cps_ma.last = 0;
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 8
-
-
- 261              		.loc 1 131 0
+ 169:..\source/encoder.c ****     left_enc.avg_cps_ma.last = 0;
+ 261              		.loc 1 169 0
  262 0018 1A63     		str	r2, [r3, #48]	@ float
- 132:..\source/encoder.c ****     left_enc.avg_cps_ma.n = 10;
- 263              		.loc 1 132 0
+ 170:..\source/encoder.c ****     left_enc.avg_cps_ma.n = 10;
+ 263              		.loc 1 170 0
  264 001a 0B48     		ldr	r0, .L12+8
  265 001c D862     		str	r0, [r3, #44]	@ float
- 133:..\source/encoder.c ****     left_enc.avg_cps = 0;
- 266              		.loc 1 133 0
+ 171:..\source/encoder.c ****     left_enc.avg_cps = 0;
+ 266              		.loc 1 171 0
  267 001e 9A61     		str	r2, [r3, #24]	@ float
- 134:..\source/encoder.c ****     left_enc.avg_mps = 0;
- 268              		.loc 1 134 0
+ 172:..\source/encoder.c ****     left_enc.avg_mps = 0;
+ 268              		.loc 1 172 0
  269 0020 DA61     		str	r2, [r3, #28]	@ float
- 135:..\source/encoder.c ****     
- 136:..\source/encoder.c ****     right_enc.count = 0;
- 270              		.loc 1 136 0
+ 173:..\source/encoder.c ****     
+ 174:..\source/encoder.c ****     right_enc.count = 0;
+ 270              		.loc 1 174 0
  271 0022 5964     		str	r1, [r3, #68]
- 137:..\source/encoder.c ****     right_enc.last_count = 0;
- 272              		.loc 1 137 0
+ 175:..\source/encoder.c ****     right_enc.last_count = 0;
+ 272              		.loc 1 175 0
  273 0024 9964     		str	r1, [r3, #72]
- 138:..\source/encoder.c ****     right_enc.delta_count = 0;
- 274              		.loc 1 138 0
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 9
+
+
+ 176:..\source/encoder.c ****     right_enc.delta_count = 0;
+ 274              		.loc 1 176 0
  275 0026 D964     		str	r1, [r3, #76]
- 139:..\source/encoder.c ****     right_enc.avg_delta_count = 0;
- 276              		.loc 1 139 0
+ 177:..\source/encoder.c ****     right_enc.avg_delta_count = 0;
+ 276              		.loc 1 177 0
  277 0028 1A65     		str	r2, [r3, #80]	@ float
- 140:..\source/encoder.c ****     right_enc.dist = 0.0;
- 278              		.loc 1 140 0
+ 178:..\source/encoder.c ****     right_enc.dist = 0.0;
+ 278              		.loc 1 178 0
  279 002a DA65     		str	r2, [r3, #92]	@ float
- 141:..\source/encoder.c ****     right_enc.delta_count_ma.last = 0;
- 280              		.loc 1 141 0
+ 179:..\source/encoder.c ****     right_enc.delta_count_ma.last = 0;
+ 280              		.loc 1 179 0
  281 002c 5A66     		str	r2, [r3, #100]	@ float
- 142:..\source/encoder.c ****     right_enc.delta_count_ma.n = 3;
- 282              		.loc 1 142 0
+ 180:..\source/encoder.c ****     right_enc.delta_count_ma.n = 20;
+ 282              		.loc 1 180 0
  283 002e 1C66     		str	r4, [r3, #96]	@ float
- 143:..\source/encoder.c ****     right_enc.avg_cps_ma.last = 0;
- 284              		.loc 1 143 0
+ 181:..\source/encoder.c ****     right_enc.avg_cps_ma.last = 0;
+ 284              		.loc 1 181 0
  285 0030 DA66     		str	r2, [r3, #108]	@ float
- 144:..\source/encoder.c ****     right_enc.avg_cps_ma.n = 10;
- 286              		.loc 1 144 0
+ 182:..\source/encoder.c ****     right_enc.avg_cps_ma.n = 10;
+ 286              		.loc 1 182 0
  287 0032 9866     		str	r0, [r3, #104]	@ float
- 145:..\source/encoder.c ****     right_enc.avg_cps = 0;
- 288              		.loc 1 145 0
+ 183:..\source/encoder.c ****     right_enc.avg_cps = 0;
+ 288              		.loc 1 183 0
  289 0034 5A65     		str	r2, [r3, #84]	@ float
- 146:..\source/encoder.c ****     right_enc.avg_mps = 0;
- 290              		.loc 1 146 0
+ 184:..\source/encoder.c ****     right_enc.avg_mps = 0;
+ 290              		.loc 1 184 0
  291 0036 9A65     		str	r2, [r3, #88]	@ float
- 147:..\source/encoder.c ****     
- 148:..\source/encoder.c **** }
- 292              		.loc 1 148 0
+ 185:..\source/encoder.c ****     
+ 186:..\source/encoder.c **** }
+ 292              		.loc 1 186 0
  293 0038 5DF8044B 		ldr	r4, [sp], #4
  294              		.cfi_restore 4
  295              		.cfi_def_cfa_offset 0
@@ -478,10 +519,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  298 003e 00BF     		.align	2
  299              	.L12:
  300 0040 00000000 		.word	.LANCHOR0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 9
-
-
- 301 0044 00004040 		.word	1077936128
+ 301 0044 0000A041 		.word	1101004800
  302 0048 00002041 		.word	1092616192
  303              		.cfi_endproc
  304              	.LFE65:
@@ -494,10 +532,20 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  311              		.type	Encoder_Start, %function
  312              	Encoder_Start:
  313              	.LFB66:
- 149:..\source/encoder.c **** 
- 150:..\source/encoder.c **** void Encoder_Start()
- 151:..\source/encoder.c **** {
- 314              		.loc 1 151 0
+ 187:..\source/encoder.c **** 
+ 188:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+ 189:..\source/encoder.c ****  * Name: Encoder_Start
+ 190:..\source/encoder.c ****  * Description: Starts the left/right quadrature encoder components and initializes the counter.
+ 191:..\source/encoder.c ****  * Parameters: None
+ 192:..\source/encoder.c ****  * Return: None
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 10
+
+
+ 193:..\source/encoder.c ****  * 
+ 194:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+ 195:..\source/encoder.c **** void Encoder_Start()
+ 196:..\source/encoder.c **** {
+ 314              		.loc 1 196 0
  315              		.cfi_startproc
  316              		@ args = 0, pretend = 0, frame = 0
  317              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -505,23 +553,23 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  319              		.cfi_def_cfa_offset 8
  320              		.cfi_offset 4, -8
  321              		.cfi_offset 14, -4
- 152:..\source/encoder.c ****     Left_QuadDec_Start();
- 322              		.loc 1 152 0
+ 197:..\source/encoder.c ****     Left_QuadDec_Start();
+ 322              		.loc 1 197 0
  323 0002 FFF7FEFF 		bl	Left_QuadDec_Start
  324              	.LVL30:
- 153:..\source/encoder.c ****     Right_QuadDec_Start();
- 325              		.loc 1 153 0
+ 198:..\source/encoder.c ****     Right_QuadDec_Start();
+ 325              		.loc 1 198 0
  326 0006 FFF7FEFF 		bl	Right_QuadDec_Start
  327              	.LVL31:
- 154:..\source/encoder.c ****     left_enc.write_counter(0);
- 328              		.loc 1 154 0
+ 199:..\source/encoder.c ****     left_enc.write_counter(0);
+ 328              		.loc 1 199 0
  329 000a 044C     		ldr	r4, .L16
  330 000c A36B     		ldr	r3, [r4, #56]
  331 000e 0020     		movs	r0, #0
  332 0010 9847     		blx	r3
  333              	.LVL32:
- 155:..\source/encoder.c ****     right_enc.write_counter(0);
- 334              		.loc 1 155 0
+ 200:..\source/encoder.c ****     right_enc.write_counter(0);
+ 334              		.loc 1 200 0
  335 0012 636F     		ldr	r3, [r4, #116]
  336 0014 0020     		movs	r0, #0
  337 0016 9847     		blx	r3
@@ -538,20 +586,28 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  348              		.global	__aeabi_dcmpge
  349              		.section	.text.Encoder_Update,"ax",%progbits
  350              		.align	2
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 10
-
-
  351              		.global	Encoder_Update
  352              		.thumb
  353              		.thumb_func
  354              		.type	Encoder_Update, %function
  355              	Encoder_Update:
  356              	.LFB67:
- 156:..\source/encoder.c **** }
- 157:..\source/encoder.c **** 
- 158:..\source/encoder.c **** void Encoder_Update()
- 159:..\source/encoder.c **** {
- 357              		.loc 1 159 0
+ 201:..\source/encoder.c **** }
+ 202:..\source/encoder.c **** 
+ 203:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+ 204:..\source/encoder.c ****  * Name: Encoder_Update
+ 205:..\source/encoder.c ****  * Description: Updates the encoder calculations and fields.  This routine is called from the main
+ 206:..\source/encoder.c ****  *              loop.  Internally, it enforces the encoder sampling rate.
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 11
+
+
+ 207:..\source/encoder.c ****  * Parameters: None
+ 208:..\source/encoder.c ****  * Return: None
+ 209:..\source/encoder.c ****  * 
+ 210:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+ 211:..\source/encoder.c **** void Encoder_Update()
+ 212:..\source/encoder.c **** {
+ 357              		.loc 1 212 0
  358              		.cfi_startproc
  359              		@ args = 0, pretend = 0, frame = 0
  360              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -561,21 +617,21 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  364              		.cfi_offset 4, -12
  365              		.cfi_offset 5, -8
  366              		.cfi_offset 14, -4
- 160:..\source/encoder.c ****     static uint32 last_update_time = 0;
- 161:..\source/encoder.c ****     static uint32 delta_time;
- 162:..\source/encoder.c ****     static uint8 enc_sched_offset_applied = 0;
- 163:..\source/encoder.c ****     
- 164:..\source/encoder.c ****     delta_time = millis() - last_update_time;
- 367              		.loc 1 164 0
+ 213:..\source/encoder.c ****     static uint32 last_update_time = 0;
+ 214:..\source/encoder.c ****     static uint32 delta_time;
+ 215:..\source/encoder.c ****     static uint8 enc_sched_offset_applied = 0;
+ 216:..\source/encoder.c ****     
+ 217:..\source/encoder.c ****     delta_time = millis() - last_update_time;
+ 367              		.loc 1 217 0
  368 0002 FFF7FEFF 		bl	millis
  369              	.LVL34:
  370 0006 1A4A     		ldr	r2, .L25
  371 0008 1368     		ldr	r3, [r2]
  372 000a C01A     		subs	r0, r0, r3
  373 000c 5060     		str	r0, [r2, #4]
- 165:..\source/encoder.c ****     ENC_DEBUG_DELTA(delta_time);
- 166:..\source/encoder.c ****     if (delta_time >= ENC_SAMPLE_TIME_MS)
- 374              		.loc 1 166 0
+ 218:..\source/encoder.c ****     ENC_DEBUG_DELTA(delta_time);
+ 219:..\source/encoder.c ****     if (delta_time >= ENC_SAMPLE_TIME_MS)
+ 374              		.loc 1 219 0
  375 000e FFF7FEFF 		bl	__aeabi_ui2d
  376              	.LVL35:
  377 0012 0022     		movs	r2, #0
@@ -583,63 +639,63 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  379 0016 FFF7FEFF 		bl	__aeabi_dcmpge
  380              	.LVL36:
  381 001a 38B3     		cbz	r0, .L18
- 167:..\source/encoder.c ****     {
- 168:..\source/encoder.c ****         last_update_time = millis();
- 382              		.loc 1 168 0
+ 220:..\source/encoder.c ****     {
+ 221:..\source/encoder.c ****         last_update_time = millis();
+ 382              		.loc 1 221 0
  383 001c FFF7FEFF 		bl	millis
  384              	.LVL37:
  385 0020 134B     		ldr	r3, .L25
  386 0022 1860     		str	r0, [r3]
- 169:..\source/encoder.c ****         
- 170:..\source/encoder.c ****         APPLY_SCHED_OFFSET(ENC_SCHED_OFFSET, enc_sched_offset_applied);
- 387              		.loc 1 170 0
+ 222:..\source/encoder.c ****         
+ 223:..\source/encoder.c ****         APPLY_SCHED_OFFSET(ENC_SCHED_OFFSET, enc_sched_offset_applied);
+ 387              		.loc 1 223 0
  388 0024 1B7A     		ldrb	r3, [r3, #8]	@ zero_extendqisi2
  389 0026 2BB9     		cbnz	r3, .L21
- 390              		.loc 1 170 0 is_stmt 0 discriminator 1
+ 390              		.loc 1 223 0 is_stmt 0 discriminator 1
  391 0028 0122     		movs	r2, #1
  392 002a 114B     		ldr	r3, .L25
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 11
-
-
  393 002c 1A72     		strb	r2, [r3, #8]
  394 002e 0720     		movs	r0, #7
  395 0030 FFF7FEFF 		bl	CyDelay
  396              	.LVL38:
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 12
+
+
  397              	.L21:
- 171:..\source/encoder.c ****         
- 172:..\source/encoder.c ****         Encoder_Sample(&left_enc, delta_time);
- 398              		.loc 1 172 0 is_stmt 1
+ 224:..\source/encoder.c ****         
+ 225:..\source/encoder.c ****         Encoder_Sample(&left_enc, delta_time);
+ 398              		.loc 1 225 0 is_stmt 1
  399 0034 104D     		ldr	r5, .L25+8
  400 0036 0E4C     		ldr	r4, .L25
  401 0038 2846     		mov	r0, r5
  402 003a 6168     		ldr	r1, [r4, #4]
  403 003c FFF7FEFF 		bl	Encoder_Sample
  404              	.LVL39:
- 173:..\source/encoder.c ****         Encoder_Sample(&right_enc, delta_time);
- 405              		.loc 1 173 0
+ 226:..\source/encoder.c ****         Encoder_Sample(&right_enc, delta_time);
+ 405              		.loc 1 226 0
  406 0040 05F13C00 		add	r0, r5, #60
  407 0044 6168     		ldr	r1, [r4, #4]
  408 0046 FFF7FEFF 		bl	Encoder_Sample
  409              	.LVL40:
- 174:..\source/encoder.c ****         LEFT_DUMP_ENC(&left_enc);
- 410              		.loc 1 174 0
+ 227:..\source/encoder.c ****         LEFT_DUMP_ENC(&left_enc);
+ 410              		.loc 1 227 0
  411 004a 0C4B     		ldr	r3, .L25+12
  412 004c 1B88     		ldrh	r3, [r3]
  413 004e 13F0010F 		tst	r3, #1
  414 0052 02D0     		beq	.L22
- 415              		.loc 1 174 0 is_stmt 0 discriminator 1
+ 415              		.loc 1 227 0 is_stmt 0 discriminator 1
  416 0054 2846     		mov	r0, r5
  417 0056 FFF7FEFF 		bl	DumpEncoder
  418              	.LVL41:
  419              	.L22:
- 175:..\source/encoder.c ****         RIGHT_DUMP_ENC(&right_enc);
- 420              		.loc 1 175 0 is_stmt 1
+ 228:..\source/encoder.c ****         RIGHT_DUMP_ENC(&right_enc);
+ 420              		.loc 1 228 0 is_stmt 1
  421 005a 084B     		ldr	r3, .L25+12
  422 005c 1B88     		ldrh	r3, [r3]
  423 005e 03F00203 		and	r3, r3, #2
  424 0062 9BB2     		uxth	r3, r3
  425 0064 13B1     		cbz	r3, .L18
- 426              		.loc 1 175 0 is_stmt 0 discriminator 1
+ 426              		.loc 1 228 0 is_stmt 0 discriminator 1
  427 0066 0648     		ldr	r0, .L25+16
  428 0068 FFF7FEFF 		bl	DumpEncoder
  429              	.LVL42:
@@ -658,28 +714,35 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  442              		.size	Encoder_Update, .-Encoder_Update
  443              		.section	.text.Encoder_LeftGetCntsPerSec,"ax",%progbits
  444              		.align	2
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 12
-
-
  445              		.global	Encoder_LeftGetCntsPerSec
  446              		.thumb
  447              		.thumb_func
  448              		.type	Encoder_LeftGetCntsPerSec, %function
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 13
+
+
  449              	Encoder_LeftGetCntsPerSec:
  450              	.LFB68:
- 176:..\source/encoder.c ****     }                    
- 177:..\source/encoder.c **** }
- 178:..\source/encoder.c **** 
- 179:..\source/encoder.c **** float Encoder_LeftGetCntsPerSec()
- 180:..\source/encoder.c **** {
- 451              		.loc 1 180 0 is_stmt 1
+ 229:..\source/encoder.c ****     }                    
+ 230:..\source/encoder.c **** }
+ 231:..\source/encoder.c **** 
+ 232:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+ 233:..\source/encoder.c ****  * Name: Encoder_LeftGetCntsPerSec
+ 234:..\source/encoder.c ****  * Description: Returns the average left encoder count/second
+ 235:..\source/encoder.c ****  * Parameters: None
+ 236:..\source/encoder.c ****  * Return: float
+ 237:..\source/encoder.c ****  * 
+ 238:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+ 239:..\source/encoder.c **** float Encoder_LeftGetCntsPerSec()
+ 240:..\source/encoder.c **** {
+ 451              		.loc 1 240 0 is_stmt 1
  452              		.cfi_startproc
  453              		@ args = 0, pretend = 0, frame = 0
  454              		@ frame_needed = 0, uses_anonymous_args = 0
  455              		@ link register save eliminated.
- 181:..\source/encoder.c ****     return left_enc.avg_cps;
- 182:..\source/encoder.c **** }
- 456              		.loc 1 182 0
+ 241:..\source/encoder.c ****     return left_enc.avg_cps;
+ 242:..\source/encoder.c **** }
+ 456              		.loc 1 242 0
  457 0000 014B     		ldr	r3, .L28
  458 0002 9869     		ldr	r0, [r3, #24]	@ float
  459 0004 7047     		bx	lr
@@ -698,17 +761,27 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  472              		.type	Encoder_RightGetCntsPerSec, %function
  473              	Encoder_RightGetCntsPerSec:
  474              	.LFB69:
- 183:..\source/encoder.c **** 
- 184:..\source/encoder.c **** float Encoder_RightGetCntsPerSec()
- 185:..\source/encoder.c **** {
- 475              		.loc 1 185 0
+ 243:..\source/encoder.c **** 
+ 244:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+ 245:..\source/encoder.c ****  * Name: Encoder_RightGetCntsPerSec
+ 246:..\source/encoder.c ****  * Description: Returns the average right encoder count/second
+ 247:..\source/encoder.c ****  * Parameters: None
+ 248:..\source/encoder.c ****  * Return: float
+ 249:..\source/encoder.c ****  * 
+ 250:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+ 251:..\source/encoder.c **** float Encoder_RightGetCntsPerSec()
+ 252:..\source/encoder.c **** {
+ 475              		.loc 1 252 0
  476              		.cfi_startproc
  477              		@ args = 0, pretend = 0, frame = 0
  478              		@ frame_needed = 0, uses_anonymous_args = 0
  479              		@ link register save eliminated.
- 186:..\source/encoder.c ****     return right_enc.avg_cps;
- 187:..\source/encoder.c **** }
- 480              		.loc 1 187 0
+ 253:..\source/encoder.c ****     return right_enc.avg_cps;
+ 254:..\source/encoder.c **** }
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 14
+
+
+ 480              		.loc 1 254 0
  481 0000 014B     		ldr	r3, .L31
  482 0002 586D     		ldr	r0, [r3, #84]	@ float
  483 0004 7047     		bx	lr
@@ -718,9 +791,6 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  487 0008 00000000 		.word	.LANCHOR0
  488              		.cfi_endproc
  489              	.LFE69:
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 13
-
-
  490              		.size	Encoder_RightGetCntsPerSec, .-Encoder_RightGetCntsPerSec
  491              		.global	__aeabi_fadd
  492              		.section	.text.Encoder_GetCntsPerSec,"ax",%progbits
@@ -731,10 +801,18 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  497              		.type	Encoder_GetCntsPerSec, %function
  498              	Encoder_GetCntsPerSec:
  499              	.LFB70:
- 188:..\source/encoder.c **** 
- 189:..\source/encoder.c **** float Encoder_GetCntsPerSec()
- 190:..\source/encoder.c **** {
- 500              		.loc 1 190 0
+ 255:..\source/encoder.c **** 
+ 256:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+ 257:..\source/encoder.c ****  * Name: Encoder_GetCntsPerSec
+ 258:..\source/encoder.c ****  * Description: Returns the average center count/second.  Note, this is the count/second as viewed
+ 259:..\source/encoder.c ****  *              from the center point of the robot between the left and right wheels.
+ 260:..\source/encoder.c ****  * Parameters: None
+ 261:..\source/encoder.c ****  * Return: float
+ 262:..\source/encoder.c ****  * 
+ 263:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+ 264:..\source/encoder.c **** float Encoder_GetCntsPerSec()
+ 265:..\source/encoder.c **** {
+ 500              		.loc 1 265 0
  501              		.cfi_startproc
  502              		@ args = 0, pretend = 0, frame = 0
  503              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -742,8 +820,8 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  505              		.cfi_def_cfa_offset 8
  506              		.cfi_offset 3, -8
  507              		.cfi_offset 14, -4
- 191:..\source/encoder.c ****     return (left_enc.avg_cps + right_enc.avg_cps) / 2;
- 508              		.loc 1 191 0
+ 266:..\source/encoder.c ****     return (left_enc.avg_cps + right_enc.avg_cps) / 2;
+ 508              		.loc 1 266 0
  509 0002 054B     		ldr	r3, .L35
  510 0004 9869     		ldr	r0, [r3, #24]	@ float
  511 0006 596D     		ldr	r1, [r3, #84]	@ float
@@ -752,14 +830,17 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  514 000c 4FF07C51 		mov	r1, #1056964608
  515 0010 FFF7FEFF 		bl	__aeabi_fmul
  516              	.LVL44:
- 192:..\source/encoder.c **** }
- 517              		.loc 1 192 0
+ 267:..\source/encoder.c **** }
+ 517              		.loc 1 267 0
  518 0014 08BD     		pop	{r3, pc}
  519              	.L36:
  520 0016 00BF     		.align	2
  521              	.L35:
  522 0018 00000000 		.word	.LANCHOR0
  523              		.cfi_endproc
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 15
+
+
  524              	.LFE70:
  525              		.size	Encoder_GetCntsPerSec, .-Encoder_GetCntsPerSec
  526              		.section	.text.Encoder_LeftGetMeterPerSec,"ax",%progbits
@@ -770,20 +851,24 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  531              		.type	Encoder_LeftGetMeterPerSec, %function
  532              	Encoder_LeftGetMeterPerSec:
  533              	.LFB71:
- 193:..\source/encoder.c **** 
- 194:..\source/encoder.c **** float Encoder_LeftGetMeterPerSec()
- 195:..\source/encoder.c **** {
- 534              		.loc 1 195 0
+ 268:..\source/encoder.c **** 
+ 269:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+ 270:..\source/encoder.c ****  * Name: Encoder_LeftGetMeterPerSec
+ 271:..\source/encoder.c ****  * Description: Returns the average left meter/second.
+ 272:..\source/encoder.c ****  * Parameters: None
+ 273:..\source/encoder.c ****  * Return: float
+ 274:..\source/encoder.c ****  * 
+ 275:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+ 276:..\source/encoder.c **** float Encoder_LeftGetMeterPerSec()
+ 277:..\source/encoder.c **** {
+ 534              		.loc 1 277 0
  535              		.cfi_startproc
  536              		@ args = 0, pretend = 0, frame = 0
  537              		@ frame_needed = 0, uses_anonymous_args = 0
  538              		@ link register save eliminated.
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 14
-
-
- 196:..\source/encoder.c ****     return left_enc.avg_mps;
- 197:..\source/encoder.c **** }
- 539              		.loc 1 197 0
+ 278:..\source/encoder.c ****     return left_enc.avg_mps;
+ 279:..\source/encoder.c **** }
+ 539              		.loc 1 279 0
  540 0000 014B     		ldr	r3, .L38
  541 0002 D869     		ldr	r0, [r3, #28]	@ float
  542 0004 7047     		bx	lr
@@ -802,17 +887,27 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  555              		.type	Encoder_RightGetMeterPerSec, %function
  556              	Encoder_RightGetMeterPerSec:
  557              	.LFB72:
- 198:..\source/encoder.c **** 
- 199:..\source/encoder.c **** float Encoder_RightGetMeterPerSec()
- 200:..\source/encoder.c **** {
- 558              		.loc 1 200 0
+ 280:..\source/encoder.c **** 
+ 281:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+ 282:..\source/encoder.c ****  * Name: Encoder_RightGetMeterPerSec
+ 283:..\source/encoder.c ****  * Description: Returns the average right meter/second.
+ 284:..\source/encoder.c ****  * Parameters: None
+ 285:..\source/encoder.c ****  * Return: float
+ 286:..\source/encoder.c ****  * 
+ 287:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+ 288:..\source/encoder.c **** float Encoder_RightGetMeterPerSec()
+ 289:..\source/encoder.c **** {
+ 558              		.loc 1 289 0
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 16
+
+
  559              		.cfi_startproc
  560              		@ args = 0, pretend = 0, frame = 0
  561              		@ frame_needed = 0, uses_anonymous_args = 0
  562              		@ link register save eliminated.
- 201:..\source/encoder.c ****     return right_enc.avg_mps;
- 202:..\source/encoder.c **** }
- 563              		.loc 1 202 0
+ 290:..\source/encoder.c ****     return right_enc.avg_mps;
+ 291:..\source/encoder.c **** }
+ 563              		.loc 1 291 0
  564 0000 014B     		ldr	r3, .L41
  565 0002 986D     		ldr	r0, [r3, #88]	@ float
  566 0004 7047     		bx	lr
@@ -831,22 +926,27 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  579              		.type	Encoder_GetMeterPerSec, %function
  580              	Encoder_GetMeterPerSec:
  581              	.LFB73:
- 203:..\source/encoder.c **** 
- 204:..\source/encoder.c **** float Encoder_GetMeterPerSec()
- 205:..\source/encoder.c **** {
- 582              		.loc 1 205 0
+ 292:..\source/encoder.c **** 
+ 293:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+ 294:..\source/encoder.c ****  * Name: Encoder_GetMeterPerSec
+ 295:..\source/encoder.c ****  * Description: Returns the average center meter/second.  Note, this is the meter/second as viewed
+ 296:..\source/encoder.c ****  *              from the center point of the robot between the left and right wheels.
+ 297:..\source/encoder.c ****  * Parameters: None
+ 298:..\source/encoder.c ****  * Return: float
+ 299:..\source/encoder.c ****  * 
+ 300:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+ 301:..\source/encoder.c **** float Encoder_GetMeterPerSec()
+ 302:..\source/encoder.c **** {
+ 582              		.loc 1 302 0
  583              		.cfi_startproc
  584              		@ args = 0, pretend = 0, frame = 0
  585              		@ frame_needed = 0, uses_anonymous_args = 0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 15
-
-
  586 0000 08B5     		push	{r3, lr}
  587              		.cfi_def_cfa_offset 8
  588              		.cfi_offset 3, -8
  589              		.cfi_offset 14, -4
- 206:..\source/encoder.c ****     return (left_enc.avg_mps + right_enc.avg_mps) / 2;
- 590              		.loc 1 206 0
+ 303:..\source/encoder.c ****     return (left_enc.avg_mps + right_enc.avg_mps) / 2;
+ 590              		.loc 1 303 0
  591 0002 054B     		ldr	r3, .L45
  592 0004 D869     		ldr	r0, [r3, #28]	@ float
  593 0006 996D     		ldr	r1, [r3, #88]	@ float
@@ -855,9 +955,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  596 000c 4FF07C51 		mov	r1, #1056964608
  597 0010 FFF7FEFF 		bl	__aeabi_fmul
  598              	.LVL46:
- 207:..\source/encoder.c **** }
- 599              		.loc 1 207 0
+ 304:..\source/encoder.c **** }
+ 599              		.loc 1 304 0
  600 0014 08BD     		pop	{r3, pc}
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 17
+
+
  601              	.L46:
  602 0016 00BF     		.align	2
  603              	.L45:
@@ -873,10 +976,17 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  613              		.type	Encoder_LeftGetCount, %function
  614              	Encoder_LeftGetCount:
  615              	.LFB74:
- 208:..\source/encoder.c **** 
- 209:..\source/encoder.c **** int32 Encoder_LeftGetCount()
- 210:..\source/encoder.c **** {
- 616              		.loc 1 210 0
+ 305:..\source/encoder.c **** 
+ 306:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+ 307:..\source/encoder.c ****  * Name: Encoder_LeftGetCount
+ 308:..\source/encoder.c ****  * Description: Returns the the left encoder count.
+ 309:..\source/encoder.c ****  * Parameters: None
+ 310:..\source/encoder.c ****  * Return: int32
+ 311:..\source/encoder.c ****  * 
+ 312:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+ 313:..\source/encoder.c **** int32 Encoder_LeftGetCount()
+ 314:..\source/encoder.c **** {
+ 616              		.loc 1 314 0
  617              		.cfi_startproc
  618              		@ args = 0, pretend = 0, frame = 0
  619              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -884,23 +994,20 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  621              		.cfi_def_cfa_offset 8
  622              		.cfi_offset 3, -8
  623              		.cfi_offset 14, -4
- 211:..\source/encoder.c ****     return left_enc.read_counter();
- 624              		.loc 1 211 0
+ 315:..\source/encoder.c ****     return left_enc.read_counter();
+ 624              		.loc 1 315 0
  625 0002 024B     		ldr	r3, .L49
  626 0004 5B6B     		ldr	r3, [r3, #52]
  627 0006 9847     		blx	r3
  628              	.LVL47:
- 212:..\source/encoder.c **** }
- 629              		.loc 1 212 0
+ 316:..\source/encoder.c **** }
+ 629              		.loc 1 316 0
  630 0008 08BD     		pop	{r3, pc}
  631              	.L50:
  632 000a 00BF     		.align	2
  633              	.L49:
  634 000c 00000000 		.word	.LANCHOR0
  635              		.cfi_endproc
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 16
-
-
  636              	.LFE74:
  637              		.size	Encoder_LeftGetCount, .-Encoder_LeftGetCount
  638              		.section	.text.Encoder_RightGetCount,"ax",%progbits
@@ -911,10 +1018,20 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  643              		.type	Encoder_RightGetCount, %function
  644              	Encoder_RightGetCount:
  645              	.LFB75:
- 213:..\source/encoder.c **** 
- 214:..\source/encoder.c **** int32 Encoder_RightGetCount()
- 215:..\source/encoder.c **** {
- 646              		.loc 1 215 0
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 18
+
+
+ 317:..\source/encoder.c **** 
+ 318:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+ 319:..\source/encoder.c ****  * Name: Encoder_RightGetCount
+ 320:..\source/encoder.c ****  * Description: Returns the right encoder count.
+ 321:..\source/encoder.c ****  * Parameters: None
+ 322:..\source/encoder.c ****  * Return: int32
+ 323:..\source/encoder.c ****  * 
+ 324:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+ 325:..\source/encoder.c **** int32 Encoder_RightGetCount()
+ 326:..\source/encoder.c **** {
+ 646              		.loc 1 326 0
  647              		.cfi_startproc
  648              		@ args = 0, pretend = 0, frame = 0
  649              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -922,14 +1039,14 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  651              		.cfi_def_cfa_offset 8
  652              		.cfi_offset 3, -8
  653              		.cfi_offset 14, -4
- 216:..\source/encoder.c ****     return right_enc.read_counter();
- 654              		.loc 1 216 0
+ 327:..\source/encoder.c ****     return right_enc.read_counter();
+ 654              		.loc 1 327 0
  655 0002 024B     		ldr	r3, .L53
  656 0004 1B6F     		ldr	r3, [r3, #112]
  657 0006 9847     		blx	r3
  658              	.LVL48:
- 217:..\source/encoder.c **** }
- 659              		.loc 1 217 0
+ 328:..\source/encoder.c **** }
+ 659              		.loc 1 328 0
  660 0008 08BD     		pop	{r3, pc}
  661              	.L54:
  662 000a 00BF     		.align	2
@@ -946,21 +1063,28 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  673              		.type	Encoder_LeftGetDeltaCount, %function
  674              	Encoder_LeftGetDeltaCount:
  675              	.LFB76:
- 218:..\source/encoder.c **** 
- 219:..\source/encoder.c **** float Encoder_LeftGetDeltaCount()
- 220:..\source/encoder.c **** {
- 676              		.loc 1 220 0
+ 329:..\source/encoder.c **** 
+ 330:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+ 331:..\source/encoder.c ****  * Name: Encoder_LeftGetDeltaCount
+ 332:..\source/encoder.c ****  * Description: Returns the left encoder average delta count.
+ 333:..\source/encoder.c ****  * Parameters: None
+ 334:..\source/encoder.c ****  * Return: float
+ 335:..\source/encoder.c ****  * 
+ 336:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+ 337:..\source/encoder.c **** float Encoder_LeftGetDeltaCount()
+ 338:..\source/encoder.c **** {
+ 676              		.loc 1 338 0
  677              		.cfi_startproc
  678              		@ args = 0, pretend = 0, frame = 0
  679              		@ frame_needed = 0, uses_anonymous_args = 0
  680              		@ link register save eliminated.
- 221:..\source/encoder.c ****     return left_enc.avg_delta_count;
- 222:..\source/encoder.c **** }
- 681              		.loc 1 222 0
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 19
+
+
+ 339:..\source/encoder.c ****     return left_enc.avg_delta_count;
+ 340:..\source/encoder.c **** }
+ 681              		.loc 1 340 0
  682 0000 014B     		ldr	r3, .L56
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 17
-
-
  683 0002 5869     		ldr	r0, [r3, #20]	@ float
  684 0004 7047     		bx	lr
  685              	.L57:
@@ -978,17 +1102,24 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  697              		.type	Encoder_RightGetDeltaCount, %function
  698              	Encoder_RightGetDeltaCount:
  699              	.LFB77:
- 223:..\source/encoder.c **** 
- 224:..\source/encoder.c **** float Encoder_RightGetDeltaCount()
- 225:..\source/encoder.c **** {
- 700              		.loc 1 225 0
+ 341:..\source/encoder.c **** 
+ 342:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+ 343:..\source/encoder.c ****  * Name: Encoder_RightGetDeltaCount
+ 344:..\source/encoder.c ****  * Description: Returns the right encoder average delta count.
+ 345:..\source/encoder.c ****  * Parameters: None
+ 346:..\source/encoder.c ****  * Return: float
+ 347:..\source/encoder.c ****  * 
+ 348:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+ 349:..\source/encoder.c **** float Encoder_RightGetDeltaCount()
+ 350:..\source/encoder.c **** {
+ 700              		.loc 1 350 0
  701              		.cfi_startproc
  702              		@ args = 0, pretend = 0, frame = 0
  703              		@ frame_needed = 0, uses_anonymous_args = 0
  704              		@ link register save eliminated.
- 226:..\source/encoder.c ****     return right_enc.avg_delta_count;
- 227:..\source/encoder.c **** }
- 705              		.loc 1 227 0
+ 351:..\source/encoder.c ****     return right_enc.avg_delta_count;
+ 352:..\source/encoder.c **** }
+ 705              		.loc 1 352 0
  706 0000 014B     		ldr	r3, .L59
  707 0002 186D     		ldr	r0, [r3, #80]	@ float
  708 0004 7047     		bx	lr
@@ -1007,20 +1138,27 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  721              		.type	Encoder_LeftGetDist, %function
  722              	Encoder_LeftGetDist:
  723              	.LFB78:
- 228:..\source/encoder.c **** 
- 229:..\source/encoder.c **** float Encoder_LeftGetDist()
- 230:..\source/encoder.c **** {
- 724              		.loc 1 230 0
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 20
+
+
+ 353:..\source/encoder.c **** 
+ 354:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+ 355:..\source/encoder.c ****  * Name: Encoder_LeftGetDist
+ 356:..\source/encoder.c ****  * Description: Returns the left wheel distance (in meters).
+ 357:..\source/encoder.c ****  * Parameters: None
+ 358:..\source/encoder.c ****  * Return: float
+ 359:..\source/encoder.c ****  * 
+ 360:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+ 361:..\source/encoder.c **** float Encoder_LeftGetDist()
+ 362:..\source/encoder.c **** {
+ 724              		.loc 1 362 0
  725              		.cfi_startproc
  726              		@ args = 0, pretend = 0, frame = 0
  727              		@ frame_needed = 0, uses_anonymous_args = 0
  728              		@ link register save eliminated.
- 231:..\source/encoder.c ****     return left_enc.dist;
- 232:..\source/encoder.c **** }
- 729              		.loc 1 232 0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 18
-
-
+ 363:..\source/encoder.c ****     return left_enc.dist;
+ 364:..\source/encoder.c **** }
+ 729              		.loc 1 364 0
  730 0000 014B     		ldr	r3, .L62
  731 0002 186A     		ldr	r0, [r3, #32]	@ float
  732 0004 7047     		bx	lr
@@ -1039,20 +1177,30 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  745              		.type	Encoder_RightGetDist, %function
  746              	Encoder_RightGetDist:
  747              	.LFB79:
- 233:..\source/encoder.c **** 
- 234:..\source/encoder.c **** float Encoder_RightGetDist()
- 235:..\source/encoder.c **** {
- 748              		.loc 1 235 0
+ 365:..\source/encoder.c **** 
+ 366:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+ 367:..\source/encoder.c ****  * Name: Encoder_RightGetDist
+ 368:..\source/encoder.c ****  * Description: Returns the right wheel distance (in meters).
+ 369:..\source/encoder.c ****  * Parameters: None
+ 370:..\source/encoder.c ****  * Return: float
+ 371:..\source/encoder.c ****  * 
+ 372:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+ 373:..\source/encoder.c **** float Encoder_RightGetDist()
+ 374:..\source/encoder.c **** {
+ 748              		.loc 1 374 0
  749              		.cfi_startproc
  750              		@ args = 0, pretend = 0, frame = 0
  751              		@ frame_needed = 0, uses_anonymous_args = 0
  752              		@ link register save eliminated.
- 236:..\source/encoder.c ****     return right_enc.dist;
- 237:..\source/encoder.c **** }
- 753              		.loc 1 237 0
+ 375:..\source/encoder.c ****     return right_enc.dist;
+ 376:..\source/encoder.c **** }
+ 753              		.loc 1 376 0
  754 0000 014B     		ldr	r3, .L65
  755 0002 D86D     		ldr	r0, [r3, #92]	@ float
  756 0004 7047     		bx	lr
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 21
+
+
  757              	.L66:
  758 0006 00BF     		.align	2
  759              	.L65:
@@ -1068,22 +1216,26 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  769              		.type	Encoder_GetDist, %function
  770              	Encoder_GetDist:
  771              	.LFB80:
- 238:..\source/encoder.c **** 
- 239:..\source/encoder.c **** float Encoder_GetDist()
- 240:..\source/encoder.c **** {
- 772              		.loc 1 240 0
+ 377:..\source/encoder.c **** 
+ 378:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+ 379:..\source/encoder.c ****  * Name: Encoder_GetDist
+ 380:..\source/encoder.c ****  * Description: Returns the distance (in meters) traveled by the center of the robot.
+ 381:..\source/encoder.c ****  * Parameters: None
+ 382:..\source/encoder.c ****  * Return: float
+ 383:..\source/encoder.c ****  * 
+ 384:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+ 385:..\source/encoder.c **** float Encoder_GetDist()
+ 386:..\source/encoder.c **** {
+ 772              		.loc 1 386 0
  773              		.cfi_startproc
  774              		@ args = 0, pretend = 0, frame = 0
  775              		@ frame_needed = 0, uses_anonymous_args = 0
  776 0000 08B5     		push	{r3, lr}
  777              		.cfi_def_cfa_offset 8
  778              		.cfi_offset 3, -8
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 19
-
-
  779              		.cfi_offset 14, -4
- 241:..\source/encoder.c ****     return (left_enc.dist + right_enc.dist) / 2;
- 780              		.loc 1 241 0
+ 387:..\source/encoder.c ****     return (left_enc.dist + right_enc.dist) / 2;
+ 780              		.loc 1 387 0
  781 0002 054B     		ldr	r3, .L69
  782 0004 186A     		ldr	r0, [r3, #32]	@ float
  783 0006 D96D     		ldr	r1, [r3, #92]	@ float
@@ -1092,8 +1244,8 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  786 000c 4FF07C51 		mov	r1, #1056964608
  787 0010 FFF7FEFF 		bl	__aeabi_fmul
  788              	.LVL50:
- 242:..\source/encoder.c **** }
- 789              		.loc 1 242 0
+ 388:..\source/encoder.c **** }
+ 789              		.loc 1 388 0
  790 0014 08BD     		pop	{r3, pc}
  791              	.L70:
  792 0016 00BF     		.align	2
@@ -1106,14 +1258,24 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  799              		.align	2
  800              		.global	Encoder_Reset
  801              		.thumb
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 22
+
+
  802              		.thumb_func
  803              		.type	Encoder_Reset, %function
  804              	Encoder_Reset:
  805              	.LFB81:
- 243:..\source/encoder.c **** 
- 244:..\source/encoder.c **** void Encoder_Reset()
- 245:..\source/encoder.c **** {
- 806              		.loc 1 245 0
+ 389:..\source/encoder.c **** 
+ 390:..\source/encoder.c **** /*-------------------------------------------------------------------------------------------------
+ 391:..\source/encoder.c ****  * Name: Encoder_Reset
+ 392:..\source/encoder.c ****  * Description: Resets the left/right encoder fields.
+ 393:..\source/encoder.c ****  * Parameters: None
+ 394:..\source/encoder.c ****  * Return: None
+ 395:..\source/encoder.c ****  * 
+ 396:..\source/encoder.c ****  *-------------------------------------------------------------------------------------------------
+ 397:..\source/encoder.c **** void Encoder_Reset()
+ 398:..\source/encoder.c **** {
+ 806              		.loc 1 398 0
  807              		.cfi_startproc
  808              		@ args = 0, pretend = 0, frame = 0
  809              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -1123,102 +1285,102 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  813              		.cfi_offset 5, -12
  814              		.cfi_offset 6, -8
  815              		.cfi_offset 14, -4
- 246:..\source/encoder.c ****     left_enc.write_counter(0);
- 816              		.loc 1 246 0
+ 399:..\source/encoder.c ****     left_enc.write_counter(0);
+ 816              		.loc 1 399 0
  817 0002 154C     		ldr	r4, .L75
  818 0004 A36B     		ldr	r3, [r4, #56]
  819 0006 0020     		movs	r0, #0
  820 0008 9847     		blx	r3
  821              	.LVL51:
- 247:..\source/encoder.c ****     left_enc.last_count = 0;
- 822              		.loc 1 247 0
+ 400:..\source/encoder.c ****     left_enc.last_count = 0;
+ 822              		.loc 1 400 0
  823 000a 0026     		movs	r6, #0
  824 000c E660     		str	r6, [r4, #12]
- 248:..\source/encoder.c ****     left_enc.delta_count = 0;
- 825              		.loc 1 248 0
+ 401:..\source/encoder.c ****     left_enc.delta_count = 0;
+ 825              		.loc 1 401 0
  826 000e 2661     		str	r6, [r4, #16]
- 249:..\source/encoder.c ****     left_enc.avg_delta_count = 0;
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 20
-
-
- 827              		.loc 1 249 0
+ 402:..\source/encoder.c ****     left_enc.avg_delta_count = 0;
+ 827              		.loc 1 402 0
  828 0010 0025     		movs	r5, #0
  829 0012 6561     		str	r5, [r4, #20]	@ float
- 250:..\source/encoder.c ****     left_enc.delta_count_ma.last = 0;
- 830              		.loc 1 250 0
+ 403:..\source/encoder.c ****     left_enc.delta_count_ma.last = 0;
+ 830              		.loc 1 403 0
  831 0014 A562     		str	r5, [r4, #40]	@ float
- 251:..\source/encoder.c ****     left_enc.avg_cps = 0;
- 832              		.loc 1 251 0
+ 404:..\source/encoder.c ****     left_enc.avg_cps = 0;
+ 832              		.loc 1 404 0
  833 0016 A561     		str	r5, [r4, #24]	@ float
- 252:..\source/encoder.c ****     left_enc.avg_mps = 0;
- 834              		.loc 1 252 0
+ 405:..\source/encoder.c ****     left_enc.avg_mps = 0;
+ 834              		.loc 1 405 0
  835 0018 E561     		str	r5, [r4, #28]	@ float
- 253:..\source/encoder.c ****     left_enc.avg_cps_ma.last = 0;
- 836              		.loc 1 253 0
+ 406:..\source/encoder.c ****     left_enc.avg_cps_ma.last = 0;
+ 836              		.loc 1 406 0
  837 001a 2563     		str	r5, [r4, #48]	@ float
- 254:..\source/encoder.c ****     left_enc.count = 0;
- 838              		.loc 1 254 0
+ 407:..\source/encoder.c ****     left_enc.count = 0;
+ 838              		.loc 1 407 0
  839 001c A660     		str	r6, [r4, #8]
- 255:..\source/encoder.c ****     
- 256:..\source/encoder.c ****     right_enc.write_counter(0);
- 840              		.loc 1 256 0
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 23
+
+
+ 408:..\source/encoder.c ****     
+ 409:..\source/encoder.c ****     right_enc.write_counter(0);
+ 840              		.loc 1 409 0
  841 001e 636F     		ldr	r3, [r4, #116]
  842 0020 3046     		mov	r0, r6
  843 0022 9847     		blx	r3
  844              	.LVL52:
- 257:..\source/encoder.c ****     right_enc.last_count = 0;
- 845              		.loc 1 257 0
+ 410:..\source/encoder.c ****     right_enc.last_count = 0;
+ 845              		.loc 1 410 0
  846 0024 A664     		str	r6, [r4, #72]
- 258:..\source/encoder.c ****     right_enc.delta_count = 0;
- 847              		.loc 1 258 0
+ 411:..\source/encoder.c ****     right_enc.delta_count = 0;
+ 847              		.loc 1 411 0
  848 0026 E664     		str	r6, [r4, #76]
- 259:..\source/encoder.c ****     right_enc.avg_delta_count = 0;
- 849              		.loc 1 259 0
+ 412:..\source/encoder.c ****     right_enc.avg_delta_count = 0;
+ 849              		.loc 1 412 0
  850 0028 2565     		str	r5, [r4, #80]	@ float
- 260:..\source/encoder.c ****     right_enc.delta_count_ma.last = 0;
- 851              		.loc 1 260 0
+ 413:..\source/encoder.c ****     right_enc.delta_count_ma.last = 0;
+ 851              		.loc 1 413 0
  852 002a 6566     		str	r5, [r4, #100]	@ float
- 261:..\source/encoder.c ****     right_enc.avg_cps = 0;
- 853              		.loc 1 261 0
+ 414:..\source/encoder.c ****     right_enc.avg_cps = 0;
+ 853              		.loc 1 414 0
  854 002c 6565     		str	r5, [r4, #84]	@ float
- 262:..\source/encoder.c ****     right_enc.avg_mps = 0;
- 855              		.loc 1 262 0
+ 415:..\source/encoder.c ****     right_enc.avg_mps = 0;
+ 855              		.loc 1 415 0
  856 002e A565     		str	r5, [r4, #88]	@ float
- 263:..\source/encoder.c ****     right_enc.avg_cps_ma.last = 0;
- 857              		.loc 1 263 0
+ 416:..\source/encoder.c ****     right_enc.avg_cps_ma.last = 0;
+ 857              		.loc 1 416 0
  858 0030 E566     		str	r5, [r4, #108]	@ float
- 264:..\source/encoder.c ****     right_enc.count = 0;
- 859              		.loc 1 264 0
+ 417:..\source/encoder.c ****     right_enc.count = 0;
+ 859              		.loc 1 417 0
  860 0032 6664     		str	r6, [r4, #68]
- 265:..\source/encoder.c ****     
- 266:..\source/encoder.c ****     LEFT_DUMP_ENC(&left_enc);
- 861              		.loc 1 266 0
+ 418:..\source/encoder.c ****     
+ 419:..\source/encoder.c ****     LEFT_DUMP_ENC(&left_enc);
+ 861              		.loc 1 419 0
  862 0034 094B     		ldr	r3, .L75+4
  863 0036 1B88     		ldrh	r3, [r3]
  864 0038 13F0010F 		tst	r3, #1
  865 003c 02D0     		beq	.L72
- 866              		.loc 1 266 0 is_stmt 0 discriminator 1
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 21
-
-
+ 866              		.loc 1 419 0 is_stmt 0 discriminator 1
  867 003e 2046     		mov	r0, r4
  868 0040 FFF7FEFF 		bl	DumpEncoder
  869              	.LVL53:
  870              	.L72:
- 267:..\source/encoder.c ****     RIGHT_DUMP_ENC(&right_enc);    
- 871              		.loc 1 267 0 is_stmt 1
+ 420:..\source/encoder.c ****     RIGHT_DUMP_ENC(&right_enc);    
+ 871              		.loc 1 420 0 is_stmt 1
  872 0044 054B     		ldr	r3, .L75+4
  873 0046 1B88     		ldrh	r3, [r3]
  874 0048 03F00203 		and	r3, r3, #2
  875 004c 9BB2     		uxth	r3, r3
  876 004e 13B1     		cbz	r3, .L71
- 877              		.loc 1 267 0 is_stmt 0 discriminator 1
+ 877              		.loc 1 420 0 is_stmt 0 discriminator 1
  878 0050 0348     		ldr	r0, .L75+8
  879 0052 FFF7FEFF 		bl	DumpEncoder
  880              	.LVL54:
  881              	.L71:
  882 0056 70BD     		pop	{r4, r5, r6, pc}
  883              	.L76:
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 24
+
+
  884              		.align	2
  885              	.L75:
  886 0058 00000000 		.word	.LANCHOR0
@@ -1227,8 +1389,8 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  889              		.cfi_endproc
  890              	.LFE81:
  891              		.size	Encoder_Reset, .-Encoder_Reset
- 892              		.comm	formatted_string,256,4
- 893              		.comm	debug_control_enabled,2,2
+ 892              		.comm	debug_control_enabled,2,2
+ 893              		.comm	formatted_string,256,4
  894              		.data
  895              		.align	2
  896              		.set	.LANCHOR0,. + 0
@@ -1258,9 +1420,6 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  919 003c 72696768 		.ascii	"right\000"
  919      7400
  920 0042 0000     		.space	2
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 22
-
-
  921 0044 00000000 		.word	0
  922 0048 00000000 		.word	0
  923 004c 00000000 		.word	0
@@ -1279,23 +1438,26 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  936              	.LC0:
  937 0000 25732065 		.ascii	"%s enc: %s %s %s %ld %s\015\012\000"
  937      6E633A20 
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 25
+
+
  937      25732025 
  937      73202573 
  937      20256C64 
  938 001a 0000     		.bss
  939              		.align	2
  940              		.set	.LANCHOR1,. + 0
- 941              		.type	last_update_time.7825, %object
- 942              		.size	last_update_time.7825, 4
- 943              	last_update_time.7825:
+ 941              		.type	last_update_time.7827, %object
+ 942              		.size	last_update_time.7827, 4
+ 943              	last_update_time.7827:
  944 0000 00000000 		.space	4
- 945              		.type	delta_time.7826, %object
- 946              		.size	delta_time.7826, 4
- 947              	delta_time.7826:
+ 945              		.type	delta_time.7828, %object
+ 946              		.size	delta_time.7828, 4
+ 947              	delta_time.7828:
  948 0004 00000000 		.space	4
- 949              		.type	enc_sched_offset_applied.7827, %object
- 950              		.size	enc_sched_offset_applied.7827, 1
- 951              	enc_sched_offset_applied.7827:
+ 949              		.type	enc_sched_offset_applied.7829, %object
+ 950              		.size	enc_sched_offset_applied.7829, 1
+ 951              	enc_sched_offset_applied.7829:
  952 0008 00       		.space	1
  953 0009 000000   		.text
  954              	.Letext0:
@@ -1314,13 +1476,10 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  967              		.file 14 "Generated_Source\\PSoC5/CyLib.h"
  968              		.section	.debug_info,"",%progbits
  969              	.Ldebug_info0:
- 970 0000 13070000 		.4byte	0x713
+ 970 0000 1F070000 		.4byte	0x71f
  971 0004 0400     		.2byte	0x4
  972 0006 00000000 		.4byte	.Ldebug_abbrev0
  973 000a 04       		.byte	0x4
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 23
-
-
  974 000b 01       		.uleb128 0x1
  975 000c E8020000 		.4byte	.LASF76
  976 0010 01       		.byte	0x1
@@ -1339,6 +1498,9 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  989 0032 07       		.byte	0x7
  990 0033 7C020000 		.4byte	.LASF0
  991 0037 04       		.uleb128 0x4
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 26
+
+
  992 0038 04       		.byte	0x4
  993 0039 05       		.byte	0x5
  994 003a 696E7400 		.ascii	"int\000"
@@ -1378,9 +1540,6 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1028 007a 03       		.uleb128 0x3
  1029 007b 08       		.byte	0x8
  1030 007c 07       		.byte	0x7
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 24
-
-
  1031 007d 49020000 		.4byte	.LASF10
  1032 0081 03       		.uleb128 0x3
  1033 0082 04       		.byte	0x4
@@ -1399,6 +1558,9 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1046 009b 06       		.uleb128 0x6
  1047 009c 8E000000 		.4byte	0x8e
  1048 00a0 02       		.uleb128 0x2
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 27
+
+
  1049 00a1 76030000 		.4byte	.LASF13
  1050 00a5 04       		.byte	0x4
  1051 00a6 2C       		.byte	0x2c
@@ -1435,33 +1597,33 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1082 00ea AB010000 		.4byte	.LASF24
  1083 00ee 08       		.byte	0x8
  1084 00ef 06       		.byte	0x6
- 1085 00f0 3D       		.byte	0x3d
+ 1085 00f0 4A       		.byte	0x4a
  1086 00f1 0C010000 		.4byte	0x10c
  1087 00f5 09       		.uleb128 0x9
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 25
-
-
  1088 00f6 6E00     		.ascii	"n\000"
  1089 00f8 06       		.byte	0x6
- 1090 00f9 3F       		.byte	0x3f
+ 1090 00f9 4C       		.byte	0x4c
  1091 00fa DB000000 		.4byte	0xdb
  1092 00fe 00       		.byte	0
  1093 00ff 0A       		.uleb128 0xa
  1094 0100 89020000 		.4byte	.LASF20
  1095 0104 06       		.byte	0x6
- 1096 0105 40       		.byte	0x40
+ 1096 0105 4D       		.byte	0x4d
  1097 0106 DB000000 		.4byte	0xdb
  1098 010a 04       		.byte	0x4
  1099 010b 00       		.byte	0
  1100 010c 02       		.uleb128 0x2
  1101 010d CB030000 		.4byte	.LASF21
  1102 0111 06       		.byte	0x6
- 1103 0112 41       		.byte	0x41
+ 1103 0112 4E       		.byte	0x4e
  1104 0113 E9000000 		.4byte	0xe9
  1105 0117 02       		.uleb128 0x2
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 28
+
+
  1106 0118 C5010000 		.4byte	.LASF22
  1107 011c 01       		.byte	0x1
- 1108 011d 2D       		.byte	0x2d
+ 1108 011d 39       		.byte	0x39
  1109 011e 22010000 		.4byte	0x122
  1110 0122 05       		.uleb128 0x5
  1111 0123 04       		.byte	0x4
@@ -1474,7 +1636,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1118 0133 02       		.uleb128 0x2
  1119 0134 1F010000 		.4byte	.LASF23
  1120 0138 01       		.byte	0x1
- 1121 0139 2E       		.byte	0x2e
+ 1121 0139 3A       		.byte	0x3a
  1122 013a 3E010000 		.4byte	0x13e
  1123 013e 05       		.uleb128 0x5
  1124 013f 04       		.byte	0x4
@@ -1488,84 +1650,81 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1132 0150 BE030000 		.4byte	.LASF25
  1133 0154 3C       		.byte	0x3c
  1134 0155 01       		.byte	0x1
- 1135 0156 31       		.byte	0x31
+ 1135 0156 3D       		.byte	0x3d
  1136 0157 EC010000 		.4byte	0x1ec
  1137 015b 0A       		.uleb128 0xa
  1138 015c A6040000 		.4byte	.LASF26
  1139 0160 01       		.byte	0x1
- 1140 0161 33       		.byte	0x33
+ 1140 0161 3F       		.byte	0x3f
  1141 0162 EC010000 		.4byte	0x1ec
  1142 0166 00       		.byte	0
  1143 0167 0A       		.uleb128 0xa
  1144 0168 46040000 		.4byte	.LASF27
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 26
-
-
  1145 016c 01       		.byte	0x1
- 1146 016d 34       		.byte	0x34
+ 1146 016d 40       		.byte	0x40
  1147 016e CF000000 		.4byte	0xcf
  1148 0172 08       		.byte	0x8
  1149 0173 0A       		.uleb128 0xa
  1150 0174 8C030000 		.4byte	.LASF28
  1151 0178 01       		.byte	0x1
- 1152 0179 35       		.byte	0x35
+ 1152 0179 41       		.byte	0x41
  1153 017a CF000000 		.4byte	0xcf
  1154 017e 0C       		.byte	0xc
  1155 017f 0A       		.uleb128 0xa
  1156 0180 44000000 		.4byte	.LASF29
  1157 0184 01       		.byte	0x1
- 1158 0185 36       		.byte	0x36
+ 1158 0185 42       		.byte	0x42
  1159 0186 CF000000 		.4byte	0xcf
  1160 018a 10       		.byte	0x10
  1161 018b 0A       		.uleb128 0xa
  1162 018c 13020000 		.4byte	.LASF30
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 29
+
+
  1163 0190 01       		.byte	0x1
- 1164 0191 37       		.byte	0x37
+ 1164 0191 43       		.byte	0x43
  1165 0192 DB000000 		.4byte	0xdb
  1166 0196 14       		.byte	0x14
  1167 0197 0A       		.uleb128 0xa
  1168 0198 2F050000 		.4byte	.LASF31
  1169 019c 01       		.byte	0x1
- 1170 019d 38       		.byte	0x38
+ 1170 019d 44       		.byte	0x44
  1171 019e DB000000 		.4byte	0xdb
  1172 01a2 18       		.byte	0x18
  1173 01a3 0A       		.uleb128 0xa
  1174 01a4 4C040000 		.4byte	.LASF32
  1175 01a8 01       		.byte	0x1
- 1176 01a9 39       		.byte	0x39
+ 1176 01a9 45       		.byte	0x45
  1177 01aa DB000000 		.4byte	0xdb
  1178 01ae 1C       		.byte	0x1c
  1179 01af 0A       		.uleb128 0xa
  1180 01b0 50000000 		.4byte	.LASF33
  1181 01b4 01       		.byte	0x1
- 1182 01b5 3A       		.byte	0x3a
+ 1182 01b5 46       		.byte	0x46
  1183 01b6 DB000000 		.4byte	0xdb
  1184 01ba 20       		.byte	0x20
  1185 01bb 0A       		.uleb128 0xa
  1186 01bc DF010000 		.4byte	.LASF34
  1187 01c0 01       		.byte	0x1
- 1188 01c1 3B       		.byte	0x3b
+ 1188 01c1 47       		.byte	0x47
  1189 01c2 0C010000 		.4byte	0x10c
  1190 01c6 24       		.byte	0x24
  1191 01c7 0A       		.uleb128 0xa
  1192 01c8 FE030000 		.4byte	.LASF35
  1193 01cc 01       		.byte	0x1
- 1194 01cd 3C       		.byte	0x3c
+ 1194 01cd 48       		.byte	0x48
  1195 01ce 0C010000 		.4byte	0x10c
  1196 01d2 2C       		.byte	0x2c
  1197 01d3 0A       		.uleb128 0xa
  1198 01d4 66000000 		.4byte	.LASF36
  1199 01d8 01       		.byte	0x1
- 1200 01d9 3D       		.byte	0x3d
+ 1200 01d9 49       		.byte	0x49
  1201 01da 17010000 		.4byte	0x117
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 27
-
-
  1202 01de 34       		.byte	0x34
  1203 01df 0A       		.uleb128 0xa
  1204 01e0 37050000 		.4byte	.LASF37
  1205 01e4 01       		.byte	0x1
- 1206 01e5 3E       		.byte	0x3e
+ 1206 01e5 4A       		.byte	0x4a
  1207 01e6 33010000 		.4byte	0x133
  1208 01ea 38       		.byte	0x38
  1209 01eb 00       		.byte	0
@@ -1579,12 +1738,15 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1217 01fc 02       		.uleb128 0x2
  1218 01fd 6F020000 		.4byte	.LASF38
  1219 0201 01       		.byte	0x1
- 1220 0202 3F       		.byte	0x3f
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 30
+
+
+ 1220 0202 4B       		.byte	0x4b
  1221 0203 4F010000 		.4byte	0x14f
  1222 0207 11       		.uleb128 0x11
  1223 0208 60020000 		.4byte	.LASF40
  1224 020c 01       		.byte	0x1
- 1225 020d 69       		.byte	0x69
+ 1225 020d 88       		.byte	0x88
  1226 020e 00000000 		.4byte	.LFB64
  1227 0212 A8000000 		.4byte	.LFE64-.LFB64
  1228 0216 01       		.uleb128 0x1
@@ -1593,24 +1755,24 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1231 021c 12       		.uleb128 0x12
  1232 021d 656E6300 		.ascii	"enc\000"
  1233 0221 01       		.byte	0x1
- 1234 0222 69       		.byte	0x69
+ 1234 0222 88       		.byte	0x88
  1235 0223 6E020000 		.4byte	0x26e
  1236 0227 00000000 		.4byte	.LLST0
  1237 022b 13       		.uleb128 0x13
  1238 022c AF000000 		.4byte	.LASF39
  1239 0230 01       		.byte	0x1
- 1240 0231 69       		.byte	0x69
+ 1240 0231 88       		.byte	0x88
  1241 0232 C3000000 		.4byte	0xc3
  1242 0236 2C000000 		.4byte	.LLST1
  1243 023a 14       		.uleb128 0x14
  1244 023b 63707300 		.ascii	"cps\000"
  1245 023f 01       		.byte	0x1
- 1246 0240 71       		.byte	0x71
+ 1246 0240 90       		.byte	0x90
  1247 0241 DB000000 		.4byte	0xdb
  1248 0245 58000000 		.4byte	.LLST2
  1249 0249 15       		.uleb128 0x15
  1250 024a 26000000 		.4byte	.LVL3
- 1251 024e 7D060000 		.4byte	0x67d
+ 1251 024e 89060000 		.4byte	0x689
  1252 0252 5D020000 		.4byte	0x25d
  1253 0256 16       		.uleb128 0x16
  1254 0257 01       		.uleb128 0x1
@@ -1618,13 +1780,10 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1256 0259 02       		.uleb128 0x2
  1257 025a 75       		.byte	0x75
  1258 025b 00       		.sleb128 0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 28
-
-
  1259 025c 00       		.byte	0
  1260 025d 17       		.uleb128 0x17
  1261 025e 48000000 		.4byte	.LVL9
- 1262 0262 7D060000 		.4byte	0x67d
+ 1262 0262 89060000 		.4byte	0x689
  1263 0266 16       		.uleb128 0x16
  1264 0267 01       		.uleb128 0x1
  1265 0268 50       		.byte	0x50
@@ -1639,7 +1798,10 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1274 0274 18       		.uleb128 0x18
  1275 0275 23020000 		.4byte	.LASF41
  1276 0279 01       		.byte	0x1
- 1277 027a 56       		.byte	0x56
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 31
+
+
+ 1277 027a 6C       		.byte	0x6c
  1278 027b 00000000 		.4byte	.LFB63
  1279 027f 74000000 		.4byte	.LFE63-.LFB63
  1280 0283 01       		.uleb128 0x1
@@ -1648,13 +1810,13 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1283 0289 12       		.uleb128 0x12
  1284 028a 656E6300 		.ascii	"enc\000"
  1285 028e 01       		.byte	0x1
- 1286 028f 56       		.byte	0x56
+ 1286 028f 6C       		.byte	0x6c
  1287 0290 6E020000 		.4byte	0x26e
  1288 0294 76000000 		.4byte	.LLST3
  1289 0298 19       		.uleb128 0x19
  1290 0299 38000000 		.4byte	.LASF42
  1291 029d 01       		.byte	0x1
- 1292 029e 58       		.byte	0x58
+ 1292 029e 6E       		.byte	0x6e
  1293 029f 8B030000 		.4byte	0x38b
  1294 02a3 02       		.uleb128 0x2
  1295 02a4 91       		.byte	0x91
@@ -1662,7 +1824,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1297 02a6 19       		.uleb128 0x19
  1298 02a7 CF000000 		.4byte	.LASF43
  1299 02ab 01       		.byte	0x1
- 1300 02ac 59       		.byte	0x59
+ 1300 02ac 6F       		.byte	0x6f
  1301 02ad 8B030000 		.4byte	0x38b
  1302 02b1 02       		.uleb128 0x2
  1303 02b2 91       		.byte	0x91
@@ -1670,7 +1832,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1305 02b4 19       		.uleb128 0x19
  1306 02b5 6D040000 		.4byte	.LASF44
  1307 02b9 01       		.byte	0x1
- 1308 02ba 5A       		.byte	0x5a
+ 1308 02ba 70       		.byte	0x70
  1309 02bb 8B030000 		.4byte	0x38b
  1310 02bf 02       		.uleb128 0x2
  1311 02c0 91       		.byte	0x91
@@ -1678,17 +1840,14 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1313 02c2 19       		.uleb128 0x19
  1314 02c3 A6000000 		.4byte	.LASF45
  1315 02c7 01       		.byte	0x1
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 29
-
-
- 1316 02c8 5B       		.byte	0x5b
+ 1316 02c8 71       		.byte	0x71
  1317 02c9 8B030000 		.4byte	0x38b
  1318 02cd 02       		.uleb128 0x2
  1319 02ce 91       		.byte	0x91
  1320 02cf 40       		.sleb128 -64
  1321 02d0 15       		.uleb128 0x15
  1322 02d1 10000000 		.4byte	.LVL23
- 1323 02d5 9D060000 		.4byte	0x69d
+ 1323 02d5 A9060000 		.4byte	0x6a9
  1324 02d9 E9020000 		.4byte	0x2e9
  1325 02dd 16       		.uleb128 0x16
  1326 02de 01       		.uleb128 0x1
@@ -1699,12 +1858,15 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1331 02e3 01       		.uleb128 0x1
  1332 02e4 51       		.byte	0x51
  1333 02e5 02       		.uleb128 0x2
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 32
+
+
  1334 02e6 91       		.byte	0x91
  1335 02e7 64       		.sleb128 -28
  1336 02e8 00       		.byte	0
  1337 02e9 15       		.uleb128 0x15
  1338 02ea 1A000000 		.4byte	.LVL24
- 1339 02ee 9D060000 		.4byte	0x69d
+ 1339 02ee A9060000 		.4byte	0x6a9
  1340 02f2 02030000 		.4byte	0x302
  1341 02f6 16       		.uleb128 0x16
  1342 02f7 01       		.uleb128 0x1
@@ -1720,7 +1882,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1352 0301 00       		.byte	0
  1353 0302 15       		.uleb128 0x15
  1354 0303 24000000 		.4byte	.LVL25
- 1355 0307 9D060000 		.4byte	0x69d
+ 1355 0307 A9060000 		.4byte	0x6a9
  1356 030b 1B030000 		.4byte	0x31b
  1357 030f 16       		.uleb128 0x16
  1358 0310 01       		.uleb128 0x1
@@ -1736,11 +1898,8 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1368 031a 00       		.byte	0
  1369 031b 15       		.uleb128 0x15
  1370 031c 2E000000 		.4byte	.LVL26
- 1371 0320 9D060000 		.4byte	0x69d
+ 1371 0320 A9060000 		.4byte	0x6a9
  1372 0324 34030000 		.4byte	0x334
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 30
-
-
  1373 0328 16       		.uleb128 0x16
  1374 0329 01       		.uleb128 0x1
  1375 032a 52       		.byte	0x52
@@ -1755,10 +1914,13 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1384 0333 00       		.byte	0
  1385 0334 15       		.uleb128 0x15
  1386 0335 5C000000 		.4byte	.LVL27
- 1387 0339 B8060000 		.4byte	0x6b8
+ 1387 0339 C4060000 		.4byte	0x6c4
  1388 033d 7A030000 		.4byte	0x37a
  1389 0341 16       		.uleb128 0x16
  1390 0342 01       		.uleb128 0x1
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 33
+
+
  1391 0343 53       		.byte	0x53
  1392 0344 02       		.uleb128 0x2
  1393 0345 74       		.byte	0x74
@@ -1798,9 +1960,6 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1427 036b 16       		.uleb128 0x16
  1428 036c 02       		.uleb128 0x2
  1429 036d 7D       		.byte	0x7d
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 31
-
-
  1430 036e 04       		.sleb128 4
  1431 036f 02       		.uleb128 0x2
  1432 0370 91       		.byte	0x91
@@ -1815,10 +1974,13 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1441 0379 00       		.byte	0
  1442 037a 17       		.uleb128 0x17
  1443 037b 62000000 		.4byte	.LVL28
- 1444 037f D9060000 		.4byte	0x6d9
+ 1444 037f E5060000 		.4byte	0x6e5
  1445 0383 16       		.uleb128 0x16
  1446 0384 01       		.uleb128 0x1
  1447 0385 50       		.byte	0x50
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 34
+
+
  1448 0386 02       		.uleb128 0x2
  1449 0387 75       		.byte	0x75
  1450 0388 00       		.sleb128 0
@@ -1834,7 +1996,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1460 039b 1A       		.uleb128 0x1a
  1461 039c 2B000000 		.4byte	.LASF79
  1462 03a0 01       		.byte	0x1
- 1463 03a1 7A       		.byte	0x7a
+ 1463 03a1 A0       		.byte	0xa0
  1464 03a2 00000000 		.4byte	.LFB65
  1465 03a6 4C000000 		.4byte	.LFE65-.LFB65
  1466 03aa 01       		.uleb128 0x1
@@ -1842,7 +2004,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1468 03ac 1B       		.uleb128 0x1b
  1469 03ad 7E030000 		.4byte	.LASF46
  1470 03b1 01       		.byte	0x1
- 1471 03b2 96       		.byte	0x96
+ 1471 03b2 C3       		.byte	0xc3
  1472 03b3 00000000 		.4byte	.LFB66
  1473 03b7 20000000 		.4byte	.LFE66-.LFB66
  1474 03bb 01       		.uleb128 0x1
@@ -1850,17 +2012,14 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1476 03bd EE030000 		.4byte	0x3ee
  1477 03c1 1C       		.uleb128 0x1c
  1478 03c2 06000000 		.4byte	.LVL30
- 1479 03c6 EA060000 		.4byte	0x6ea
+ 1479 03c6 F6060000 		.4byte	0x6f6
  1480 03ca 1C       		.uleb128 0x1c
  1481 03cb 0A000000 		.4byte	.LVL31
- 1482 03cf F1060000 		.4byte	0x6f1
+ 1482 03cf FD060000 		.4byte	0x6fd
  1483 03d3 1D       		.uleb128 0x1d
  1484 03d4 12000000 		.4byte	.LVL32
  1485 03d8 E2030000 		.4byte	0x3e2
  1486 03dc 16       		.uleb128 0x16
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 32
-
-
  1487 03dd 01       		.uleb128 0x1
  1488 03de 50       		.byte	0x50
  1489 03df 01       		.uleb128 0x1
@@ -1878,7 +2037,10 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1501 03ee 1F       		.uleb128 0x1f
  1502 03ef 54040000 		.4byte	.LASF47
  1503 03f3 01       		.byte	0x1
- 1504 03f4 9E       		.byte	0x9e
+ 1504 03f4 D3       		.byte	0xd3
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 35
+
+
  1505 03f5 00000000 		.4byte	.LFB67
  1506 03f9 84000000 		.4byte	.LFE67-.LFB67
  1507 03fd 01       		.uleb128 0x1
@@ -1887,40 +2049,37 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1510 0403 19       		.uleb128 0x19
  1511 0404 8E020000 		.4byte	.LASF48
  1512 0408 01       		.byte	0x1
- 1513 0409 A0       		.byte	0xa0
+ 1513 0409 D5       		.byte	0xd5
  1514 040a C3000000 		.4byte	0xc3
  1515 040e 05       		.uleb128 0x5
  1516 040f 03       		.byte	0x3
- 1517 0410 00000000 		.4byte	last_update_time.7825
+ 1517 0410 00000000 		.4byte	last_update_time.7827
  1518 0414 19       		.uleb128 0x19
  1519 0415 AF000000 		.4byte	.LASF39
  1520 0419 01       		.byte	0x1
- 1521 041a A1       		.byte	0xa1
+ 1521 041a D6       		.byte	0xd6
  1522 041b C3000000 		.4byte	0xc3
  1523 041f 05       		.uleb128 0x5
  1524 0420 03       		.byte	0x3
- 1525 0421 04000000 		.4byte	delta_time.7826
+ 1525 0421 04000000 		.4byte	delta_time.7828
  1526 0425 19       		.uleb128 0x19
  1527 0426 01050000 		.4byte	.LASF49
  1528 042a 01       		.byte	0x1
- 1529 042b A2       		.byte	0xa2
+ 1529 042b D7       		.byte	0xd7
  1530 042c AB000000 		.4byte	0xab
  1531 0430 05       		.uleb128 0x5
  1532 0431 03       		.byte	0x3
- 1533 0432 08000000 		.4byte	enc_sched_offset_applied.7827
+ 1533 0432 08000000 		.4byte	enc_sched_offset_applied.7829
  1534 0436 1C       		.uleb128 0x1c
  1535 0437 06000000 		.4byte	.LVL34
- 1536 043b F8060000 		.4byte	0x6f8
+ 1536 043b 04070000 		.4byte	0x704
  1537 043f 1C       		.uleb128 0x1c
  1538 0440 20000000 		.4byte	.LVL37
- 1539 0444 F8060000 		.4byte	0x6f8
+ 1539 0444 04070000 		.4byte	0x704
  1540 0448 15       		.uleb128 0x15
  1541 0449 34000000 		.4byte	.LVL38
- 1542 044d 09070000 		.4byte	0x709
+ 1542 044d 15070000 		.4byte	0x715
  1543 0451 5B040000 		.4byte	0x45b
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 33
-
-
  1544 0455 16       		.uleb128 0x16
  1545 0456 01       		.uleb128 0x1
  1546 0457 50       		.byte	0x50
@@ -1939,6 +2098,9 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1559 046d 00       		.sleb128 0
  1560 046e 00       		.byte	0
  1561 046f 15       		.uleb128 0x15
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 36
+
+
  1562 0470 4A000000 		.4byte	.LVL40
  1563 0474 07020000 		.4byte	0x207
  1564 0478 83040000 		.4byte	0x483
@@ -1974,19 +2136,16 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1594 04ab 20       		.uleb128 0x20
  1595 04ac C9020000 		.4byte	.LASF50
  1596 04b0 01       		.byte	0x1
- 1597 04b1 B3       		.byte	0xb3
+ 1597 04b1 EF       		.byte	0xef
  1598 04b2 DB000000 		.4byte	0xdb
  1599 04b6 00000000 		.4byte	.LFB68
  1600 04ba 0C000000 		.4byte	.LFE68-.LFB68
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 34
-
-
  1601 04be 01       		.uleb128 0x1
  1602 04bf 9C       		.byte	0x9c
  1603 04c0 20       		.uleb128 0x20
  1604 04c1 04010000 		.4byte	.LASF51
  1605 04c5 01       		.byte	0x1
- 1606 04c6 B8       		.byte	0xb8
+ 1606 04c6 FB       		.byte	0xfb
  1607 04c7 DB000000 		.4byte	0xdb
  1608 04cb 00000000 		.4byte	.LFB69
  1609 04cf 0C000000 		.4byte	.LFE69-.LFB69
@@ -1995,282 +2154,285 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1612 04d5 21       		.uleb128 0x21
  1613 04d6 15000000 		.4byte	.LASF52
  1614 04da 01       		.byte	0x1
- 1615 04db BD       		.byte	0xbd
- 1616 04dc DB000000 		.4byte	0xdb
- 1617 04e0 00000000 		.4byte	.LFB70
- 1618 04e4 1C000000 		.4byte	.LFE70-.LFB70
- 1619 04e8 01       		.uleb128 0x1
- 1620 04e9 9C       		.byte	0x9c
- 1621 04ea 20       		.uleb128 0x20
- 1622 04eb 2B040000 		.4byte	.LASF53
- 1623 04ef 01       		.byte	0x1
- 1624 04f0 C2       		.byte	0xc2
- 1625 04f1 DB000000 		.4byte	0xdb
- 1626 04f5 00000000 		.4byte	.LFB71
- 1627 04f9 0C000000 		.4byte	.LFE71-.LFB71
- 1628 04fd 01       		.uleb128 0x1
- 1629 04fe 9C       		.byte	0x9c
- 1630 04ff 20       		.uleb128 0x20
- 1631 0500 D0040000 		.4byte	.LASF54
- 1632 0504 01       		.byte	0x1
- 1633 0505 C7       		.byte	0xc7
- 1634 0506 DB000000 		.4byte	0xdb
- 1635 050a 00000000 		.4byte	.LFB72
- 1636 050e 0C000000 		.4byte	.LFE72-.LFB72
- 1637 0512 01       		.uleb128 0x1
- 1638 0513 9C       		.byte	0x9c
- 1639 0514 21       		.uleb128 0x21
- 1640 0515 9F020000 		.4byte	.LASF55
- 1641 0519 01       		.byte	0x1
- 1642 051a CC       		.byte	0xcc
- 1643 051b DB000000 		.4byte	0xdb
- 1644 051f 00000000 		.4byte	.LFB73
- 1645 0523 1C000000 		.4byte	.LFE73-.LFB73
- 1646 0527 01       		.uleb128 0x1
- 1647 0528 9C       		.byte	0x9c
- 1648 0529 21       		.uleb128 0x21
- 1649 052a BA000000 		.4byte	.LASF56
- 1650 052e 01       		.byte	0x1
- 1651 052f D1       		.byte	0xd1
- 1652 0530 CF000000 		.4byte	0xcf
- 1653 0534 00000000 		.4byte	.LFB74
- 1654 0538 10000000 		.4byte	.LFE74-.LFB74
- 1655 053c 01       		.uleb128 0x1
- 1656 053d 9C       		.byte	0x9c
- 1657 053e 21       		.uleb128 0x21
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 35
+ 1615 04db 0801     		.2byte	0x108
+ 1616 04dd DB000000 		.4byte	0xdb
+ 1617 04e1 00000000 		.4byte	.LFB70
+ 1618 04e5 1C000000 		.4byte	.LFE70-.LFB70
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 37
 
 
- 1658 053f F7010000 		.4byte	.LASF57
- 1659 0543 01       		.byte	0x1
- 1660 0544 D6       		.byte	0xd6
- 1661 0545 CF000000 		.4byte	0xcf
- 1662 0549 00000000 		.4byte	.LFB75
- 1663 054d 10000000 		.4byte	.LFE75-.LFB75
- 1664 0551 01       		.uleb128 0x1
- 1665 0552 9C       		.byte	0x9c
- 1666 0553 20       		.uleb128 0x20
- 1667 0554 E3000000 		.4byte	.LASF58
- 1668 0558 01       		.byte	0x1
- 1669 0559 DB       		.byte	0xdb
- 1670 055a DB000000 		.4byte	0xdb
- 1671 055e 00000000 		.4byte	.LFB76
- 1672 0562 0C000000 		.4byte	.LFE76-.LFB76
- 1673 0566 01       		.uleb128 0x1
- 1674 0567 9C       		.byte	0x9c
- 1675 0568 20       		.uleb128 0x20
- 1676 0569 80010000 		.4byte	.LASF59
- 1677 056d 01       		.byte	0x1
- 1678 056e E0       		.byte	0xe0
- 1679 056f DB000000 		.4byte	0xdb
- 1680 0573 00000000 		.4byte	.LFB77
- 1681 0577 0C000000 		.4byte	.LFE77-.LFB77
- 1682 057b 01       		.uleb128 0x1
- 1683 057c 9C       		.byte	0x9c
- 1684 057d 20       		.uleb128 0x20
- 1685 057e 7C000000 		.4byte	.LASF60
- 1686 0582 01       		.byte	0x1
- 1687 0583 E5       		.byte	0xe5
- 1688 0584 DB000000 		.4byte	0xdb
- 1689 0588 00000000 		.4byte	.LFB78
- 1690 058c 0C000000 		.4byte	.LFE78-.LFB78
- 1691 0590 01       		.uleb128 0x1
- 1692 0591 9C       		.byte	0x9c
- 1693 0592 20       		.uleb128 0x20
- 1694 0593 00000000 		.4byte	.LASF61
- 1695 0597 01       		.byte	0x1
- 1696 0598 EA       		.byte	0xea
- 1697 0599 DB000000 		.4byte	0xdb
- 1698 059d 00000000 		.4byte	.LFB79
- 1699 05a1 0C000000 		.4byte	.LFE79-.LFB79
- 1700 05a5 01       		.uleb128 0x1
- 1701 05a6 9C       		.byte	0x9c
- 1702 05a7 21       		.uleb128 0x21
- 1703 05a8 96040000 		.4byte	.LASF62
- 1704 05ac 01       		.byte	0x1
- 1705 05ad EF       		.byte	0xef
- 1706 05ae DB000000 		.4byte	0xdb
- 1707 05b2 00000000 		.4byte	.LFB80
- 1708 05b6 1C000000 		.4byte	.LFE80-.LFB80
- 1709 05ba 01       		.uleb128 0x1
- 1710 05bb 9C       		.byte	0x9c
- 1711 05bc 1B       		.uleb128 0x1b
- 1712 05bd EC040000 		.4byte	.LASF63
- 1713 05c1 01       		.byte	0x1
- 1714 05c2 F4       		.byte	0xf4
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 36
+ 1619 04e9 01       		.uleb128 0x1
+ 1620 04ea 9C       		.byte	0x9c
+ 1621 04eb 22       		.uleb128 0x22
+ 1622 04ec 2B040000 		.4byte	.LASF53
+ 1623 04f0 01       		.byte	0x1
+ 1624 04f1 1401     		.2byte	0x114
+ 1625 04f3 DB000000 		.4byte	0xdb
+ 1626 04f7 00000000 		.4byte	.LFB71
+ 1627 04fb 0C000000 		.4byte	.LFE71-.LFB71
+ 1628 04ff 01       		.uleb128 0x1
+ 1629 0500 9C       		.byte	0x9c
+ 1630 0501 22       		.uleb128 0x22
+ 1631 0502 D0040000 		.4byte	.LASF54
+ 1632 0506 01       		.byte	0x1
+ 1633 0507 2001     		.2byte	0x120
+ 1634 0509 DB000000 		.4byte	0xdb
+ 1635 050d 00000000 		.4byte	.LFB72
+ 1636 0511 0C000000 		.4byte	.LFE72-.LFB72
+ 1637 0515 01       		.uleb128 0x1
+ 1638 0516 9C       		.byte	0x9c
+ 1639 0517 21       		.uleb128 0x21
+ 1640 0518 9F020000 		.4byte	.LASF55
+ 1641 051c 01       		.byte	0x1
+ 1642 051d 2D01     		.2byte	0x12d
+ 1643 051f DB000000 		.4byte	0xdb
+ 1644 0523 00000000 		.4byte	.LFB73
+ 1645 0527 1C000000 		.4byte	.LFE73-.LFB73
+ 1646 052b 01       		.uleb128 0x1
+ 1647 052c 9C       		.byte	0x9c
+ 1648 052d 21       		.uleb128 0x21
+ 1649 052e BA000000 		.4byte	.LASF56
+ 1650 0532 01       		.byte	0x1
+ 1651 0533 3901     		.2byte	0x139
+ 1652 0535 CF000000 		.4byte	0xcf
+ 1653 0539 00000000 		.4byte	.LFB74
+ 1654 053d 10000000 		.4byte	.LFE74-.LFB74
+ 1655 0541 01       		.uleb128 0x1
+ 1656 0542 9C       		.byte	0x9c
+ 1657 0543 21       		.uleb128 0x21
+ 1658 0544 F7010000 		.4byte	.LASF57
+ 1659 0548 01       		.byte	0x1
+ 1660 0549 4501     		.2byte	0x145
+ 1661 054b CF000000 		.4byte	0xcf
+ 1662 054f 00000000 		.4byte	.LFB75
+ 1663 0553 10000000 		.4byte	.LFE75-.LFB75
+ 1664 0557 01       		.uleb128 0x1
+ 1665 0558 9C       		.byte	0x9c
+ 1666 0559 22       		.uleb128 0x22
+ 1667 055a E3000000 		.4byte	.LASF58
+ 1668 055e 01       		.byte	0x1
+ 1669 055f 5101     		.2byte	0x151
+ 1670 0561 DB000000 		.4byte	0xdb
+ 1671 0565 00000000 		.4byte	.LFB76
+ 1672 0569 0C000000 		.4byte	.LFE76-.LFB76
+ 1673 056d 01       		.uleb128 0x1
+ 1674 056e 9C       		.byte	0x9c
+ 1675 056f 22       		.uleb128 0x22
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 38
 
 
- 1715 05c3 00000000 		.4byte	.LFB81
- 1716 05c7 64000000 		.4byte	.LFE81-.LFB81
- 1717 05cb 01       		.uleb128 0x1
- 1718 05cc 9C       		.byte	0x9c
- 1719 05cd 18060000 		.4byte	0x618
- 1720 05d1 1D       		.uleb128 0x1d
- 1721 05d2 0A000000 		.4byte	.LVL51
- 1722 05d6 E0050000 		.4byte	0x5e0
- 1723 05da 16       		.uleb128 0x16
- 1724 05db 01       		.uleb128 0x1
- 1725 05dc 50       		.byte	0x50
- 1726 05dd 01       		.uleb128 0x1
- 1727 05de 30       		.byte	0x30
- 1728 05df 00       		.byte	0
- 1729 05e0 1D       		.uleb128 0x1d
- 1730 05e1 24000000 		.4byte	.LVL52
- 1731 05e5 F0050000 		.4byte	0x5f0
- 1732 05e9 16       		.uleb128 0x16
- 1733 05ea 01       		.uleb128 0x1
- 1734 05eb 50       		.byte	0x50
- 1735 05ec 02       		.uleb128 0x2
- 1736 05ed 75       		.byte	0x75
- 1737 05ee 00       		.sleb128 0
- 1738 05ef 00       		.byte	0
- 1739 05f0 15       		.uleb128 0x15
- 1740 05f1 44000000 		.4byte	.LVL53
- 1741 05f5 74020000 		.4byte	0x274
- 1742 05f9 04060000 		.4byte	0x604
- 1743 05fd 16       		.uleb128 0x16
- 1744 05fe 01       		.uleb128 0x1
- 1745 05ff 50       		.byte	0x50
- 1746 0600 02       		.uleb128 0x2
- 1747 0601 74       		.byte	0x74
- 1748 0602 00       		.sleb128 0
- 1749 0603 00       		.byte	0
- 1750 0604 17       		.uleb128 0x17
- 1751 0605 56000000 		.4byte	.LVL54
- 1752 0609 74020000 		.4byte	0x274
- 1753 060d 16       		.uleb128 0x16
- 1754 060e 01       		.uleb128 0x1
- 1755 060f 50       		.byte	0x50
- 1756 0610 05       		.uleb128 0x5
- 1757 0611 03       		.byte	0x3
- 1758 0612 3C000000 		.4byte	.LANCHOR0+60
- 1759 0616 00       		.byte	0
- 1760 0617 00       		.byte	0
- 1761 0618 19       		.uleb128 0x19
- 1762 0619 0F040000 		.4byte	.LASF64
- 1763 061d 01       		.byte	0x1
- 1764 061e 41       		.byte	0x41
- 1765 061f FC010000 		.4byte	0x1fc
- 1766 0623 05       		.uleb128 0x5
- 1767 0624 03       		.byte	0x3
- 1768 0625 00000000 		.4byte	left_enc
- 1769 0629 19       		.uleb128 0x19
- 1770 062a 79040000 		.4byte	.LASF65
- 1771 062e 01       		.byte	0x1
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 37
+ 1676 0570 80010000 		.4byte	.LASF59
+ 1677 0574 01       		.byte	0x1
+ 1678 0575 5D01     		.2byte	0x15d
+ 1679 0577 DB000000 		.4byte	0xdb
+ 1680 057b 00000000 		.4byte	.LFB77
+ 1681 057f 0C000000 		.4byte	.LFE77-.LFB77
+ 1682 0583 01       		.uleb128 0x1
+ 1683 0584 9C       		.byte	0x9c
+ 1684 0585 22       		.uleb128 0x22
+ 1685 0586 7C000000 		.4byte	.LASF60
+ 1686 058a 01       		.byte	0x1
+ 1687 058b 6901     		.2byte	0x169
+ 1688 058d DB000000 		.4byte	0xdb
+ 1689 0591 00000000 		.4byte	.LFB78
+ 1690 0595 0C000000 		.4byte	.LFE78-.LFB78
+ 1691 0599 01       		.uleb128 0x1
+ 1692 059a 9C       		.byte	0x9c
+ 1693 059b 22       		.uleb128 0x22
+ 1694 059c 00000000 		.4byte	.LASF61
+ 1695 05a0 01       		.byte	0x1
+ 1696 05a1 7501     		.2byte	0x175
+ 1697 05a3 DB000000 		.4byte	0xdb
+ 1698 05a7 00000000 		.4byte	.LFB79
+ 1699 05ab 0C000000 		.4byte	.LFE79-.LFB79
+ 1700 05af 01       		.uleb128 0x1
+ 1701 05b0 9C       		.byte	0x9c
+ 1702 05b1 21       		.uleb128 0x21
+ 1703 05b2 96040000 		.4byte	.LASF62
+ 1704 05b6 01       		.byte	0x1
+ 1705 05b7 8101     		.2byte	0x181
+ 1706 05b9 DB000000 		.4byte	0xdb
+ 1707 05bd 00000000 		.4byte	.LFB80
+ 1708 05c1 1C000000 		.4byte	.LFE80-.LFB80
+ 1709 05c5 01       		.uleb128 0x1
+ 1710 05c6 9C       		.byte	0x9c
+ 1711 05c7 23       		.uleb128 0x23
+ 1712 05c8 EC040000 		.4byte	.LASF63
+ 1713 05cc 01       		.byte	0x1
+ 1714 05cd 8D01     		.2byte	0x18d
+ 1715 05cf 00000000 		.4byte	.LFB81
+ 1716 05d3 64000000 		.4byte	.LFE81-.LFB81
+ 1717 05d7 01       		.uleb128 0x1
+ 1718 05d8 9C       		.byte	0x9c
+ 1719 05d9 24060000 		.4byte	0x624
+ 1720 05dd 1D       		.uleb128 0x1d
+ 1721 05de 0A000000 		.4byte	.LVL51
+ 1722 05e2 EC050000 		.4byte	0x5ec
+ 1723 05e6 16       		.uleb128 0x16
+ 1724 05e7 01       		.uleb128 0x1
+ 1725 05e8 50       		.byte	0x50
+ 1726 05e9 01       		.uleb128 0x1
+ 1727 05ea 30       		.byte	0x30
+ 1728 05eb 00       		.byte	0
+ 1729 05ec 1D       		.uleb128 0x1d
+ 1730 05ed 24000000 		.4byte	.LVL52
+ 1731 05f1 FC050000 		.4byte	0x5fc
+ 1732 05f5 16       		.uleb128 0x16
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 39
 
 
- 1772 062f 4B       		.byte	0x4b
- 1773 0630 FC010000 		.4byte	0x1fc
- 1774 0634 05       		.uleb128 0x5
- 1775 0635 03       		.byte	0x3
- 1776 0636 3C000000 		.4byte	right_enc
- 1777 063a 22       		.uleb128 0x22
- 1778 063b 1A050000 		.4byte	.LASF66
- 1779 063f 07       		.byte	0x7
- 1780 0640 5506     		.2byte	0x655
- 1781 0642 46060000 		.4byte	0x646
- 1782 0646 23       		.uleb128 0x23
- 1783 0647 A0000000 		.4byte	0xa0
- 1784 064b 24       		.uleb128 0x24
- 1785 064c 90000000 		.4byte	.LASF67
- 1786 0650 08       		.byte	0x8
- 1787 0651 32       		.byte	0x32
- 1788 0652 B7000000 		.4byte	0xb7
- 1789 0656 05       		.uleb128 0x5
- 1790 0657 03       		.byte	0x3
- 1791 0658 00000000 		.4byte	debug_control_enabled
- 1792 065c 0F       		.uleb128 0xf
- 1793 065d 8E000000 		.4byte	0x8e
- 1794 0661 6C060000 		.4byte	0x66c
- 1795 0665 10       		.uleb128 0x10
- 1796 0666 81000000 		.4byte	0x81
- 1797 066a FF       		.byte	0xff
- 1798 066b 00       		.byte	0
- 1799 066c 24       		.uleb128 0x24
- 1800 066d AB040000 		.4byte	.LASF68
- 1801 0671 08       		.byte	0x8
- 1802 0672 33       		.byte	0x33
- 1803 0673 5C060000 		.4byte	0x65c
- 1804 0677 05       		.uleb128 0x5
- 1805 0678 03       		.byte	0x3
- 1806 0679 00000000 		.4byte	formatted_string
- 1807 067d 25       		.uleb128 0x25
- 1808 067e 18040000 		.4byte	.LASF69
- 1809 0682 06       		.byte	0x6
- 1810 0683 45       		.byte	0x45
- 1811 0684 DB000000 		.4byte	0xdb
- 1812 0688 97060000 		.4byte	0x697
- 1813 068c 0E       		.uleb128 0xe
- 1814 068d 97060000 		.4byte	0x697
- 1815 0691 0E       		.uleb128 0xe
- 1816 0692 DB000000 		.4byte	0xdb
- 1817 0696 00       		.byte	0
- 1818 0697 05       		.uleb128 0x5
- 1819 0698 04       		.byte	0x4
- 1820 0699 0C010000 		.4byte	0x10c
- 1821 069d 26       		.uleb128 0x26
- 1822 069e A5030000 		.4byte	.LASF71
- 1823 06a2 06       		.byte	0x6
- 1824 06a3 51       		.byte	0x51
- 1825 06a4 B8060000 		.4byte	0x6b8
- 1826 06a8 0E       		.uleb128 0xe
- 1827 06a9 DB000000 		.4byte	0xdb
- 1828 06ad 0E       		.uleb128 0xe
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 38
+ 1733 05f6 01       		.uleb128 0x1
+ 1734 05f7 50       		.byte	0x50
+ 1735 05f8 02       		.uleb128 0x2
+ 1736 05f9 75       		.byte	0x75
+ 1737 05fa 00       		.sleb128 0
+ 1738 05fb 00       		.byte	0
+ 1739 05fc 15       		.uleb128 0x15
+ 1740 05fd 44000000 		.4byte	.LVL53
+ 1741 0601 74020000 		.4byte	0x274
+ 1742 0605 10060000 		.4byte	0x610
+ 1743 0609 16       		.uleb128 0x16
+ 1744 060a 01       		.uleb128 0x1
+ 1745 060b 50       		.byte	0x50
+ 1746 060c 02       		.uleb128 0x2
+ 1747 060d 74       		.byte	0x74
+ 1748 060e 00       		.sleb128 0
+ 1749 060f 00       		.byte	0
+ 1750 0610 17       		.uleb128 0x17
+ 1751 0611 56000000 		.4byte	.LVL54
+ 1752 0615 74020000 		.4byte	0x274
+ 1753 0619 16       		.uleb128 0x16
+ 1754 061a 01       		.uleb128 0x1
+ 1755 061b 50       		.byte	0x50
+ 1756 061c 05       		.uleb128 0x5
+ 1757 061d 03       		.byte	0x3
+ 1758 061e 3C000000 		.4byte	.LANCHOR0+60
+ 1759 0622 00       		.byte	0
+ 1760 0623 00       		.byte	0
+ 1761 0624 19       		.uleb128 0x19
+ 1762 0625 0F040000 		.4byte	.LASF64
+ 1763 0629 01       		.byte	0x1
+ 1764 062a 50       		.byte	0x50
+ 1765 062b FC010000 		.4byte	0x1fc
+ 1766 062f 05       		.uleb128 0x5
+ 1767 0630 03       		.byte	0x3
+ 1768 0631 00000000 		.4byte	left_enc
+ 1769 0635 19       		.uleb128 0x19
+ 1770 0636 79040000 		.4byte	.LASF65
+ 1771 063a 01       		.byte	0x1
+ 1772 063b 5A       		.byte	0x5a
+ 1773 063c FC010000 		.4byte	0x1fc
+ 1774 0640 05       		.uleb128 0x5
+ 1775 0641 03       		.byte	0x3
+ 1776 0642 3C000000 		.4byte	right_enc
+ 1777 0646 24       		.uleb128 0x24
+ 1778 0647 1A050000 		.4byte	.LASF66
+ 1779 064b 07       		.byte	0x7
+ 1780 064c 5506     		.2byte	0x655
+ 1781 064e 52060000 		.4byte	0x652
+ 1782 0652 25       		.uleb128 0x25
+ 1783 0653 A0000000 		.4byte	0xa0
+ 1784 0657 0F       		.uleb128 0xf
+ 1785 0658 8E000000 		.4byte	0x8e
+ 1786 065c 67060000 		.4byte	0x667
+ 1787 0660 10       		.uleb128 0x10
+ 1788 0661 81000000 		.4byte	0x81
+ 1789 0665 FF       		.byte	0xff
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 40
 
 
- 1829 06ae 88000000 		.4byte	0x88
- 1830 06b2 0E       		.uleb128 0xe
- 1831 06b3 37000000 		.4byte	0x37
- 1832 06b7 00       		.byte	0
- 1833 06b8 27       		.uleb128 0x27
- 1834 06b9 EE010000 		.4byte	.LASF70
- 1835 06bd 09       		.byte	0x9
- 1836 06be 0C01     		.2byte	0x10c
- 1837 06c0 37000000 		.4byte	0x37
- 1838 06c4 D9060000 		.4byte	0x6d9
- 1839 06c8 0E       		.uleb128 0xe
- 1840 06c9 88000000 		.4byte	0x88
- 1841 06cd 0E       		.uleb128 0xe
- 1842 06ce 25000000 		.4byte	0x25
- 1843 06d2 0E       		.uleb128 0xe
- 1844 06d3 95000000 		.4byte	0x95
- 1845 06d7 0C       		.uleb128 0xc
- 1846 06d8 00       		.byte	0
- 1847 06d9 26       		.uleb128 0x26
- 1848 06da 97030000 		.4byte	.LASF72
- 1849 06de 0A       		.byte	0xa
- 1850 06df 13       		.byte	0x13
- 1851 06e0 EA060000 		.4byte	0x6ea
- 1852 06e4 0E       		.uleb128 0xe
- 1853 06e5 88000000 		.4byte	0x88
- 1854 06e9 00       		.byte	0
- 1855 06ea 28       		.uleb128 0x28
- 1856 06eb 83040000 		.4byte	.LASF73
- 1857 06ef 0B       		.byte	0xb
- 1858 06f0 48       		.byte	0x48
- 1859 06f1 28       		.uleb128 0x28
- 1860 06f2 AA030000 		.4byte	.LASF74
- 1861 06f6 0C       		.byte	0xc
- 1862 06f7 48       		.byte	0x48
- 1863 06f8 29       		.uleb128 0x29
- 1864 06f9 A4010000 		.4byte	.LASF75
- 1865 06fd 0D       		.byte	0xd
- 1866 06fe 18       		.byte	0x18
- 1867 06ff C3000000 		.4byte	0xc3
- 1868 0703 09070000 		.4byte	0x709
- 1869 0707 0C       		.uleb128 0xc
- 1870 0708 00       		.byte	0
- 1871 0709 2A       		.uleb128 0x2a
- 1872 070a 27050000 		.4byte	.LASF80
- 1873 070e 0E       		.byte	0xe
- 1874 070f 77       		.byte	0x77
- 1875 0710 0E       		.uleb128 0xe
- 1876 0711 C3000000 		.4byte	0xc3
- 1877 0715 00       		.byte	0
- 1878 0716 00       		.byte	0
+ 1790 0666 00       		.byte	0
+ 1791 0667 26       		.uleb128 0x26
+ 1792 0668 AB040000 		.4byte	.LASF67
+ 1793 066c 08       		.byte	0x8
+ 1794 066d 37       		.byte	0x37
+ 1795 066e 57060000 		.4byte	0x657
+ 1796 0672 05       		.uleb128 0x5
+ 1797 0673 03       		.byte	0x3
+ 1798 0674 00000000 		.4byte	formatted_string
+ 1799 0678 26       		.uleb128 0x26
+ 1800 0679 90000000 		.4byte	.LASF68
+ 1801 067d 08       		.byte	0x8
+ 1802 067e 88       		.byte	0x88
+ 1803 067f B7000000 		.4byte	0xb7
+ 1804 0683 05       		.uleb128 0x5
+ 1805 0684 03       		.byte	0x3
+ 1806 0685 00000000 		.4byte	debug_control_enabled
+ 1807 0689 27       		.uleb128 0x27
+ 1808 068a 18040000 		.4byte	.LASF69
+ 1809 068e 06       		.byte	0x6
+ 1810 068f 52       		.byte	0x52
+ 1811 0690 DB000000 		.4byte	0xdb
+ 1812 0694 A3060000 		.4byte	0x6a3
+ 1813 0698 0E       		.uleb128 0xe
+ 1814 0699 A3060000 		.4byte	0x6a3
+ 1815 069d 0E       		.uleb128 0xe
+ 1816 069e DB000000 		.4byte	0xdb
+ 1817 06a2 00       		.byte	0
+ 1818 06a3 05       		.uleb128 0x5
+ 1819 06a4 04       		.byte	0x4
+ 1820 06a5 0C010000 		.4byte	0x10c
+ 1821 06a9 28       		.uleb128 0x28
+ 1822 06aa A5030000 		.4byte	.LASF71
+ 1823 06ae 06       		.byte	0x6
+ 1824 06af 5E       		.byte	0x5e
+ 1825 06b0 C4060000 		.4byte	0x6c4
+ 1826 06b4 0E       		.uleb128 0xe
+ 1827 06b5 DB000000 		.4byte	0xdb
+ 1828 06b9 0E       		.uleb128 0xe
+ 1829 06ba 88000000 		.4byte	0x88
+ 1830 06be 0E       		.uleb128 0xe
+ 1831 06bf 37000000 		.4byte	0x37
+ 1832 06c3 00       		.byte	0
+ 1833 06c4 29       		.uleb128 0x29
+ 1834 06c5 EE010000 		.4byte	.LASF70
+ 1835 06c9 09       		.byte	0x9
+ 1836 06ca 0C01     		.2byte	0x10c
+ 1837 06cc 37000000 		.4byte	0x37
+ 1838 06d0 E5060000 		.4byte	0x6e5
+ 1839 06d4 0E       		.uleb128 0xe
+ 1840 06d5 88000000 		.4byte	0x88
+ 1841 06d9 0E       		.uleb128 0xe
+ 1842 06da 25000000 		.4byte	0x25
+ 1843 06de 0E       		.uleb128 0xe
+ 1844 06df 95000000 		.4byte	0x95
+ 1845 06e3 0C       		.uleb128 0xc
+ 1846 06e4 00       		.byte	0
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 41
+
+
+ 1847 06e5 28       		.uleb128 0x28
+ 1848 06e6 97030000 		.4byte	.LASF72
+ 1849 06ea 0A       		.byte	0xa
+ 1850 06eb 16       		.byte	0x16
+ 1851 06ec F6060000 		.4byte	0x6f6
+ 1852 06f0 0E       		.uleb128 0xe
+ 1853 06f1 88000000 		.4byte	0x88
+ 1854 06f5 00       		.byte	0
+ 1855 06f6 2A       		.uleb128 0x2a
+ 1856 06f7 83040000 		.4byte	.LASF73
+ 1857 06fb 0B       		.byte	0xb
+ 1858 06fc 48       		.byte	0x48
+ 1859 06fd 2A       		.uleb128 0x2a
+ 1860 06fe AA030000 		.4byte	.LASF74
+ 1861 0702 0C       		.byte	0xc
+ 1862 0703 48       		.byte	0x48
+ 1863 0704 2B       		.uleb128 0x2b
+ 1864 0705 A4010000 		.4byte	.LASF75
+ 1865 0709 0D       		.byte	0xd
+ 1866 070a 18       		.byte	0x18
+ 1867 070b C3000000 		.4byte	0xc3
+ 1868 070f 15070000 		.4byte	0x715
+ 1869 0713 0C       		.uleb128 0xc
+ 1870 0714 00       		.byte	0
+ 1871 0715 2C       		.uleb128 0x2c
+ 1872 0716 27050000 		.4byte	.LASF80
+ 1873 071a 0E       		.byte	0xe
+ 1874 071b 77       		.byte	0x77
+ 1875 071c 0E       		.uleb128 0xe
+ 1876 071d C3000000 		.4byte	0xc3
+ 1877 0721 00       		.byte	0
+ 1878 0722 00       		.byte	0
  1879              		.section	.debug_abbrev,"",%progbits
  1880              	.Ldebug_abbrev0:
  1881 0000 01       		.uleb128 0x1
@@ -2278,9 +2440,6 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1883 0002 01       		.byte	0x1
  1884 0003 25       		.uleb128 0x25
  1885 0004 0E       		.uleb128 0xe
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 39
-
-
  1886 0005 13       		.uleb128 0x13
  1887 0006 0B       		.uleb128 0xb
  1888 0007 03       		.uleb128 0x3
@@ -2299,6 +2458,9 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1901 0014 16       		.uleb128 0x16
  1902 0015 00       		.byte	0
  1903 0016 03       		.uleb128 0x3
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 42
+
+
  1904 0017 0E       		.uleb128 0xe
  1905 0018 3A       		.uleb128 0x3a
  1906 0019 0B       		.uleb128 0xb
@@ -2338,9 +2500,6 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1940 003b 49       		.uleb128 0x49
  1941 003c 13       		.uleb128 0x13
  1942 003d 00       		.byte	0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 40
-
-
  1943 003e 00       		.byte	0
  1944 003f 06       		.uleb128 0x6
  1945 0040 26       		.uleb128 0x26
@@ -2359,6 +2518,9 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1958 004d 3B       		.uleb128 0x3b
  1959 004e 05       		.uleb128 0x5
  1960 004f 49       		.uleb128 0x49
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 43
+
+
  1961 0050 13       		.uleb128 0x13
  1962 0051 00       		.byte	0
  1963 0052 00       		.byte	0
@@ -2398,9 +2560,6 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  1997 0074 03       		.uleb128 0x3
  1998 0075 0E       		.uleb128 0xe
  1999 0076 3A       		.uleb128 0x3a
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 41
-
-
  2000 0077 0B       		.uleb128 0xb
  2001 0078 3B       		.uleb128 0x3b
  2002 0079 0B       		.uleb128 0xb
@@ -2419,6 +2578,9 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  2015 0086 13       		.uleb128 0x13
  2016 0087 00       		.byte	0
  2017 0088 00       		.byte	0
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 44
+
+
  2018 0089 0C       		.uleb128 0xc
  2019 008a 18       		.uleb128 0x18
  2020 008b 00       		.byte	0
@@ -2458,9 +2620,6 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  2054 00ad 0B       		.uleb128 0xb
  2055 00ae 00       		.byte	0
  2056 00af 00       		.byte	0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 42
-
-
  2057 00b0 11       		.uleb128 0x11
  2058 00b1 2E       		.uleb128 0x2e
  2059 00b2 01       		.byte	0x1
@@ -2479,6 +2638,9 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  2072 00bf 40       		.uleb128 0x40
  2073 00c0 18       		.uleb128 0x18
  2074 00c1 9642     		.uleb128 0x2116
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 45
+
+
  2075 00c3 19       		.uleb128 0x19
  2076 00c4 01       		.uleb128 0x1
  2077 00c5 13       		.uleb128 0x13
@@ -2518,9 +2680,6 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  2111 00e7 34       		.uleb128 0x34
  2112 00e8 00       		.byte	0
  2113 00e9 03       		.uleb128 0x3
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 43
-
-
  2114 00ea 08       		.uleb128 0x8
  2115 00eb 3A       		.uleb128 0x3a
  2116 00ec 0B       		.uleb128 0xb
@@ -2539,6 +2698,9 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  2129 00fb 01       		.uleb128 0x1
  2130 00fc 31       		.uleb128 0x31
  2131 00fd 13       		.uleb128 0x13
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 46
+
+
  2132 00fe 01       		.uleb128 0x1
  2133 00ff 13       		.uleb128 0x13
  2134 0100 00       		.byte	0
@@ -2578,9 +2740,6 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  2168 0127 06       		.uleb128 0x6
  2169 0128 40       		.uleb128 0x40
  2170 0129 18       		.uleb128 0x18
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 44
-
-
  2171 012a 9742     		.uleb128 0x2117
  2172 012c 19       		.uleb128 0x19
  2173 012d 01       		.uleb128 0x1
@@ -2599,6 +2758,9 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  2186 013a 49       		.uleb128 0x49
  2187 013b 13       		.uleb128 0x13
  2188 013c 02       		.uleb128 0x2
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 47
+
+
  2189 013d 18       		.uleb128 0x18
  2190 013e 00       		.byte	0
  2191 013f 00       		.byte	0
@@ -2638,9 +2800,6 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  2225 0162 01       		.uleb128 0x1
  2226 0163 12       		.uleb128 0x12
  2227 0164 06       		.uleb128 0x6
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 45
-
-
  2228 0165 40       		.uleb128 0x40
  2229 0166 18       		.uleb128 0x18
  2230 0167 9742     		.uleb128 0x2117
@@ -2659,6 +2818,9 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  2243 0177 00       		.byte	0
  2244 0178 00       		.byte	0
  2245 0179 1D       		.uleb128 0x1d
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 48
+
+
  2246 017a 898201   		.uleb128 0x4109
  2247 017d 01       		.byte	0x1
  2248 017e 11       		.uleb128 0x11
@@ -2698,9 +2860,6 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  2282 01a3 00       		.byte	0
  2283 01a4 00       		.byte	0
  2284 01a5 20       		.uleb128 0x20
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 46
-
-
  2285 01a6 2E       		.uleb128 0x2e
  2286 01a7 00       		.byte	0
  2287 01a8 3F       		.uleb128 0x3f
@@ -2719,6 +2878,9 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  2300 01b5 06       		.uleb128 0x6
  2301 01b6 40       		.uleb128 0x40
  2302 01b7 18       		.uleb128 0x18
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 49
+
+
  2303 01b8 9742     		.uleb128 0x2117
  2304 01ba 19       		.uleb128 0x19
  2305 01bb 00       		.byte	0
@@ -2733,7 +2895,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  2314 01c4 3A       		.uleb128 0x3a
  2315 01c5 0B       		.uleb128 0xb
  2316 01c6 3B       		.uleb128 0x3b
- 2317 01c7 0B       		.uleb128 0xb
+ 2317 01c7 05       		.uleb128 0x5
  2318 01c8 49       		.uleb128 0x49
  2319 01c9 13       		.uleb128 0x13
  2320 01ca 11       		.uleb128 0x11
@@ -2747,756 +2909,802 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 1
  2328 01d3 00       		.byte	0
  2329 01d4 00       		.byte	0
  2330 01d5 22       		.uleb128 0x22
- 2331 01d6 34       		.uleb128 0x34
+ 2331 01d6 2E       		.uleb128 0x2e
  2332 01d7 00       		.byte	0
- 2333 01d8 03       		.uleb128 0x3
- 2334 01d9 0E       		.uleb128 0xe
- 2335 01da 3A       		.uleb128 0x3a
- 2336 01db 0B       		.uleb128 0xb
- 2337 01dc 3B       		.uleb128 0x3b
- 2338 01dd 05       		.uleb128 0x5
- 2339 01de 49       		.uleb128 0x49
- 2340 01df 13       		.uleb128 0x13
- 2341 01e0 3F       		.uleb128 0x3f
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 47
+ 2333 01d8 3F       		.uleb128 0x3f
+ 2334 01d9 19       		.uleb128 0x19
+ 2335 01da 03       		.uleb128 0x3
+ 2336 01db 0E       		.uleb128 0xe
+ 2337 01dc 3A       		.uleb128 0x3a
+ 2338 01dd 0B       		.uleb128 0xb
+ 2339 01de 3B       		.uleb128 0x3b
+ 2340 01df 05       		.uleb128 0x5
+ 2341 01e0 49       		.uleb128 0x49
+ 2342 01e1 13       		.uleb128 0x13
+ 2343 01e2 11       		.uleb128 0x11
+ 2344 01e3 01       		.uleb128 0x1
+ 2345 01e4 12       		.uleb128 0x12
+ 2346 01e5 06       		.uleb128 0x6
+ 2347 01e6 40       		.uleb128 0x40
+ 2348 01e7 18       		.uleb128 0x18
+ 2349 01e8 9742     		.uleb128 0x2117
+ 2350 01ea 19       		.uleb128 0x19
+ 2351 01eb 00       		.byte	0
+ 2352 01ec 00       		.byte	0
+ 2353 01ed 23       		.uleb128 0x23
+ 2354 01ee 2E       		.uleb128 0x2e
+ 2355 01ef 01       		.byte	0x1
+ 2356 01f0 3F       		.uleb128 0x3f
+ 2357 01f1 19       		.uleb128 0x19
+ 2358 01f2 03       		.uleb128 0x3
+ 2359 01f3 0E       		.uleb128 0xe
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 50
 
 
- 2342 01e1 19       		.uleb128 0x19
- 2343 01e2 3C       		.uleb128 0x3c
- 2344 01e3 19       		.uleb128 0x19
- 2345 01e4 00       		.byte	0
- 2346 01e5 00       		.byte	0
- 2347 01e6 23       		.uleb128 0x23
- 2348 01e7 35       		.uleb128 0x35
- 2349 01e8 00       		.byte	0
- 2350 01e9 49       		.uleb128 0x49
- 2351 01ea 13       		.uleb128 0x13
- 2352 01eb 00       		.byte	0
- 2353 01ec 00       		.byte	0
- 2354 01ed 24       		.uleb128 0x24
- 2355 01ee 34       		.uleb128 0x34
- 2356 01ef 00       		.byte	0
- 2357 01f0 03       		.uleb128 0x3
- 2358 01f1 0E       		.uleb128 0xe
- 2359 01f2 3A       		.uleb128 0x3a
- 2360 01f3 0B       		.uleb128 0xb
- 2361 01f4 3B       		.uleb128 0x3b
- 2362 01f5 0B       		.uleb128 0xb
- 2363 01f6 49       		.uleb128 0x49
- 2364 01f7 13       		.uleb128 0x13
- 2365 01f8 3F       		.uleb128 0x3f
- 2366 01f9 19       		.uleb128 0x19
- 2367 01fa 02       		.uleb128 0x2
- 2368 01fb 18       		.uleb128 0x18
- 2369 01fc 00       		.byte	0
- 2370 01fd 00       		.byte	0
- 2371 01fe 25       		.uleb128 0x25
- 2372 01ff 2E       		.uleb128 0x2e
- 2373 0200 01       		.byte	0x1
- 2374 0201 3F       		.uleb128 0x3f
- 2375 0202 19       		.uleb128 0x19
- 2376 0203 03       		.uleb128 0x3
- 2377 0204 0E       		.uleb128 0xe
- 2378 0205 3A       		.uleb128 0x3a
- 2379 0206 0B       		.uleb128 0xb
- 2380 0207 3B       		.uleb128 0x3b
- 2381 0208 0B       		.uleb128 0xb
- 2382 0209 27       		.uleb128 0x27
- 2383 020a 19       		.uleb128 0x19
- 2384 020b 49       		.uleb128 0x49
- 2385 020c 13       		.uleb128 0x13
- 2386 020d 3C       		.uleb128 0x3c
- 2387 020e 19       		.uleb128 0x19
- 2388 020f 01       		.uleb128 0x1
- 2389 0210 13       		.uleb128 0x13
- 2390 0211 00       		.byte	0
- 2391 0212 00       		.byte	0
- 2392 0213 26       		.uleb128 0x26
- 2393 0214 2E       		.uleb128 0x2e
- 2394 0215 01       		.byte	0x1
- 2395 0216 3F       		.uleb128 0x3f
- 2396 0217 19       		.uleb128 0x19
- 2397 0218 03       		.uleb128 0x3
- 2398 0219 0E       		.uleb128 0xe
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 48
+ 2360 01f4 3A       		.uleb128 0x3a
+ 2361 01f5 0B       		.uleb128 0xb
+ 2362 01f6 3B       		.uleb128 0x3b
+ 2363 01f7 05       		.uleb128 0x5
+ 2364 01f8 11       		.uleb128 0x11
+ 2365 01f9 01       		.uleb128 0x1
+ 2366 01fa 12       		.uleb128 0x12
+ 2367 01fb 06       		.uleb128 0x6
+ 2368 01fc 40       		.uleb128 0x40
+ 2369 01fd 18       		.uleb128 0x18
+ 2370 01fe 9742     		.uleb128 0x2117
+ 2371 0200 19       		.uleb128 0x19
+ 2372 0201 01       		.uleb128 0x1
+ 2373 0202 13       		.uleb128 0x13
+ 2374 0203 00       		.byte	0
+ 2375 0204 00       		.byte	0
+ 2376 0205 24       		.uleb128 0x24
+ 2377 0206 34       		.uleb128 0x34
+ 2378 0207 00       		.byte	0
+ 2379 0208 03       		.uleb128 0x3
+ 2380 0209 0E       		.uleb128 0xe
+ 2381 020a 3A       		.uleb128 0x3a
+ 2382 020b 0B       		.uleb128 0xb
+ 2383 020c 3B       		.uleb128 0x3b
+ 2384 020d 05       		.uleb128 0x5
+ 2385 020e 49       		.uleb128 0x49
+ 2386 020f 13       		.uleb128 0x13
+ 2387 0210 3F       		.uleb128 0x3f
+ 2388 0211 19       		.uleb128 0x19
+ 2389 0212 3C       		.uleb128 0x3c
+ 2390 0213 19       		.uleb128 0x19
+ 2391 0214 00       		.byte	0
+ 2392 0215 00       		.byte	0
+ 2393 0216 25       		.uleb128 0x25
+ 2394 0217 35       		.uleb128 0x35
+ 2395 0218 00       		.byte	0
+ 2396 0219 49       		.uleb128 0x49
+ 2397 021a 13       		.uleb128 0x13
+ 2398 021b 00       		.byte	0
+ 2399 021c 00       		.byte	0
+ 2400 021d 26       		.uleb128 0x26
+ 2401 021e 34       		.uleb128 0x34
+ 2402 021f 00       		.byte	0
+ 2403 0220 03       		.uleb128 0x3
+ 2404 0221 0E       		.uleb128 0xe
+ 2405 0222 3A       		.uleb128 0x3a
+ 2406 0223 0B       		.uleb128 0xb
+ 2407 0224 3B       		.uleb128 0x3b
+ 2408 0225 0B       		.uleb128 0xb
+ 2409 0226 49       		.uleb128 0x49
+ 2410 0227 13       		.uleb128 0x13
+ 2411 0228 3F       		.uleb128 0x3f
+ 2412 0229 19       		.uleb128 0x19
+ 2413 022a 02       		.uleb128 0x2
+ 2414 022b 18       		.uleb128 0x18
+ 2415 022c 00       		.byte	0
+ 2416 022d 00       		.byte	0
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 51
 
 
- 2399 021a 3A       		.uleb128 0x3a
- 2400 021b 0B       		.uleb128 0xb
- 2401 021c 3B       		.uleb128 0x3b
- 2402 021d 0B       		.uleb128 0xb
- 2403 021e 27       		.uleb128 0x27
- 2404 021f 19       		.uleb128 0x19
- 2405 0220 3C       		.uleb128 0x3c
- 2406 0221 19       		.uleb128 0x19
- 2407 0222 01       		.uleb128 0x1
- 2408 0223 13       		.uleb128 0x13
- 2409 0224 00       		.byte	0
- 2410 0225 00       		.byte	0
- 2411 0226 27       		.uleb128 0x27
- 2412 0227 2E       		.uleb128 0x2e
- 2413 0228 01       		.byte	0x1
- 2414 0229 3F       		.uleb128 0x3f
- 2415 022a 19       		.uleb128 0x19
- 2416 022b 03       		.uleb128 0x3
- 2417 022c 0E       		.uleb128 0xe
- 2418 022d 3A       		.uleb128 0x3a
- 2419 022e 0B       		.uleb128 0xb
- 2420 022f 3B       		.uleb128 0x3b
- 2421 0230 05       		.uleb128 0x5
- 2422 0231 27       		.uleb128 0x27
- 2423 0232 19       		.uleb128 0x19
- 2424 0233 49       		.uleb128 0x49
- 2425 0234 13       		.uleb128 0x13
- 2426 0235 3C       		.uleb128 0x3c
- 2427 0236 19       		.uleb128 0x19
- 2428 0237 01       		.uleb128 0x1
- 2429 0238 13       		.uleb128 0x13
- 2430 0239 00       		.byte	0
- 2431 023a 00       		.byte	0
- 2432 023b 28       		.uleb128 0x28
- 2433 023c 2E       		.uleb128 0x2e
- 2434 023d 00       		.byte	0
- 2435 023e 3F       		.uleb128 0x3f
- 2436 023f 19       		.uleb128 0x19
- 2437 0240 03       		.uleb128 0x3
- 2438 0241 0E       		.uleb128 0xe
- 2439 0242 3A       		.uleb128 0x3a
- 2440 0243 0B       		.uleb128 0xb
- 2441 0244 3B       		.uleb128 0x3b
- 2442 0245 0B       		.uleb128 0xb
- 2443 0246 27       		.uleb128 0x27
- 2444 0247 19       		.uleb128 0x19
- 2445 0248 3C       		.uleb128 0x3c
- 2446 0249 19       		.uleb128 0x19
- 2447 024a 00       		.byte	0
- 2448 024b 00       		.byte	0
- 2449 024c 29       		.uleb128 0x29
- 2450 024d 2E       		.uleb128 0x2e
- 2451 024e 01       		.byte	0x1
- 2452 024f 3F       		.uleb128 0x3f
- 2453 0250 19       		.uleb128 0x19
- 2454 0251 03       		.uleb128 0x3
- 2455 0252 0E       		.uleb128 0xe
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 49
+ 2417 022e 27       		.uleb128 0x27
+ 2418 022f 2E       		.uleb128 0x2e
+ 2419 0230 01       		.byte	0x1
+ 2420 0231 3F       		.uleb128 0x3f
+ 2421 0232 19       		.uleb128 0x19
+ 2422 0233 03       		.uleb128 0x3
+ 2423 0234 0E       		.uleb128 0xe
+ 2424 0235 3A       		.uleb128 0x3a
+ 2425 0236 0B       		.uleb128 0xb
+ 2426 0237 3B       		.uleb128 0x3b
+ 2427 0238 0B       		.uleb128 0xb
+ 2428 0239 27       		.uleb128 0x27
+ 2429 023a 19       		.uleb128 0x19
+ 2430 023b 49       		.uleb128 0x49
+ 2431 023c 13       		.uleb128 0x13
+ 2432 023d 3C       		.uleb128 0x3c
+ 2433 023e 19       		.uleb128 0x19
+ 2434 023f 01       		.uleb128 0x1
+ 2435 0240 13       		.uleb128 0x13
+ 2436 0241 00       		.byte	0
+ 2437 0242 00       		.byte	0
+ 2438 0243 28       		.uleb128 0x28
+ 2439 0244 2E       		.uleb128 0x2e
+ 2440 0245 01       		.byte	0x1
+ 2441 0246 3F       		.uleb128 0x3f
+ 2442 0247 19       		.uleb128 0x19
+ 2443 0248 03       		.uleb128 0x3
+ 2444 0249 0E       		.uleb128 0xe
+ 2445 024a 3A       		.uleb128 0x3a
+ 2446 024b 0B       		.uleb128 0xb
+ 2447 024c 3B       		.uleb128 0x3b
+ 2448 024d 0B       		.uleb128 0xb
+ 2449 024e 27       		.uleb128 0x27
+ 2450 024f 19       		.uleb128 0x19
+ 2451 0250 3C       		.uleb128 0x3c
+ 2452 0251 19       		.uleb128 0x19
+ 2453 0252 01       		.uleb128 0x1
+ 2454 0253 13       		.uleb128 0x13
+ 2455 0254 00       		.byte	0
+ 2456 0255 00       		.byte	0
+ 2457 0256 29       		.uleb128 0x29
+ 2458 0257 2E       		.uleb128 0x2e
+ 2459 0258 01       		.byte	0x1
+ 2460 0259 3F       		.uleb128 0x3f
+ 2461 025a 19       		.uleb128 0x19
+ 2462 025b 03       		.uleb128 0x3
+ 2463 025c 0E       		.uleb128 0xe
+ 2464 025d 3A       		.uleb128 0x3a
+ 2465 025e 0B       		.uleb128 0xb
+ 2466 025f 3B       		.uleb128 0x3b
+ 2467 0260 05       		.uleb128 0x5
+ 2468 0261 27       		.uleb128 0x27
+ 2469 0262 19       		.uleb128 0x19
+ 2470 0263 49       		.uleb128 0x49
+ 2471 0264 13       		.uleb128 0x13
+ 2472 0265 3C       		.uleb128 0x3c
+ 2473 0266 19       		.uleb128 0x19
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 52
 
 
- 2456 0253 3A       		.uleb128 0x3a
- 2457 0254 0B       		.uleb128 0xb
- 2458 0255 3B       		.uleb128 0x3b
- 2459 0256 0B       		.uleb128 0xb
- 2460 0257 49       		.uleb128 0x49
- 2461 0258 13       		.uleb128 0x13
- 2462 0259 3C       		.uleb128 0x3c
- 2463 025a 19       		.uleb128 0x19
- 2464 025b 01       		.uleb128 0x1
- 2465 025c 13       		.uleb128 0x13
- 2466 025d 00       		.byte	0
- 2467 025e 00       		.byte	0
- 2468 025f 2A       		.uleb128 0x2a
- 2469 0260 2E       		.uleb128 0x2e
- 2470 0261 01       		.byte	0x1
- 2471 0262 3F       		.uleb128 0x3f
- 2472 0263 19       		.uleb128 0x19
- 2473 0264 03       		.uleb128 0x3
- 2474 0265 0E       		.uleb128 0xe
- 2475 0266 3A       		.uleb128 0x3a
- 2476 0267 0B       		.uleb128 0xb
- 2477 0268 3B       		.uleb128 0x3b
- 2478 0269 0B       		.uleb128 0xb
- 2479 026a 27       		.uleb128 0x27
- 2480 026b 19       		.uleb128 0x19
- 2481 026c 3C       		.uleb128 0x3c
- 2482 026d 19       		.uleb128 0x19
- 2483 026e 00       		.byte	0
- 2484 026f 00       		.byte	0
- 2485 0270 00       		.byte	0
- 2486              		.section	.debug_loc,"",%progbits
- 2487              	.Ldebug_loc0:
- 2488              	.LLST0:
- 2489 0000 00000000 		.4byte	.LVL0
- 2490 0004 09000000 		.4byte	.LVL1-1
- 2491 0008 0100     		.2byte	0x1
- 2492 000a 50       		.byte	0x50
- 2493 000b 09000000 		.4byte	.LVL1-1
- 2494 000f 90000000 		.4byte	.LVL20
- 2495 0013 0100     		.2byte	0x1
- 2496 0015 54       		.byte	0x54
- 2497 0016 90000000 		.4byte	.LVL20
- 2498 001a A8000000 		.4byte	.LFE64
- 2499 001e 0400     		.2byte	0x4
- 2500 0020 F3       		.byte	0xf3
- 2501 0021 01       		.uleb128 0x1
- 2502 0022 50       		.byte	0x50
- 2503 0023 9F       		.byte	0x9f
- 2504 0024 00000000 		.4byte	0
- 2505 0028 00000000 		.4byte	0
- 2506              	.LLST1:
- 2507 002c 00000000 		.4byte	.LVL0
- 2508 0030 09000000 		.4byte	.LVL1-1
- 2509 0034 0100     		.2byte	0x1
- 2510 0036 51       		.byte	0x51
- 2511 0037 09000000 		.4byte	.LVL1-1
- 2512 003b 78000000 		.4byte	.LVL16
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 50
+ 2474 0267 01       		.uleb128 0x1
+ 2475 0268 13       		.uleb128 0x13
+ 2476 0269 00       		.byte	0
+ 2477 026a 00       		.byte	0
+ 2478 026b 2A       		.uleb128 0x2a
+ 2479 026c 2E       		.uleb128 0x2e
+ 2480 026d 00       		.byte	0
+ 2481 026e 3F       		.uleb128 0x3f
+ 2482 026f 19       		.uleb128 0x19
+ 2483 0270 03       		.uleb128 0x3
+ 2484 0271 0E       		.uleb128 0xe
+ 2485 0272 3A       		.uleb128 0x3a
+ 2486 0273 0B       		.uleb128 0xb
+ 2487 0274 3B       		.uleb128 0x3b
+ 2488 0275 0B       		.uleb128 0xb
+ 2489 0276 27       		.uleb128 0x27
+ 2490 0277 19       		.uleb128 0x19
+ 2491 0278 3C       		.uleb128 0x3c
+ 2492 0279 19       		.uleb128 0x19
+ 2493 027a 00       		.byte	0
+ 2494 027b 00       		.byte	0
+ 2495 027c 2B       		.uleb128 0x2b
+ 2496 027d 2E       		.uleb128 0x2e
+ 2497 027e 01       		.byte	0x1
+ 2498 027f 3F       		.uleb128 0x3f
+ 2499 0280 19       		.uleb128 0x19
+ 2500 0281 03       		.uleb128 0x3
+ 2501 0282 0E       		.uleb128 0xe
+ 2502 0283 3A       		.uleb128 0x3a
+ 2503 0284 0B       		.uleb128 0xb
+ 2504 0285 3B       		.uleb128 0x3b
+ 2505 0286 0B       		.uleb128 0xb
+ 2506 0287 49       		.uleb128 0x49
+ 2507 0288 13       		.uleb128 0x13
+ 2508 0289 3C       		.uleb128 0x3c
+ 2509 028a 19       		.uleb128 0x19
+ 2510 028b 01       		.uleb128 0x1
+ 2511 028c 13       		.uleb128 0x13
+ 2512 028d 00       		.byte	0
+ 2513 028e 00       		.byte	0
+ 2514 028f 2C       		.uleb128 0x2c
+ 2515 0290 2E       		.uleb128 0x2e
+ 2516 0291 01       		.byte	0x1
+ 2517 0292 3F       		.uleb128 0x3f
+ 2518 0293 19       		.uleb128 0x19
+ 2519 0294 03       		.uleb128 0x3
+ 2520 0295 0E       		.uleb128 0xe
+ 2521 0296 3A       		.uleb128 0x3a
+ 2522 0297 0B       		.uleb128 0xb
+ 2523 0298 3B       		.uleb128 0x3b
+ 2524 0299 0B       		.uleb128 0xb
+ 2525 029a 27       		.uleb128 0x27
+ 2526 029b 19       		.uleb128 0x19
+ 2527 029c 3C       		.uleb128 0x3c
+ 2528 029d 19       		.uleb128 0x19
+ 2529 029e 00       		.byte	0
+ 2530 029f 00       		.byte	0
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 53
 
 
- 2513 003f 0100     		.2byte	0x1
- 2514 0041 56       		.byte	0x56
- 2515 0042 78000000 		.4byte	.LVL16
- 2516 0046 A8000000 		.4byte	.LFE64
- 2517 004a 0400     		.2byte	0x4
- 2518 004c F3       		.byte	0xf3
- 2519 004d 01       		.uleb128 0x1
- 2520 004e 51       		.byte	0x51
- 2521 004f 9F       		.byte	0x9f
- 2522 0050 00000000 		.4byte	0
- 2523 0054 00000000 		.4byte	0
- 2524              	.LLST2:
- 2525 0058 40000000 		.4byte	.LVL7
- 2526 005c 44000000 		.4byte	.LVL8
- 2527 0060 0100     		.2byte	0x1
- 2528 0062 50       		.byte	0x50
- 2529 0063 44000000 		.4byte	.LVL8
- 2530 0067 47000000 		.4byte	.LVL9-1
- 2531 006b 0100     		.2byte	0x1
- 2532 006d 51       		.byte	0x51
- 2533 006e 00000000 		.4byte	0
- 2534 0072 00000000 		.4byte	0
- 2535              	.LLST3:
- 2536 0076 00000000 		.4byte	.LVL21
- 2537 007a 08000000 		.4byte	.LVL22
- 2538 007e 0100     		.2byte	0x1
- 2539 0080 50       		.byte	0x50
- 2540 0081 08000000 		.4byte	.LVL22
- 2541 0085 66000000 		.4byte	.LVL29
- 2542 0089 0100     		.2byte	0x1
- 2543 008b 54       		.byte	0x54
- 2544 008c 66000000 		.4byte	.LVL29
- 2545 0090 74000000 		.4byte	.LFE63
- 2546 0094 0400     		.2byte	0x4
- 2547 0096 F3       		.byte	0xf3
- 2548 0097 01       		.uleb128 0x1
- 2549 0098 50       		.byte	0x50
- 2550 0099 9F       		.byte	0x9f
- 2551 009a 00000000 		.4byte	0
- 2552 009e 00000000 		.4byte	0
- 2553              		.section	.debug_aranges,"",%progbits
- 2554 0000 AC000000 		.4byte	0xac
- 2555 0004 0200     		.2byte	0x2
- 2556 0006 00000000 		.4byte	.Ldebug_info0
- 2557 000a 04       		.byte	0x4
- 2558 000b 00       		.byte	0
- 2559 000c 0000     		.2byte	0
- 2560 000e 0000     		.2byte	0
- 2561 0010 00000000 		.4byte	.LFB64
- 2562 0014 A8000000 		.4byte	.LFE64-.LFB64
- 2563 0018 00000000 		.4byte	.LFB63
- 2564 001c 74000000 		.4byte	.LFE63-.LFB63
- 2565 0020 00000000 		.4byte	.LFB65
- 2566 0024 4C000000 		.4byte	.LFE65-.LFB65
- 2567 0028 00000000 		.4byte	.LFB66
- 2568 002c 20000000 		.4byte	.LFE66-.LFB66
- 2569 0030 00000000 		.4byte	.LFB67
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 51
+ 2531 02a0 00       		.byte	0
+ 2532              		.section	.debug_loc,"",%progbits
+ 2533              	.Ldebug_loc0:
+ 2534              	.LLST0:
+ 2535 0000 00000000 		.4byte	.LVL0
+ 2536 0004 09000000 		.4byte	.LVL1-1
+ 2537 0008 0100     		.2byte	0x1
+ 2538 000a 50       		.byte	0x50
+ 2539 000b 09000000 		.4byte	.LVL1-1
+ 2540 000f 90000000 		.4byte	.LVL20
+ 2541 0013 0100     		.2byte	0x1
+ 2542 0015 54       		.byte	0x54
+ 2543 0016 90000000 		.4byte	.LVL20
+ 2544 001a A8000000 		.4byte	.LFE64
+ 2545 001e 0400     		.2byte	0x4
+ 2546 0020 F3       		.byte	0xf3
+ 2547 0021 01       		.uleb128 0x1
+ 2548 0022 50       		.byte	0x50
+ 2549 0023 9F       		.byte	0x9f
+ 2550 0024 00000000 		.4byte	0
+ 2551 0028 00000000 		.4byte	0
+ 2552              	.LLST1:
+ 2553 002c 00000000 		.4byte	.LVL0
+ 2554 0030 09000000 		.4byte	.LVL1-1
+ 2555 0034 0100     		.2byte	0x1
+ 2556 0036 51       		.byte	0x51
+ 2557 0037 09000000 		.4byte	.LVL1-1
+ 2558 003b 78000000 		.4byte	.LVL16
+ 2559 003f 0100     		.2byte	0x1
+ 2560 0041 56       		.byte	0x56
+ 2561 0042 78000000 		.4byte	.LVL16
+ 2562 0046 A8000000 		.4byte	.LFE64
+ 2563 004a 0400     		.2byte	0x4
+ 2564 004c F3       		.byte	0xf3
+ 2565 004d 01       		.uleb128 0x1
+ 2566 004e 51       		.byte	0x51
+ 2567 004f 9F       		.byte	0x9f
+ 2568 0050 00000000 		.4byte	0
+ 2569 0054 00000000 		.4byte	0
+ 2570              	.LLST2:
+ 2571 0058 40000000 		.4byte	.LVL7
+ 2572 005c 44000000 		.4byte	.LVL8
+ 2573 0060 0100     		.2byte	0x1
+ 2574 0062 50       		.byte	0x50
+ 2575 0063 44000000 		.4byte	.LVL8
+ 2576 0067 47000000 		.4byte	.LVL9-1
+ 2577 006b 0100     		.2byte	0x1
+ 2578 006d 51       		.byte	0x51
+ 2579 006e 00000000 		.4byte	0
+ 2580 0072 00000000 		.4byte	0
+ 2581              	.LLST3:
+ 2582 0076 00000000 		.4byte	.LVL21
+ 2583 007a 08000000 		.4byte	.LVL22
+ 2584 007e 0100     		.2byte	0x1
+ 2585 0080 50       		.byte	0x50
+ 2586 0081 08000000 		.4byte	.LVL22
+ 2587 0085 66000000 		.4byte	.LVL29
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 54
 
 
- 2570 0034 84000000 		.4byte	.LFE67-.LFB67
- 2571 0038 00000000 		.4byte	.LFB68
- 2572 003c 0C000000 		.4byte	.LFE68-.LFB68
- 2573 0040 00000000 		.4byte	.LFB69
- 2574 0044 0C000000 		.4byte	.LFE69-.LFB69
- 2575 0048 00000000 		.4byte	.LFB70
- 2576 004c 1C000000 		.4byte	.LFE70-.LFB70
- 2577 0050 00000000 		.4byte	.LFB71
- 2578 0054 0C000000 		.4byte	.LFE71-.LFB71
- 2579 0058 00000000 		.4byte	.LFB72
- 2580 005c 0C000000 		.4byte	.LFE72-.LFB72
- 2581 0060 00000000 		.4byte	.LFB73
- 2582 0064 1C000000 		.4byte	.LFE73-.LFB73
- 2583 0068 00000000 		.4byte	.LFB74
- 2584 006c 10000000 		.4byte	.LFE74-.LFB74
- 2585 0070 00000000 		.4byte	.LFB75
- 2586 0074 10000000 		.4byte	.LFE75-.LFB75
- 2587 0078 00000000 		.4byte	.LFB76
- 2588 007c 0C000000 		.4byte	.LFE76-.LFB76
- 2589 0080 00000000 		.4byte	.LFB77
- 2590 0084 0C000000 		.4byte	.LFE77-.LFB77
- 2591 0088 00000000 		.4byte	.LFB78
- 2592 008c 0C000000 		.4byte	.LFE78-.LFB78
- 2593 0090 00000000 		.4byte	.LFB79
- 2594 0094 0C000000 		.4byte	.LFE79-.LFB79
- 2595 0098 00000000 		.4byte	.LFB80
- 2596 009c 1C000000 		.4byte	.LFE80-.LFB80
- 2597 00a0 00000000 		.4byte	.LFB81
- 2598 00a4 64000000 		.4byte	.LFE81-.LFB81
- 2599 00a8 00000000 		.4byte	0
- 2600 00ac 00000000 		.4byte	0
- 2601              		.section	.debug_ranges,"",%progbits
- 2602              	.Ldebug_ranges0:
- 2603 0000 00000000 		.4byte	.LFB64
- 2604 0004 A8000000 		.4byte	.LFE64
- 2605 0008 00000000 		.4byte	.LFB63
- 2606 000c 74000000 		.4byte	.LFE63
- 2607 0010 00000000 		.4byte	.LFB65
- 2608 0014 4C000000 		.4byte	.LFE65
- 2609 0018 00000000 		.4byte	.LFB66
- 2610 001c 20000000 		.4byte	.LFE66
- 2611 0020 00000000 		.4byte	.LFB67
- 2612 0024 84000000 		.4byte	.LFE67
- 2613 0028 00000000 		.4byte	.LFB68
- 2614 002c 0C000000 		.4byte	.LFE68
- 2615 0030 00000000 		.4byte	.LFB69
- 2616 0034 0C000000 		.4byte	.LFE69
- 2617 0038 00000000 		.4byte	.LFB70
- 2618 003c 1C000000 		.4byte	.LFE70
- 2619 0040 00000000 		.4byte	.LFB71
- 2620 0044 0C000000 		.4byte	.LFE71
- 2621 0048 00000000 		.4byte	.LFB72
- 2622 004c 0C000000 		.4byte	.LFE72
- 2623 0050 00000000 		.4byte	.LFB73
- 2624 0054 1C000000 		.4byte	.LFE73
- 2625 0058 00000000 		.4byte	.LFB74
- 2626 005c 10000000 		.4byte	.LFE74
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 52
+ 2588 0089 0100     		.2byte	0x1
+ 2589 008b 54       		.byte	0x54
+ 2590 008c 66000000 		.4byte	.LVL29
+ 2591 0090 74000000 		.4byte	.LFE63
+ 2592 0094 0400     		.2byte	0x4
+ 2593 0096 F3       		.byte	0xf3
+ 2594 0097 01       		.uleb128 0x1
+ 2595 0098 50       		.byte	0x50
+ 2596 0099 9F       		.byte	0x9f
+ 2597 009a 00000000 		.4byte	0
+ 2598 009e 00000000 		.4byte	0
+ 2599              		.section	.debug_aranges,"",%progbits
+ 2600 0000 AC000000 		.4byte	0xac
+ 2601 0004 0200     		.2byte	0x2
+ 2602 0006 00000000 		.4byte	.Ldebug_info0
+ 2603 000a 04       		.byte	0x4
+ 2604 000b 00       		.byte	0
+ 2605 000c 0000     		.2byte	0
+ 2606 000e 0000     		.2byte	0
+ 2607 0010 00000000 		.4byte	.LFB64
+ 2608 0014 A8000000 		.4byte	.LFE64-.LFB64
+ 2609 0018 00000000 		.4byte	.LFB63
+ 2610 001c 74000000 		.4byte	.LFE63-.LFB63
+ 2611 0020 00000000 		.4byte	.LFB65
+ 2612 0024 4C000000 		.4byte	.LFE65-.LFB65
+ 2613 0028 00000000 		.4byte	.LFB66
+ 2614 002c 20000000 		.4byte	.LFE66-.LFB66
+ 2615 0030 00000000 		.4byte	.LFB67
+ 2616 0034 84000000 		.4byte	.LFE67-.LFB67
+ 2617 0038 00000000 		.4byte	.LFB68
+ 2618 003c 0C000000 		.4byte	.LFE68-.LFB68
+ 2619 0040 00000000 		.4byte	.LFB69
+ 2620 0044 0C000000 		.4byte	.LFE69-.LFB69
+ 2621 0048 00000000 		.4byte	.LFB70
+ 2622 004c 1C000000 		.4byte	.LFE70-.LFB70
+ 2623 0050 00000000 		.4byte	.LFB71
+ 2624 0054 0C000000 		.4byte	.LFE71-.LFB71
+ 2625 0058 00000000 		.4byte	.LFB72
+ 2626 005c 0C000000 		.4byte	.LFE72-.LFB72
+ 2627 0060 00000000 		.4byte	.LFB73
+ 2628 0064 1C000000 		.4byte	.LFE73-.LFB73
+ 2629 0068 00000000 		.4byte	.LFB74
+ 2630 006c 10000000 		.4byte	.LFE74-.LFB74
+ 2631 0070 00000000 		.4byte	.LFB75
+ 2632 0074 10000000 		.4byte	.LFE75-.LFB75
+ 2633 0078 00000000 		.4byte	.LFB76
+ 2634 007c 0C000000 		.4byte	.LFE76-.LFB76
+ 2635 0080 00000000 		.4byte	.LFB77
+ 2636 0084 0C000000 		.4byte	.LFE77-.LFB77
+ 2637 0088 00000000 		.4byte	.LFB78
+ 2638 008c 0C000000 		.4byte	.LFE78-.LFB78
+ 2639 0090 00000000 		.4byte	.LFB79
+ 2640 0094 0C000000 		.4byte	.LFE79-.LFB79
+ 2641 0098 00000000 		.4byte	.LFB80
+ 2642 009c 1C000000 		.4byte	.LFE80-.LFB80
+ 2643 00a0 00000000 		.4byte	.LFB81
+ 2644 00a4 64000000 		.4byte	.LFE81-.LFB81
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 55
 
 
- 2627 0060 00000000 		.4byte	.LFB75
- 2628 0064 10000000 		.4byte	.LFE75
- 2629 0068 00000000 		.4byte	.LFB76
- 2630 006c 0C000000 		.4byte	.LFE76
- 2631 0070 00000000 		.4byte	.LFB77
- 2632 0074 0C000000 		.4byte	.LFE77
- 2633 0078 00000000 		.4byte	.LFB78
- 2634 007c 0C000000 		.4byte	.LFE78
- 2635 0080 00000000 		.4byte	.LFB79
- 2636 0084 0C000000 		.4byte	.LFE79
- 2637 0088 00000000 		.4byte	.LFB80
- 2638 008c 1C000000 		.4byte	.LFE80
- 2639 0090 00000000 		.4byte	.LFB81
- 2640 0094 64000000 		.4byte	.LFE81
- 2641 0098 00000000 		.4byte	0
- 2642 009c 00000000 		.4byte	0
- 2643              		.section	.debug_line,"",%progbits
- 2644              	.Ldebug_line0:
- 2645 0000 ED030000 		.section	.debug_str,"MS",%progbits,1
- 2645      02003D02 
- 2645      00000201 
- 2645      FB0E0D00 
- 2645      01010101 
- 2646              	.LASF61:
- 2647 0000 456E636F 		.ascii	"Encoder_RightGetDist\000"
- 2647      6465725F 
- 2647      52696768 
- 2647      74476574 
- 2647      44697374 
- 2648              	.LASF52:
- 2649 0015 456E636F 		.ascii	"Encoder_GetCntsPerSec\000"
- 2649      6465725F 
- 2649      47657443 
- 2649      6E747350 
- 2649      65725365 
- 2650              	.LASF79:
- 2651 002b 456E636F 		.ascii	"Encoder_Init\000"
- 2651      6465725F 
- 2651      496E6974 
- 2651      00
- 2652              	.LASF42:
- 2653 0038 6176675F 		.ascii	"avg_cps_str\000"
- 2653      6370735F 
- 2653      73747200 
- 2654              	.LASF29:
- 2655 0044 64656C74 		.ascii	"delta_count\000"
- 2655      615F636F 
- 2655      756E7400 
- 2656              	.LASF33:
- 2657 0050 64697374 		.ascii	"dist\000"
- 2657      00
- 2658              	.LASF3:
- 2659 0055 73686F72 		.ascii	"short int\000"
- 2659      7420696E 
- 2659      7400
- 2660              	.LASF5:
- 2661 005f 73697A65 		.ascii	"size_t\000"
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 53
+ 2645 00a8 00000000 		.4byte	0
+ 2646 00ac 00000000 		.4byte	0
+ 2647              		.section	.debug_ranges,"",%progbits
+ 2648              	.Ldebug_ranges0:
+ 2649 0000 00000000 		.4byte	.LFB64
+ 2650 0004 A8000000 		.4byte	.LFE64
+ 2651 0008 00000000 		.4byte	.LFB63
+ 2652 000c 74000000 		.4byte	.LFE63
+ 2653 0010 00000000 		.4byte	.LFB65
+ 2654 0014 4C000000 		.4byte	.LFE65
+ 2655 0018 00000000 		.4byte	.LFB66
+ 2656 001c 20000000 		.4byte	.LFE66
+ 2657 0020 00000000 		.4byte	.LFB67
+ 2658 0024 84000000 		.4byte	.LFE67
+ 2659 0028 00000000 		.4byte	.LFB68
+ 2660 002c 0C000000 		.4byte	.LFE68
+ 2661 0030 00000000 		.4byte	.LFB69
+ 2662 0034 0C000000 		.4byte	.LFE69
+ 2663 0038 00000000 		.4byte	.LFB70
+ 2664 003c 1C000000 		.4byte	.LFE70
+ 2665 0040 00000000 		.4byte	.LFB71
+ 2666 0044 0C000000 		.4byte	.LFE71
+ 2667 0048 00000000 		.4byte	.LFB72
+ 2668 004c 0C000000 		.4byte	.LFE72
+ 2669 0050 00000000 		.4byte	.LFB73
+ 2670 0054 1C000000 		.4byte	.LFE73
+ 2671 0058 00000000 		.4byte	.LFB74
+ 2672 005c 10000000 		.4byte	.LFE74
+ 2673 0060 00000000 		.4byte	.LFB75
+ 2674 0064 10000000 		.4byte	.LFE75
+ 2675 0068 00000000 		.4byte	.LFB76
+ 2676 006c 0C000000 		.4byte	.LFE76
+ 2677 0070 00000000 		.4byte	.LFB77
+ 2678 0074 0C000000 		.4byte	.LFE77
+ 2679 0078 00000000 		.4byte	.LFB78
+ 2680 007c 0C000000 		.4byte	.LFE78
+ 2681 0080 00000000 		.4byte	.LFB79
+ 2682 0084 0C000000 		.4byte	.LFE79
+ 2683 0088 00000000 		.4byte	.LFB80
+ 2684 008c 1C000000 		.4byte	.LFE80
+ 2685 0090 00000000 		.4byte	.LFB81
+ 2686 0094 64000000 		.4byte	.LFE81
+ 2687 0098 00000000 		.4byte	0
+ 2688 009c 00000000 		.4byte	0
+ 2689              		.section	.debug_line,"",%progbits
+ 2690              	.Ldebug_line0:
+ 2691 0000 ED030000 		.section	.debug_str,"MS",%progbits,1
+ 2691      02003D02 
+ 2691      00000201 
+ 2691      FB0E0D00 
+ 2691      01010101 
+ 2692              	.LASF61:
+ 2693 0000 456E636F 		.ascii	"Encoder_RightGetDist\000"
+ 2693      6465725F 
+ 2693      52696768 
+ 2693      74476574 
+ 2693      44697374 
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 56
 
 
- 2661      5F7400
- 2662              	.LASF36:
- 2663 0066 72656164 		.ascii	"read_counter\000"
- 2663      5F636F75 
- 2663      6E746572 
- 2663      00
- 2664              	.LASF11:
- 2665 0073 73697A65 		.ascii	"sizetype\000"
- 2665      74797065 
- 2665      00
- 2666              	.LASF60:
- 2667 007c 456E636F 		.ascii	"Encoder_LeftGetDist\000"
- 2667      6465725F 
- 2667      4C656674 
- 2667      47657444 
- 2667      69737400 
- 2668              	.LASF67:
- 2669 0090 64656275 		.ascii	"debug_control_enabled\000"
- 2669      675F636F 
- 2669      6E74726F 
- 2669      6C5F656E 
- 2669      61626C65 
- 2670              	.LASF45:
- 2671 00a6 64697374 		.ascii	"dist_str\000"
- 2671      5F737472 
- 2671      00
- 2672              	.LASF39:
- 2673 00af 64656C74 		.ascii	"delta_time\000"
- 2673      615F7469 
- 2673      6D6500
- 2674              	.LASF56:
- 2675 00ba 456E636F 		.ascii	"Encoder_LeftGetCount\000"
- 2675      6465725F 
- 2675      4C656674 
- 2675      47657443 
- 2675      6F756E74 
- 2676              	.LASF43:
- 2677 00cf 6176675F 		.ascii	"avg_delta_count_str\000"
- 2677      64656C74 
- 2677      615F636F 
- 2677      756E745F 
- 2677      73747200 
- 2678              	.LASF58:
- 2679 00e3 456E636F 		.ascii	"Encoder_LeftGetDeltaCount\000"
- 2679      6465725F 
- 2679      4C656674 
- 2679      47657444 
- 2679      656C7461 
- 2680              	.LASF15:
- 2681 00fd 75696E74 		.ascii	"uint16\000"
- 2681      313600
- 2682              	.LASF51:
- 2683 0104 456E636F 		.ascii	"Encoder_RightGetCntsPerSec\000"
- 2683      6465725F 
- 2683      52696768 
- 2683      74476574 
- 2683      436E7473 
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 54
+ 2694              	.LASF52:
+ 2695 0015 456E636F 		.ascii	"Encoder_GetCntsPerSec\000"
+ 2695      6465725F 
+ 2695      47657443 
+ 2695      6E747350 
+ 2695      65725365 
+ 2696              	.LASF79:
+ 2697 002b 456E636F 		.ascii	"Encoder_Init\000"
+ 2697      6465725F 
+ 2697      496E6974 
+ 2697      00
+ 2698              	.LASF42:
+ 2699 0038 6176675F 		.ascii	"avg_cps_str\000"
+ 2699      6370735F 
+ 2699      73747200 
+ 2700              	.LASF29:
+ 2701 0044 64656C74 		.ascii	"delta_count\000"
+ 2701      615F636F 
+ 2701      756E7400 
+ 2702              	.LASF33:
+ 2703 0050 64697374 		.ascii	"dist\000"
+ 2703      00
+ 2704              	.LASF3:
+ 2705 0055 73686F72 		.ascii	"short int\000"
+ 2705      7420696E 
+ 2705      7400
+ 2706              	.LASF5:
+ 2707 005f 73697A65 		.ascii	"size_t\000"
+ 2707      5F7400
+ 2708              	.LASF36:
+ 2709 0066 72656164 		.ascii	"read_counter\000"
+ 2709      5F636F75 
+ 2709      6E746572 
+ 2709      00
+ 2710              	.LASF11:
+ 2711 0073 73697A65 		.ascii	"sizetype\000"
+ 2711      74797065 
+ 2711      00
+ 2712              	.LASF60:
+ 2713 007c 456E636F 		.ascii	"Encoder_LeftGetDist\000"
+ 2713      6465725F 
+ 2713      4C656674 
+ 2713      47657444 
+ 2713      69737400 
+ 2714              	.LASF68:
+ 2715 0090 64656275 		.ascii	"debug_control_enabled\000"
+ 2715      675F636F 
+ 2715      6E74726F 
+ 2715      6C5F656E 
+ 2715      61626C65 
+ 2716              	.LASF45:
+ 2717 00a6 64697374 		.ascii	"dist_str\000"
+ 2717      5F737472 
+ 2717      00
+ 2718              	.LASF39:
+ 2719 00af 64656C74 		.ascii	"delta_time\000"
+ 2719      615F7469 
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 57
 
 
- 2684              	.LASF23:
- 2685 011f 57524954 		.ascii	"WRITE_ENCODER_COUNTER_TYPE\000"
- 2685      455F454E 
- 2685      434F4445 
- 2685      525F434F 
- 2685      554E5445 
- 2686              	.LASF18:
- 2687 013a 666C6F61 		.ascii	"float\000"
- 2687      7400
- 2688              	.LASF78:
- 2689 0140 443A5C70 		.ascii	"D:\\projects\\ArloBot\\arlobot_freesoc\\freesoc.cyd"
- 2689      726F6A65 
- 2689      6374735C 
- 2689      41726C6F 
- 2689      426F745C 
- 2690 016f 736E00   		.ascii	"sn\000"
- 2691              	.LASF9:
- 2692 0172 6C6F6E67 		.ascii	"long long int\000"
- 2692      206C6F6E 
- 2692      6720696E 
- 2692      7400
- 2693              	.LASF59:
- 2694 0180 456E636F 		.ascii	"Encoder_RightGetDeltaCount\000"
- 2694      6465725F 
- 2694      52696768 
- 2694      74476574 
- 2694      44656C74 
- 2695              	.LASF7:
- 2696 019b 6C6F6E67 		.ascii	"long int\000"
- 2696      20696E74 
- 2696      00
- 2697              	.LASF75:
- 2698 01a4 6D696C6C 		.ascii	"millis\000"
- 2698      697300
- 2699              	.LASF24:
- 2700 01ab 5F6D6F76 		.ascii	"_moving_average_float_tag\000"
- 2700      696E675F 
- 2700      61766572 
- 2700      6167655F 
- 2700      666C6F61 
- 2701              	.LASF22:
- 2702 01c5 52454144 		.ascii	"READ_ENCODER_COUNTER_TYPE\000"
- 2702      5F454E43 
- 2702      4F444552 
- 2702      5F434F55 
- 2702      4E544552 
- 2703              	.LASF34:
- 2704 01df 64656C74 		.ascii	"delta_count_ma\000"
- 2704      615F636F 
- 2704      756E745F 
- 2704      6D6100
- 2705              	.LASF70:
- 2706 01ee 736E7072 		.ascii	"snprintf\000"
- 2706      696E7466 
- 2706      00
- 2707              	.LASF57:
- 2708 01f7 456E636F 		.ascii	"Encoder_RightGetCount\000"
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 55
+ 2719      6D6500
+ 2720              	.LASF56:
+ 2721 00ba 456E636F 		.ascii	"Encoder_LeftGetCount\000"
+ 2721      6465725F 
+ 2721      4C656674 
+ 2721      47657443 
+ 2721      6F756E74 
+ 2722              	.LASF43:
+ 2723 00cf 6176675F 		.ascii	"avg_delta_count_str\000"
+ 2723      64656C74 
+ 2723      615F636F 
+ 2723      756E745F 
+ 2723      73747200 
+ 2724              	.LASF58:
+ 2725 00e3 456E636F 		.ascii	"Encoder_LeftGetDeltaCount\000"
+ 2725      6465725F 
+ 2725      4C656674 
+ 2725      47657444 
+ 2725      656C7461 
+ 2726              	.LASF15:
+ 2727 00fd 75696E74 		.ascii	"uint16\000"
+ 2727      313600
+ 2728              	.LASF51:
+ 2729 0104 456E636F 		.ascii	"Encoder_RightGetCntsPerSec\000"
+ 2729      6465725F 
+ 2729      52696768 
+ 2729      74476574 
+ 2729      436E7473 
+ 2730              	.LASF23:
+ 2731 011f 57524954 		.ascii	"WRITE_ENCODER_COUNTER_TYPE\000"
+ 2731      455F454E 
+ 2731      434F4445 
+ 2731      525F434F 
+ 2731      554E5445 
+ 2732              	.LASF18:
+ 2733 013a 666C6F61 		.ascii	"float\000"
+ 2733      7400
+ 2734              	.LASF78:
+ 2735 0140 443A5C70 		.ascii	"D:\\projects\\ArloBot\\arlobot_freesoc\\freesoc.cyd"
+ 2735      726F6A65 
+ 2735      6374735C 
+ 2735      41726C6F 
+ 2735      426F745C 
+ 2736 016f 736E00   		.ascii	"sn\000"
+ 2737              	.LASF9:
+ 2738 0172 6C6F6E67 		.ascii	"long long int\000"
+ 2738      206C6F6E 
+ 2738      6720696E 
+ 2738      7400
+ 2739              	.LASF59:
+ 2740 0180 456E636F 		.ascii	"Encoder_RightGetDeltaCount\000"
+ 2740      6465725F 
+ 2740      52696768 
+ 2740      74476574 
+ 2740      44656C74 
+ 2741              	.LASF7:
+ 2742 019b 6C6F6E67 		.ascii	"long int\000"
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 58
 
 
- 2708      6465725F 
- 2708      52696768 
- 2708      74476574 
- 2708      436F756E 
- 2709              	.LASF14:
- 2710 020d 75696E74 		.ascii	"uint8\000"
- 2710      3800
- 2711              	.LASF30:
- 2712 0213 6176675F 		.ascii	"avg_delta_count\000"
- 2712      64656C74 
- 2712      615F636F 
- 2712      756E7400 
- 2713              	.LASF41:
- 2714 0223 44756D70 		.ascii	"DumpEncoder\000"
- 2714      456E636F 
- 2714      64657200 
- 2715              	.LASF2:
- 2716 022f 756E7369 		.ascii	"unsigned char\000"
- 2716      676E6564 
- 2716      20636861 
- 2716      7200
- 2717              	.LASF1:
- 2718 023d 7369676E 		.ascii	"signed char\000"
- 2718      65642063 
- 2718      68617200 
- 2719              	.LASF10:
- 2720 0249 6C6F6E67 		.ascii	"long long unsigned int\000"
- 2720      206C6F6E 
- 2720      6720756E 
- 2720      7369676E 
- 2720      65642069 
- 2721              	.LASF40:
- 2722 0260 456E636F 		.ascii	"Encoder_Sample\000"
- 2722      6465725F 
- 2722      53616D70 
- 2722      6C6500
- 2723              	.LASF38:
- 2724 026f 454E434F 		.ascii	"ENCODER_TYPE\000"
- 2724      4445525F 
- 2724      54595045 
- 2724      00
- 2725              	.LASF0:
- 2726 027c 756E7369 		.ascii	"unsigned int\000"
- 2726      676E6564 
- 2726      20696E74 
- 2726      00
- 2727              	.LASF20:
- 2728 0289 6C617374 		.ascii	"last\000"
- 2728      00
- 2729              	.LASF48:
- 2730 028e 6C617374 		.ascii	"last_update_time\000"
- 2730      5F757064 
- 2730      6174655F 
- 2730      74696D65 
- 2730      00
- 2731              	.LASF55:
- 2732 029f 456E636F 		.ascii	"Encoder_GetMeterPerSec\000"
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 56
-
-
- 2732      6465725F 
- 2732      4765744D 
- 2732      65746572 
- 2732      50657253 
- 2733              	.LASF4:
- 2734 02b6 73686F72 		.ascii	"short unsigned int\000"
- 2734      7420756E 
- 2734      7369676E 
- 2734      65642069 
- 2734      6E7400
- 2735              	.LASF50:
- 2736 02c9 456E636F 		.ascii	"Encoder_LeftGetCntsPerSec\000"
- 2736      6465725F 
- 2736      4C656674 
- 2736      47657443 
- 2736      6E747350 
- 2737              	.LASF12:
- 2738 02e3 63686172 		.ascii	"char\000"
- 2738      00
- 2739              	.LASF76:
- 2740 02e8 474E5520 		.ascii	"GNU C 4.9.3 20150303 (release) [ARM/embedded-4_9-br"
- 2740      4320342E 
- 2740      392E3320 
- 2740      32303135 
- 2740      30333033 
- 2741 031b 616E6368 		.ascii	"anch revision 221220] -mcpu=cortex-m3 -mthumb -g -O"
- 2741      20726576 
- 2741      6973696F 
- 2741      6E203232 
- 2741      31323230 
- 2742 034e 67202D66 		.ascii	"g -ffunction-sections -ffat-lto-objects\000"
- 2742      66756E63 
- 2742      74696F6E 
- 2742      2D736563 
- 2742      74696F6E 
- 2743              	.LASF13:
- 2744 0376 696E7433 		.ascii	"int32_t\000"
- 2744      325F7400 
- 2745              	.LASF46:
- 2746 037e 456E636F 		.ascii	"Encoder_Start\000"
- 2746      6465725F 
- 2746      53746172 
- 2746      7400
- 2747              	.LASF28:
- 2748 038c 6C617374 		.ascii	"last_count\000"
- 2748      5F636F75 
- 2748      6E7400
- 2749              	.LASF72:
- 2750 0397 5365725F 		.ascii	"Ser_PutString\000"
- 2750      50757453 
- 2750      7472696E 
- 2750      6700
- 2751              	.LASF71:
- 2752 03a5 66746F61 		.ascii	"ftoa\000"
+ 2742      20696E74 
+ 2742      00
+ 2743              	.LASF75:
+ 2744 01a4 6D696C6C 		.ascii	"millis\000"
+ 2744      697300
+ 2745              	.LASF24:
+ 2746 01ab 5F6D6F76 		.ascii	"_moving_average_float_tag\000"
+ 2746      696E675F 
+ 2746      61766572 
+ 2746      6167655F 
+ 2746      666C6F61 
+ 2747              	.LASF22:
+ 2748 01c5 52454144 		.ascii	"READ_ENCODER_COUNTER_TYPE\000"
+ 2748      5F454E43 
+ 2748      4F444552 
+ 2748      5F434F55 
+ 2748      4E544552 
+ 2749              	.LASF34:
+ 2750 01df 64656C74 		.ascii	"delta_count_ma\000"
+ 2750      615F636F 
+ 2750      756E745F 
+ 2750      6D6100
+ 2751              	.LASF70:
+ 2752 01ee 736E7072 		.ascii	"snprintf\000"
+ 2752      696E7466 
  2752      00
- 2753              	.LASF74:
- 2754 03aa 52696768 		.ascii	"Right_QuadDec_Start\000"
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 57
+ 2753              	.LASF57:
+ 2754 01f7 456E636F 		.ascii	"Encoder_RightGetCount\000"
+ 2754      6465725F 
+ 2754      52696768 
+ 2754      74476574 
+ 2754      436F756E 
+ 2755              	.LASF14:
+ 2756 020d 75696E74 		.ascii	"uint8\000"
+ 2756      3800
+ 2757              	.LASF30:
+ 2758 0213 6176675F 		.ascii	"avg_delta_count\000"
+ 2758      64656C74 
+ 2758      615F636F 
+ 2758      756E7400 
+ 2759              	.LASF41:
+ 2760 0223 44756D70 		.ascii	"DumpEncoder\000"
+ 2760      456E636F 
+ 2760      64657200 
+ 2761              	.LASF2:
+ 2762 022f 756E7369 		.ascii	"unsigned char\000"
+ 2762      676E6564 
+ 2762      20636861 
+ 2762      7200
+ 2763              	.LASF1:
+ 2764 023d 7369676E 		.ascii	"signed char\000"
+ 2764      65642063 
+ 2764      68617200 
+ 2765              	.LASF10:
+ 2766 0249 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 2766      206C6F6E 
+ 2766      6720756E 
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 59
 
 
- 2754      745F5175 
- 2754      61644465 
- 2754      635F5374 
- 2754      61727400 
- 2755              	.LASF25:
- 2756 03be 5F656E63 		.ascii	"_encoder_tag\000"
- 2756      6F646572 
- 2756      5F746167 
- 2756      00
- 2757              	.LASF21:
- 2758 03cb 4D4F5649 		.ascii	"MOVING_AVERAGE_FLOAT_TYPE\000"
- 2758      4E475F41 
- 2758      56455241 
- 2758      47455F46 
- 2758      4C4F4154 
- 2759              	.LASF16:
- 2760 03e5 75696E74 		.ascii	"uint32\000"
- 2760      333200
- 2761              	.LASF8:
- 2762 03ec 6C6F6E67 		.ascii	"long unsigned int\000"
- 2762      20756E73 
- 2762      69676E65 
- 2762      6420696E 
- 2762      7400
- 2763              	.LASF35:
- 2764 03fe 6176675F 		.ascii	"avg_cps_ma\000"
- 2764      6370735F 
- 2764      6D6100
- 2765              	.LASF17:
- 2766 0409 696E7433 		.ascii	"int32\000"
- 2766      3200
- 2767              	.LASF64:
- 2768 040f 6C656674 		.ascii	"left_enc\000"
- 2768      5F656E63 
- 2768      00
- 2769              	.LASF69:
- 2770 0418 4D6F7669 		.ascii	"MovingAverageFloat\000"
- 2770      6E674176 
- 2770      65726167 
- 2770      65466C6F 
- 2770      617400
- 2771              	.LASF53:
- 2772 042b 456E636F 		.ascii	"Encoder_LeftGetMeterPerSec\000"
- 2772      6465725F 
- 2772      4C656674 
- 2772      4765744D 
- 2772      65746572 
- 2773              	.LASF27:
- 2774 0446 636F756E 		.ascii	"count\000"
- 2774      7400
- 2775              	.LASF32:
- 2776 044c 6176675F 		.ascii	"avg_mps\000"
- 2776      6D707300 
- 2777              	.LASF47:
- 2778 0454 456E636F 		.ascii	"Encoder_Update\000"
+ 2766      7369676E 
+ 2766      65642069 
+ 2767              	.LASF40:
+ 2768 0260 456E636F 		.ascii	"Encoder_Sample\000"
+ 2768      6465725F 
+ 2768      53616D70 
+ 2768      6C6500
+ 2769              	.LASF38:
+ 2770 026f 454E434F 		.ascii	"ENCODER_TYPE\000"
+ 2770      4445525F 
+ 2770      54595045 
+ 2770      00
+ 2771              	.LASF0:
+ 2772 027c 756E7369 		.ascii	"unsigned int\000"
+ 2772      676E6564 
+ 2772      20696E74 
+ 2772      00
+ 2773              	.LASF20:
+ 2774 0289 6C617374 		.ascii	"last\000"
+ 2774      00
+ 2775              	.LASF48:
+ 2776 028e 6C617374 		.ascii	"last_update_time\000"
+ 2776      5F757064 
+ 2776      6174655F 
+ 2776      74696D65 
+ 2776      00
+ 2777              	.LASF55:
+ 2778 029f 456E636F 		.ascii	"Encoder_GetMeterPerSec\000"
  2778      6465725F 
- 2778      55706461 
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 58
+ 2778      4765744D 
+ 2778      65746572 
+ 2778      50657253 
+ 2779              	.LASF4:
+ 2780 02b6 73686F72 		.ascii	"short unsigned int\000"
+ 2780      7420756E 
+ 2780      7369676E 
+ 2780      65642069 
+ 2780      6E7400
+ 2781              	.LASF50:
+ 2782 02c9 456E636F 		.ascii	"Encoder_LeftGetCntsPerSec\000"
+ 2782      6465725F 
+ 2782      4C656674 
+ 2782      47657443 
+ 2782      6E747350 
+ 2783              	.LASF12:
+ 2784 02e3 63686172 		.ascii	"char\000"
+ 2784      00
+ 2785              	.LASF76:
+ 2786 02e8 474E5520 		.ascii	"GNU C 4.9.3 20150303 (release) [ARM/embedded-4_9-br"
+ 2786      4320342E 
+ 2786      392E3320 
+ 2786      32303135 
+ 2786      30333033 
+ 2787 031b 616E6368 		.ascii	"anch revision 221220] -mcpu=cortex-m3 -mthumb -g -O"
+ 2787      20726576 
+ 2787      6973696F 
+ 2787      6E203232 
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 60
 
 
- 2778      746500
- 2779              	.LASF6:
- 2780 0463 5F5F696E 		.ascii	"__int32_t\000"
- 2780      7433325F 
- 2780      7400
- 2781              	.LASF44:
- 2782 046d 6176675F 		.ascii	"avg_mps_str\000"
- 2782      6D70735F 
- 2782      73747200 
- 2783              	.LASF65:
- 2784 0479 72696768 		.ascii	"right_enc\000"
- 2784      745F656E 
- 2784      6300
- 2785              	.LASF73:
- 2786 0483 4C656674 		.ascii	"Left_QuadDec_Start\000"
- 2786      5F517561 
- 2786      64446563 
- 2786      5F537461 
- 2786      727400
- 2787              	.LASF62:
- 2788 0496 456E636F 		.ascii	"Encoder_GetDist\000"
- 2788      6465725F 
- 2788      47657444 
- 2788      69737400 
- 2789              	.LASF26:
- 2790 04a6 6E616D65 		.ascii	"name\000"
- 2790      00
- 2791              	.LASF68:
- 2792 04ab 666F726D 		.ascii	"formatted_string\000"
- 2792      61747465 
- 2792      645F7374 
- 2792      72696E67 
- 2792      00
- 2793              	.LASF77:
- 2794 04bc 2E2E5C73 		.ascii	"..\\source\\encoder.c\000"
- 2794      6F757263 
- 2794      655C656E 
- 2794      636F6465 
- 2794      722E6300 
- 2795              	.LASF54:
- 2796 04d0 456E636F 		.ascii	"Encoder_RightGetMeterPerSec\000"
- 2796      6465725F 
- 2796      52696768 
- 2796      74476574 
- 2796      4D657465 
- 2797              	.LASF63:
- 2798 04ec 456E636F 		.ascii	"Encoder_Reset\000"
- 2798      6465725F 
- 2798      52657365 
- 2798      7400
- 2799              	.LASF19:
- 2800 04fa 646F7562 		.ascii	"double\000"
- 2800      6C6500
- 2801              	.LASF49:
- 2802 0501 656E635F 		.ascii	"enc_sched_offset_applied\000"
- 2802      73636865 
- 2802      645F6F66 
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccuVT0vi.s 			page 59
+ 2787      31323230 
+ 2788 034e 67202D66 		.ascii	"g -ffunction-sections -ffat-lto-objects\000"
+ 2788      66756E63 
+ 2788      74696F6E 
+ 2788      2D736563 
+ 2788      74696F6E 
+ 2789              	.LASF13:
+ 2790 0376 696E7433 		.ascii	"int32_t\000"
+ 2790      325F7400 
+ 2791              	.LASF46:
+ 2792 037e 456E636F 		.ascii	"Encoder_Start\000"
+ 2792      6465725F 
+ 2792      53746172 
+ 2792      7400
+ 2793              	.LASF28:
+ 2794 038c 6C617374 		.ascii	"last_count\000"
+ 2794      5F636F75 
+ 2794      6E7400
+ 2795              	.LASF72:
+ 2796 0397 5365725F 		.ascii	"Ser_PutString\000"
+ 2796      50757453 
+ 2796      7472696E 
+ 2796      6700
+ 2797              	.LASF71:
+ 2798 03a5 66746F61 		.ascii	"ftoa\000"
+ 2798      00
+ 2799              	.LASF74:
+ 2800 03aa 52696768 		.ascii	"Right_QuadDec_Start\000"
+ 2800      745F5175 
+ 2800      61644465 
+ 2800      635F5374 
+ 2800      61727400 
+ 2801              	.LASF25:
+ 2802 03be 5F656E63 		.ascii	"_encoder_tag\000"
+ 2802      6F646572 
+ 2802      5F746167 
+ 2802      00
+ 2803              	.LASF21:
+ 2804 03cb 4D4F5649 		.ascii	"MOVING_AVERAGE_FLOAT_TYPE\000"
+ 2804      4E475F41 
+ 2804      56455241 
+ 2804      47455F46 
+ 2804      4C4F4154 
+ 2805              	.LASF16:
+ 2806 03e5 75696E74 		.ascii	"uint32\000"
+ 2806      333200
+ 2807              	.LASF8:
+ 2808 03ec 6C6F6E67 		.ascii	"long unsigned int\000"
+ 2808      20756E73 
+ 2808      69676E65 
+ 2808      6420696E 
+ 2808      7400
+ 2809              	.LASF35:
+ 2810 03fe 6176675F 		.ascii	"avg_cps_ma\000"
+ 2810      6370735F 
+ 2810      6D6100
+ 2811              	.LASF17:
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 61
 
 
- 2802      66736574 
- 2802      5F617070 
- 2803              	.LASF66:
- 2804 051a 49544D5F 		.ascii	"ITM_RxBuffer\000"
- 2804      52784275 
- 2804      66666572 
- 2804      00
- 2805              	.LASF80:
- 2806 0527 43794465 		.ascii	"CyDelay\000"
- 2806      6C617900 
- 2807              	.LASF31:
- 2808 052f 6176675F 		.ascii	"avg_cps\000"
- 2808      63707300 
- 2809              	.LASF37:
- 2810 0537 77726974 		.ascii	"write_counter\000"
- 2810      655F636F 
- 2810      756E7465 
- 2810      7200
- 2811              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 4.9.3 20150303 (release) [ARM/embedded-4_9-br
+ 2812 0409 696E7433 		.ascii	"int32\000"
+ 2812      3200
+ 2813              	.LASF64:
+ 2814 040f 6C656674 		.ascii	"left_enc\000"
+ 2814      5F656E63 
+ 2814      00
+ 2815              	.LASF69:
+ 2816 0418 4D6F7669 		.ascii	"MovingAverageFloat\000"
+ 2816      6E674176 
+ 2816      65726167 
+ 2816      65466C6F 
+ 2816      617400
+ 2817              	.LASF53:
+ 2818 042b 456E636F 		.ascii	"Encoder_LeftGetMeterPerSec\000"
+ 2818      6465725F 
+ 2818      4C656674 
+ 2818      4765744D 
+ 2818      65746572 
+ 2819              	.LASF27:
+ 2820 0446 636F756E 		.ascii	"count\000"
+ 2820      7400
+ 2821              	.LASF32:
+ 2822 044c 6176675F 		.ascii	"avg_mps\000"
+ 2822      6D707300 
+ 2823              	.LASF47:
+ 2824 0454 456E636F 		.ascii	"Encoder_Update\000"
+ 2824      6465725F 
+ 2824      55706461 
+ 2824      746500
+ 2825              	.LASF6:
+ 2826 0463 5F5F696E 		.ascii	"__int32_t\000"
+ 2826      7433325F 
+ 2826      7400
+ 2827              	.LASF44:
+ 2828 046d 6176675F 		.ascii	"avg_mps_str\000"
+ 2828      6D70735F 
+ 2828      73747200 
+ 2829              	.LASF65:
+ 2830 0479 72696768 		.ascii	"right_enc\000"
+ 2830      745F656E 
+ 2830      6300
+ 2831              	.LASF73:
+ 2832 0483 4C656674 		.ascii	"Left_QuadDec_Start\000"
+ 2832      5F517561 
+ 2832      64446563 
+ 2832      5F537461 
+ 2832      727400
+ 2833              	.LASF62:
+ 2834 0496 456E636F 		.ascii	"Encoder_GetDist\000"
+ 2834      6465725F 
+ 2834      47657444 
+ 2834      69737400 
+ 2835              	.LASF26:
+ 2836 04a6 6E616D65 		.ascii	"name\000"
+ 2836      00
+ 2837              	.LASF67:
+ 2838 04ab 666F726D 		.ascii	"formatted_string\000"
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZEFZFb.s 			page 62
+
+
+ 2838      61747465 
+ 2838      645F7374 
+ 2838      72696E67 
+ 2838      00
+ 2839              	.LASF77:
+ 2840 04bc 2E2E5C73 		.ascii	"..\\source\\encoder.c\000"
+ 2840      6F757263 
+ 2840      655C656E 
+ 2840      636F6465 
+ 2840      722E6300 
+ 2841              	.LASF54:
+ 2842 04d0 456E636F 		.ascii	"Encoder_RightGetMeterPerSec\000"
+ 2842      6465725F 
+ 2842      52696768 
+ 2842      74476574 
+ 2842      4D657465 
+ 2843              	.LASF63:
+ 2844 04ec 456E636F 		.ascii	"Encoder_Reset\000"
+ 2844      6465725F 
+ 2844      52657365 
+ 2844      7400
+ 2845              	.LASF19:
+ 2846 04fa 646F7562 		.ascii	"double\000"
+ 2846      6C6500
+ 2847              	.LASF49:
+ 2848 0501 656E635F 		.ascii	"enc_sched_offset_applied\000"
+ 2848      73636865 
+ 2848      645F6F66 
+ 2848      66736574 
+ 2848      5F617070 
+ 2849              	.LASF66:
+ 2850 051a 49544D5F 		.ascii	"ITM_RxBuffer\000"
+ 2850      52784275 
+ 2850      66666572 
+ 2850      00
+ 2851              	.LASF80:
+ 2852 0527 43794465 		.ascii	"CyDelay\000"
+ 2852      6C617900 
+ 2853              	.LASF31:
+ 2854 052f 6176675F 		.ascii	"avg_cps\000"
+ 2854      63707300 
+ 2855              	.LASF37:
+ 2856 0537 77726974 		.ascii	"write_counter\000"
+ 2856      655F636F 
+ 2856      756E7465 
+ 2856      7200
+ 2857              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 4.9.3 20150303 (release) [ARM/embedded-4_9-br

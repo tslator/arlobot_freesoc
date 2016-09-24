@@ -54,7 +54,7 @@ void Diag_Start()
 
 }
 
-*---------------------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------------------------
  * Name: Diag_Update
  * Description: Updates the heartbeat timer and writes the heartbeat counter to I2C.
  * Parameters: None

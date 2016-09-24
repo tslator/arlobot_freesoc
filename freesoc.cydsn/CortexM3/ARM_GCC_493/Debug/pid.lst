@@ -1,4 +1,4 @@
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 1
 
 
    1              		.syntax unified
@@ -46,122 +46,167 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
   10:..\source/pid.c ****  * ========================================
   11:..\source/pid.c **** */
   12:..\source/pid.c **** 
-  13:..\source/pid.c **** #include <stdio.h>
-  14:..\source/pid.c **** #include "config.h"
-  15:..\source/pid.c **** #include "pid.h"
-  16:..\source/pid.c **** #include "time.h"
-  17:..\source/pid.c **** #include "utils.h"
-  18:..\source/pid.c **** #include "encoder.h"
-  19:..\source/pid.c **** #include "motor.h"
-  20:..\source/pid.c **** #include "pid_controller.h"
-  21:..\source/pid.c **** #include "diag.h"
-  22:..\source/pid.c **** #include "debug.h"
-  23:..\source/pid.c **** #include "odom.h"
-  24:..\source/pid.c **** #include "control.h"
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 2
+  13:..\source/pid.c **** /*-------------------------------------------------------------------------------------------------
+  14:..\source/pid.c ****  * Includes
+  15:..\source/pid.c ****  *-------------------------------------------------------------------------------------------------
+  16:..\source/pid.c **** #include <stdio.h>
+  17:..\source/pid.c **** #include "config.h"
+  18:..\source/pid.c **** #include "pid.h"
+  19:..\source/pid.c **** #include "time.h"
+  20:..\source/pid.c **** #include "utils.h"
+  21:..\source/pid.c **** #include "encoder.h"
+  22:..\source/pid.c **** #include "motor.h"
+  23:..\source/pid.c **** #include "pid_controller.h"
+  24:..\source/pid.c **** #include "diag.h"
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 2
 
 
-  25:..\source/pid.c **** #include "pidutil.h"
-  26:..\source/pid.c **** 
-  27:..\source/pid.c **** #ifdef LEFT_PID_DUMP_ENABLED
-  28:..\source/pid.c **** #define LEFT_DUMP_PID()  if (debug_control_enabled & DEBUG_LEFT_PID_ENABLE_BIT) DumpPid(left_pid.na
-  29:..\source/pid.c **** #else
-  30:..\source/pid.c **** #define  LEFT_DUMP_PID()
-  31:..\source/pid.c **** #endif
-  32:..\source/pid.c **** 
-  33:..\source/pid.c **** #ifdef RIGHT_PID_DUMP_ENABLED
-  34:..\source/pid.c **** #define RIGHT_DUMP_PID()  if (debug_control_enabled & DEBUG_RIGHT_PID_ENABLE_BIT) DumpPid(right_pid
+  25:..\source/pid.c **** #include "debug.h"
+  26:..\source/pid.c **** #include "odom.h"
+  27:..\source/pid.c **** #include "control.h"
+  28:..\source/pid.c **** #include "pidutil.h"
+  29:..\source/pid.c **** 
+  30:..\source/pid.c **** /*-------------------------------------------------------------------------------------------------
+  31:..\source/pid.c ****  * Macros
+  32:..\source/pid.c ****  *-------------------------------------------------------------------------------------------------
+  33:..\source/pid.c **** #ifdef LEFT_PID_DUMP_ENABLED
+  34:..\source/pid.c **** #define LEFT_DUMP_PID()  if (debug_control_enabled & DEBUG_LEFT_PID_ENABLE_BIT) DumpPid(left_pid.na
   35:..\source/pid.c **** #else
-  36:..\source/pid.c **** #define RIGHT_DUMP_PID()
+  36:..\source/pid.c **** #define  LEFT_DUMP_PID()
   37:..\source/pid.c **** #endif
   38:..\source/pid.c **** 
-  39:..\source/pid.c **** #ifdef PID_UPDATE_DELTA_ENABLED
-  40:..\source/pid.c **** #define PID_DEBUG_DELTA(delta)  DEBUG_DELTA_TIME("pid", delta)
+  39:..\source/pid.c **** #ifdef RIGHT_PID_DUMP_ENABLED
+  40:..\source/pid.c **** #define RIGHT_DUMP_PID()  if (debug_control_enabled & DEBUG_RIGHT_PID_ENABLE_BIT) DumpPid(right_pid
   41:..\source/pid.c **** #else
-  42:..\source/pid.c **** #define PID_DEBUG_DELTA(delta)
+  42:..\source/pid.c **** #define RIGHT_DUMP_PID()
   43:..\source/pid.c **** #endif
   44:..\source/pid.c **** 
-  45:..\source/pid.c **** #define PID_SAMPLE_TIME_MS  SAMPLE_TIME_MS(PID_SAMPLE_RATE)
-  46:..\source/pid.c **** #define PID_SAMPLE_TIME_SEC SAMPLE_TIME_SEC(PID_SAMPLE_RATE)
-  47:..\source/pid.c **** 
-  48:..\source/pid.c **** #define PID_MIN (0)
-  49:..\source/pid.c **** #define PID_MAX (5000)
+  45:..\source/pid.c **** #ifdef PID_UPDATE_DELTA_ENABLED
+  46:..\source/pid.c **** #define PID_DEBUG_DELTA(delta)  DEBUG_DELTA_TIME("pid", delta)
+  47:..\source/pid.c **** #else
+  48:..\source/pid.c **** #define PID_DEBUG_DELTA(delta)
+  49:..\source/pid.c **** #endif
   50:..\source/pid.c **** 
-  51:..\source/pid.c **** typedef struct _pid_tag
-  52:..\source/pid.c **** {
-  53:..\source/pid.c ****     char name[6];
-  54:..\source/pid.c ****     WHEEL_TYPE wheel;
-  55:..\source/pid.c ****     PIDControl pid;
-  56:..\source/pid.c ****     GET_TARGET_FUNC_TYPE get_target;
-  57:..\source/pid.c ****     GET_ENCODER_FUNC_TYPE get_encoder;
-  58:..\source/pid.c ****     SET_MOTOR_PWM_FUNC_TYPE set_motor;
-  59:..\source/pid.c ****     GET_MOTOR_PWM_FUNC_TYPE get_pwm;
-  60:..\source/pid.c **** } PID_TYPE;
-  61:..\source/pid.c **** 
-  62:..\source/pid.c **** 
-  63:..\source/pid.c **** #define left_kp (3.55)
-  64:..\source/pid.c **** #define left_ki (1.955)
-  65:..\source/pid.c **** #define left_kd (0.57)
-  66:..\source/pid.c **** 
-  67:..\source/pid.c **** #define right_kp (6.0)
-  68:..\source/pid.c **** #define right_ki (1.95)
-  69:..\source/pid.c **** #define right_kd (0.65)
-  70:..\source/pid.c **** 
-  71:..\source/pid.c **** static PID_TYPE left_pid = { 
-  72:..\source/pid.c ****     /* name */          "left",
-  73:..\source/pid.c ****     /* wheel */         WHEEL_LEFT,
-  74:..\source/pid.c ****     /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMA
-  75:..\source/pid.c ****     /* get_target */    0,
-  76:..\source/pid.c ****     /* get_encoder */   Encoder_LeftGetCntsPerSec,
-  77:..\source/pid.c ****     /* set_motor */     Motor_LeftSetPwm,
-  78:..\source/pid.c ****     /* get_pwm */       Motor_LeftGetPwm
-  79:..\source/pid.c **** };
-  80:..\source/pid.c **** 
-  81:..\source/pid.c **** static PID_TYPE right_pid = { 
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 3
+  51:..\source/pid.c **** #define PID_SAMPLE_TIME_MS  SAMPLE_TIME_MS(PID_SAMPLE_RATE)
+  52:..\source/pid.c **** #define PID_SAMPLE_TIME_SEC SAMPLE_TIME_SEC(PID_SAMPLE_RATE)
+  53:..\source/pid.c **** 
+  54:..\source/pid.c **** /*-------------------------------------------------------------------------------------------------
+  55:..\source/pid.c ****  * Constants
+  56:..\source/pid.c ****  *-------------------------------------------------------------------------------------------------
+  57:..\source/pid.c **** #define PID_MIN (0)     // count/sec
+  58:..\source/pid.c **** #define PID_MAX (5000)  // count/sec
+  59:..\source/pid.c **** 
+  60:..\source/pid.c **** #define left_kp (3.55)
+  61:..\source/pid.c **** #define left_ki (1.955)
+  62:..\source/pid.c **** #define left_kd (0.57)
+  63:..\source/pid.c **** 
+  64:..\source/pid.c **** #define right_kp (6.0)
+  65:..\source/pid.c **** #define right_ki (1.95)
+  66:..\source/pid.c **** #define right_kd (0.65)
+  67:..\source/pid.c **** 
+  68:..\source/pid.c **** /*-------------------------------------------------------------------------------------------------
+  69:..\source/pid.c ****  * Types
+  70:..\source/pid.c ****  *-------------------------------------------------------------------------------------------------
+  71:..\source/pid.c **** typedef struct _pid_tag
+  72:..\source/pid.c **** {
+  73:..\source/pid.c ****     char name[6];
+  74:..\source/pid.c ****     WHEEL_TYPE wheel;
+  75:..\source/pid.c ****     PIDControl pid;
+  76:..\source/pid.c ****     GET_TARGET_FUNC_TYPE get_target;
+  77:..\source/pid.c ****     GET_ENCODER_FUNC_TYPE get_encoder;
+  78:..\source/pid.c ****     SET_MOTOR_PWM_FUNC_TYPE set_motor;
+  79:..\source/pid.c ****     GET_MOTOR_PWM_FUNC_TYPE get_pwm;
+  80:..\source/pid.c **** } PID_TYPE;
+  81:..\source/pid.c **** 
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 3
 
 
-  82:..\source/pid.c ****     /* name */          "right",
-  83:..\source/pid.c ****     /* wheel */         WHEEL_RIGHT,
-  84:..\source/pid.c ****     /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMA
-  85:..\source/pid.c ****     /* get_target */    0,    
-  86:..\source/pid.c ****     /* get_encoder */   Encoder_RightGetCntsPerSec,
-  87:..\source/pid.c ****     /* set_motor */     Motor_RightSetPwm,
-  88:..\source/pid.c ****     /* get_pwm */       Motor_RightGetPwm
-  89:..\source/pid.c **** };
-  90:..\source/pid.c **** 
-  91:..\source/pid.c **** static uint8 pid_enabled;
-  92:..\source/pid.c **** 
-  93:..\source/pid.c **** 
-  94:..\source/pid.c **** void Pid_Init()
-  95:..\source/pid.c **** {
-  96:..\source/pid.c ****     pid_enabled = 0;
-  97:..\source/pid.c ****     left_pid.get_target = Control_LeftGetCmdVelocity;
-  98:..\source/pid.c ****     right_pid.get_target = Control_RightGetCmdVelocity;
-  99:..\source/pid.c ****     
- 100:..\source/pid.c ****     PIDInit(&left_pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, PID_MIN, PID_MAX, AUTOMATIC, DIRECT); 
- 101:..\source/pid.c ****     PIDInit(&right_pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, PID_MIN, PID_MAX, AUTOMATIC, DIRECT); 
- 102:..\source/pid.c **** }
- 103:..\source/pid.c ****     
- 104:..\source/pid.c **** void Pid_Start()
- 105:..\source/pid.c **** {
- 106:..\source/pid.c ****     CAL_PID_TYPE *p_gains;
- 107:..\source/pid.c ****     
- 108:..\source/pid.c ****     // Note: the PID gains are stored in EEPROM, so we don't have access to EEPROM until the EEPROM
- 109:..\source/pid.c ****     // started.  Pid_Start is called after Nvstore_Start.
- 110:..\source/pid.c ****     
- 111:..\source/pid.c ****     p_gains = Cal_LeftGetPidGains();    
- 112:..\source/pid.c ****     PIDTuningsSet(&left_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
- 113:..\source/pid.c ****     //PIDTuningsSet(&left_pid.pid, left_kp, left_ki, left_kd);
- 114:..\source/pid.c ****     
- 115:..\source/pid.c ****     p_gains = Cal_RightGetPidGains();
- 116:..\source/pid.c ****     PIDTuningsSet(&right_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
- 117:..\source/pid.c ****     //PIDTuningsSet(&right_pid.pid, right_kp, right_ki, right_kd);
- 118:..\source/pid.c **** }
- 119:..\source/pid.c **** 
- 120:..\source/pid.c **** static void ProcessPid(PID_TYPE *pid)
- 121:..\source/pid.c **** {
-  34              		.loc 1 121 0
+  82:..\source/pid.c **** 
+  83:..\source/pid.c **** /*-------------------------------------------------------------------------------------------------
+  84:..\source/pid.c ****  * Variables
+  85:..\source/pid.c ****  *-------------------------------------------------------------------------------------------------
+  86:..\source/pid.c **** 
+  87:..\source/pid.c **** static PID_TYPE left_pid = { 
+  88:..\source/pid.c ****     /* name */          "left",
+  89:..\source/pid.c ****     /* wheel */         WHEEL_LEFT,
+  90:..\source/pid.c ****     /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMA
+  91:..\source/pid.c ****     /* get_target */    0,
+  92:..\source/pid.c ****     /* get_encoder */   Encoder_LeftGetCntsPerSec,
+  93:..\source/pid.c ****     /* set_motor */     Motor_LeftSetPwm,
+  94:..\source/pid.c ****     /* get_pwm */       Motor_LeftGetPwm
+  95:..\source/pid.c **** };
+  96:..\source/pid.c **** 
+  97:..\source/pid.c **** static PID_TYPE right_pid = { 
+  98:..\source/pid.c ****     /* name */          "right",
+  99:..\source/pid.c ****     /* wheel */         WHEEL_RIGHT,
+ 100:..\source/pid.c ****     /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMA
+ 101:..\source/pid.c ****     /* get_target */    0,    
+ 102:..\source/pid.c ****     /* get_encoder */   Encoder_RightGetCntsPerSec,
+ 103:..\source/pid.c ****     /* set_motor */     Motor_RightSetPwm,
+ 104:..\source/pid.c ****     /* get_pwm */       Motor_RightGetPwm
+ 105:..\source/pid.c **** };
+ 106:..\source/pid.c **** 
+ 107:..\source/pid.c **** static uint8 pid_enabled;
+ 108:..\source/pid.c **** 
+ 109:..\source/pid.c **** 
+ 110:..\source/pid.c **** /*-------------------------------------------------------------------------------------------------
+ 111:..\source/pid.c ****  * Functions
+ 112:..\source/pid.c ****  *-------------------------------------------------------------------------------------------------
+ 113:..\source/pid.c **** 
+ 114:..\source/pid.c **** /*-------------------------------------------------------------------------------------------------
+ 115:..\source/pid.c ****  * Name: Pid_Init
+ 116:..\source/pid.c ****  * Description: Starts the EEPROM component used for storing calibration information.
+ 117:..\source/pid.c ****  * Parameters: None
+ 118:..\source/pid.c ****  * Return: None
+ 119:..\source/pid.c ****  * 
+ 120:..\source/pid.c ****  *-------------------------------------------------------------------------------------------------
+ 121:..\source/pid.c **** void Pid_Init()
+ 122:..\source/pid.c **** {
+ 123:..\source/pid.c ****     pid_enabled = 0;
+ 124:..\source/pid.c ****     left_pid.get_target = Control_LeftGetCmdVelocity;
+ 125:..\source/pid.c ****     right_pid.get_target = Control_RightGetCmdVelocity;
+ 126:..\source/pid.c ****     
+ 127:..\source/pid.c ****     PIDInit(&left_pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, PID_MIN, PID_MAX, AUTOMATIC, DIRECT); 
+ 128:..\source/pid.c ****     PIDInit(&right_pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, PID_MIN, PID_MAX, AUTOMATIC, DIRECT); 
+ 129:..\source/pid.c **** }
+ 130:..\source/pid.c ****     
+ 131:..\source/pid.c **** /*-------------------------------------------------------------------------------------------------
+ 132:..\source/pid.c ****  * Name: Pid_Start
+ 133:..\source/pid.c ****  * Description: Obtains the left/right PID gains and sets them into the left/right PID controller.
+ 134:..\source/pid.c ****  * Parameters: None
+ 135:..\source/pid.c ****  * Return: None
+ 136:..\source/pid.c ****  * 
+ 137:..\source/pid.c ****  *-------------------------------------------------------------------------------------------------
+ 138:..\source/pid.c **** void Pid_Start()
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 4
+
+
+ 139:..\source/pid.c **** {
+ 140:..\source/pid.c ****     CAL_PID_TYPE *p_gains;
+ 141:..\source/pid.c ****     
+ 142:..\source/pid.c ****     // Note: the PID gains are stored in EEPROM.  The EEPROM cannot be accessed until the EEPROM
+ 143:..\source/pid.c ****     // component is started which is handled in the Nvstore module.  
+ 144:..\source/pid.c ****     // Pid_Start is called after Nvstore_Start.
+ 145:..\source/pid.c ****     
+ 146:..\source/pid.c ****     p_gains = Cal_LeftGetPidGains();    
+ 147:..\source/pid.c ****     PIDTuningsSet(&left_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
+ 148:..\source/pid.c ****     
+ 149:..\source/pid.c ****     p_gains = Cal_RightGetPidGains();
+ 150:..\source/pid.c ****     PIDTuningsSet(&right_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
+ 151:..\source/pid.c **** }
+ 152:..\source/pid.c **** 
+ 153:..\source/pid.c **** /*-------------------------------------------------------------------------------------------------
+ 154:..\source/pid.c ****  * Name: ProcessPid
+ 155:..\source/pid.c ****  * Description: Prepares the values to be passed to the PID controller (which handles the actual
+ 156:..\source/pid.c ****  *              PID calculations) and applies the results to the relevant motor.  This function is
+ 157:..\source/pid.c ****  *              called at the PID sampling rate
+ 158:..\source/pid.c ****  * Parameters: pid - the relevant PID, left or right.
+ 159:..\source/pid.c ****  * Return: None
+ 160:..\source/pid.c ****  * 
+ 161:..\source/pid.c ****  *-------------------------------------------------------------------------------------------------
+ 162:..\source/pid.c **** static void ProcessPid(PID_TYPE *pid)
+ 163:..\source/pid.c **** {
+  34              		.loc 1 163 0
   35              		.cfi_startproc
   36              		@ args = 0, pretend = 0, frame = 0
   37              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -177,25 +222,25 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
   47              		.cfi_offset 10, -8
   48              		.cfi_offset 14, -4
   49 0004 0446     		mov	r4, r0
- 122:..\source/pid.c ****     float tgt_speed;
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 4
-
-
- 123:..\source/pid.c ****     int8 dir;
- 124:..\source/pid.c ****     float enc_speed;
- 125:..\source/pid.c ****     
- 126:..\source/pid.c ****     tgt_speed = pid->get_target();
-  50              		.loc 1 126 0
+ 164:..\source/pid.c ****     float tgt_speed;
+ 165:..\source/pid.c ****     int8 dir;
+ 166:..\source/pid.c ****     float enc_speed;
+ 167:..\source/pid.c ****     
+ 168:..\source/pid.c ****     tgt_speed = pid->get_target();
+  50              		.loc 1 168 0
   51 0006 436C     		ldr	r3, [r0, #68]
   52 0008 9847     		blx	r3
   53              	.LVL1:
   54 000a 8146     		mov	r9, r0
   55              	.LVL2:
- 127:..\source/pid.c ****     dir = tgt_speed > 0 ? 1 : -1;
-  56              		.loc 1 127 0
+ 169:..\source/pid.c ****     dir = tgt_speed > 0 ? 1 : -1;
+  56              		.loc 1 169 0
   57 000c 0021     		movs	r1, #0
   58 000e FFF7FEFF 		bl	__aeabi_fcmpgt
   59              	.LVL3:
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 5
+
+
   60 0012 10B1     		cbz	r0, .L14
   61 0014 4FF0010A 		mov	r10, #1
   62 0018 01E0     		b	.L2
@@ -203,17 +248,17 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
   64 001a 4FF0FF0A 		mov	r10, #255
   65              	.L2:
   66              	.LVL4:
- 128:..\source/pid.c ****     
- 129:..\source/pid.c ****     enc_speed = pid->get_encoder();
-  67              		.loc 1 129 0 discriminator 4
+ 170:..\source/pid.c ****     
+ 171:..\source/pid.c ****     enc_speed = pid->get_encoder();
+  67              		.loc 1 171 0 discriminator 4
   68 001e A36C     		ldr	r3, [r4, #72]
   69 0020 9847     		blx	r3
   70              	.LVL5:
   71 0022 0546     		mov	r5, r0
   72              	.LVL6:
- 130:..\source/pid.c ****     
- 131:..\source/pid.c ****     PIDSetpointSet(&pid->pid, abs(tgt_speed / METER_PER_COUNT));
-  73              		.loc 1 131 0 discriminator 4
+ 172:..\source/pid.c ****     
+ 173:..\source/pid.c ****     PIDSetpointSet(&pid->pid, abs(tgt_speed / METER_PER_COUNT));
+  73              		.loc 1 173 0 discriminator 4
   74 0024 04F10808 		add	r8, r4, #8
   75 0028 4846     		mov	r0, r9
   76              	.LVL7:
@@ -230,7 +275,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
   87 0040 FFF7FEFF 		bl	__aeabi_dcmplt
   88              	.LVL10:
   89 0044 50B1     		cbz	r0, .L4
-  90              		.loc 1 131 0 is_stmt 0 discriminator 1
+  90              		.loc 1 173 0 is_stmt 0 discriminator 1
   91 0046 09F10040 		add	r0, r9, #-2147483648
   92 004a FFF7FEFF 		bl	__aeabi_f2d
   93              	.LVL11:
@@ -238,13 +283,10 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
   95 0050 D3E90023 		ldrd	r2, [r3]
   96 0054 FFF7FEFF 		bl	__aeabi_ddiv
   97              	.LVL12:
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 5
-
-
   98 0058 0646     		mov	r6, r0
   99 005a 0F46     		mov	r7, r1
  100              	.L4:
- 101              		.loc 1 131 0 discriminator 4
+ 101              		.loc 1 173 0 discriminator 4
  102 005c 3046     		mov	r0, r6
  103 005e 3946     		mov	r1, r7
  104 0060 FFF7FEFF 		bl	__aeabi_d2f
@@ -253,34 +295,37 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  107 0066 4046     		mov	r0, r8
  108 0068 FFF7FEFF 		bl	PIDSetpointSet
  109              	.LVL14:
- 132:..\source/pid.c ****     PIDInputSet(&pid->pid, abs(enc_speed));
- 110              		.loc 1 132 0 is_stmt 1 discriminator 4
+ 174:..\source/pid.c ****     PIDInputSet(&pid->pid, abs(enc_speed));
+ 110              		.loc 1 174 0 is_stmt 1 discriminator 4
  111 006c 2846     		mov	r0, r5
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 6
+
+
  112 006e 0021     		movs	r1, #0
  113 0070 FFF7FEFF 		bl	__aeabi_fcmplt
  114              	.LVL15:
  115 0074 10B1     		cbz	r0, .L15
- 116              		.loc 1 132 0 is_stmt 0 discriminator 1
+ 116              		.loc 1 174 0 is_stmt 0 discriminator 1
  117 0076 05F10041 		add	r1, r5, #-2147483648
  118 007a 00E0     		b	.L6
  119              	.L15:
- 120              		.loc 1 132 0
+ 120              		.loc 1 174 0
  121 007c 2946     		mov	r1, r5
  122              	.L6:
- 123              		.loc 1 132 0 discriminator 4
+ 123              		.loc 1 174 0 discriminator 4
  124 007e 4046     		mov	r0, r8
  125 0080 FFF7FEFF 		bl	PIDInputSet
  126              	.LVL16:
- 133:..\source/pid.c ****     
- 134:..\source/pid.c ****     if (PIDCompute(&pid->pid))
- 127              		.loc 1 134 0 is_stmt 1 discriminator 4
+ 175:..\source/pid.c ****     
+ 176:..\source/pid.c ****     if (PIDCompute(&pid->pid))
+ 127              		.loc 1 176 0 is_stmt 1 discriminator 4
  128 0084 4046     		mov	r0, r8
  129 0086 FFF7FEFF 		bl	PIDCompute
  130              	.LVL17:
  131 008a 78B1     		cbz	r0, .L1
- 135:..\source/pid.c ****     {
- 136:..\source/pid.c ****         pid->set_motor(Cal_CpsToPwm(pid->wheel, pid->pid.output * dir));
- 132              		.loc 1 136 0
+ 177:..\source/pid.c ****     {
+ 178:..\source/pid.c ****         pid->set_motor(Cal_CpsToPwm(pid->wheel, pid->pid.output * dir));
+ 132              		.loc 1 178 0
  133 008c E56C     		ldr	r5, [r4, #76]
  134              	.LVL18:
  135 008e 2669     		ldr	r6, [r4, #16]	@ float
@@ -298,9 +343,6 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  147 00a6 FFF7FEFF 		bl	Cal_CpsToPwm
  148              	.LVL22:
  149 00aa A847     		blx	r5
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 6
-
-
  150              	.LVL23:
  151              	.L1:
  152 00ac BDE8F087 		pop	{r4, r5, r6, r7, r8, r9, r10, pc}
@@ -316,13 +358,16 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  162              		.section	.text.Pid_Init,"ax",%progbits
  163              		.align	2
  164              		.global	Pid_Init
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 7
+
+
  165              		.thumb
  166              		.thumb_func
  167              		.type	Pid_Init, %function
  168              	Pid_Init:
  169              	.LFB63:
-  95:..\source/pid.c ****     pid_enabled = 0;
- 170              		.loc 1 95 0
+ 122:..\source/pid.c ****     pid_enabled = 0;
+ 170              		.loc 1 122 0
  171              		.cfi_startproc
  172              		@ args = 0, pretend = 0, frame = 0
  173              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -337,30 +382,27 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  182              		.cfi_offset 14, -4
  183 0004 87B0     		sub	sp, sp, #28
  184              		.cfi_def_cfa_offset 56
-  96:..\source/pid.c ****     left_pid.get_target = Control_LeftGetCmdVelocity;
- 185              		.loc 1 96 0
+ 123:..\source/pid.c ****     left_pid.get_target = Control_LeftGetCmdVelocity;
+ 185              		.loc 1 123 0
  186 0006 0026     		movs	r6, #0
  187 0008 164B     		ldr	r3, .L21
  188 000a 1E70     		strb	r6, [r3]
-  97:..\source/pid.c ****     right_pid.get_target = Control_RightGetCmdVelocity;
- 189              		.loc 1 97 0
+ 124:..\source/pid.c ****     right_pid.get_target = Control_RightGetCmdVelocity;
+ 189              		.loc 1 124 0
  190 000c 164D     		ldr	r5, .L21+4
  191 000e 174B     		ldr	r3, .L21+8
  192 0010 6B64     		str	r3, [r5, #68]
-  98:..\source/pid.c ****     
- 193              		.loc 1 98 0
+ 125:..\source/pid.c ****     
+ 193              		.loc 1 125 0
  194 0012 174B     		ldr	r3, .L21+12
  195 0014 C5F89830 		str	r3, [r5, #152]
- 100:..\source/pid.c ****     PIDInit(&right_pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, PID_MIN, PID_MAX, AUTOMATIC, DIRECT); 
- 196              		.loc 1 100 0
+ 127:..\source/pid.c ****     PIDInit(&right_pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, PID_MIN, PID_MAX, AUTOMATIC, DIRECT); 
+ 196              		.loc 1 127 0
  197 0018 0024     		movs	r4, #0
  198 001a DFF85890 		ldr	r9, .L21+16
  199 001e CDF80090 		str	r9, [sp]	@ float
  200 0022 0194     		str	r4, [sp, #4]	@ float
  201 0024 DFF85080 		ldr	r8, .L21+20
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 7
-
-
  202 0028 CDF80880 		str	r8, [sp, #8]	@ float
  203 002c 0127     		movs	r7, #1
  204 002e 0397     		str	r7, [sp, #12]
@@ -371,11 +413,14 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  209 003a 2346     		mov	r3, r4
  210 003c FFF7FEFF 		bl	PIDInit
  211              	.LVL25:
- 101:..\source/pid.c **** }
- 212              		.loc 1 101 0
+ 128:..\source/pid.c **** }
+ 212              		.loc 1 128 0
  213 0040 CDF80090 		str	r9, [sp]	@ float
  214 0044 0194     		str	r4, [sp, #4]	@ float
  215 0046 CDF80880 		str	r8, [sp, #8]	@ float
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 8
+
+
  216 004a 0397     		str	r7, [sp, #12]
  217 004c 0496     		str	r6, [sp, #16]
  218 004e 05F15C00 		add	r0, r5, #92
@@ -384,8 +429,8 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  221 0056 2346     		mov	r3, r4
  222 0058 FFF7FEFF 		bl	PIDInit
  223              	.LVL26:
- 102:..\source/pid.c ****     
- 224              		.loc 1 102 0
+ 129:..\source/pid.c ****     
+ 224              		.loc 1 129 0
  225 005c 07B0     		add	sp, sp, #28
  226              		.cfi_def_cfa_offset 28
  227              		@ sp needed
@@ -410,24 +455,21 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  246              		.type	Pid_Start, %function
  247              	Pid_Start:
  248              	.LFB64:
- 105:..\source/pid.c ****     CAL_PID_TYPE *p_gains;
- 249              		.loc 1 105 0
+ 139:..\source/pid.c ****     CAL_PID_TYPE *p_gains;
+ 249              		.loc 1 139 0
  250              		.cfi_startproc
  251              		@ args = 0, pretend = 0, frame = 0
  252              		@ frame_needed = 0, uses_anonymous_args = 0
  253 0000 10B5     		push	{r4, lr}
  254              		.cfi_def_cfa_offset 8
  255              		.cfi_offset 4, -8
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 8
-
-
  256              		.cfi_offset 14, -4
- 111:..\source/pid.c ****     PIDTuningsSet(&left_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
- 257              		.loc 1 111 0
+ 146:..\source/pid.c ****     PIDTuningsSet(&left_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
+ 257              		.loc 1 146 0
  258 0002 FFF7FEFF 		bl	Cal_LeftGetPidGains
  259              	.LVL27:
- 112:..\source/pid.c ****     //PIDTuningsSet(&left_pid.pid, left_kp, left_ki, left_kd);
- 260              		.loc 1 112 0
+ 147:..\source/pid.c ****     
+ 260              		.loc 1 147 0
  261 0006 094C     		ldr	r4, .L25
  262 0008 0168     		ldr	r1, [r0]	@ unaligned
  263 000a 4268     		ldr	r2, [r0, #4]	@ unaligned
@@ -436,12 +478,15 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  266              	.LVL28:
  267 0012 FFF7FEFF 		bl	PIDTuningsSet
  268              	.LVL29:
- 115:..\source/pid.c ****     PIDTuningsSet(&right_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
- 269              		.loc 1 115 0
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 9
+
+
+ 149:..\source/pid.c ****     PIDTuningsSet(&right_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
+ 269              		.loc 1 149 0
  270 0016 FFF7FEFF 		bl	Cal_RightGetPidGains
  271              	.LVL30:
- 116:..\source/pid.c ****     //PIDTuningsSet(&right_pid.pid, right_kp, right_ki, right_kd);
- 272              		.loc 1 116 0
+ 150:..\source/pid.c **** }
+ 272              		.loc 1 150 0
  273 001a 0168     		ldr	r1, [r0]	@ unaligned
  274 001c 4268     		ldr	r2, [r0, #4]	@ unaligned
  275 001e 8368     		ldr	r3, [r0, #8]	@ unaligned
@@ -467,36 +512,44 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  295              		.type	Pid_Update, %function
  296              	Pid_Update:
  297              	.LFB66:
- 137:..\source/pid.c ****     }
- 138:..\source/pid.c **** }
- 139:..\source/pid.c **** 
- 140:..\source/pid.c **** void Pid_Update()
- 141:..\source/pid.c **** {
- 298              		.loc 1 141 0
+ 179:..\source/pid.c ****     }
+ 180:..\source/pid.c **** }
+ 181:..\source/pid.c **** 
+ 182:..\source/pid.c **** /*-------------------------------------------------------------------------------------------------
+ 183:..\source/pid.c ****  * Name: Pid_Update
+ 184:..\source/pid.c ****  * Description: Updates the left/right PID fields.  This function is called from the main loop and
+ 185:..\source/pid.c ****  *              enforces the PID sampling rate.
+ 186:..\source/pid.c ****  * Parameters: None
+ 187:..\source/pid.c ****  * Return: None
+ 188:..\source/pid.c ****  * 
+ 189:..\source/pid.c ****  *-------------------------------------------------------------------------------------------------
+ 190:..\source/pid.c **** void Pid_Update()
+ 191:..\source/pid.c **** {
+ 298              		.loc 1 191 0
  299              		.cfi_startproc
  300              		@ args = 0, pretend = 0, frame = 0
  301              		@ frame_needed = 0, uses_anonymous_args = 0
  302 0000 10B5     		push	{r4, lr}
  303              		.cfi_def_cfa_offset 8
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 9
-
-
  304              		.cfi_offset 4, -8
  305              		.cfi_offset 14, -4
- 142:..\source/pid.c ****     static uint32 last_update_time = 0;
- 143:..\source/pid.c ****     static uint8 pid_sched_offset_applied = 0;
- 144:..\source/pid.c ****     uint32 delta_time;
- 145:..\source/pid.c ****     
- 146:..\source/pid.c ****     delta_time = millis() - last_update_time;
- 306              		.loc 1 146 0
+ 192:..\source/pid.c ****     static uint32 last_update_time = 0;
+ 193:..\source/pid.c ****     static uint8 pid_sched_offset_applied = 0;
+ 194:..\source/pid.c ****     uint32 delta_time;
+ 195:..\source/pid.c ****     
+ 196:..\source/pid.c ****     delta_time = millis() - last_update_time;
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 10
+
+
+ 306              		.loc 1 196 0
  307 0002 FFF7FEFF 		bl	millis
  308              	.LVL33:
  309 0006 224B     		ldr	r3, .L34+8
  310 0008 5B68     		ldr	r3, [r3, #4]
  311              	.LVL34:
- 147:..\source/pid.c ****     PID_DEBUG_DELTA(delta_time);
- 148:..\source/pid.c ****     if (delta_time >= PID_SAMPLE_TIME_MS)
- 312              		.loc 1 148 0
+ 197:..\source/pid.c ****     PID_DEBUG_DELTA(delta_time);
+ 198:..\source/pid.c ****     if (delta_time >= PID_SAMPLE_TIME_MS)
+ 312              		.loc 1 198 0
  313 000a C01A     		subs	r0, r0, r3
  314              	.LVL35:
  315 000c FFF7FEFF 		bl	__aeabi_ui2d
@@ -507,19 +560,19 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  320              	.LVL37:
  321 001a 0028     		cmp	r0, #0
  322 001c 32D0     		beq	.L27
- 149:..\source/pid.c ****     {    
- 150:..\source/pid.c ****         last_update_time = millis();
- 323              		.loc 1 150 0
+ 199:..\source/pid.c ****     {    
+ 200:..\source/pid.c ****         last_update_time = millis();
+ 323              		.loc 1 200 0
  324 001e FFF7FEFF 		bl	millis
  325              	.LVL38:
  326 0022 1B4B     		ldr	r3, .L34+8
  327 0024 5860     		str	r0, [r3, #4]
- 151:..\source/pid.c ****         
- 152:..\source/pid.c ****         APPLY_SCHED_OFFSET(PID_SCHED_OFFSET, pid_sched_offset_applied);
- 328              		.loc 1 152 0
+ 201:..\source/pid.c ****         
+ 202:..\source/pid.c ****         APPLY_SCHED_OFFSET(PID_SCHED_OFFSET, pid_sched_offset_applied);
+ 328              		.loc 1 202 0
  329 0026 1B7A     		ldrb	r3, [r3, #8]	@ zero_extendqisi2
  330 0028 2BB9     		cbnz	r3, .L30
- 331              		.loc 1 152 0 is_stmt 0 discriminator 1
+ 331              		.loc 1 202 0 is_stmt 0 discriminator 1
  332 002a 0122     		movs	r2, #1
  333 002c 184B     		ldr	r3, .L34+8
  334 002e 1A72     		strb	r2, [r3, #8]
@@ -527,29 +580,29 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  336 0032 FFF7FEFF 		bl	CyDelay
  337              	.LVL39:
  338              	.L30:
- 153:..\source/pid.c ****         
- 154:..\source/pid.c ****         ProcessPid(&left_pid);
- 339              		.loc 1 154 0 is_stmt 1
+ 203:..\source/pid.c ****         
+ 204:..\source/pid.c ****         ProcessPid(&left_pid);
+ 339              		.loc 1 204 0 is_stmt 1
  340 0036 174C     		ldr	r4, .L34+12
  341 0038 2046     		mov	r0, r4
  342 003a FFF7FEFF 		bl	ProcessPid
  343              	.LVL40:
- 155:..\source/pid.c ****         ProcessPid(&right_pid);
- 344              		.loc 1 155 0
+ 205:..\source/pid.c ****         ProcessPid(&right_pid);
+ 344              		.loc 1 205 0
  345 003e 04F15400 		add	r0, r4, #84
  346 0042 FFF7FEFF 		bl	ProcessPid
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 10
-
-
  347              	.LVL41:
- 156:..\source/pid.c ****         LEFT_DUMP_PID();
- 348              		.loc 1 156 0
+ 206:..\source/pid.c ****         LEFT_DUMP_PID();
+ 348              		.loc 1 206 0
  349 0046 144B     		ldr	r3, .L34+16
  350 0048 1B88     		ldrh	r3, [r3]
  351 004a 03F00403 		and	r3, r3, #4
  352 004e 9BB2     		uxth	r3, r3
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 11
+
+
  353 0050 3BB1     		cbz	r3, .L31
- 354              		.loc 1 156 0 is_stmt 0 discriminator 1
+ 354              		.loc 1 206 0 is_stmt 0 discriminator 1
  355 0052 236D     		ldr	r3, [r4, #80]
  356 0054 9847     		blx	r3
  357              	.LVL42:
@@ -559,14 +612,14 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  361 005e FFF7FEFF 		bl	DumpPid
  362              	.LVL43:
  363              	.L31:
- 157:..\source/pid.c ****         RIGHT_DUMP_PID();
- 364              		.loc 1 157 0 is_stmt 1
+ 207:..\source/pid.c ****         RIGHT_DUMP_PID();
+ 364              		.loc 1 207 0 is_stmt 1
  365 0062 0D4B     		ldr	r3, .L34+16
  366 0064 1B88     		ldrh	r3, [r3]
  367 0066 03F00803 		and	r3, r3, #8
  368 006a 9BB2     		uxth	r3, r3
  369 006c 53B1     		cbz	r3, .L27
- 370              		.loc 1 157 0 is_stmt 0 discriminator 1
+ 370              		.loc 1 207 0 is_stmt 0 discriminator 1
  371 006e 094C     		ldr	r4, .L34+12
  372 0070 D4F8A430 		ldr	r3, [r4, #164]
  373 0074 9847     		blx	r3
@@ -597,26 +650,36 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  398              		.type	Pid_SetLeftRightTarget, %function
  399              	Pid_SetLeftRightTarget:
  400              	.LFB67:
- 158:..\source/pid.c ****     }
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 11
+ 208:..\source/pid.c ****     }
+ 209:..\source/pid.c **** }
+ 210:..\source/pid.c **** 
+ 211:..\source/pid.c **** /*-------------------------------------------------------------------------------------------------
+ 212:..\source/pid.c ****  * Name: Pid_SetLeftRightTarget
+ 213:..\source/pid.c ****  * Description: Sets the left/right get_target fields to a different function.
+ 214:..\source/pid.c ****  *              Note: This is done during calibration to allow internal control of the left/right
+ 215:..\source/pid.c ****  *              wheel speed.
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 12
 
 
- 159:..\source/pid.c **** }
- 160:..\source/pid.c **** 
- 161:..\source/pid.c **** void Pid_SetLeftRightTarget(GET_TARGET_FUNC_TYPE left_target, GET_TARGET_FUNC_TYPE right_target)
- 162:..\source/pid.c **** {
- 401              		.loc 1 162 0 is_stmt 1
+ 216:..\source/pid.c ****  * Parameters: left_target - the function that will be used to get the left target speed
+ 217:..\source/pid.c ****  *             right_target - the function that will be used to get the right target speed
+ 218:..\source/pid.c ****  * Return: None
+ 219:..\source/pid.c ****  * 
+ 220:..\source/pid.c ****  *-------------------------------------------------------------------------------------------------
+ 221:..\source/pid.c **** void Pid_SetLeftRightTarget(GET_TARGET_FUNC_TYPE left_target, GET_TARGET_FUNC_TYPE right_target)
+ 222:..\source/pid.c **** {
+ 401              		.loc 1 222 0 is_stmt 1
  402              		.cfi_startproc
  403              		@ args = 0, pretend = 0, frame = 0
  404              		@ frame_needed = 0, uses_anonymous_args = 0
  405              		@ link register save eliminated.
  406              	.LVL46:
- 163:..\source/pid.c ****     left_pid.get_target = left_target;
- 407              		.loc 1 163 0
+ 223:..\source/pid.c ****     left_pid.get_target = left_target;
+ 407              		.loc 1 223 0
  408 0000 024B     		ldr	r3, .L37
  409 0002 5864     		str	r0, [r3, #68]
- 164:..\source/pid.c ****     right_pid.get_target = right_target;
- 410              		.loc 1 164 0
+ 224:..\source/pid.c ****     right_pid.get_target = right_target;
+ 410              		.loc 1 224 0
  411 0004 C3F89810 		str	r1, [r3, #152]
  412 0008 7047     		bx	lr
  413              	.L38:
@@ -634,22 +697,32 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  425              		.type	Pid_RestoreLeftRightTarget, %function
  426              	Pid_RestoreLeftRightTarget:
  427              	.LFB68:
- 165:..\source/pid.c **** }
- 166:..\source/pid.c **** 
- 167:..\source/pid.c **** void Pid_RestoreLeftRightTarget()
- 168:..\source/pid.c **** {
- 428              		.loc 1 168 0
+ 225:..\source/pid.c **** }
+ 226:..\source/pid.c **** 
+ 227:..\source/pid.c **** /*-------------------------------------------------------------------------------------------------
+ 228:..\source/pid.c ****  * Name: Pid_RestoreLeftRightTarget
+ 229:..\source/pid.c ****  * Description: Restores the left/right get_target fields to the default function.
+ 230:..\source/pid.c ****  * Parameters: None
+ 231:..\source/pid.c ****  * Return: None
+ 232:..\source/pid.c ****  * 
+ 233:..\source/pid.c ****  *-------------------------------------------------------------------------------------------------
+ 234:..\source/pid.c **** void Pid_RestoreLeftRightTarget()
+ 235:..\source/pid.c **** {
+ 428              		.loc 1 235 0
  429              		.cfi_startproc
  430              		@ args = 0, pretend = 0, frame = 0
  431              		@ frame_needed = 0, uses_anonymous_args = 0
  432              		@ link register save eliminated.
- 169:..\source/pid.c ****     left_pid.get_target = Control_LeftGetCmdVelocity;
- 433              		.loc 1 169 0
+ 236:..\source/pid.c ****     left_pid.get_target = Control_LeftGetCmdVelocity;
+ 433              		.loc 1 236 0
  434 0000 034B     		ldr	r3, .L40
  435 0002 044A     		ldr	r2, .L40+4
  436 0004 5A64     		str	r2, [r3, #68]
- 170:..\source/pid.c ****     right_pid.get_target = Control_RightGetCmdVelocity;
- 437              		.loc 1 170 0
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 13
+
+
+ 237:..\source/pid.c ****     right_pid.get_target = Control_RightGetCmdVelocity;
+ 437              		.loc 1 237 0
  438 0006 044A     		ldr	r2, .L40+8
  439 0008 C3F89820 		str	r2, [r3, #152]
  440 000c 7047     		bx	lr
@@ -658,9 +731,6 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  443              	.L40:
  444 0010 00000000 		.word	.LANCHOR1
  445 0014 00000000 		.word	Control_LeftGetCmdVelocity
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 12
-
-
  446 0018 00000000 		.word	Control_RightGetCmdVelocity
  447              		.cfi_endproc
  448              	.LFE68:
@@ -673,54 +743,61 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  455              		.type	Pid_Reset, %function
  456              	Pid_Reset:
  457              	.LFB69:
- 171:..\source/pid.c **** }
- 172:..\source/pid.c **** 
- 173:..\source/pid.c **** void Pid_Reset()
- 174:..\source/pid.c **** {
- 458              		.loc 1 174 0
+ 238:..\source/pid.c **** }
+ 239:..\source/pid.c **** 
+ 240:..\source/pid.c **** /*-------------------------------------------------------------------------------------------------
+ 241:..\source/pid.c ****  * Name: Pid_Reset
+ 242:..\source/pid.c ****  * Description: Resets the left/right PID fields.
+ 243:..\source/pid.c ****  * Parameters: None
+ 244:..\source/pid.c ****  * Return: None
+ 245:..\source/pid.c ****  * 
+ 246:..\source/pid.c ****  *-------------------------------------------------------------------------------------------------
+ 247:..\source/pid.c **** void Pid_Reset()
+ 248:..\source/pid.c **** {
+ 458              		.loc 1 248 0
  459              		.cfi_startproc
  460              		@ args = 0, pretend = 0, frame = 0
  461              		@ frame_needed = 0, uses_anonymous_args = 0
  462              		@ link register save eliminated.
- 175:..\source/pid.c ****     left_pid.pid.input = 0;
- 463              		.loc 1 175 0
+ 249:..\source/pid.c ****     left_pid.pid.input = 0;
+ 463              		.loc 1 249 0
  464 0000 074B     		ldr	r3, .L43
  465 0002 0022     		movs	r2, #0
  466 0004 9A60     		str	r2, [r3, #8]	@ float
- 176:..\source/pid.c ****     left_pid.pid.iTerm = 0;
- 467              		.loc 1 176 0
+ 250:..\source/pid.c ****     left_pid.pid.iTerm = 0;
+ 467              		.loc 1 250 0
  468 0006 DA62     		str	r2, [r3, #44]	@ float
- 177:..\source/pid.c ****     left_pid.pid.lastInput = 0;
- 469              		.loc 1 177 0
+ 251:..\source/pid.c ****     left_pid.pid.lastInput = 0;
+ 469              		.loc 1 251 0
  470 0008 DA60     		str	r2, [r3, #12]	@ float
- 178:..\source/pid.c ****     left_pid.pid.setpoint = 0;
- 471              		.loc 1 178 0
+ 252:..\source/pid.c ****     left_pid.pid.setpoint = 0;
+ 471              		.loc 1 252 0
  472 000a DA63     		str	r2, [r3, #60]	@ float
- 179:..\source/pid.c ****     left_pid.pid.output = 0;
- 473              		.loc 1 179 0
+ 253:..\source/pid.c ****     left_pid.pid.output = 0;
+ 473              		.loc 1 253 0
  474 000c 1A61     		str	r2, [r3, #16]	@ float
- 180:..\source/pid.c **** 
- 181:..\source/pid.c ****     right_pid.pid.input = 0;
- 475              		.loc 1 181 0
+ 254:..\source/pid.c **** 
+ 255:..\source/pid.c ****     right_pid.pid.input = 0;
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 14
+
+
+ 475              		.loc 1 255 0
  476 000e DA65     		str	r2, [r3, #92]	@ float
- 182:..\source/pid.c ****     right_pid.pid.iTerm = 0;
- 477              		.loc 1 182 0
+ 256:..\source/pid.c ****     right_pid.pid.iTerm = 0;
+ 477              		.loc 1 256 0
  478 0010 C3F88020 		str	r2, [r3, #128]	@ float
- 183:..\source/pid.c ****     right_pid.pid.lastInput = 0;
- 479              		.loc 1 183 0
+ 257:..\source/pid.c ****     right_pid.pid.lastInput = 0;
+ 479              		.loc 1 257 0
  480 0014 1A66     		str	r2, [r3, #96]	@ float
- 184:..\source/pid.c ****     right_pid.pid.setpoint = 0;
- 481              		.loc 1 184 0
+ 258:..\source/pid.c ****     right_pid.pid.setpoint = 0;
+ 481              		.loc 1 258 0
  482 0016 C3F89020 		str	r2, [r3, #144]	@ float
- 185:..\source/pid.c ****     right_pid.pid.output = 0;
- 483              		.loc 1 185 0
+ 259:..\source/pid.c ****     right_pid.pid.output = 0;
+ 483              		.loc 1 259 0
  484 001a 5A66     		str	r2, [r3, #100]	@ float
  485 001c 7047     		bx	lr
  486              	.L44:
  487 001e 00BF     		.align	2
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 13
-
-
  488              	.L43:
  489 0020 00000000 		.word	.LANCHOR1
  490              		.cfi_endproc
@@ -734,11 +811,18 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  498              		.type	Pid_Enable, %function
  499              	Pid_Enable:
  500              	.LFB70:
- 186:..\source/pid.c **** }
- 187:..\source/pid.c **** 
- 188:..\source/pid.c **** void Pid_Enable(uint8 enable)
- 189:..\source/pid.c **** {
- 501              		.loc 1 189 0
+ 260:..\source/pid.c **** }
+ 261:..\source/pid.c **** 
+ 262:..\source/pid.c **** /*-------------------------------------------------------------------------------------------------
+ 263:..\source/pid.c ****  * Name: Pid_Enable
+ 264:..\source/pid.c ****  * Description: Enables/Disables the PID.  This is needed for motor and PID calibration.
+ 265:..\source/pid.c ****  * Parameters: None
+ 266:..\source/pid.c ****  * Return: None
+ 267:..\source/pid.c ****  * 
+ 268:..\source/pid.c ****  *-------------------------------------------------------------------------------------------------
+ 269:..\source/pid.c **** void Pid_Enable(uint8 enable)
+ 270:..\source/pid.c **** {
+ 501              		.loc 1 270 0
  502              		.cfi_startproc
  503              		@ args = 0, pretend = 0, frame = 0
  504              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -750,37 +834,37 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  510              		.cfi_offset 5, -8
  511              		.cfi_offset 14, -4
  512              	.LVL48:
- 190:..\source/pid.c ****     PIDMode mode = MANUAL;
- 191:..\source/pid.c ****     
- 192:..\source/pid.c ****     if (enable)
- 513              		.loc 1 192 0
+ 271:..\source/pid.c ****     PIDMode mode = MANUAL;
+ 272:..\source/pid.c ****     
+ 273:..\source/pid.c ****     if (enable)
+ 513              		.loc 1 273 0
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 15
+
+
  514 0002 08B9     		cbnz	r0, .L47
- 190:..\source/pid.c ****     PIDMode mode = MANUAL;
- 515              		.loc 1 190 0
+ 271:..\source/pid.c ****     PIDMode mode = MANUAL;
+ 515              		.loc 1 271 0
  516 0004 0024     		movs	r4, #0
  517 0006 00E0     		b	.L46
  518              	.L47:
- 193:..\source/pid.c ****     {
- 194:..\source/pid.c ****         mode = AUTOMATIC;
- 519              		.loc 1 194 0
+ 274:..\source/pid.c ****     {
+ 275:..\source/pid.c ****         mode = AUTOMATIC;
+ 519              		.loc 1 275 0
  520 0008 0124     		movs	r4, #1
  521              	.L46:
  522              	.LVL49:
- 195:..\source/pid.c ****     }
- 196:..\source/pid.c ****     
- 197:..\source/pid.c ****     PIDModeSet(&left_pid.pid, mode);
- 523              		.loc 1 197 0
+ 276:..\source/pid.c ****     }
+ 277:..\source/pid.c ****     
+ 278:..\source/pid.c ****     PIDModeSet(&left_pid.pid, mode);
+ 523              		.loc 1 278 0
  524 000a 064D     		ldr	r5, .L49
  525 000c 05F10800 		add	r0, r5, #8
  526              	.LVL50:
  527 0010 2146     		mov	r1, r4
  528 0012 FFF7FEFF 		bl	PIDModeSet
  529              	.LVL51:
- 198:..\source/pid.c ****     PIDModeSet(&right_pid.pid, mode);
- 530              		.loc 1 198 0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 14
-
-
+ 279:..\source/pid.c ****     PIDModeSet(&right_pid.pid, mode);
+ 530              		.loc 1 279 0
  531 0016 05F15C00 		add	r0, r5, #92
  532 001a 2146     		mov	r1, r4
  533 001c FFF7FEFF 		bl	PIDModeSet
@@ -802,11 +886,23 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  549              		.type	Pid_LeftSetGains, %function
  550              	Pid_LeftSetGains:
  551              	.LFB71:
- 199:..\source/pid.c **** }
- 200:..\source/pid.c **** 
- 201:..\source/pid.c **** void Pid_LeftSetGains(float kp, float ki, float kd)
- 202:..\source/pid.c **** {
- 552              		.loc 1 202 0
+ 280:..\source/pid.c **** }
+ 281:..\source/pid.c **** 
+ 282:..\source/pid.c **** /*-------------------------------------------------------------------------------------------------
+ 283:..\source/pid.c ****  * Name: Pid_LeftSetGains
+ 284:..\source/pid.c ****  * Description: Sets the right PID gains.
+ 285:..\source/pid.c ****  * Parameters: kp - the proportional gain
+ 286:..\source/pid.c ****  *             ki - the integral gain
+ 287:..\source/pid.c ****  *             kd - the derivative gain
+ 288:..\source/pid.c ****  * Return: None
+ 289:..\source/pid.c ****  * 
+ 290:..\source/pid.c ****  *-------------------------------------------------------------------------------------------------
+ 291:..\source/pid.c **** void Pid_LeftSetGains(float kp, float ki, float kd)
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 16
+
+
+ 292:..\source/pid.c **** {
+ 552              		.loc 1 292 0
  553              		.cfi_startproc
  554              		@ args = 0, pretend = 0, frame = 0
  555              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -820,8 +916,8 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  563 0002 0546     		mov	r5, r0
  564 0004 0C46     		mov	r4, r1
  565 0006 1346     		mov	r3, r2
- 203:..\source/pid.c ****     PIDTuningsSet(&left_pid.pid, kp, ki, kd);
- 566              		.loc 1 203 0
+ 293:..\source/pid.c ****     PIDTuningsSet(&left_pid.pid, kp, ki, kd);
+ 566              		.loc 1 293 0
  567 0008 0248     		ldr	r0, .L53
  568              	.LVL55:
  569 000a 2946     		mov	r1, r5
@@ -838,9 +934,6 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  580 0014 08000000 		.word	.LANCHOR1+8
  581              		.cfi_endproc
  582              	.LFE71:
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 15
-
-
  583              		.size	Pid_LeftSetGains, .-Pid_LeftSetGains
  584              		.section	.text.Pid_RightSetGains,"ax",%progbits
  585              		.align	2
@@ -850,12 +943,24 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  589              		.type	Pid_RightSetGains, %function
  590              	Pid_RightSetGains:
  591              	.LFB72:
- 204:..\source/pid.c **** }
- 205:..\source/pid.c **** 
- 206:..\source/pid.c **** void Pid_RightSetGains(float kp, float ki, float kd)
- 207:..\source/pid.c **** {
- 592              		.loc 1 207 0
+ 294:..\source/pid.c **** }
+ 295:..\source/pid.c **** 
+ 296:..\source/pid.c **** /*-------------------------------------------------------------------------------------------------
+ 297:..\source/pid.c ****  * Name: Pid_RightSetGains
+ 298:..\source/pid.c ****  * Description: Sets the right PID gains.
+ 299:..\source/pid.c ****  * Parameters: kp - the proportional gain
+ 300:..\source/pid.c ****  *             ki - the integral gain
+ 301:..\source/pid.c ****  *             kd - the derivative gain
+ 302:..\source/pid.c ****  * Return: None
+ 303:..\source/pid.c ****  * 
+ 304:..\source/pid.c ****  *-------------------------------------------------------------------------------------------------
+ 305:..\source/pid.c **** void Pid_RightSetGains(float kp, float ki, float kd)
+ 306:..\source/pid.c **** {
+ 592              		.loc 1 306 0
  593              		.cfi_startproc
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 17
+
+
  594              		@ args = 0, pretend = 0, frame = 0
  595              		@ frame_needed = 0, uses_anonymous_args = 0
  596              	.LVL60:
@@ -868,8 +973,8 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  603 0002 0546     		mov	r5, r0
  604 0004 0C46     		mov	r4, r1
  605 0006 1346     		mov	r3, r2
- 208:..\source/pid.c ****     PIDTuningsSet(&right_pid.pid, kp, ki, kd);
- 606              		.loc 1 208 0
+ 307:..\source/pid.c ****     PIDTuningsSet(&right_pid.pid, kp, ki, kd);
+ 606              		.loc 1 307 0
  607 0008 0248     		ldr	r0, .L57
  608              	.LVL61:
  609 000a 2946     		mov	r1, r5
@@ -895,38 +1000,47 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  629              		.type	Pid_LeftGetGains, %function
  630              	Pid_LeftGetGains:
  631              	.LFB73:
- 209:..\source/pid.c **** }
- 210:..\source/pid.c **** 
- 211:..\source/pid.c **** void Pid_LeftGetGains(float *kp, float *ki, float *kd)
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 16
-
-
- 212:..\source/pid.c **** {
- 632              		.loc 1 212 0
+ 308:..\source/pid.c **** }
+ 309:..\source/pid.c **** 
+ 310:..\source/pid.c **** /*-------------------------------------------------------------------------------------------------
+ 311:..\source/pid.c ****  * Name: Pid_LeftGetGains
+ 312:..\source/pid.c ****  * Description: Returns the right PID gains
+ 313:..\source/pid.c ****  * Parameters: kp - the proportional gain
+ 314:..\source/pid.c ****  *             ki - the integral gain
+ 315:..\source/pid.c ****  *             kd - the derivative gain
+ 316:..\source/pid.c ****  * Return: None
+ 317:..\source/pid.c ****  * 
+ 318:..\source/pid.c ****  *-------------------------------------------------------------------------------------------------
+ 319:..\source/pid.c **** void Pid_LeftGetGains(float *kp, float *ki, float *kd)
+ 320:..\source/pid.c **** {
+ 632              		.loc 1 320 0
  633              		.cfi_startproc
  634              		@ args = 0, pretend = 0, frame = 0
  635              		@ frame_needed = 0, uses_anonymous_args = 0
  636              		@ link register save eliminated.
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 18
+
+
  637              	.LVL66:
  638 0000 10B4     		push	{r4}
  639              		.cfi_def_cfa_offset 4
  640              		.cfi_offset 4, -4
- 213:..\source/pid.c ****     *kp = left_pid.pid.dispKp;
- 641              		.loc 1 213 0
+ 321:..\source/pid.c ****     *kp = left_pid.pid.dispKp;
+ 641              		.loc 1 321 0
  642 0002 054B     		ldr	r3, .L61
  643 0004 5C69     		ldr	r4, [r3, #20]	@ float
  644 0006 0460     		str	r4, [r0]	@ float
- 214:..\source/pid.c ****     *ki = left_pid.pid.dispKi;
- 645              		.loc 1 214 0
+ 322:..\source/pid.c ****     *ki = left_pid.pid.dispKi;
+ 645              		.loc 1 322 0
  646 0008 9869     		ldr	r0, [r3, #24]	@ float
  647              	.LVL67:
  648 000a 0860     		str	r0, [r1]	@ float
- 215:..\source/pid.c ****     *kd = left_pid.pid.dispKd;
- 649              		.loc 1 215 0
+ 323:..\source/pid.c ****     *kd = left_pid.pid.dispKd;
+ 649              		.loc 1 323 0
  650 000c DB69     		ldr	r3, [r3, #28]	@ float
  651 000e 1360     		str	r3, [r2]	@ float
- 216:..\source/pid.c **** }
- 652              		.loc 1 216 0
+ 324:..\source/pid.c **** }
+ 652              		.loc 1 324 0
  653 0010 5DF8044B 		ldr	r4, [sp], #4
  654              		.cfi_restore 4
  655              		.cfi_def_cfa_offset 0
@@ -946,37 +1060,46 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  669              		.type	Pid_RightGetGains, %function
  670              	Pid_RightGetGains:
  671              	.LFB74:
- 217:..\source/pid.c **** 
- 218:..\source/pid.c **** void Pid_RightGetGains(float *kp, float *ki, float *kd)
- 219:..\source/pid.c **** {
- 672              		.loc 1 219 0
+ 325:..\source/pid.c **** 
+ 326:..\source/pid.c **** /*-------------------------------------------------------------------------------------------------
+ 327:..\source/pid.c ****  * Name: Pid_RightGetGains
+ 328:..\source/pid.c ****  * Description: Returns the right PID gains
+ 329:..\source/pid.c ****  * Parameters: kp - the proportional gain
+ 330:..\source/pid.c ****  *             ki - the integral gain
+ 331:..\source/pid.c ****  *             kd - the derivative gain
+ 332:..\source/pid.c ****  * Return: None
+ 333:..\source/pid.c ****  * 
+ 334:..\source/pid.c ****  *-------------------------------------------------------------------------------------------------
+ 335:..\source/pid.c **** void Pid_RightGetGains(float *kp, float *ki, float *kd)
+ 336:..\source/pid.c **** {
+ 672              		.loc 1 336 0
  673              		.cfi_startproc
  674              		@ args = 0, pretend = 0, frame = 0
  675              		@ frame_needed = 0, uses_anonymous_args = 0
  676              		@ link register save eliminated.
  677              	.LVL68:
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 19
+
+
  678 0000 10B4     		push	{r4}
  679              		.cfi_def_cfa_offset 4
  680              		.cfi_offset 4, -4
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 17
-
-
- 220:..\source/pid.c ****     *kp = right_pid.pid.dispKp;
- 681              		.loc 1 220 0
+ 337:..\source/pid.c ****     *kp = right_pid.pid.dispKp;
+ 681              		.loc 1 337 0
  682 0002 054B     		ldr	r3, .L65
  683 0004 9C6E     		ldr	r4, [r3, #104]	@ float
  684 0006 0460     		str	r4, [r0]	@ float
- 221:..\source/pid.c ****     *ki = right_pid.pid.dispKi;
- 685              		.loc 1 221 0
+ 338:..\source/pid.c ****     *ki = right_pid.pid.dispKi;
+ 685              		.loc 1 338 0
  686 0008 D86E     		ldr	r0, [r3, #108]	@ float
  687              	.LVL69:
  688 000a 0860     		str	r0, [r1]	@ float
- 222:..\source/pid.c ****     *kd = right_pid.pid.dispKd;
- 689              		.loc 1 222 0
+ 339:..\source/pid.c ****     *kd = right_pid.pid.dispKd;
+ 689              		.loc 1 339 0
  690 000c 1B6F     		ldr	r3, [r3, #112]	@ float
  691 000e 1360     		str	r3, [r2]	@ float
- 223:..\source/pid.c **** }
- 692              		.loc 1 223 0
+ 340:..\source/pid.c **** }
+ 692              		.loc 1 340 0
  693 0010 5DF8044B 		ldr	r4, [sp], #4
  694              		.cfi_restore 4
  695              		.cfi_def_cfa_offset 0
@@ -988,8 +1111,8 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  701              		.cfi_endproc
  702              	.LFE74:
  703              		.size	Pid_RightGetGains, .-Pid_RightGetGains
- 704              		.comm	formatted_string,256,4
- 705              		.comm	debug_control_enabled,2,2
+ 704              		.comm	debug_control_enabled,2,2
+ 705              		.comm	formatted_string,256,4
  706              		.comm	Cal_RightTarget,4,4
  707              		.comm	Cal_LeftTarget,4,4
  708              		.comm	p_cal_eeprom,4,4
@@ -1015,12 +1138,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  727 0028 00000000 		.word	0
  728 002c 00000000 		.word	0
  729 0030 00000000 		.word	0
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 20
+
+
  730 0034 00000000 		.word	0
  731 0038 00000000 		.word	0
  732 003c 00000000 		.word	0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 18
-
-
  733 0040 00       		.byte	0
  734 0041 01       		.byte	1
  735 0042 0000     		.space	2
@@ -1064,23 +1187,23 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  772              	pid_enabled:
  773 0000 00       		.space	1
  774 0001 000000   		.space	3
- 775              		.type	last_update_time.7613, %object
- 776              		.size	last_update_time.7613, 4
- 777              	last_update_time.7613:
+ 775              		.type	last_update_time.7609, %object
+ 776              		.size	last_update_time.7609, 4
+ 777              	last_update_time.7609:
  778 0004 00000000 		.space	4
- 779              		.type	pid_sched_offset_applied.7614, %object
- 780              		.size	pid_sched_offset_applied.7614, 1
- 781              	pid_sched_offset_applied.7614:
+ 779              		.type	pid_sched_offset_applied.7610, %object
+ 780              		.size	pid_sched_offset_applied.7610, 1
+ 781              	pid_sched_offset_applied.7610:
  782 0008 00       		.space	1
  783 0009 000000   		.text
  784              	.Letext0:
  785              		.file 2 "c:\\program files (x86)\\cypress\\psoc creator\\3.3\\psoc creator\\import\\gnu\\arm\\4.9.
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 21
+
+
  786              		.file 3 "c:\\program files (x86)\\cypress\\psoc creator\\3.3\\psoc creator\\import\\gnu\\arm\\4.9.
  787              		.file 4 "Generated_Source\\PSoC5/cytypes.h"
  788              		.file 5 "..\\source\\config.h"
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 19
-
-
  789              		.file 6 "..\\source\\encoder.h"
  790              		.file 7 "..\\source\\calstore.h"
  791              		.file 8 "..\\source\\motor.h"
@@ -1093,7 +1216,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  798              		.file 15 "..\\source\\pidutil.h"
  799              		.section	.debug_info,"",%progbits
  800              	.Ldebug_info0:
- 801 0000 E70A0000 		.4byte	0xae7
+ 801 0000 FA0A0000 		.4byte	0xafa
  802 0004 0400     		.2byte	0x4
  803 0006 00000000 		.4byte	.Ldebug_abbrev0
  804 000a 04       		.byte	0x4
@@ -1135,12 +1258,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  840 0055 05       		.byte	0x5
  841 0056 B3040000 		.4byte	.LASF5
  842 005a 02       		.uleb128 0x2
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 22
+
+
  843 005b 04       		.byte	0x4
  844 005c 07       		.byte	0x7
  845 005d 0C050000 		.4byte	.LASF6
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 20
-
-
  846 0061 02       		.uleb128 0x2
  847 0062 08       		.byte	0x8
  848 0063 05       		.byte	0x5
@@ -1195,12 +1318,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  897 00c8 2C000000 		.4byte	0x2c
  898 00cc 06       		.uleb128 0x6
  899 00cd 73010000 		.4byte	.LASF18
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 23
+
+
  900 00d1 04       		.byte	0x4
  901 00d2 3D01     		.2byte	0x13d
  902 00d4 53000000 		.4byte	0x53
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 21
-
-
  903 00d8 02       		.uleb128 0x2
  904 00d9 08       		.byte	0x8
  905 00da 04       		.byte	0x4
@@ -1248,19 +1371,19 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  947 0131 03       		.uleb128 0x3
  948 0132 2F000000 		.4byte	.LASF25
  949 0136 06       		.byte	0x6
- 950 0137 12       		.byte	0x12
+ 950 0137 18       		.byte	0x18
  951 0138 FA000000 		.4byte	0xfa
  952 013c 0D       		.uleb128 0xd
  953 013d 37020000 		.4byte	.LASF33
  954 0141 4001     		.2byte	0x140
  955 0143 07       		.byte	0x7
  956 0144 09       		.byte	0x9
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 24
+
+
  957 0145 93010000 		.4byte	0x193
  958 0149 0E       		.uleb128 0xe
  959 014a 35030000 		.4byte	.LASF26
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 22
-
-
  960 014e 07       		.byte	0x7
  961 014f 0B       		.byte	0xb
  962 0150 CC000000 		.4byte	0xcc
@@ -1315,12 +1438,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1011 01b8 07       		.byte	0x7
  1012 01b9 13       		.byte	0x13
  1013 01ba 3C010000 		.4byte	0x13c
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 25
+
+
  1014 01be 10       		.uleb128 0x10
  1015 01bf 77020000 		.4byte	.LASF34
  1016 01c3 10       		.byte	0x10
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 23
-
-
  1017 01c4 07       		.byte	0x7
  1018 01c5 15       		.byte	0x15
  1019 01c6 F8010000 		.4byte	0x1f8
@@ -1375,12 +1498,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1068 0228 0E       		.uleb128 0xe
  1069 0229 E4020000 		.4byte	.LASF40
  1070 022d 07       		.byte	0x7
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 26
+
+
  1071 022e 26       		.byte	0x26
  1072 022f DF000000 		.4byte	0xdf
  1073 0233 04       		.byte	0x4
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 24
-
-
  1074 0234 0E       		.uleb128 0xe
  1075 0235 D5000000 		.4byte	.LASF41
  1076 0239 07       		.byte	0x7
@@ -1435,14 +1558,14 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1125 029d 0F030000 		.4byte	.LASF48
  1126 02a1 07       		.byte	0x7
  1127 02a2 2E       		.byte	0x2e
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 27
+
+
  1128 02a3 03020000 		.4byte	0x203
  1129 02a7 03       		.uleb128 0x3
  1130 02a8 82040000 		.4byte	.LASF49
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 25
-
-
  1131 02ac 08       		.byte	0x8
- 1132 02ad 14       		.byte	0x14
+ 1132 02ad 1A       		.byte	0x1a
  1133 02ae B2020000 		.4byte	0x2b2
  1134 02b2 05       		.uleb128 0x5
  1135 02b3 04       		.byte	0x4
@@ -1455,7 +1578,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1142 02c3 03       		.uleb128 0x3
  1143 02c4 56060000 		.4byte	.LASF50
  1144 02c8 08       		.byte	0x8
- 1145 02c9 15       		.byte	0x15
+ 1145 02c9 1B       		.byte	0x1b
  1146 02ca CE020000 		.4byte	0x2ce
  1147 02ce 05       		.uleb128 0x5
  1148 02cf 04       		.byte	0x4
@@ -1495,12 +1618,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1182 0312 01       		.sleb128 1
  1183 0313 00       		.byte	0
  1184 0314 03       		.uleb128 0x3
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 28
+
+
  1185 0315 18040000 		.4byte	.LASF56
  1186 0319 09       		.byte	0x9
  1187 031a 46       		.byte	0x46
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 26
-
-
  1188 031b FF020000 		.4byte	0x2ff
  1189 031f 14       		.uleb128 0x14
  1190 0320 3C       		.byte	0x3c
@@ -1555,12 +1678,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1239 0381 66       		.byte	0x66
  1240 0382 25000000 		.4byte	0x25
  1241 0386 1C       		.byte	0x1c
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 29
+
+
  1242 0387 0E       		.uleb128 0xe
  1243 0388 FF000000 		.4byte	.LASF65
  1244 038c 09       		.byte	0x9
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 27
-
-
  1245 038d 67       		.byte	0x67
  1246 038e 25000000 		.4byte	0x25
  1247 0392 20       		.byte	0x20
@@ -1615,55 +1738,55 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1296 03f3 05       		.uleb128 0x5
  1297 03f4 04       		.byte	0x4
  1298 03f5 25000000 		.4byte	0x25
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 30
+
+
  1299 03f9 10       		.uleb128 0x10
  1300 03fa 84020000 		.4byte	.LASF74
  1301 03fe 54       		.byte	0x54
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 28
-
-
  1302 03ff 01       		.byte	0x1
- 1303 0400 33       		.byte	0x33
+ 1303 0400 47       		.byte	0x47
  1304 0401 5A040000 		.4byte	0x45a
  1305 0405 0E       		.uleb128 0xe
  1306 0406 FE040000 		.4byte	.LASF75
  1307 040a 01       		.byte	0x1
- 1308 040b 35       		.byte	0x35
+ 1308 040b 49       		.byte	0x49
  1309 040c 5A040000 		.4byte	0x45a
  1310 0410 00       		.byte	0
  1311 0411 0E       		.uleb128 0xe
  1312 0412 13010000 		.4byte	.LASF76
  1313 0416 01       		.byte	0x1
- 1314 0417 36       		.byte	0x36
+ 1314 0417 4A       		.byte	0x4a
  1315 0418 26010000 		.4byte	0x126
  1316 041c 06       		.byte	0x6
  1317 041d 11       		.uleb128 0x11
  1318 041e 70696400 		.ascii	"pid\000"
  1319 0422 01       		.byte	0x1
- 1320 0423 37       		.byte	0x37
+ 1320 0423 4B       		.byte	0x4b
  1321 0424 E8030000 		.4byte	0x3e8
  1322 0428 08       		.byte	0x8
  1323 0429 0E       		.uleb128 0xe
  1324 042a 02040000 		.4byte	.LASF77
  1325 042e 01       		.byte	0x1
- 1326 042f 38       		.byte	0x38
+ 1326 042f 4C       		.byte	0x4c
  1327 0430 EF000000 		.4byte	0xef
  1328 0434 44       		.byte	0x44
  1329 0435 0E       		.uleb128 0xe
  1330 0436 D7030000 		.4byte	.LASF78
  1331 043a 01       		.byte	0x1
- 1332 043b 39       		.byte	0x39
+ 1332 043b 4D       		.byte	0x4d
  1333 043c 31010000 		.4byte	0x131
  1334 0440 48       		.byte	0x48
  1335 0441 0E       		.uleb128 0xe
  1336 0442 0B020000 		.4byte	.LASF79
  1337 0446 01       		.byte	0x1
- 1338 0447 3A       		.byte	0x3a
+ 1338 0447 4E       		.byte	0x4e
  1339 0448 A7020000 		.4byte	0x2a7
  1340 044c 4C       		.byte	0x4c
  1341 044d 0E       		.uleb128 0xe
  1342 044e 34010000 		.4byte	.LASF80
  1343 0452 01       		.byte	0x1
- 1344 0453 3B       		.byte	0x3b
+ 1344 0453 4F       		.byte	0x4f
  1345 0454 C3020000 		.4byte	0x2c3
  1346 0458 50       		.byte	0x50
  1347 0459 00       		.byte	0
@@ -1675,17 +1798,17 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1353 0468 05       		.byte	0x5
  1354 0469 00       		.byte	0
  1355 046a 03       		.uleb128 0x3
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 31
+
+
  1356 046b 6E020000 		.4byte	.LASF81
  1357 046f 01       		.byte	0x1
- 1358 0470 3C       		.byte	0x3c
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 29
-
-
+ 1358 0470 50       		.byte	0x50
  1359 0471 F9030000 		.4byte	0x3f9
  1360 0475 15       		.uleb128 0x15
  1361 0476 50040000 		.4byte	.LASF126
  1362 047a 01       		.byte	0x1
- 1363 047b 78       		.byte	0x78
+ 1363 047b A2       		.byte	0xa2
  1364 047c 00000000 		.4byte	.LFB65
  1365 0480 B8000000 		.4byte	.LFE65-.LFB65
  1366 0484 01       		.uleb128 0x1
@@ -1694,30 +1817,30 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1369 048a 16       		.uleb128 0x16
  1370 048b 70696400 		.ascii	"pid\000"
  1371 048f 01       		.byte	0x1
- 1372 0490 78       		.byte	0x78
+ 1372 0490 A2       		.byte	0xa2
  1373 0491 1F050000 		.4byte	0x51f
  1374 0495 00000000 		.4byte	.LLST0
  1375 0499 17       		.uleb128 0x17
  1376 049a 3C010000 		.4byte	.LASF82
  1377 049e 01       		.byte	0x1
- 1378 049f 7A       		.byte	0x7a
+ 1378 049f A4       		.byte	0xa4
  1379 04a0 25000000 		.4byte	0x25
  1380 04a4 39000000 		.4byte	.LLST1
  1381 04a8 18       		.uleb128 0x18
  1382 04a9 64697200 		.ascii	"dir\000"
  1383 04ad 01       		.byte	0x1
- 1384 04ae 7B       		.byte	0x7b
+ 1384 04ae A5       		.byte	0xa5
  1385 04af C0000000 		.4byte	0xc0
  1386 04b3 57000000 		.4byte	.LLST2
  1387 04b7 17       		.uleb128 0x17
  1388 04b8 4C060000 		.4byte	.LASF83
  1389 04bc 01       		.byte	0x1
- 1390 04bd 7C       		.byte	0x7c
+ 1390 04bd A6       		.byte	0xa6
  1391 04be 25000000 		.4byte	0x25
  1392 04c2 6A000000 		.4byte	.LLST3
  1393 04c6 19       		.uleb128 0x19
  1394 04c7 6C000000 		.4byte	.LVL14
- 1395 04cb B6090000 		.4byte	0x9b6
+ 1395 04cb C9090000 		.4byte	0x9c9
  1396 04cf DA040000 		.4byte	0x4da
  1397 04d3 1A       		.uleb128 0x1a
  1398 04d4 01       		.uleb128 0x1
@@ -1728,21 +1851,21 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1403 04d9 00       		.byte	0
  1404 04da 19       		.uleb128 0x19
  1405 04db 84000000 		.4byte	.LVL16
- 1406 04df D3090000 		.4byte	0x9d3
+ 1406 04df E6090000 		.4byte	0x9e6
  1407 04e3 EE040000 		.4byte	0x4ee
  1408 04e7 1A       		.uleb128 0x1a
  1409 04e8 01       		.uleb128 0x1
  1410 04e9 50       		.byte	0x50
  1411 04ea 02       		.uleb128 0x2
  1412 04eb 78       		.byte	0x78
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 32
+
+
  1413 04ec 00       		.sleb128 0
  1414 04ed 00       		.byte	0
  1415 04ee 19       		.uleb128 0x19
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 30
-
-
  1416 04ef 8A000000 		.4byte	.LVL17
- 1417 04f3 EA090000 		.4byte	0x9ea
+ 1417 04f3 FD090000 		.4byte	0x9fd
  1418 04f7 02050000 		.4byte	0x502
  1419 04fb 1A       		.uleb128 0x1a
  1420 04fc 01       		.uleb128 0x1
@@ -1753,7 +1876,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1425 0501 00       		.byte	0
  1426 0502 19       		.uleb128 0x19
  1427 0503 AA000000 		.4byte	.LVL22
- 1428 0507 060A0000 		.4byte	0xa06
+ 1428 0507 190A0000 		.4byte	0xa19
  1429 050b 16050000 		.4byte	0x516
  1430 050f 1A       		.uleb128 0x1a
  1431 0510 01       		.uleb128 0x1
@@ -1774,7 +1897,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1446 0525 1C       		.uleb128 0x1c
  1447 0526 A4010000 		.4byte	.LASF84
  1448 052a 01       		.byte	0x1
- 1449 052b 5E       		.byte	0x5e
+ 1449 052b 79       		.byte	0x79
  1450 052c 00000000 		.4byte	.LFB63
  1451 0530 7C000000 		.4byte	.LFE63-.LFB63
  1452 0534 01       		.uleb128 0x1
@@ -1782,7 +1905,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1454 0536 D6050000 		.4byte	0x5d6
  1455 053a 19       		.uleb128 0x19
  1456 053b 40000000 		.4byte	.LVL25
- 1457 053f 200A0000 		.4byte	0xa20
+ 1457 053f 330A0000 		.4byte	0xa33
  1458 0543 89050000 		.4byte	0x589
  1459 0547 1A       		.uleb128 0x1a
  1460 0548 01       		.uleb128 0x1
@@ -1795,12 +1918,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1467 054f 01       		.uleb128 0x1
  1468 0550 52       		.byte	0x52
  1469 0551 03       		.uleb128 0x3
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 33
+
+
  1470 0552 F5       		.byte	0xf5
  1471 0553 04       		.uleb128 0x4
  1472 0554 25       		.uleb128 0x25
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 31
-
-
  1473 0555 1A       		.uleb128 0x1a
  1474 0556 01       		.uleb128 0x1
  1475 0557 51       		.byte	0x51
@@ -1855,12 +1978,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1524 0588 00       		.byte	0
  1525 0589 1D       		.uleb128 0x1d
  1526 058a 5C000000 		.4byte	.LVL26
- 1527 058e 200A0000 		.4byte	0xa20
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 34
+
+
+ 1527 058e 330A0000 		.4byte	0xa33
  1528 0592 1A       		.uleb128 0x1a
  1529 0593 01       		.uleb128 0x1
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 32
-
-
  1530 0594 53       		.byte	0x53
  1531 0595 03       		.uleb128 0x3
  1532 0596 F5       		.byte	0xf5
@@ -1915,12 +2038,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1581 05c8 03       		.uleb128 0x3
  1582 05c9 F5       		.byte	0xf5
  1583 05ca 04       		.uleb128 0x4
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 35
+
+
  1584 05cb 25       		.uleb128 0x25
  1585 05cc 1A       		.uleb128 0x1a
  1586 05cd 02       		.uleb128 0x2
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 33
-
-
  1587 05ce 7D       		.byte	0x7d
  1588 05cf 00       		.sleb128 0
  1589 05d0 03       		.uleb128 0x3
@@ -1932,7 +2055,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1595 05d6 1C       		.uleb128 0x1c
  1596 05d7 FD020000 		.4byte	.LASF85
  1597 05db 01       		.byte	0x1
- 1598 05dc 68       		.byte	0x68
+ 1598 05dc 8A       		.byte	0x8a
  1599 05dd 00000000 		.4byte	.LFB64
  1600 05e1 30000000 		.4byte	.LFE64-.LFB64
  1601 05e5 01       		.uleb128 0x1
@@ -1941,15 +2064,15 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1604 05eb 17       		.uleb128 0x17
  1605 05ec 07030000 		.4byte	.LASF86
  1606 05f0 01       		.byte	0x1
- 1607 05f1 6A       		.byte	0x6a
+ 1607 05f1 8C       		.byte	0x8c
  1608 05f2 32060000 		.4byte	0x632
  1609 05f6 88000000 		.4byte	.LLST4
  1610 05fa 1E       		.uleb128 0x1e
  1611 05fb 06000000 		.4byte	.LVL27
- 1612 05ff 590A0000 		.4byte	0xa59
+ 1612 05ff 6C0A0000 		.4byte	0xa6c
  1613 0603 19       		.uleb128 0x19
  1614 0604 16000000 		.4byte	.LVL29
- 1615 0608 6A0A0000 		.4byte	0xa6a
+ 1615 0608 7D0A0000 		.4byte	0xa7d
  1616 060c 17060000 		.4byte	0x617
  1617 0610 1A       		.uleb128 0x1a
  1618 0611 01       		.uleb128 0x1
@@ -1960,10 +2083,10 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1623 0616 00       		.byte	0
  1624 0617 1E       		.uleb128 0x1e
  1625 0618 1A000000 		.4byte	.LVL30
- 1626 061c 8A0A0000 		.4byte	0xa8a
+ 1626 061c 9D0A0000 		.4byte	0xa9d
  1627 0620 1D       		.uleb128 0x1d
  1628 0621 28000000 		.4byte	.LVL32
- 1629 0625 6A0A0000 		.4byte	0xa6a
+ 1629 0625 7D0A0000 		.4byte	0xa7d
  1630 0629 1A       		.uleb128 0x1a
  1631 062a 01       		.uleb128 0x1
  1632 062b 50       		.byte	0x50
@@ -1975,13 +2098,13 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1638 0632 05       		.uleb128 0x5
  1639 0633 04       		.byte	0x4
  1640 0634 F8010000 		.4byte	0x1f8
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 36
+
+
  1641 0638 1F       		.uleb128 0x1f
  1642 0639 34060000 		.4byte	.LASF87
  1643 063d 01       		.byte	0x1
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 34
-
-
- 1644 063e 8C       		.byte	0x8c
+ 1644 063e BE       		.byte	0xbe
  1645 063f 00000000 		.4byte	.LFB66
  1646 0643 9C000000 		.4byte	.LFE66-.LFB66
  1647 0647 01       		.uleb128 0x1
@@ -1990,34 +2113,34 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1650 064d 20       		.uleb128 0x20
  1651 064e D3020000 		.4byte	.LASF88
  1652 0652 01       		.byte	0x1
- 1653 0653 8E       		.byte	0x8e
+ 1653 0653 C0       		.byte	0xc0
  1654 0654 B4000000 		.4byte	0xb4
  1655 0658 05       		.uleb128 0x5
  1656 0659 03       		.byte	0x3
- 1657 065a 04000000 		.4byte	last_update_time.7613
+ 1657 065a 04000000 		.4byte	last_update_time.7609
  1658 065e 20       		.uleb128 0x20
  1659 065f 25040000 		.4byte	.LASF89
  1660 0663 01       		.byte	0x1
- 1661 0664 8F       		.byte	0x8f
+ 1661 0664 C1       		.byte	0xc1
  1662 0665 9C000000 		.4byte	0x9c
  1663 0669 05       		.uleb128 0x5
  1664 066a 03       		.byte	0x3
- 1665 066b 08000000 		.4byte	pid_sched_offset_applied.7614
+ 1665 066b 08000000 		.4byte	pid_sched_offset_applied.7610
  1666 066f 17       		.uleb128 0x17
  1667 0670 00020000 		.4byte	.LASF90
  1668 0674 01       		.byte	0x1
- 1669 0675 90       		.byte	0x90
+ 1669 0675 C2       		.byte	0xc2
  1670 0676 B4000000 		.4byte	0xb4
  1671 067a A6000000 		.4byte	.LLST5
  1672 067e 1E       		.uleb128 0x1e
  1673 067f 06000000 		.4byte	.LVL33
- 1674 0683 9B0A0000 		.4byte	0xa9b
+ 1674 0683 AE0A0000 		.4byte	0xaae
  1675 0687 1E       		.uleb128 0x1e
  1676 0688 22000000 		.4byte	.LVL38
- 1677 068c 9B0A0000 		.4byte	0xa9b
+ 1677 068c AE0A0000 		.4byte	0xaae
  1678 0690 19       		.uleb128 0x19
  1679 0691 36000000 		.4byte	.LVL39
- 1680 0695 AC0A0000 		.4byte	0xaac
+ 1680 0695 BF0A0000 		.4byte	0xabf
  1681 0699 A3060000 		.4byte	0x6a3
  1682 069d 1A       		.uleb128 0x1a
  1683 069e 01       		.uleb128 0x1
@@ -2035,12 +2158,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1695 06b3 02       		.uleb128 0x2
  1696 06b4 74       		.byte	0x74
  1697 06b5 00       		.sleb128 0
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 37
+
+
  1698 06b6 00       		.byte	0
  1699 06b7 19       		.uleb128 0x19
  1700 06b8 46000000 		.4byte	.LVL41
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 35
-
-
  1701 06bc 75040000 		.4byte	0x475
  1702 06c0 CC060000 		.4byte	0x6cc
  1703 06c4 1A       		.uleb128 0x1a
@@ -2052,7 +2175,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1709 06cb 00       		.byte	0
  1710 06cc 19       		.uleb128 0x19
  1711 06cd 62000000 		.4byte	.LVL43
- 1712 06d1 BD0A0000 		.4byte	0xabd
+ 1712 06d1 D00A0000 		.4byte	0xad0
  1713 06d5 E6060000 		.4byte	0x6e6
  1714 06d9 1A       		.uleb128 0x1a
  1715 06da 01       		.uleb128 0x1
@@ -2069,7 +2192,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1726 06e5 00       		.byte	0
  1727 06e6 1D       		.uleb128 0x1d
  1728 06e7 84000000 		.4byte	.LVL45
- 1729 06eb BD0A0000 		.4byte	0xabd
+ 1729 06eb D00A0000 		.4byte	0xad0
  1730 06ef 1A       		.uleb128 0x1a
  1731 06f0 01       		.uleb128 0x1
  1732 06f1 51       		.byte	0x51
@@ -2087,7 +2210,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1744 06ff 21       		.uleb128 0x21
  1745 0700 9A000000 		.4byte	.LASF95
  1746 0704 01       		.byte	0x1
- 1747 0705 A1       		.byte	0xa1
+ 1747 0705 DD       		.byte	0xdd
  1748 0706 00000000 		.4byte	.LFB67
  1749 070a 10000000 		.4byte	.LFE67-.LFB67
  1750 070e 01       		.uleb128 0x1
@@ -2095,18 +2218,18 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1752 0710 2F070000 		.4byte	0x72f
  1753 0714 22       		.uleb128 0x22
  1754 0715 4C010000 		.4byte	.LASF91
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 38
+
+
  1755 0719 01       		.byte	0x1
- 1756 071a A1       		.byte	0xa1
+ 1756 071a DD       		.byte	0xdd
  1757 071b EF000000 		.4byte	0xef
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 36
-
-
  1758 071f 01       		.uleb128 0x1
  1759 0720 50       		.byte	0x50
  1760 0721 22       		.uleb128 0x22
  1761 0722 B1000000 		.4byte	.LASF92
  1762 0726 01       		.byte	0x1
- 1763 0727 A1       		.byte	0xa1
+ 1763 0727 DD       		.byte	0xdd
  1764 0728 EF000000 		.4byte	0xef
  1765 072c 01       		.uleb128 0x1
  1766 072d 51       		.byte	0x51
@@ -2114,7 +2237,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1768 072f 23       		.uleb128 0x23
  1769 0730 26050000 		.4byte	.LASF93
  1770 0734 01       		.byte	0x1
- 1771 0735 A7       		.byte	0xa7
+ 1771 0735 EA       		.byte	0xea
  1772 0736 00000000 		.4byte	.LFB68
  1773 073a 1C000000 		.4byte	.LFE68-.LFB68
  1774 073e 01       		.uleb128 0x1
@@ -2122,494 +2245,494 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  1776 0740 23       		.uleb128 0x23
  1777 0741 D1040000 		.4byte	.LASF94
  1778 0745 01       		.byte	0x1
- 1779 0746 AD       		.byte	0xad
+ 1779 0746 F7       		.byte	0xf7
  1780 0747 00000000 		.4byte	.LFB69
  1781 074b 24000000 		.4byte	.LFE69-.LFB69
  1782 074f 01       		.uleb128 0x1
  1783 0750 9C       		.byte	0x9c
- 1784 0751 21       		.uleb128 0x21
+ 1784 0751 24       		.uleb128 0x24
  1785 0752 6A000000 		.4byte	.LASF96
  1786 0756 01       		.byte	0x1
- 1787 0757 BC       		.byte	0xbc
- 1788 0758 00000000 		.4byte	.LFB70
- 1789 075c 28000000 		.4byte	.LFE70-.LFB70
- 1790 0760 01       		.uleb128 0x1
- 1791 0761 9C       		.byte	0x9c
- 1792 0762 B6070000 		.4byte	0x7b6
- 1793 0766 24       		.uleb128 0x24
- 1794 0767 F9010000 		.4byte	.LASF97
- 1795 076b 01       		.byte	0x1
- 1796 076c BC       		.byte	0xbc
- 1797 076d 9C000000 		.4byte	0x9c
- 1798 0771 C9000000 		.4byte	.LLST6
- 1799 0775 17       		.uleb128 0x17
- 1800 0776 FA000000 		.4byte	.LASF72
- 1801 077a 01       		.byte	0x1
- 1802 077b BE       		.byte	0xbe
- 1803 077c F4020000 		.4byte	0x2f4
- 1804 0780 EA000000 		.4byte	.LLST7
- 1805 0784 19       		.uleb128 0x19
- 1806 0785 16000000 		.4byte	.LVL51
- 1807 0789 D80A0000 		.4byte	0xad8
- 1808 078d 9E070000 		.4byte	0x79e
- 1809 0791 1A       		.uleb128 0x1a
- 1810 0792 01       		.uleb128 0x1
- 1811 0793 51       		.byte	0x51
- 1812 0794 02       		.uleb128 0x2
- 1813 0795 74       		.byte	0x74
- 1814 0796 00       		.sleb128 0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 37
+ 1787 0757 0D01     		.2byte	0x10d
+ 1788 0759 00000000 		.4byte	.LFB70
+ 1789 075d 28000000 		.4byte	.LFE70-.LFB70
+ 1790 0761 01       		.uleb128 0x1
+ 1791 0762 9C       		.byte	0x9c
+ 1792 0763 B9070000 		.4byte	0x7b9
+ 1793 0767 25       		.uleb128 0x25
+ 1794 0768 F9010000 		.4byte	.LASF97
+ 1795 076c 01       		.byte	0x1
+ 1796 076d 0D01     		.2byte	0x10d
+ 1797 076f 9C000000 		.4byte	0x9c
+ 1798 0773 C9000000 		.4byte	.LLST6
+ 1799 0777 26       		.uleb128 0x26
+ 1800 0778 FA000000 		.4byte	.LASF72
+ 1801 077c 01       		.byte	0x1
+ 1802 077d 0F01     		.2byte	0x10f
+ 1803 077f F4020000 		.4byte	0x2f4
+ 1804 0783 EA000000 		.4byte	.LLST7
+ 1805 0787 19       		.uleb128 0x19
+ 1806 0788 16000000 		.4byte	.LVL51
+ 1807 078c EB0A0000 		.4byte	0xaeb
+ 1808 0790 A1070000 		.4byte	0x7a1
+ 1809 0794 1A       		.uleb128 0x1a
+ 1810 0795 01       		.uleb128 0x1
+ 1811 0796 51       		.byte	0x51
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 39
 
 
- 1815 0797 1A       		.uleb128 0x1a
- 1816 0798 01       		.uleb128 0x1
- 1817 0799 50       		.byte	0x50
- 1818 079a 02       		.uleb128 0x2
- 1819 079b 75       		.byte	0x75
- 1820 079c 08       		.sleb128 8
- 1821 079d 00       		.byte	0
- 1822 079e 1D       		.uleb128 0x1d
- 1823 079f 20000000 		.4byte	.LVL52
- 1824 07a3 D80A0000 		.4byte	0xad8
- 1825 07a7 1A       		.uleb128 0x1a
- 1826 07a8 01       		.uleb128 0x1
- 1827 07a9 51       		.byte	0x51
- 1828 07aa 02       		.uleb128 0x2
- 1829 07ab 74       		.byte	0x74
- 1830 07ac 00       		.sleb128 0
- 1831 07ad 1A       		.uleb128 0x1a
- 1832 07ae 01       		.uleb128 0x1
- 1833 07af 50       		.byte	0x50
- 1834 07b0 03       		.uleb128 0x3
- 1835 07b1 75       		.byte	0x75
- 1836 07b2 DC00     		.sleb128 92
- 1837 07b4 00       		.byte	0
- 1838 07b5 00       		.byte	0
- 1839 07b6 21       		.uleb128 0x21
- 1840 07b7 3D030000 		.4byte	.LASF98
- 1841 07bb 01       		.byte	0x1
- 1842 07bc C9       		.byte	0xc9
- 1843 07bd 00000000 		.4byte	.LFB71
- 1844 07c1 18000000 		.4byte	.LFE71-.LFB71
- 1845 07c5 01       		.uleb128 0x1
- 1846 07c6 9C       		.byte	0x9c
- 1847 07c7 20080000 		.4byte	0x820
- 1848 07cb 16       		.uleb128 0x16
- 1849 07cc 6B7000   		.ascii	"kp\000"
- 1850 07cf 01       		.byte	0x1
- 1851 07d0 C9       		.byte	0xc9
- 1852 07d1 25000000 		.4byte	0x25
- 1853 07d5 09010000 		.4byte	.LLST8
- 1854 07d9 16       		.uleb128 0x16
- 1855 07da 6B6900   		.ascii	"ki\000"
- 1856 07dd 01       		.byte	0x1
- 1857 07de C9       		.byte	0xc9
- 1858 07df 25000000 		.4byte	0x25
- 1859 07e3 37010000 		.4byte	.LLST9
- 1860 07e7 16       		.uleb128 0x16
- 1861 07e8 6B6400   		.ascii	"kd\000"
- 1862 07eb 01       		.byte	0x1
- 1863 07ec C9       		.byte	0xc9
- 1864 07ed 25000000 		.4byte	0x25
- 1865 07f1 65010000 		.4byte	.LLST10
- 1866 07f5 1D       		.uleb128 0x1d
- 1867 07f6 12000000 		.4byte	.LVL58
- 1868 07fa 6A0A0000 		.4byte	0xa6a
- 1869 07fe 1A       		.uleb128 0x1a
- 1870 07ff 01       		.uleb128 0x1
- 1871 0800 53       		.byte	0x53
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 38
+ 1812 0797 02       		.uleb128 0x2
+ 1813 0798 74       		.byte	0x74
+ 1814 0799 00       		.sleb128 0
+ 1815 079a 1A       		.uleb128 0x1a
+ 1816 079b 01       		.uleb128 0x1
+ 1817 079c 50       		.byte	0x50
+ 1818 079d 02       		.uleb128 0x2
+ 1819 079e 75       		.byte	0x75
+ 1820 079f 08       		.sleb128 8
+ 1821 07a0 00       		.byte	0
+ 1822 07a1 1D       		.uleb128 0x1d
+ 1823 07a2 20000000 		.4byte	.LVL52
+ 1824 07a6 EB0A0000 		.4byte	0xaeb
+ 1825 07aa 1A       		.uleb128 0x1a
+ 1826 07ab 01       		.uleb128 0x1
+ 1827 07ac 51       		.byte	0x51
+ 1828 07ad 02       		.uleb128 0x2
+ 1829 07ae 74       		.byte	0x74
+ 1830 07af 00       		.sleb128 0
+ 1831 07b0 1A       		.uleb128 0x1a
+ 1832 07b1 01       		.uleb128 0x1
+ 1833 07b2 50       		.byte	0x50
+ 1834 07b3 03       		.uleb128 0x3
+ 1835 07b4 75       		.byte	0x75
+ 1836 07b5 DC00     		.sleb128 92
+ 1837 07b7 00       		.byte	0
+ 1838 07b8 00       		.byte	0
+ 1839 07b9 24       		.uleb128 0x24
+ 1840 07ba 3D030000 		.4byte	.LASF98
+ 1841 07be 01       		.byte	0x1
+ 1842 07bf 2301     		.2byte	0x123
+ 1843 07c1 00000000 		.4byte	.LFB71
+ 1844 07c5 18000000 		.4byte	.LFE71-.LFB71
+ 1845 07c9 01       		.uleb128 0x1
+ 1846 07ca 9C       		.byte	0x9c
+ 1847 07cb 27080000 		.4byte	0x827
+ 1848 07cf 27       		.uleb128 0x27
+ 1849 07d0 6B7000   		.ascii	"kp\000"
+ 1850 07d3 01       		.byte	0x1
+ 1851 07d4 2301     		.2byte	0x123
+ 1852 07d6 25000000 		.4byte	0x25
+ 1853 07da 09010000 		.4byte	.LLST8
+ 1854 07de 27       		.uleb128 0x27
+ 1855 07df 6B6900   		.ascii	"ki\000"
+ 1856 07e2 01       		.byte	0x1
+ 1857 07e3 2301     		.2byte	0x123
+ 1858 07e5 25000000 		.4byte	0x25
+ 1859 07e9 37010000 		.4byte	.LLST9
+ 1860 07ed 27       		.uleb128 0x27
+ 1861 07ee 6B6400   		.ascii	"kd\000"
+ 1862 07f1 01       		.byte	0x1
+ 1863 07f2 2301     		.2byte	0x123
+ 1864 07f4 25000000 		.4byte	0x25
+ 1865 07f8 65010000 		.4byte	.LLST10
+ 1866 07fc 1D       		.uleb128 0x1d
+ 1867 07fd 12000000 		.4byte	.LVL58
+ 1868 0801 7D0A0000 		.4byte	0xa7d
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 40
 
 
- 1872 0801 05       		.uleb128 0x5
- 1873 0802 F3       		.byte	0xf3
- 1874 0803 03       		.uleb128 0x3
- 1875 0804 F5       		.byte	0xf5
- 1876 0805 02       		.uleb128 0x2
- 1877 0806 25       		.uleb128 0x25
- 1878 0807 1A       		.uleb128 0x1a
- 1879 0808 01       		.uleb128 0x1
- 1880 0809 52       		.byte	0x52
- 1881 080a 03       		.uleb128 0x3
- 1882 080b F5       		.byte	0xf5
- 1883 080c 04       		.uleb128 0x4
- 1884 080d 25       		.uleb128 0x25
- 1885 080e 1A       		.uleb128 0x1a
- 1886 080f 01       		.uleb128 0x1
- 1887 0810 51       		.byte	0x51
- 1888 0811 03       		.uleb128 0x3
- 1889 0812 F5       		.byte	0xf5
- 1890 0813 05       		.uleb128 0x5
- 1891 0814 25       		.uleb128 0x25
- 1892 0815 1A       		.uleb128 0x1a
- 1893 0816 01       		.uleb128 0x1
- 1894 0817 50       		.byte	0x50
- 1895 0818 05       		.uleb128 0x5
- 1896 0819 03       		.byte	0x3
- 1897 081a 08000000 		.4byte	.LANCHOR1+8
- 1898 081e 00       		.byte	0
- 1899 081f 00       		.byte	0
- 1900 0820 21       		.uleb128 0x21
- 1901 0821 3E040000 		.4byte	.LASF99
- 1902 0825 01       		.byte	0x1
- 1903 0826 CE       		.byte	0xce
- 1904 0827 00000000 		.4byte	.LFB72
- 1905 082b 18000000 		.4byte	.LFE72-.LFB72
- 1906 082f 01       		.uleb128 0x1
- 1907 0830 9C       		.byte	0x9c
- 1908 0831 8A080000 		.4byte	0x88a
- 1909 0835 16       		.uleb128 0x16
- 1910 0836 6B7000   		.ascii	"kp\000"
- 1911 0839 01       		.byte	0x1
- 1912 083a CE       		.byte	0xce
- 1913 083b 25000000 		.4byte	0x25
- 1914 083f 93010000 		.4byte	.LLST11
- 1915 0843 16       		.uleb128 0x16
- 1916 0844 6B6900   		.ascii	"ki\000"
- 1917 0847 01       		.byte	0x1
- 1918 0848 CE       		.byte	0xce
- 1919 0849 25000000 		.4byte	0x25
- 1920 084d C1010000 		.4byte	.LLST12
- 1921 0851 16       		.uleb128 0x16
- 1922 0852 6B6400   		.ascii	"kd\000"
- 1923 0855 01       		.byte	0x1
- 1924 0856 CE       		.byte	0xce
- 1925 0857 25000000 		.4byte	0x25
- 1926 085b EF010000 		.4byte	.LLST13
- 1927 085f 1D       		.uleb128 0x1d
- 1928 0860 12000000 		.4byte	.LVL64
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 39
+ 1869 0805 1A       		.uleb128 0x1a
+ 1870 0806 01       		.uleb128 0x1
+ 1871 0807 53       		.byte	0x53
+ 1872 0808 05       		.uleb128 0x5
+ 1873 0809 F3       		.byte	0xf3
+ 1874 080a 03       		.uleb128 0x3
+ 1875 080b F5       		.byte	0xf5
+ 1876 080c 02       		.uleb128 0x2
+ 1877 080d 25       		.uleb128 0x25
+ 1878 080e 1A       		.uleb128 0x1a
+ 1879 080f 01       		.uleb128 0x1
+ 1880 0810 52       		.byte	0x52
+ 1881 0811 03       		.uleb128 0x3
+ 1882 0812 F5       		.byte	0xf5
+ 1883 0813 04       		.uleb128 0x4
+ 1884 0814 25       		.uleb128 0x25
+ 1885 0815 1A       		.uleb128 0x1a
+ 1886 0816 01       		.uleb128 0x1
+ 1887 0817 51       		.byte	0x51
+ 1888 0818 03       		.uleb128 0x3
+ 1889 0819 F5       		.byte	0xf5
+ 1890 081a 05       		.uleb128 0x5
+ 1891 081b 25       		.uleb128 0x25
+ 1892 081c 1A       		.uleb128 0x1a
+ 1893 081d 01       		.uleb128 0x1
+ 1894 081e 50       		.byte	0x50
+ 1895 081f 05       		.uleb128 0x5
+ 1896 0820 03       		.byte	0x3
+ 1897 0821 08000000 		.4byte	.LANCHOR1+8
+ 1898 0825 00       		.byte	0
+ 1899 0826 00       		.byte	0
+ 1900 0827 24       		.uleb128 0x24
+ 1901 0828 3E040000 		.4byte	.LASF99
+ 1902 082c 01       		.byte	0x1
+ 1903 082d 3101     		.2byte	0x131
+ 1904 082f 00000000 		.4byte	.LFB72
+ 1905 0833 18000000 		.4byte	.LFE72-.LFB72
+ 1906 0837 01       		.uleb128 0x1
+ 1907 0838 9C       		.byte	0x9c
+ 1908 0839 95080000 		.4byte	0x895
+ 1909 083d 27       		.uleb128 0x27
+ 1910 083e 6B7000   		.ascii	"kp\000"
+ 1911 0841 01       		.byte	0x1
+ 1912 0842 3101     		.2byte	0x131
+ 1913 0844 25000000 		.4byte	0x25
+ 1914 0848 93010000 		.4byte	.LLST11
+ 1915 084c 27       		.uleb128 0x27
+ 1916 084d 6B6900   		.ascii	"ki\000"
+ 1917 0850 01       		.byte	0x1
+ 1918 0851 3101     		.2byte	0x131
+ 1919 0853 25000000 		.4byte	0x25
+ 1920 0857 C1010000 		.4byte	.LLST12
+ 1921 085b 27       		.uleb128 0x27
+ 1922 085c 6B6400   		.ascii	"kd\000"
+ 1923 085f 01       		.byte	0x1
+ 1924 0860 3101     		.2byte	0x131
+ 1925 0862 25000000 		.4byte	0x25
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 41
 
 
- 1929 0864 6A0A0000 		.4byte	0xa6a
- 1930 0868 1A       		.uleb128 0x1a
- 1931 0869 01       		.uleb128 0x1
- 1932 086a 53       		.byte	0x53
- 1933 086b 05       		.uleb128 0x5
- 1934 086c F3       		.byte	0xf3
- 1935 086d 03       		.uleb128 0x3
- 1936 086e F5       		.byte	0xf5
- 1937 086f 02       		.uleb128 0x2
- 1938 0870 25       		.uleb128 0x25
- 1939 0871 1A       		.uleb128 0x1a
- 1940 0872 01       		.uleb128 0x1
- 1941 0873 52       		.byte	0x52
- 1942 0874 03       		.uleb128 0x3
- 1943 0875 F5       		.byte	0xf5
- 1944 0876 04       		.uleb128 0x4
- 1945 0877 25       		.uleb128 0x25
- 1946 0878 1A       		.uleb128 0x1a
- 1947 0879 01       		.uleb128 0x1
- 1948 087a 51       		.byte	0x51
- 1949 087b 03       		.uleb128 0x3
- 1950 087c F5       		.byte	0xf5
- 1951 087d 05       		.uleb128 0x5
- 1952 087e 25       		.uleb128 0x25
- 1953 087f 1A       		.uleb128 0x1a
- 1954 0880 01       		.uleb128 0x1
- 1955 0881 50       		.byte	0x50
- 1956 0882 05       		.uleb128 0x5
- 1957 0883 03       		.byte	0x3
- 1958 0884 5C000000 		.4byte	.LANCHOR1+92
- 1959 0888 00       		.byte	0
- 1960 0889 00       		.byte	0
- 1961 088a 21       		.uleb128 0x21
- 1962 088b 23010000 		.4byte	.LASF100
- 1963 088f 01       		.byte	0x1
- 1964 0890 D3       		.byte	0xd3
- 1965 0891 00000000 		.4byte	.LFB73
- 1966 0895 1C000000 		.4byte	.LFE73-.LFB73
- 1967 0899 01       		.uleb128 0x1
- 1968 089a 9C       		.byte	0x9c
- 1969 089b C6080000 		.4byte	0x8c6
- 1970 089f 16       		.uleb128 0x16
- 1971 08a0 6B7000   		.ascii	"kp\000"
- 1972 08a3 01       		.byte	0x1
- 1973 08a4 D3       		.byte	0xd3
- 1974 08a5 F3030000 		.4byte	0x3f3
- 1975 08a9 1D020000 		.4byte	.LLST14
- 1976 08ad 25       		.uleb128 0x25
- 1977 08ae 6B6900   		.ascii	"ki\000"
- 1978 08b1 01       		.byte	0x1
- 1979 08b2 D3       		.byte	0xd3
- 1980 08b3 F3030000 		.4byte	0x3f3
- 1981 08b7 01       		.uleb128 0x1
- 1982 08b8 51       		.byte	0x51
- 1983 08b9 25       		.uleb128 0x25
- 1984 08ba 6B6400   		.ascii	"kd\000"
- 1985 08bd 01       		.byte	0x1
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 40
+ 1926 0866 EF010000 		.4byte	.LLST13
+ 1927 086a 1D       		.uleb128 0x1d
+ 1928 086b 12000000 		.4byte	.LVL64
+ 1929 086f 7D0A0000 		.4byte	0xa7d
+ 1930 0873 1A       		.uleb128 0x1a
+ 1931 0874 01       		.uleb128 0x1
+ 1932 0875 53       		.byte	0x53
+ 1933 0876 05       		.uleb128 0x5
+ 1934 0877 F3       		.byte	0xf3
+ 1935 0878 03       		.uleb128 0x3
+ 1936 0879 F5       		.byte	0xf5
+ 1937 087a 02       		.uleb128 0x2
+ 1938 087b 25       		.uleb128 0x25
+ 1939 087c 1A       		.uleb128 0x1a
+ 1940 087d 01       		.uleb128 0x1
+ 1941 087e 52       		.byte	0x52
+ 1942 087f 03       		.uleb128 0x3
+ 1943 0880 F5       		.byte	0xf5
+ 1944 0881 04       		.uleb128 0x4
+ 1945 0882 25       		.uleb128 0x25
+ 1946 0883 1A       		.uleb128 0x1a
+ 1947 0884 01       		.uleb128 0x1
+ 1948 0885 51       		.byte	0x51
+ 1949 0886 03       		.uleb128 0x3
+ 1950 0887 F5       		.byte	0xf5
+ 1951 0888 05       		.uleb128 0x5
+ 1952 0889 25       		.uleb128 0x25
+ 1953 088a 1A       		.uleb128 0x1a
+ 1954 088b 01       		.uleb128 0x1
+ 1955 088c 50       		.byte	0x50
+ 1956 088d 05       		.uleb128 0x5
+ 1957 088e 03       		.byte	0x3
+ 1958 088f 5C000000 		.4byte	.LANCHOR1+92
+ 1959 0893 00       		.byte	0
+ 1960 0894 00       		.byte	0
+ 1961 0895 24       		.uleb128 0x24
+ 1962 0896 23010000 		.4byte	.LASF100
+ 1963 089a 01       		.byte	0x1
+ 1964 089b 3F01     		.2byte	0x13f
+ 1965 089d 00000000 		.4byte	.LFB73
+ 1966 08a1 1C000000 		.4byte	.LFE73-.LFB73
+ 1967 08a5 01       		.uleb128 0x1
+ 1968 08a6 9C       		.byte	0x9c
+ 1969 08a7 D5080000 		.4byte	0x8d5
+ 1970 08ab 27       		.uleb128 0x27
+ 1971 08ac 6B7000   		.ascii	"kp\000"
+ 1972 08af 01       		.byte	0x1
+ 1973 08b0 3F01     		.2byte	0x13f
+ 1974 08b2 F3030000 		.4byte	0x3f3
+ 1975 08b6 1D020000 		.4byte	.LLST14
+ 1976 08ba 28       		.uleb128 0x28
+ 1977 08bb 6B6900   		.ascii	"ki\000"
+ 1978 08be 01       		.byte	0x1
+ 1979 08bf 3F01     		.2byte	0x13f
+ 1980 08c1 F3030000 		.4byte	0x3f3
+ 1981 08c5 01       		.uleb128 0x1
+ 1982 08c6 51       		.byte	0x51
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 42
 
 
- 1986 08be D3       		.byte	0xd3
- 1987 08bf F3030000 		.4byte	0x3f3
- 1988 08c3 01       		.uleb128 0x1
- 1989 08c4 52       		.byte	0x52
- 1990 08c5 00       		.byte	0
- 1991 08c6 21       		.uleb128 0x21
- 1992 08c7 61010000 		.4byte	.LASF101
- 1993 08cb 01       		.byte	0x1
- 1994 08cc DA       		.byte	0xda
- 1995 08cd 00000000 		.4byte	.LFB74
- 1996 08d1 1C000000 		.4byte	.LFE74-.LFB74
- 1997 08d5 01       		.uleb128 0x1
- 1998 08d6 9C       		.byte	0x9c
- 1999 08d7 02090000 		.4byte	0x902
- 2000 08db 16       		.uleb128 0x16
- 2001 08dc 6B7000   		.ascii	"kp\000"
- 2002 08df 01       		.byte	0x1
- 2003 08e0 DA       		.byte	0xda
- 2004 08e1 F3030000 		.4byte	0x3f3
- 2005 08e5 3E020000 		.4byte	.LLST15
- 2006 08e9 25       		.uleb128 0x25
- 2007 08ea 6B6900   		.ascii	"ki\000"
- 2008 08ed 01       		.byte	0x1
- 2009 08ee DA       		.byte	0xda
- 2010 08ef F3030000 		.4byte	0x3f3
- 2011 08f3 01       		.uleb128 0x1
- 2012 08f4 51       		.byte	0x51
- 2013 08f5 25       		.uleb128 0x25
- 2014 08f6 6B6400   		.ascii	"kd\000"
- 2015 08f9 01       		.byte	0x1
- 2016 08fa DA       		.byte	0xda
- 2017 08fb F3030000 		.4byte	0x3f3
- 2018 08ff 01       		.uleb128 0x1
- 2019 0900 52       		.byte	0x52
- 2020 0901 00       		.byte	0
- 2021 0902 20       		.uleb128 0x20
- 2022 0903 5C030000 		.4byte	.LASF102
- 2023 0907 01       		.byte	0x1
- 2024 0908 47       		.byte	0x47
- 2025 0909 6A040000 		.4byte	0x46a
- 2026 090d 05       		.uleb128 0x5
- 2027 090e 03       		.byte	0x3
- 2028 090f 00000000 		.4byte	left_pid
- 2029 0913 20       		.uleb128 0x20
- 2030 0914 45000000 		.4byte	.LASF103
- 2031 0918 01       		.byte	0x1
- 2032 0919 51       		.byte	0x51
- 2033 091a 6A040000 		.4byte	0x46a
- 2034 091e 05       		.uleb128 0x5
- 2035 091f 03       		.byte	0x3
- 2036 0920 54000000 		.4byte	right_pid
- 2037 0924 20       		.uleb128 0x20
- 2038 0925 E9040000 		.4byte	.LASF104
- 2039 0929 01       		.byte	0x1
- 2040 092a 5B       		.byte	0x5b
- 2041 092b 9C000000 		.4byte	0x9c
- 2042 092f 05       		.uleb128 0x5
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 41
+ 1983 08c7 28       		.uleb128 0x28
+ 1984 08c8 6B6400   		.ascii	"kd\000"
+ 1985 08cb 01       		.byte	0x1
+ 1986 08cc 3F01     		.2byte	0x13f
+ 1987 08ce F3030000 		.4byte	0x3f3
+ 1988 08d2 01       		.uleb128 0x1
+ 1989 08d3 52       		.byte	0x52
+ 1990 08d4 00       		.byte	0
+ 1991 08d5 24       		.uleb128 0x24
+ 1992 08d6 61010000 		.4byte	.LASF101
+ 1993 08da 01       		.byte	0x1
+ 1994 08db 4F01     		.2byte	0x14f
+ 1995 08dd 00000000 		.4byte	.LFB74
+ 1996 08e1 1C000000 		.4byte	.LFE74-.LFB74
+ 1997 08e5 01       		.uleb128 0x1
+ 1998 08e6 9C       		.byte	0x9c
+ 1999 08e7 15090000 		.4byte	0x915
+ 2000 08eb 27       		.uleb128 0x27
+ 2001 08ec 6B7000   		.ascii	"kp\000"
+ 2002 08ef 01       		.byte	0x1
+ 2003 08f0 4F01     		.2byte	0x14f
+ 2004 08f2 F3030000 		.4byte	0x3f3
+ 2005 08f6 3E020000 		.4byte	.LLST15
+ 2006 08fa 28       		.uleb128 0x28
+ 2007 08fb 6B6900   		.ascii	"ki\000"
+ 2008 08fe 01       		.byte	0x1
+ 2009 08ff 4F01     		.2byte	0x14f
+ 2010 0901 F3030000 		.4byte	0x3f3
+ 2011 0905 01       		.uleb128 0x1
+ 2012 0906 51       		.byte	0x51
+ 2013 0907 28       		.uleb128 0x28
+ 2014 0908 6B6400   		.ascii	"kd\000"
+ 2015 090b 01       		.byte	0x1
+ 2016 090c 4F01     		.2byte	0x14f
+ 2017 090e F3030000 		.4byte	0x3f3
+ 2018 0912 01       		.uleb128 0x1
+ 2019 0913 52       		.byte	0x52
+ 2020 0914 00       		.byte	0
+ 2021 0915 20       		.uleb128 0x20
+ 2022 0916 5C030000 		.4byte	.LASF102
+ 2023 091a 01       		.byte	0x1
+ 2024 091b 57       		.byte	0x57
+ 2025 091c 6A040000 		.4byte	0x46a
+ 2026 0920 05       		.uleb128 0x5
+ 2027 0921 03       		.byte	0x3
+ 2028 0922 00000000 		.4byte	left_pid
+ 2029 0926 20       		.uleb128 0x20
+ 2030 0927 45000000 		.4byte	.LASF103
+ 2031 092b 01       		.byte	0x1
+ 2032 092c 61       		.byte	0x61
+ 2033 092d 6A040000 		.4byte	0x46a
+ 2034 0931 05       		.uleb128 0x5
+ 2035 0932 03       		.byte	0x3
+ 2036 0933 54000000 		.4byte	right_pid
+ 2037 0937 20       		.uleb128 0x20
+ 2038 0938 E9040000 		.4byte	.LASF104
+ 2039 093c 01       		.byte	0x1
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 43
 
 
- 2043 0930 03       		.byte	0x3
- 2044 0931 00000000 		.4byte	pid_enabled
- 2045 0935 26       		.uleb128 0x26
- 2046 0936 BC040000 		.4byte	.LASF105
- 2047 093a 0A       		.byte	0xa
- 2048 093b 5506     		.2byte	0x655
- 2049 093d 41090000 		.4byte	0x941
- 2050 0941 27       		.uleb128 0x27
- 2051 0942 91000000 		.4byte	0x91
- 2052 0946 28       		.uleb128 0x28
- 2053 0947 75040000 		.4byte	.LASF106
- 2054 094b 0B       		.byte	0xb
- 2055 094c 56       		.byte	0x56
- 2056 094d 57090000 		.4byte	0x957
- 2057 0951 05       		.uleb128 0x5
- 2058 0952 03       		.byte	0x3
- 2059 0953 00000000 		.4byte	p_cal_eeprom
- 2060 0957 05       		.uleb128 0x5
- 2061 0958 04       		.byte	0x4
- 2062 0959 5D090000 		.4byte	0x95d
- 2063 095d 27       		.uleb128 0x27
- 2064 095e 9C020000 		.4byte	0x29c
- 2065 0962 28       		.uleb128 0x28
- 2066 0963 A4040000 		.4byte	.LASF107
- 2067 0967 0B       		.byte	0xb
- 2068 0968 58       		.byte	0x58
- 2069 0969 EF000000 		.4byte	0xef
- 2070 096d 05       		.uleb128 0x5
- 2071 096e 03       		.byte	0x3
- 2072 096f 00000000 		.4byte	Cal_LeftTarget
- 2073 0973 28       		.uleb128 0x28
- 2074 0974 76060000 		.4byte	.LASF108
- 2075 0978 0B       		.byte	0xb
- 2076 0979 59       		.byte	0x59
- 2077 097a EF000000 		.4byte	0xef
- 2078 097e 05       		.uleb128 0x5
- 2079 097f 03       		.byte	0x3
- 2080 0980 00000000 		.4byte	Cal_RightTarget
- 2081 0984 28       		.uleb128 0x28
- 2082 0985 21020000 		.4byte	.LASF109
- 2083 0989 0C       		.byte	0xc
- 2084 098a 32       		.byte	0x32
- 2085 098b A8000000 		.4byte	0xa8
- 2086 098f 05       		.uleb128 0x5
- 2087 0990 03       		.byte	0x3
- 2088 0991 00000000 		.4byte	debug_control_enabled
- 2089 0995 07       		.uleb128 0x7
- 2090 0996 8A000000 		.4byte	0x8a
- 2091 099a A5090000 		.4byte	0x9a5
- 2092 099e 08       		.uleb128 0x8
- 2093 099f 7D000000 		.4byte	0x7d
- 2094 09a3 FF       		.byte	0xff
- 2095 09a4 00       		.byte	0
- 2096 09a5 28       		.uleb128 0x28
- 2097 09a6 AD010000 		.4byte	.LASF110
- 2098 09aa 0C       		.byte	0xc
- 2099 09ab 33       		.byte	0x33
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 42
+ 2040 093d 6B       		.byte	0x6b
+ 2041 093e 9C000000 		.4byte	0x9c
+ 2042 0942 05       		.uleb128 0x5
+ 2043 0943 03       		.byte	0x3
+ 2044 0944 00000000 		.4byte	pid_enabled
+ 2045 0948 29       		.uleb128 0x29
+ 2046 0949 BC040000 		.4byte	.LASF105
+ 2047 094d 0A       		.byte	0xa
+ 2048 094e 5506     		.2byte	0x655
+ 2049 0950 54090000 		.4byte	0x954
+ 2050 0954 2A       		.uleb128 0x2a
+ 2051 0955 91000000 		.4byte	0x91
+ 2052 0959 2B       		.uleb128 0x2b
+ 2053 095a 75040000 		.4byte	.LASF106
+ 2054 095e 0B       		.byte	0xb
+ 2055 095f 5C       		.byte	0x5c
+ 2056 0960 6A090000 		.4byte	0x96a
+ 2057 0964 05       		.uleb128 0x5
+ 2058 0965 03       		.byte	0x3
+ 2059 0966 00000000 		.4byte	p_cal_eeprom
+ 2060 096a 05       		.uleb128 0x5
+ 2061 096b 04       		.byte	0x4
+ 2062 096c 70090000 		.4byte	0x970
+ 2063 0970 2A       		.uleb128 0x2a
+ 2064 0971 9C020000 		.4byte	0x29c
+ 2065 0975 2B       		.uleb128 0x2b
+ 2066 0976 A4040000 		.4byte	.LASF107
+ 2067 097a 0B       		.byte	0xb
+ 2068 097b 5E       		.byte	0x5e
+ 2069 097c EF000000 		.4byte	0xef
+ 2070 0980 05       		.uleb128 0x5
+ 2071 0981 03       		.byte	0x3
+ 2072 0982 00000000 		.4byte	Cal_LeftTarget
+ 2073 0986 2B       		.uleb128 0x2b
+ 2074 0987 76060000 		.4byte	.LASF108
+ 2075 098b 0B       		.byte	0xb
+ 2076 098c 5F       		.byte	0x5f
+ 2077 098d EF000000 		.4byte	0xef
+ 2078 0991 05       		.uleb128 0x5
+ 2079 0992 03       		.byte	0x3
+ 2080 0993 00000000 		.4byte	Cal_RightTarget
+ 2081 0997 07       		.uleb128 0x7
+ 2082 0998 8A000000 		.4byte	0x8a
+ 2083 099c A7090000 		.4byte	0x9a7
+ 2084 09a0 08       		.uleb128 0x8
+ 2085 09a1 7D000000 		.4byte	0x7d
+ 2086 09a5 FF       		.byte	0xff
+ 2087 09a6 00       		.byte	0
+ 2088 09a7 2B       		.uleb128 0x2b
+ 2089 09a8 AD010000 		.4byte	.LASF109
+ 2090 09ac 0C       		.byte	0xc
+ 2091 09ad 37       		.byte	0x37
+ 2092 09ae 97090000 		.4byte	0x997
+ 2093 09b2 05       		.uleb128 0x5
+ 2094 09b3 03       		.byte	0x3
+ 2095 09b4 00000000 		.4byte	formatted_string
+ 2096 09b8 2B       		.uleb128 0x2b
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 44
 
 
- 2100 09ac 95090000 		.4byte	0x995
- 2101 09b0 05       		.uleb128 0x5
- 2102 09b1 03       		.byte	0x3
- 2103 09b2 00000000 		.4byte	formatted_string
- 2104 09b6 29       		.uleb128 0x29
- 2105 09b7 E0000000 		.4byte	.LASF111
- 2106 09bb 09       		.byte	0x9
- 2107 09bc 3501     		.2byte	0x135
- 2108 09be CD090000 		.4byte	0x9cd
- 2109 09c2 13       		.uleb128 0x13
- 2110 09c3 CD090000 		.4byte	0x9cd
- 2111 09c7 13       		.uleb128 0x13
- 2112 09c8 25000000 		.4byte	0x25
- 2113 09cc 00       		.byte	0
- 2114 09cd 05       		.uleb128 0x5
- 2115 09ce 04       		.byte	0x4
- 2116 09cf E8030000 		.4byte	0x3e8
- 2117 09d3 29       		.uleb128 0x29
- 2118 09d4 5B020000 		.4byte	.LASF112
- 2119 09d8 09       		.byte	0x9
- 2120 09d9 4201     		.2byte	0x142
- 2121 09db EA090000 		.4byte	0x9ea
- 2122 09df 13       		.uleb128 0x13
- 2123 09e0 CD090000 		.4byte	0x9cd
- 2124 09e4 13       		.uleb128 0x13
- 2125 09e5 25000000 		.4byte	0x25
- 2126 09e9 00       		.byte	0
- 2127 09ea 2A       		.uleb128 0x2a
- 2128 09eb EF000000 		.4byte	.LASF114
- 2129 09ef 09       		.byte	0x9
- 2130 09f0 BA       		.byte	0xba
- 2131 09f1 FF090000 		.4byte	0x9ff
- 2132 09f5 FF090000 		.4byte	0x9ff
- 2133 09f9 13       		.uleb128 0x13
- 2134 09fa CD090000 		.4byte	0x9cd
- 2135 09fe 00       		.byte	0
- 2136 09ff 02       		.uleb128 0x2
- 2137 0a00 01       		.byte	0x1
- 2138 0a01 02       		.byte	0x2
- 2139 0a02 55020000 		.4byte	.LASF113
- 2140 0a06 2A       		.uleb128 0x2a
- 2141 0a07 68040000 		.4byte	.LASF115
- 2142 0a0b 0B       		.byte	0xb
- 2143 0a0c 6B       		.byte	0x6b
- 2144 0a0d A8000000 		.4byte	0xa8
- 2145 0a11 200A0000 		.4byte	0xa20
- 2146 0a15 13       		.uleb128 0x13
- 2147 0a16 26010000 		.4byte	0x126
- 2148 0a1a 13       		.uleb128 0x13
- 2149 0a1b 25000000 		.4byte	0x25
- 2150 0a1f 00       		.byte	0
- 2151 0a20 2B       		.uleb128 0x2b
- 2152 0a21 46020000 		.4byte	.LASF116
- 2153 0a25 09       		.byte	0x9
- 2154 0a26 AB       		.byte	0xab
- 2155 0a27 590A0000 		.4byte	0xa59
- 2156 0a2b 13       		.uleb128 0x13
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 43
+ 2097 09b9 21020000 		.4byte	.LASF110
+ 2098 09bd 0C       		.byte	0xc
+ 2099 09be 88       		.byte	0x88
+ 2100 09bf A8000000 		.4byte	0xa8
+ 2101 09c3 05       		.uleb128 0x5
+ 2102 09c4 03       		.byte	0x3
+ 2103 09c5 00000000 		.4byte	debug_control_enabled
+ 2104 09c9 2C       		.uleb128 0x2c
+ 2105 09ca E0000000 		.4byte	.LASF111
+ 2106 09ce 09       		.byte	0x9
+ 2107 09cf 3501     		.2byte	0x135
+ 2108 09d1 E0090000 		.4byte	0x9e0
+ 2109 09d5 13       		.uleb128 0x13
+ 2110 09d6 E0090000 		.4byte	0x9e0
+ 2111 09da 13       		.uleb128 0x13
+ 2112 09db 25000000 		.4byte	0x25
+ 2113 09df 00       		.byte	0
+ 2114 09e0 05       		.uleb128 0x5
+ 2115 09e1 04       		.byte	0x4
+ 2116 09e2 E8030000 		.4byte	0x3e8
+ 2117 09e6 2C       		.uleb128 0x2c
+ 2118 09e7 5B020000 		.4byte	.LASF112
+ 2119 09eb 09       		.byte	0x9
+ 2120 09ec 4201     		.2byte	0x142
+ 2121 09ee FD090000 		.4byte	0x9fd
+ 2122 09f2 13       		.uleb128 0x13
+ 2123 09f3 E0090000 		.4byte	0x9e0
+ 2124 09f7 13       		.uleb128 0x13
+ 2125 09f8 25000000 		.4byte	0x25
+ 2126 09fc 00       		.byte	0
+ 2127 09fd 2D       		.uleb128 0x2d
+ 2128 09fe EF000000 		.4byte	.LASF114
+ 2129 0a02 09       		.byte	0x9
+ 2130 0a03 BA       		.byte	0xba
+ 2131 0a04 120A0000 		.4byte	0xa12
+ 2132 0a08 120A0000 		.4byte	0xa12
+ 2133 0a0c 13       		.uleb128 0x13
+ 2134 0a0d E0090000 		.4byte	0x9e0
+ 2135 0a11 00       		.byte	0
+ 2136 0a12 02       		.uleb128 0x2
+ 2137 0a13 01       		.byte	0x1
+ 2138 0a14 02       		.byte	0x2
+ 2139 0a15 55020000 		.4byte	.LASF113
+ 2140 0a19 2D       		.uleb128 0x2d
+ 2141 0a1a 68040000 		.4byte	.LASF115
+ 2142 0a1e 0B       		.byte	0xb
+ 2143 0a1f 6F       		.byte	0x6f
+ 2144 0a20 A8000000 		.4byte	0xa8
+ 2145 0a24 330A0000 		.4byte	0xa33
+ 2146 0a28 13       		.uleb128 0x13
+ 2147 0a29 26010000 		.4byte	0x126
+ 2148 0a2d 13       		.uleb128 0x13
+ 2149 0a2e 25000000 		.4byte	0x25
+ 2150 0a32 00       		.byte	0
+ 2151 0a33 2E       		.uleb128 0x2e
+ 2152 0a34 46020000 		.4byte	.LASF116
+ 2153 0a38 09       		.byte	0x9
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 45
 
 
- 2157 0a2c CD090000 		.4byte	0x9cd
- 2158 0a30 13       		.uleb128 0x13
- 2159 0a31 25000000 		.4byte	0x25
- 2160 0a35 13       		.uleb128 0x13
- 2161 0a36 25000000 		.4byte	0x25
- 2162 0a3a 13       		.uleb128 0x13
- 2163 0a3b 25000000 		.4byte	0x25
- 2164 0a3f 13       		.uleb128 0x13
- 2165 0a40 25000000 		.4byte	0x25
- 2166 0a44 13       		.uleb128 0x13
- 2167 0a45 25000000 		.4byte	0x25
- 2168 0a49 13       		.uleb128 0x13
- 2169 0a4a 25000000 		.4byte	0x25
- 2170 0a4e 13       		.uleb128 0x13
- 2171 0a4f F4020000 		.4byte	0x2f4
- 2172 0a53 13       		.uleb128 0x13
- 2173 0a54 14030000 		.4byte	0x314
- 2174 0a58 00       		.byte	0
- 2175 0a59 2C       		.uleb128 0x2c
- 2176 0a5a 79010000 		.4byte	.LASF117
- 2177 0a5e 0B       		.byte	0xb
- 2178 0a5f 61       		.byte	0x61
- 2179 0a60 32060000 		.4byte	0x632
- 2180 0a64 6A0A0000 		.4byte	0xa6a
- 2181 0a68 0A       		.uleb128 0xa
- 2182 0a69 00       		.byte	0
- 2183 0a6a 2B       		.uleb128 0x2b
- 2184 0a6b DB040000 		.4byte	.LASF118
- 2185 0a6f 09       		.byte	0x9
- 2186 0a70 E6       		.byte	0xe6
- 2187 0a71 8A0A0000 		.4byte	0xa8a
- 2188 0a75 13       		.uleb128 0x13
- 2189 0a76 CD090000 		.4byte	0x9cd
- 2190 0a7a 13       		.uleb128 0x13
- 2191 0a7b 25000000 		.4byte	0x25
- 2192 0a7f 13       		.uleb128 0x13
- 2193 0a80 25000000 		.4byte	0x25
- 2194 0a84 13       		.uleb128 0x13
- 2195 0a85 25000000 		.4byte	0x25
- 2196 0a89 00       		.byte	0
- 2197 0a8a 2C       		.uleb128 0x2c
- 2198 0a8b 9C020000 		.4byte	.LASF119
- 2199 0a8f 0B       		.byte	0xb
- 2200 0a90 62       		.byte	0x62
- 2201 0a91 32060000 		.4byte	0x632
- 2202 0a95 9B0A0000 		.4byte	0xa9b
- 2203 0a99 0A       		.uleb128 0xa
- 2204 0a9a 00       		.byte	0
- 2205 0a9b 2C       		.uleb128 0x2c
- 2206 0a9c EF020000 		.4byte	.LASF120
- 2207 0aa0 0D       		.byte	0xd
- 2208 0aa1 18       		.byte	0x18
- 2209 0aa2 B4000000 		.4byte	0xb4
- 2210 0aa6 AC0A0000 		.4byte	0xaac
- 2211 0aaa 0A       		.uleb128 0xa
- 2212 0aab 00       		.byte	0
- 2213 0aac 2B       		.uleb128 0x2b
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 44
+ 2154 0a39 AB       		.byte	0xab
+ 2155 0a3a 6C0A0000 		.4byte	0xa6c
+ 2156 0a3e 13       		.uleb128 0x13
+ 2157 0a3f E0090000 		.4byte	0x9e0
+ 2158 0a43 13       		.uleb128 0x13
+ 2159 0a44 25000000 		.4byte	0x25
+ 2160 0a48 13       		.uleb128 0x13
+ 2161 0a49 25000000 		.4byte	0x25
+ 2162 0a4d 13       		.uleb128 0x13
+ 2163 0a4e 25000000 		.4byte	0x25
+ 2164 0a52 13       		.uleb128 0x13
+ 2165 0a53 25000000 		.4byte	0x25
+ 2166 0a57 13       		.uleb128 0x13
+ 2167 0a58 25000000 		.4byte	0x25
+ 2168 0a5c 13       		.uleb128 0x13
+ 2169 0a5d 25000000 		.4byte	0x25
+ 2170 0a61 13       		.uleb128 0x13
+ 2171 0a62 F4020000 		.4byte	0x2f4
+ 2172 0a66 13       		.uleb128 0x13
+ 2173 0a67 14030000 		.4byte	0x314
+ 2174 0a6b 00       		.byte	0
+ 2175 0a6c 2F       		.uleb128 0x2f
+ 2176 0a6d 79010000 		.4byte	.LASF117
+ 2177 0a71 0B       		.byte	0xb
+ 2178 0a72 67       		.byte	0x67
+ 2179 0a73 32060000 		.4byte	0x632
+ 2180 0a77 7D0A0000 		.4byte	0xa7d
+ 2181 0a7b 0A       		.uleb128 0xa
+ 2182 0a7c 00       		.byte	0
+ 2183 0a7d 2E       		.uleb128 0x2e
+ 2184 0a7e DB040000 		.4byte	.LASF118
+ 2185 0a82 09       		.byte	0x9
+ 2186 0a83 E6       		.byte	0xe6
+ 2187 0a84 9D0A0000 		.4byte	0xa9d
+ 2188 0a88 13       		.uleb128 0x13
+ 2189 0a89 E0090000 		.4byte	0x9e0
+ 2190 0a8d 13       		.uleb128 0x13
+ 2191 0a8e 25000000 		.4byte	0x25
+ 2192 0a92 13       		.uleb128 0x13
+ 2193 0a93 25000000 		.4byte	0x25
+ 2194 0a97 13       		.uleb128 0x13
+ 2195 0a98 25000000 		.4byte	0x25
+ 2196 0a9c 00       		.byte	0
+ 2197 0a9d 2F       		.uleb128 0x2f
+ 2198 0a9e 9C020000 		.4byte	.LASF119
+ 2199 0aa2 0B       		.byte	0xb
+ 2200 0aa3 68       		.byte	0x68
+ 2201 0aa4 32060000 		.4byte	0x632
+ 2202 0aa8 AE0A0000 		.4byte	0xaae
+ 2203 0aac 0A       		.uleb128 0xa
+ 2204 0aad 00       		.byte	0
+ 2205 0aae 2F       		.uleb128 0x2f
+ 2206 0aaf EF020000 		.4byte	.LASF120
+ 2207 0ab3 0D       		.byte	0xd
+ 2208 0ab4 18       		.byte	0x18
+ 2209 0ab5 B4000000 		.4byte	0xb4
+ 2210 0ab9 BF0A0000 		.4byte	0xabf
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 46
 
 
- 2214 0aad 00000000 		.4byte	.LASF121
- 2215 0ab1 0E       		.byte	0xe
- 2216 0ab2 77       		.byte	0x77
- 2217 0ab3 BD0A0000 		.4byte	0xabd
- 2218 0ab7 13       		.uleb128 0x13
- 2219 0ab8 B4000000 		.4byte	0xb4
- 2220 0abc 00       		.byte	0
- 2221 0abd 2B       		.uleb128 0x2b
- 2222 0abe FA030000 		.4byte	.LASF122
- 2223 0ac2 0F       		.byte	0xf
- 2224 0ac3 07       		.byte	0x7
- 2225 0ac4 D80A0000 		.4byte	0xad8
- 2226 0ac8 13       		.uleb128 0x13
- 2227 0ac9 84000000 		.4byte	0x84
- 2228 0acd 13       		.uleb128 0x13
- 2229 0ace CD090000 		.4byte	0x9cd
- 2230 0ad2 13       		.uleb128 0x13
- 2231 0ad3 A8000000 		.4byte	0xa8
- 2232 0ad7 00       		.byte	0
- 2233 0ad8 2D       		.uleb128 0x2d
- 2234 0ad9 CA000000 		.4byte	.LASF127
- 2235 0add 09       		.byte	0x9
- 2236 0ade CA       		.byte	0xca
- 2237 0adf 13       		.uleb128 0x13
- 2238 0ae0 CD090000 		.4byte	0x9cd
- 2239 0ae4 13       		.uleb128 0x13
- 2240 0ae5 F4020000 		.4byte	0x2f4
- 2241 0ae9 00       		.byte	0
- 2242 0aea 00       		.byte	0
+ 2211 0abd 0A       		.uleb128 0xa
+ 2212 0abe 00       		.byte	0
+ 2213 0abf 2E       		.uleb128 0x2e
+ 2214 0ac0 00000000 		.4byte	.LASF121
+ 2215 0ac4 0E       		.byte	0xe
+ 2216 0ac5 77       		.byte	0x77
+ 2217 0ac6 D00A0000 		.4byte	0xad0
+ 2218 0aca 13       		.uleb128 0x13
+ 2219 0acb B4000000 		.4byte	0xb4
+ 2220 0acf 00       		.byte	0
+ 2221 0ad0 2E       		.uleb128 0x2e
+ 2222 0ad1 FA030000 		.4byte	.LASF122
+ 2223 0ad5 0F       		.byte	0xf
+ 2224 0ad6 07       		.byte	0x7
+ 2225 0ad7 EB0A0000 		.4byte	0xaeb
+ 2226 0adb 13       		.uleb128 0x13
+ 2227 0adc 84000000 		.4byte	0x84
+ 2228 0ae0 13       		.uleb128 0x13
+ 2229 0ae1 E0090000 		.4byte	0x9e0
+ 2230 0ae5 13       		.uleb128 0x13
+ 2231 0ae6 A8000000 		.4byte	0xa8
+ 2232 0aea 00       		.byte	0
+ 2233 0aeb 30       		.uleb128 0x30
+ 2234 0aec CA000000 		.4byte	.LASF127
+ 2235 0af0 09       		.byte	0x9
+ 2236 0af1 CA       		.byte	0xca
+ 2237 0af2 13       		.uleb128 0x13
+ 2238 0af3 E0090000 		.4byte	0x9e0
+ 2239 0af7 13       		.uleb128 0x13
+ 2240 0af8 F4020000 		.4byte	0x2f4
+ 2241 0afc 00       		.byte	0
+ 2242 0afd 00       		.byte	0
  2243              		.section	.debug_abbrev,"",%progbits
  2244              	.Ldebug_abbrev0:
  2245 0000 01       		.uleb128 0x1
@@ -2635,12 +2758,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  2265 0014 24       		.uleb128 0x24
  2266 0015 00       		.byte	0
  2267 0016 0B       		.uleb128 0xb
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 47
+
+
  2268 0017 0B       		.uleb128 0xb
  2269 0018 3E       		.uleb128 0x3e
  2270 0019 0B       		.uleb128 0xb
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 45
-
-
  2271 001a 03       		.uleb128 0x3
  2272 001b 0E       		.uleb128 0xe
  2273 001c 00       		.byte	0
@@ -2695,12 +2818,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  2322 004d 01       		.uleb128 0x1
  2323 004e 01       		.byte	0x1
  2324 004f 49       		.uleb128 0x49
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 48
+
+
  2325 0050 13       		.uleb128 0x13
  2326 0051 01       		.uleb128 0x1
  2327 0052 13       		.uleb128 0x13
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 46
-
-
  2328 0053 00       		.byte	0
  2329 0054 00       		.byte	0
  2330 0055 08       		.uleb128 0x8
@@ -2755,12 +2878,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  2379 0086 0E       		.uleb128 0xe
  2380 0087 0B       		.uleb128 0xb
  2381 0088 05       		.uleb128 0x5
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 49
+
+
  2382 0089 3A       		.uleb128 0x3a
  2383 008a 0B       		.uleb128 0xb
  2384 008b 3B       		.uleb128 0x3b
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 47
-
-
  2385 008c 0B       		.uleb128 0xb
  2386 008d 01       		.uleb128 0x1
  2387 008e 13       		.uleb128 0x13
@@ -2815,12 +2938,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  2436 00bf 0D       		.uleb128 0xd
  2437 00c0 00       		.byte	0
  2438 00c1 03       		.uleb128 0x3
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 50
+
+
  2439 00c2 08       		.uleb128 0x8
  2440 00c3 3A       		.uleb128 0x3a
  2441 00c4 0B       		.uleb128 0xb
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 48
-
-
  2442 00c5 3B       		.uleb128 0x3b
  2443 00c6 0B       		.uleb128 0xb
  2444 00c7 49       		.uleb128 0x49
@@ -2875,12 +2998,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  2493 00f8 06       		.uleb128 0x6
  2494 00f9 40       		.uleb128 0x40
  2495 00fa 18       		.uleb128 0x18
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 51
+
+
  2496 00fb 9642     		.uleb128 0x2116
  2497 00fd 19       		.uleb128 0x19
  2498 00fe 01       		.uleb128 0x1
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 49
-
-
  2499 00ff 13       		.uleb128 0x13
  2500 0100 00       		.byte	0
  2501 0101 00       		.byte	0
@@ -2935,12 +3058,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  2550 0134 11       		.uleb128 0x11
  2551 0135 01       		.uleb128 0x1
  2552 0136 31       		.uleb128 0x31
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 52
+
+
  2553 0137 13       		.uleb128 0x13
  2554 0138 01       		.uleb128 0x1
  2555 0139 13       		.uleb128 0x13
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 50
-
-
  2556 013a 00       		.byte	0
  2557 013b 00       		.byte	0
  2558 013c 1A       		.uleb128 0x1a
@@ -2995,12 +3118,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  2607 0176 00       		.byte	0
  2608 0177 1E       		.uleb128 0x1e
  2609 0178 898201   		.uleb128 0x4109
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 53
+
+
  2610 017b 00       		.byte	0
  2611 017c 11       		.uleb128 0x11
  2612 017d 01       		.uleb128 0x1
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 51
-
-
  2613 017e 31       		.uleb128 0x31
  2614 017f 13       		.uleb128 0x13
  2615 0180 00       		.byte	0
@@ -3055,12 +3178,12 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  2664 01b2 3B       		.uleb128 0x3b
  2665 01b3 0B       		.uleb128 0xb
  2666 01b4 27       		.uleb128 0x27
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 54
+
+
  2667 01b5 19       		.uleb128 0x19
  2668 01b6 11       		.uleb128 0x11
  2669 01b7 01       		.uleb128 0x1
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 52
-
-
  2670 01b8 12       		.uleb128 0x12
  2671 01b9 06       		.uleb128 0x6
  2672 01ba 40       		.uleb128 0x40
@@ -3108,1106 +3231,1164 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 1
  2714 01e6 00       		.byte	0
  2715 01e7 00       		.byte	0
  2716 01e8 24       		.uleb128 0x24
- 2717 01e9 05       		.uleb128 0x5
- 2718 01ea 00       		.byte	0
- 2719 01eb 03       		.uleb128 0x3
- 2720 01ec 0E       		.uleb128 0xe
- 2721 01ed 3A       		.uleb128 0x3a
- 2722 01ee 0B       		.uleb128 0xb
- 2723 01ef 3B       		.uleb128 0x3b
+ 2717 01e9 2E       		.uleb128 0x2e
+ 2718 01ea 01       		.byte	0x1
+ 2719 01eb 3F       		.uleb128 0x3f
+ 2720 01ec 19       		.uleb128 0x19
+ 2721 01ed 03       		.uleb128 0x3
+ 2722 01ee 0E       		.uleb128 0xe
+ 2723 01ef 3A       		.uleb128 0x3a
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 55
+
+
  2724 01f0 0B       		.uleb128 0xb
- 2725 01f1 49       		.uleb128 0x49
- 2726 01f2 13       		.uleb128 0x13
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 53
+ 2725 01f1 3B       		.uleb128 0x3b
+ 2726 01f2 05       		.uleb128 0x5
+ 2727 01f3 27       		.uleb128 0x27
+ 2728 01f4 19       		.uleb128 0x19
+ 2729 01f5 11       		.uleb128 0x11
+ 2730 01f6 01       		.uleb128 0x1
+ 2731 01f7 12       		.uleb128 0x12
+ 2732 01f8 06       		.uleb128 0x6
+ 2733 01f9 40       		.uleb128 0x40
+ 2734 01fa 18       		.uleb128 0x18
+ 2735 01fb 9742     		.uleb128 0x2117
+ 2736 01fd 19       		.uleb128 0x19
+ 2737 01fe 01       		.uleb128 0x1
+ 2738 01ff 13       		.uleb128 0x13
+ 2739 0200 00       		.byte	0
+ 2740 0201 00       		.byte	0
+ 2741 0202 25       		.uleb128 0x25
+ 2742 0203 05       		.uleb128 0x5
+ 2743 0204 00       		.byte	0
+ 2744 0205 03       		.uleb128 0x3
+ 2745 0206 0E       		.uleb128 0xe
+ 2746 0207 3A       		.uleb128 0x3a
+ 2747 0208 0B       		.uleb128 0xb
+ 2748 0209 3B       		.uleb128 0x3b
+ 2749 020a 05       		.uleb128 0x5
+ 2750 020b 49       		.uleb128 0x49
+ 2751 020c 13       		.uleb128 0x13
+ 2752 020d 02       		.uleb128 0x2
+ 2753 020e 17       		.uleb128 0x17
+ 2754 020f 00       		.byte	0
+ 2755 0210 00       		.byte	0
+ 2756 0211 26       		.uleb128 0x26
+ 2757 0212 34       		.uleb128 0x34
+ 2758 0213 00       		.byte	0
+ 2759 0214 03       		.uleb128 0x3
+ 2760 0215 0E       		.uleb128 0xe
+ 2761 0216 3A       		.uleb128 0x3a
+ 2762 0217 0B       		.uleb128 0xb
+ 2763 0218 3B       		.uleb128 0x3b
+ 2764 0219 05       		.uleb128 0x5
+ 2765 021a 49       		.uleb128 0x49
+ 2766 021b 13       		.uleb128 0x13
+ 2767 021c 02       		.uleb128 0x2
+ 2768 021d 17       		.uleb128 0x17
+ 2769 021e 00       		.byte	0
+ 2770 021f 00       		.byte	0
+ 2771 0220 27       		.uleb128 0x27
+ 2772 0221 05       		.uleb128 0x5
+ 2773 0222 00       		.byte	0
+ 2774 0223 03       		.uleb128 0x3
+ 2775 0224 08       		.uleb128 0x8
+ 2776 0225 3A       		.uleb128 0x3a
+ 2777 0226 0B       		.uleb128 0xb
+ 2778 0227 3B       		.uleb128 0x3b
+ 2779 0228 05       		.uleb128 0x5
+ 2780 0229 49       		.uleb128 0x49
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 56
 
 
- 2727 01f3 02       		.uleb128 0x2
- 2728 01f4 17       		.uleb128 0x17
- 2729 01f5 00       		.byte	0
- 2730 01f6 00       		.byte	0
- 2731 01f7 25       		.uleb128 0x25
- 2732 01f8 05       		.uleb128 0x5
- 2733 01f9 00       		.byte	0
- 2734 01fa 03       		.uleb128 0x3
- 2735 01fb 08       		.uleb128 0x8
- 2736 01fc 3A       		.uleb128 0x3a
- 2737 01fd 0B       		.uleb128 0xb
- 2738 01fe 3B       		.uleb128 0x3b
- 2739 01ff 0B       		.uleb128 0xb
- 2740 0200 49       		.uleb128 0x49
- 2741 0201 13       		.uleb128 0x13
- 2742 0202 02       		.uleb128 0x2
- 2743 0203 18       		.uleb128 0x18
- 2744 0204 00       		.byte	0
- 2745 0205 00       		.byte	0
- 2746 0206 26       		.uleb128 0x26
- 2747 0207 34       		.uleb128 0x34
- 2748 0208 00       		.byte	0
- 2749 0209 03       		.uleb128 0x3
- 2750 020a 0E       		.uleb128 0xe
- 2751 020b 3A       		.uleb128 0x3a
- 2752 020c 0B       		.uleb128 0xb
- 2753 020d 3B       		.uleb128 0x3b
- 2754 020e 05       		.uleb128 0x5
- 2755 020f 49       		.uleb128 0x49
- 2756 0210 13       		.uleb128 0x13
- 2757 0211 3F       		.uleb128 0x3f
- 2758 0212 19       		.uleb128 0x19
- 2759 0213 3C       		.uleb128 0x3c
- 2760 0214 19       		.uleb128 0x19
- 2761 0215 00       		.byte	0
- 2762 0216 00       		.byte	0
- 2763 0217 27       		.uleb128 0x27
- 2764 0218 35       		.uleb128 0x35
- 2765 0219 00       		.byte	0
- 2766 021a 49       		.uleb128 0x49
- 2767 021b 13       		.uleb128 0x13
- 2768 021c 00       		.byte	0
- 2769 021d 00       		.byte	0
- 2770 021e 28       		.uleb128 0x28
- 2771 021f 34       		.uleb128 0x34
- 2772 0220 00       		.byte	0
- 2773 0221 03       		.uleb128 0x3
- 2774 0222 0E       		.uleb128 0xe
- 2775 0223 3A       		.uleb128 0x3a
- 2776 0224 0B       		.uleb128 0xb
- 2777 0225 3B       		.uleb128 0x3b
- 2778 0226 0B       		.uleb128 0xb
- 2779 0227 49       		.uleb128 0x49
- 2780 0228 13       		.uleb128 0x13
- 2781 0229 3F       		.uleb128 0x3f
- 2782 022a 19       		.uleb128 0x19
- 2783 022b 02       		.uleb128 0x2
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 54
+ 2781 022a 13       		.uleb128 0x13
+ 2782 022b 02       		.uleb128 0x2
+ 2783 022c 17       		.uleb128 0x17
+ 2784 022d 00       		.byte	0
+ 2785 022e 00       		.byte	0
+ 2786 022f 28       		.uleb128 0x28
+ 2787 0230 05       		.uleb128 0x5
+ 2788 0231 00       		.byte	0
+ 2789 0232 03       		.uleb128 0x3
+ 2790 0233 08       		.uleb128 0x8
+ 2791 0234 3A       		.uleb128 0x3a
+ 2792 0235 0B       		.uleb128 0xb
+ 2793 0236 3B       		.uleb128 0x3b
+ 2794 0237 05       		.uleb128 0x5
+ 2795 0238 49       		.uleb128 0x49
+ 2796 0239 13       		.uleb128 0x13
+ 2797 023a 02       		.uleb128 0x2
+ 2798 023b 18       		.uleb128 0x18
+ 2799 023c 00       		.byte	0
+ 2800 023d 00       		.byte	0
+ 2801 023e 29       		.uleb128 0x29
+ 2802 023f 34       		.uleb128 0x34
+ 2803 0240 00       		.byte	0
+ 2804 0241 03       		.uleb128 0x3
+ 2805 0242 0E       		.uleb128 0xe
+ 2806 0243 3A       		.uleb128 0x3a
+ 2807 0244 0B       		.uleb128 0xb
+ 2808 0245 3B       		.uleb128 0x3b
+ 2809 0246 05       		.uleb128 0x5
+ 2810 0247 49       		.uleb128 0x49
+ 2811 0248 13       		.uleb128 0x13
+ 2812 0249 3F       		.uleb128 0x3f
+ 2813 024a 19       		.uleb128 0x19
+ 2814 024b 3C       		.uleb128 0x3c
+ 2815 024c 19       		.uleb128 0x19
+ 2816 024d 00       		.byte	0
+ 2817 024e 00       		.byte	0
+ 2818 024f 2A       		.uleb128 0x2a
+ 2819 0250 35       		.uleb128 0x35
+ 2820 0251 00       		.byte	0
+ 2821 0252 49       		.uleb128 0x49
+ 2822 0253 13       		.uleb128 0x13
+ 2823 0254 00       		.byte	0
+ 2824 0255 00       		.byte	0
+ 2825 0256 2B       		.uleb128 0x2b
+ 2826 0257 34       		.uleb128 0x34
+ 2827 0258 00       		.byte	0
+ 2828 0259 03       		.uleb128 0x3
+ 2829 025a 0E       		.uleb128 0xe
+ 2830 025b 3A       		.uleb128 0x3a
+ 2831 025c 0B       		.uleb128 0xb
+ 2832 025d 3B       		.uleb128 0x3b
+ 2833 025e 0B       		.uleb128 0xb
+ 2834 025f 49       		.uleb128 0x49
+ 2835 0260 13       		.uleb128 0x13
+ 2836 0261 3F       		.uleb128 0x3f
+ 2837 0262 19       		.uleb128 0x19
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 57
 
 
- 2784 022c 18       		.uleb128 0x18
- 2785 022d 00       		.byte	0
- 2786 022e 00       		.byte	0
- 2787 022f 29       		.uleb128 0x29
- 2788 0230 2E       		.uleb128 0x2e
- 2789 0231 01       		.byte	0x1
- 2790 0232 3F       		.uleb128 0x3f
- 2791 0233 19       		.uleb128 0x19
- 2792 0234 03       		.uleb128 0x3
- 2793 0235 0E       		.uleb128 0xe
- 2794 0236 3A       		.uleb128 0x3a
- 2795 0237 0B       		.uleb128 0xb
- 2796 0238 3B       		.uleb128 0x3b
- 2797 0239 05       		.uleb128 0x5
- 2798 023a 27       		.uleb128 0x27
- 2799 023b 19       		.uleb128 0x19
- 2800 023c 3C       		.uleb128 0x3c
- 2801 023d 19       		.uleb128 0x19
- 2802 023e 01       		.uleb128 0x1
- 2803 023f 13       		.uleb128 0x13
- 2804 0240 00       		.byte	0
- 2805 0241 00       		.byte	0
- 2806 0242 2A       		.uleb128 0x2a
- 2807 0243 2E       		.uleb128 0x2e
- 2808 0244 01       		.byte	0x1
- 2809 0245 3F       		.uleb128 0x3f
- 2810 0246 19       		.uleb128 0x19
- 2811 0247 03       		.uleb128 0x3
- 2812 0248 0E       		.uleb128 0xe
- 2813 0249 3A       		.uleb128 0x3a
- 2814 024a 0B       		.uleb128 0xb
- 2815 024b 3B       		.uleb128 0x3b
- 2816 024c 0B       		.uleb128 0xb
- 2817 024d 27       		.uleb128 0x27
- 2818 024e 19       		.uleb128 0x19
- 2819 024f 49       		.uleb128 0x49
- 2820 0250 13       		.uleb128 0x13
- 2821 0251 3C       		.uleb128 0x3c
- 2822 0252 19       		.uleb128 0x19
- 2823 0253 01       		.uleb128 0x1
- 2824 0254 13       		.uleb128 0x13
- 2825 0255 00       		.byte	0
- 2826 0256 00       		.byte	0
- 2827 0257 2B       		.uleb128 0x2b
- 2828 0258 2E       		.uleb128 0x2e
- 2829 0259 01       		.byte	0x1
- 2830 025a 3F       		.uleb128 0x3f
- 2831 025b 19       		.uleb128 0x19
- 2832 025c 03       		.uleb128 0x3
- 2833 025d 0E       		.uleb128 0xe
- 2834 025e 3A       		.uleb128 0x3a
- 2835 025f 0B       		.uleb128 0xb
- 2836 0260 3B       		.uleb128 0x3b
- 2837 0261 0B       		.uleb128 0xb
- 2838 0262 27       		.uleb128 0x27
- 2839 0263 19       		.uleb128 0x19
- 2840 0264 3C       		.uleb128 0x3c
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 55
+ 2838 0263 02       		.uleb128 0x2
+ 2839 0264 18       		.uleb128 0x18
+ 2840 0265 00       		.byte	0
+ 2841 0266 00       		.byte	0
+ 2842 0267 2C       		.uleb128 0x2c
+ 2843 0268 2E       		.uleb128 0x2e
+ 2844 0269 01       		.byte	0x1
+ 2845 026a 3F       		.uleb128 0x3f
+ 2846 026b 19       		.uleb128 0x19
+ 2847 026c 03       		.uleb128 0x3
+ 2848 026d 0E       		.uleb128 0xe
+ 2849 026e 3A       		.uleb128 0x3a
+ 2850 026f 0B       		.uleb128 0xb
+ 2851 0270 3B       		.uleb128 0x3b
+ 2852 0271 05       		.uleb128 0x5
+ 2853 0272 27       		.uleb128 0x27
+ 2854 0273 19       		.uleb128 0x19
+ 2855 0274 3C       		.uleb128 0x3c
+ 2856 0275 19       		.uleb128 0x19
+ 2857 0276 01       		.uleb128 0x1
+ 2858 0277 13       		.uleb128 0x13
+ 2859 0278 00       		.byte	0
+ 2860 0279 00       		.byte	0
+ 2861 027a 2D       		.uleb128 0x2d
+ 2862 027b 2E       		.uleb128 0x2e
+ 2863 027c 01       		.byte	0x1
+ 2864 027d 3F       		.uleb128 0x3f
+ 2865 027e 19       		.uleb128 0x19
+ 2866 027f 03       		.uleb128 0x3
+ 2867 0280 0E       		.uleb128 0xe
+ 2868 0281 3A       		.uleb128 0x3a
+ 2869 0282 0B       		.uleb128 0xb
+ 2870 0283 3B       		.uleb128 0x3b
+ 2871 0284 0B       		.uleb128 0xb
+ 2872 0285 27       		.uleb128 0x27
+ 2873 0286 19       		.uleb128 0x19
+ 2874 0287 49       		.uleb128 0x49
+ 2875 0288 13       		.uleb128 0x13
+ 2876 0289 3C       		.uleb128 0x3c
+ 2877 028a 19       		.uleb128 0x19
+ 2878 028b 01       		.uleb128 0x1
+ 2879 028c 13       		.uleb128 0x13
+ 2880 028d 00       		.byte	0
+ 2881 028e 00       		.byte	0
+ 2882 028f 2E       		.uleb128 0x2e
+ 2883 0290 2E       		.uleb128 0x2e
+ 2884 0291 01       		.byte	0x1
+ 2885 0292 3F       		.uleb128 0x3f
+ 2886 0293 19       		.uleb128 0x19
+ 2887 0294 03       		.uleb128 0x3
+ 2888 0295 0E       		.uleb128 0xe
+ 2889 0296 3A       		.uleb128 0x3a
+ 2890 0297 0B       		.uleb128 0xb
+ 2891 0298 3B       		.uleb128 0x3b
+ 2892 0299 0B       		.uleb128 0xb
+ 2893 029a 27       		.uleb128 0x27
+ 2894 029b 19       		.uleb128 0x19
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 58
 
 
- 2841 0265 19       		.uleb128 0x19
- 2842 0266 01       		.uleb128 0x1
- 2843 0267 13       		.uleb128 0x13
- 2844 0268 00       		.byte	0
- 2845 0269 00       		.byte	0
- 2846 026a 2C       		.uleb128 0x2c
- 2847 026b 2E       		.uleb128 0x2e
- 2848 026c 01       		.byte	0x1
- 2849 026d 3F       		.uleb128 0x3f
- 2850 026e 19       		.uleb128 0x19
- 2851 026f 03       		.uleb128 0x3
- 2852 0270 0E       		.uleb128 0xe
- 2853 0271 3A       		.uleb128 0x3a
- 2854 0272 0B       		.uleb128 0xb
- 2855 0273 3B       		.uleb128 0x3b
- 2856 0274 0B       		.uleb128 0xb
- 2857 0275 49       		.uleb128 0x49
- 2858 0276 13       		.uleb128 0x13
- 2859 0277 3C       		.uleb128 0x3c
- 2860 0278 19       		.uleb128 0x19
- 2861 0279 01       		.uleb128 0x1
- 2862 027a 13       		.uleb128 0x13
- 2863 027b 00       		.byte	0
- 2864 027c 00       		.byte	0
- 2865 027d 2D       		.uleb128 0x2d
- 2866 027e 2E       		.uleb128 0x2e
- 2867 027f 01       		.byte	0x1
- 2868 0280 3F       		.uleb128 0x3f
- 2869 0281 19       		.uleb128 0x19
- 2870 0282 03       		.uleb128 0x3
- 2871 0283 0E       		.uleb128 0xe
- 2872 0284 3A       		.uleb128 0x3a
- 2873 0285 0B       		.uleb128 0xb
- 2874 0286 3B       		.uleb128 0x3b
- 2875 0287 0B       		.uleb128 0xb
- 2876 0288 27       		.uleb128 0x27
- 2877 0289 19       		.uleb128 0x19
- 2878 028a 3C       		.uleb128 0x3c
- 2879 028b 19       		.uleb128 0x19
- 2880 028c 00       		.byte	0
- 2881 028d 00       		.byte	0
- 2882 028e 00       		.byte	0
- 2883              		.section	.debug_loc,"",%progbits
- 2884              	.Ldebug_loc0:
- 2885              	.LLST0:
- 2886 0000 00000000 		.4byte	.LVL0
- 2887 0004 09000000 		.4byte	.LVL1-1
- 2888 0008 0100     		.2byte	0x1
- 2889 000a 50       		.byte	0x50
- 2890 000b 09000000 		.4byte	.LVL1-1
- 2891 000f 92000000 		.4byte	.LVL19
- 2892 0013 0100     		.2byte	0x1
- 2893 0015 54       		.byte	0x54
- 2894 0016 92000000 		.4byte	.LVL19
- 2895 001a B0000000 		.4byte	.LVL24
- 2896 001e 0300     		.2byte	0x3
- 2897 0020 78       		.byte	0x78
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 56
+ 2895 029c 3C       		.uleb128 0x3c
+ 2896 029d 19       		.uleb128 0x19
+ 2897 029e 01       		.uleb128 0x1
+ 2898 029f 13       		.uleb128 0x13
+ 2899 02a0 00       		.byte	0
+ 2900 02a1 00       		.byte	0
+ 2901 02a2 2F       		.uleb128 0x2f
+ 2902 02a3 2E       		.uleb128 0x2e
+ 2903 02a4 01       		.byte	0x1
+ 2904 02a5 3F       		.uleb128 0x3f
+ 2905 02a6 19       		.uleb128 0x19
+ 2906 02a7 03       		.uleb128 0x3
+ 2907 02a8 0E       		.uleb128 0xe
+ 2908 02a9 3A       		.uleb128 0x3a
+ 2909 02aa 0B       		.uleb128 0xb
+ 2910 02ab 3B       		.uleb128 0x3b
+ 2911 02ac 0B       		.uleb128 0xb
+ 2912 02ad 49       		.uleb128 0x49
+ 2913 02ae 13       		.uleb128 0x13
+ 2914 02af 3C       		.uleb128 0x3c
+ 2915 02b0 19       		.uleb128 0x19
+ 2916 02b1 01       		.uleb128 0x1
+ 2917 02b2 13       		.uleb128 0x13
+ 2918 02b3 00       		.byte	0
+ 2919 02b4 00       		.byte	0
+ 2920 02b5 30       		.uleb128 0x30
+ 2921 02b6 2E       		.uleb128 0x2e
+ 2922 02b7 01       		.byte	0x1
+ 2923 02b8 3F       		.uleb128 0x3f
+ 2924 02b9 19       		.uleb128 0x19
+ 2925 02ba 03       		.uleb128 0x3
+ 2926 02bb 0E       		.uleb128 0xe
+ 2927 02bc 3A       		.uleb128 0x3a
+ 2928 02bd 0B       		.uleb128 0xb
+ 2929 02be 3B       		.uleb128 0x3b
+ 2930 02bf 0B       		.uleb128 0xb
+ 2931 02c0 27       		.uleb128 0x27
+ 2932 02c1 19       		.uleb128 0x19
+ 2933 02c2 3C       		.uleb128 0x3c
+ 2934 02c3 19       		.uleb128 0x19
+ 2935 02c4 00       		.byte	0
+ 2936 02c5 00       		.byte	0
+ 2937 02c6 00       		.byte	0
+ 2938              		.section	.debug_loc,"",%progbits
+ 2939              	.Ldebug_loc0:
+ 2940              	.LLST0:
+ 2941 0000 00000000 		.4byte	.LVL0
+ 2942 0004 09000000 		.4byte	.LVL1-1
+ 2943 0008 0100     		.2byte	0x1
+ 2944 000a 50       		.byte	0x50
+ 2945 000b 09000000 		.4byte	.LVL1-1
+ 2946 000f 92000000 		.4byte	.LVL19
+ 2947 0013 0100     		.2byte	0x1
+ 2948 0015 54       		.byte	0x54
+ 2949 0016 92000000 		.4byte	.LVL19
+ 2950 001a B0000000 		.4byte	.LVL24
+ 2951 001e 0300     		.2byte	0x3
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 59
 
 
- 2898 0021 78       		.sleb128 -8
- 2899 0022 9F       		.byte	0x9f
- 2900 0023 B0000000 		.4byte	.LVL24
- 2901 0027 B8000000 		.4byte	.LFE65
- 2902 002b 0400     		.2byte	0x4
- 2903 002d F3       		.byte	0xf3
- 2904 002e 01       		.uleb128 0x1
- 2905 002f 50       		.byte	0x50
- 2906 0030 9F       		.byte	0x9f
- 2907 0031 00000000 		.4byte	0
- 2908 0035 00000000 		.4byte	0
- 2909              	.LLST1:
- 2910 0039 0C000000 		.4byte	.LVL2
- 2911 003d 11000000 		.4byte	.LVL3-1
- 2912 0041 0100     		.2byte	0x1
- 2913 0043 50       		.byte	0x50
- 2914 0044 11000000 		.4byte	.LVL3-1
- 2915 0048 B0000000 		.4byte	.LVL24
- 2916 004c 0100     		.2byte	0x1
- 2917 004e 59       		.byte	0x59
- 2918 004f 00000000 		.4byte	0
- 2919 0053 00000000 		.4byte	0
- 2920              	.LLST2:
- 2921 0057 1E000000 		.4byte	.LVL4
- 2922 005b B0000000 		.4byte	.LVL24
- 2923 005f 0100     		.2byte	0x1
- 2924 0061 5A       		.byte	0x5a
- 2925 0062 00000000 		.4byte	0
- 2926 0066 00000000 		.4byte	0
- 2927              	.LLST3:
- 2928 006a 24000000 		.4byte	.LVL6
- 2929 006e 2A000000 		.4byte	.LVL7
- 2930 0072 0100     		.2byte	0x1
- 2931 0074 50       		.byte	0x50
- 2932 0075 2A000000 		.4byte	.LVL7
- 2933 0079 8E000000 		.4byte	.LVL18
- 2934 007d 0100     		.2byte	0x1
- 2935 007f 55       		.byte	0x55
- 2936 0080 00000000 		.4byte	0
- 2937 0084 00000000 		.4byte	0
- 2938              	.LLST4:
- 2939 0088 06000000 		.4byte	.LVL27
- 2940 008c 12000000 		.4byte	.LVL28
- 2941 0090 0100     		.2byte	0x1
- 2942 0092 50       		.byte	0x50
- 2943 0093 1A000000 		.4byte	.LVL30
- 2944 0097 24000000 		.4byte	.LVL31
- 2945 009b 0100     		.2byte	0x1
- 2946 009d 50       		.byte	0x50
- 2947 009e 00000000 		.4byte	0
- 2948 00a2 00000000 		.4byte	0
- 2949              	.LLST5:
- 2950 00a6 0A000000 		.4byte	.LVL34
- 2951 00aa 0C000000 		.4byte	.LVL35
- 2952 00ae 0600     		.2byte	0x6
- 2953 00b0 70       		.byte	0x70
- 2954 00b1 00       		.sleb128 0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 57
+ 2952 0020 78       		.byte	0x78
+ 2953 0021 78       		.sleb128 -8
+ 2954 0022 9F       		.byte	0x9f
+ 2955 0023 B0000000 		.4byte	.LVL24
+ 2956 0027 B8000000 		.4byte	.LFE65
+ 2957 002b 0400     		.2byte	0x4
+ 2958 002d F3       		.byte	0xf3
+ 2959 002e 01       		.uleb128 0x1
+ 2960 002f 50       		.byte	0x50
+ 2961 0030 9F       		.byte	0x9f
+ 2962 0031 00000000 		.4byte	0
+ 2963 0035 00000000 		.4byte	0
+ 2964              	.LLST1:
+ 2965 0039 0C000000 		.4byte	.LVL2
+ 2966 003d 11000000 		.4byte	.LVL3-1
+ 2967 0041 0100     		.2byte	0x1
+ 2968 0043 50       		.byte	0x50
+ 2969 0044 11000000 		.4byte	.LVL3-1
+ 2970 0048 B0000000 		.4byte	.LVL24
+ 2971 004c 0100     		.2byte	0x1
+ 2972 004e 59       		.byte	0x59
+ 2973 004f 00000000 		.4byte	0
+ 2974 0053 00000000 		.4byte	0
+ 2975              	.LLST2:
+ 2976 0057 1E000000 		.4byte	.LVL4
+ 2977 005b B0000000 		.4byte	.LVL24
+ 2978 005f 0100     		.2byte	0x1
+ 2979 0061 5A       		.byte	0x5a
+ 2980 0062 00000000 		.4byte	0
+ 2981 0066 00000000 		.4byte	0
+ 2982              	.LLST3:
+ 2983 006a 24000000 		.4byte	.LVL6
+ 2984 006e 2A000000 		.4byte	.LVL7
+ 2985 0072 0100     		.2byte	0x1
+ 2986 0074 50       		.byte	0x50
+ 2987 0075 2A000000 		.4byte	.LVL7
+ 2988 0079 8E000000 		.4byte	.LVL18
+ 2989 007d 0100     		.2byte	0x1
+ 2990 007f 55       		.byte	0x55
+ 2991 0080 00000000 		.4byte	0
+ 2992 0084 00000000 		.4byte	0
+ 2993              	.LLST4:
+ 2994 0088 06000000 		.4byte	.LVL27
+ 2995 008c 12000000 		.4byte	.LVL28
+ 2996 0090 0100     		.2byte	0x1
+ 2997 0092 50       		.byte	0x50
+ 2998 0093 1A000000 		.4byte	.LVL30
+ 2999 0097 24000000 		.4byte	.LVL31
+ 3000 009b 0100     		.2byte	0x1
+ 3001 009d 50       		.byte	0x50
+ 3002 009e 00000000 		.4byte	0
+ 3003 00a2 00000000 		.4byte	0
+ 3004              	.LLST5:
+ 3005 00a6 0A000000 		.4byte	.LVL34
+ 3006 00aa 0C000000 		.4byte	.LVL35
+ 3007 00ae 0600     		.2byte	0x6
+ 3008 00b0 70       		.byte	0x70
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 60
 
 
- 2955 00b2 73       		.byte	0x73
- 2956 00b3 00       		.sleb128 0
- 2957 00b4 1C       		.byte	0x1c
- 2958 00b5 9F       		.byte	0x9f
- 2959 00b6 0C000000 		.4byte	.LVL35
- 2960 00ba 0F000000 		.4byte	.LVL36-1
- 2961 00be 0100     		.2byte	0x1
- 2962 00c0 50       		.byte	0x50
- 2963 00c1 00000000 		.4byte	0
- 2964 00c5 00000000 		.4byte	0
- 2965              	.LLST6:
- 2966 00c9 00000000 		.4byte	.LVL47
- 2967 00cd 10000000 		.4byte	.LVL50
- 2968 00d1 0100     		.2byte	0x1
- 2969 00d3 50       		.byte	0x50
- 2970 00d4 10000000 		.4byte	.LVL50
- 2971 00d8 28000000 		.4byte	.LFE70
- 2972 00dc 0400     		.2byte	0x4
- 2973 00de F3       		.byte	0xf3
- 2974 00df 01       		.uleb128 0x1
- 2975 00e0 50       		.byte	0x50
- 2976 00e1 9F       		.byte	0x9f
- 2977 00e2 00000000 		.4byte	0
- 2978 00e6 00000000 		.4byte	0
- 2979              	.LLST7:
- 2980 00ea 02000000 		.4byte	.LVL48
- 2981 00ee 0A000000 		.4byte	.LVL49
- 2982 00f2 0200     		.2byte	0x2
- 2983 00f4 30       		.byte	0x30
- 2984 00f5 9F       		.byte	0x9f
- 2985 00f6 0A000000 		.4byte	.LVL49
- 2986 00fa 22000000 		.4byte	.LVL53
- 2987 00fe 0100     		.2byte	0x1
- 2988 0100 54       		.byte	0x54
- 2989 0101 00000000 		.4byte	0
- 2990 0105 00000000 		.4byte	0
- 2991              	.LLST8:
- 2992 0109 00000000 		.4byte	.LVL54
- 2993 010d 0A000000 		.4byte	.LVL55
- 2994 0111 0100     		.2byte	0x1
- 2995 0113 50       		.byte	0x50
- 2996 0114 0A000000 		.4byte	.LVL55
- 2997 0118 14000000 		.4byte	.LVL59
- 2998 011c 0100     		.2byte	0x1
- 2999 011e 55       		.byte	0x55
- 3000 011f 14000000 		.4byte	.LVL59
- 3001 0123 18000000 		.4byte	.LFE71
- 3002 0127 0600     		.2byte	0x6
- 3003 0129 F3       		.byte	0xf3
- 3004 012a 03       		.uleb128 0x3
- 3005 012b F5       		.byte	0xf5
- 3006 012c 00       		.uleb128 0
- 3007 012d 25       		.uleb128 0x25
- 3008 012e 9F       		.byte	0x9f
- 3009 012f 00000000 		.4byte	0
- 3010 0133 00000000 		.4byte	0
- 3011              	.LLST9:
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 58
+ 3009 00b1 00       		.sleb128 0
+ 3010 00b2 73       		.byte	0x73
+ 3011 00b3 00       		.sleb128 0
+ 3012 00b4 1C       		.byte	0x1c
+ 3013 00b5 9F       		.byte	0x9f
+ 3014 00b6 0C000000 		.4byte	.LVL35
+ 3015 00ba 0F000000 		.4byte	.LVL36-1
+ 3016 00be 0100     		.2byte	0x1
+ 3017 00c0 50       		.byte	0x50
+ 3018 00c1 00000000 		.4byte	0
+ 3019 00c5 00000000 		.4byte	0
+ 3020              	.LLST6:
+ 3021 00c9 00000000 		.4byte	.LVL47
+ 3022 00cd 10000000 		.4byte	.LVL50
+ 3023 00d1 0100     		.2byte	0x1
+ 3024 00d3 50       		.byte	0x50
+ 3025 00d4 10000000 		.4byte	.LVL50
+ 3026 00d8 28000000 		.4byte	.LFE70
+ 3027 00dc 0400     		.2byte	0x4
+ 3028 00de F3       		.byte	0xf3
+ 3029 00df 01       		.uleb128 0x1
+ 3030 00e0 50       		.byte	0x50
+ 3031 00e1 9F       		.byte	0x9f
+ 3032 00e2 00000000 		.4byte	0
+ 3033 00e6 00000000 		.4byte	0
+ 3034              	.LLST7:
+ 3035 00ea 02000000 		.4byte	.LVL48
+ 3036 00ee 0A000000 		.4byte	.LVL49
+ 3037 00f2 0200     		.2byte	0x2
+ 3038 00f4 30       		.byte	0x30
+ 3039 00f5 9F       		.byte	0x9f
+ 3040 00f6 0A000000 		.4byte	.LVL49
+ 3041 00fa 22000000 		.4byte	.LVL53
+ 3042 00fe 0100     		.2byte	0x1
+ 3043 0100 54       		.byte	0x54
+ 3044 0101 00000000 		.4byte	0
+ 3045 0105 00000000 		.4byte	0
+ 3046              	.LLST8:
+ 3047 0109 00000000 		.4byte	.LVL54
+ 3048 010d 0A000000 		.4byte	.LVL55
+ 3049 0111 0100     		.2byte	0x1
+ 3050 0113 50       		.byte	0x50
+ 3051 0114 0A000000 		.4byte	.LVL55
+ 3052 0118 14000000 		.4byte	.LVL59
+ 3053 011c 0100     		.2byte	0x1
+ 3054 011e 55       		.byte	0x55
+ 3055 011f 14000000 		.4byte	.LVL59
+ 3056 0123 18000000 		.4byte	.LFE71
+ 3057 0127 0600     		.2byte	0x6
+ 3058 0129 F3       		.byte	0xf3
+ 3059 012a 03       		.uleb128 0x3
+ 3060 012b F5       		.byte	0xf5
+ 3061 012c 00       		.uleb128 0
+ 3062 012d 25       		.uleb128 0x25
+ 3063 012e 9F       		.byte	0x9f
+ 3064 012f 00000000 		.4byte	0
+ 3065 0133 00000000 		.4byte	0
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 61
 
 
- 3012 0137 00000000 		.4byte	.LVL54
- 3013 013b 0C000000 		.4byte	.LVL56
- 3014 013f 0100     		.2byte	0x1
- 3015 0141 51       		.byte	0x51
- 3016 0142 0C000000 		.4byte	.LVL56
- 3017 0146 14000000 		.4byte	.LVL59
- 3018 014a 0100     		.2byte	0x1
- 3019 014c 54       		.byte	0x54
- 3020 014d 14000000 		.4byte	.LVL59
- 3021 0151 18000000 		.4byte	.LFE71
- 3022 0155 0600     		.2byte	0x6
- 3023 0157 F3       		.byte	0xf3
- 3024 0158 03       		.uleb128 0x3
- 3025 0159 F5       		.byte	0xf5
- 3026 015a 01       		.uleb128 0x1
- 3027 015b 25       		.uleb128 0x25
- 3028 015c 9F       		.byte	0x9f
- 3029 015d 00000000 		.4byte	0
- 3030 0161 00000000 		.4byte	0
- 3031              	.LLST10:
- 3032 0165 00000000 		.4byte	.LVL54
- 3033 0169 0E000000 		.4byte	.LVL57
- 3034 016d 0100     		.2byte	0x1
- 3035 016f 52       		.byte	0x52
- 3036 0170 0E000000 		.4byte	.LVL57
- 3037 0174 11000000 		.4byte	.LVL58-1
- 3038 0178 0100     		.2byte	0x1
- 3039 017a 53       		.byte	0x53
- 3040 017b 11000000 		.4byte	.LVL58-1
- 3041 017f 18000000 		.4byte	.LFE71
- 3042 0183 0600     		.2byte	0x6
- 3043 0185 F3       		.byte	0xf3
- 3044 0186 03       		.uleb128 0x3
- 3045 0187 F5       		.byte	0xf5
- 3046 0188 02       		.uleb128 0x2
- 3047 0189 25       		.uleb128 0x25
- 3048 018a 9F       		.byte	0x9f
- 3049 018b 00000000 		.4byte	0
- 3050 018f 00000000 		.4byte	0
- 3051              	.LLST11:
- 3052 0193 00000000 		.4byte	.LVL60
- 3053 0197 0A000000 		.4byte	.LVL61
- 3054 019b 0100     		.2byte	0x1
- 3055 019d 50       		.byte	0x50
- 3056 019e 0A000000 		.4byte	.LVL61
- 3057 01a2 14000000 		.4byte	.LVL65
- 3058 01a6 0100     		.2byte	0x1
- 3059 01a8 55       		.byte	0x55
- 3060 01a9 14000000 		.4byte	.LVL65
- 3061 01ad 18000000 		.4byte	.LFE72
- 3062 01b1 0600     		.2byte	0x6
- 3063 01b3 F3       		.byte	0xf3
- 3064 01b4 03       		.uleb128 0x3
- 3065 01b5 F5       		.byte	0xf5
- 3066 01b6 00       		.uleb128 0
- 3067 01b7 25       		.uleb128 0x25
- 3068 01b8 9F       		.byte	0x9f
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 59
+ 3066              	.LLST9:
+ 3067 0137 00000000 		.4byte	.LVL54
+ 3068 013b 0C000000 		.4byte	.LVL56
+ 3069 013f 0100     		.2byte	0x1
+ 3070 0141 51       		.byte	0x51
+ 3071 0142 0C000000 		.4byte	.LVL56
+ 3072 0146 14000000 		.4byte	.LVL59
+ 3073 014a 0100     		.2byte	0x1
+ 3074 014c 54       		.byte	0x54
+ 3075 014d 14000000 		.4byte	.LVL59
+ 3076 0151 18000000 		.4byte	.LFE71
+ 3077 0155 0600     		.2byte	0x6
+ 3078 0157 F3       		.byte	0xf3
+ 3079 0158 03       		.uleb128 0x3
+ 3080 0159 F5       		.byte	0xf5
+ 3081 015a 01       		.uleb128 0x1
+ 3082 015b 25       		.uleb128 0x25
+ 3083 015c 9F       		.byte	0x9f
+ 3084 015d 00000000 		.4byte	0
+ 3085 0161 00000000 		.4byte	0
+ 3086              	.LLST10:
+ 3087 0165 00000000 		.4byte	.LVL54
+ 3088 0169 0E000000 		.4byte	.LVL57
+ 3089 016d 0100     		.2byte	0x1
+ 3090 016f 52       		.byte	0x52
+ 3091 0170 0E000000 		.4byte	.LVL57
+ 3092 0174 11000000 		.4byte	.LVL58-1
+ 3093 0178 0100     		.2byte	0x1
+ 3094 017a 53       		.byte	0x53
+ 3095 017b 11000000 		.4byte	.LVL58-1
+ 3096 017f 18000000 		.4byte	.LFE71
+ 3097 0183 0600     		.2byte	0x6
+ 3098 0185 F3       		.byte	0xf3
+ 3099 0186 03       		.uleb128 0x3
+ 3100 0187 F5       		.byte	0xf5
+ 3101 0188 02       		.uleb128 0x2
+ 3102 0189 25       		.uleb128 0x25
+ 3103 018a 9F       		.byte	0x9f
+ 3104 018b 00000000 		.4byte	0
+ 3105 018f 00000000 		.4byte	0
+ 3106              	.LLST11:
+ 3107 0193 00000000 		.4byte	.LVL60
+ 3108 0197 0A000000 		.4byte	.LVL61
+ 3109 019b 0100     		.2byte	0x1
+ 3110 019d 50       		.byte	0x50
+ 3111 019e 0A000000 		.4byte	.LVL61
+ 3112 01a2 14000000 		.4byte	.LVL65
+ 3113 01a6 0100     		.2byte	0x1
+ 3114 01a8 55       		.byte	0x55
+ 3115 01a9 14000000 		.4byte	.LVL65
+ 3116 01ad 18000000 		.4byte	.LFE72
+ 3117 01b1 0600     		.2byte	0x6
+ 3118 01b3 F3       		.byte	0xf3
+ 3119 01b4 03       		.uleb128 0x3
+ 3120 01b5 F5       		.byte	0xf5
+ 3121 01b6 00       		.uleb128 0
+ 3122 01b7 25       		.uleb128 0x25
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 62
 
 
- 3069 01b9 00000000 		.4byte	0
- 3070 01bd 00000000 		.4byte	0
- 3071              	.LLST12:
- 3072 01c1 00000000 		.4byte	.LVL60
- 3073 01c5 0C000000 		.4byte	.LVL62
- 3074 01c9 0100     		.2byte	0x1
- 3075 01cb 51       		.byte	0x51
- 3076 01cc 0C000000 		.4byte	.LVL62
- 3077 01d0 14000000 		.4byte	.LVL65
- 3078 01d4 0100     		.2byte	0x1
- 3079 01d6 54       		.byte	0x54
- 3080 01d7 14000000 		.4byte	.LVL65
- 3081 01db 18000000 		.4byte	.LFE72
- 3082 01df 0600     		.2byte	0x6
- 3083 01e1 F3       		.byte	0xf3
- 3084 01e2 03       		.uleb128 0x3
- 3085 01e3 F5       		.byte	0xf5
- 3086 01e4 01       		.uleb128 0x1
- 3087 01e5 25       		.uleb128 0x25
- 3088 01e6 9F       		.byte	0x9f
- 3089 01e7 00000000 		.4byte	0
- 3090 01eb 00000000 		.4byte	0
- 3091              	.LLST13:
- 3092 01ef 00000000 		.4byte	.LVL60
- 3093 01f3 0E000000 		.4byte	.LVL63
- 3094 01f7 0100     		.2byte	0x1
- 3095 01f9 52       		.byte	0x52
- 3096 01fa 0E000000 		.4byte	.LVL63
- 3097 01fe 11000000 		.4byte	.LVL64-1
- 3098 0202 0100     		.2byte	0x1
- 3099 0204 53       		.byte	0x53
- 3100 0205 11000000 		.4byte	.LVL64-1
- 3101 0209 18000000 		.4byte	.LFE72
- 3102 020d 0600     		.2byte	0x6
- 3103 020f F3       		.byte	0xf3
- 3104 0210 03       		.uleb128 0x3
- 3105 0211 F5       		.byte	0xf5
- 3106 0212 02       		.uleb128 0x2
- 3107 0213 25       		.uleb128 0x25
- 3108 0214 9F       		.byte	0x9f
- 3109 0215 00000000 		.4byte	0
- 3110 0219 00000000 		.4byte	0
- 3111              	.LLST14:
- 3112 021d 00000000 		.4byte	.LVL66
- 3113 0221 0A000000 		.4byte	.LVL67
- 3114 0225 0100     		.2byte	0x1
- 3115 0227 50       		.byte	0x50
- 3116 0228 0A000000 		.4byte	.LVL67
- 3117 022c 1C000000 		.4byte	.LFE73
- 3118 0230 0400     		.2byte	0x4
- 3119 0232 F3       		.byte	0xf3
- 3120 0233 01       		.uleb128 0x1
- 3121 0234 50       		.byte	0x50
- 3122 0235 9F       		.byte	0x9f
- 3123 0236 00000000 		.4byte	0
- 3124 023a 00000000 		.4byte	0
- 3125              	.LLST15:
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 60
+ 3123 01b8 9F       		.byte	0x9f
+ 3124 01b9 00000000 		.4byte	0
+ 3125 01bd 00000000 		.4byte	0
+ 3126              	.LLST12:
+ 3127 01c1 00000000 		.4byte	.LVL60
+ 3128 01c5 0C000000 		.4byte	.LVL62
+ 3129 01c9 0100     		.2byte	0x1
+ 3130 01cb 51       		.byte	0x51
+ 3131 01cc 0C000000 		.4byte	.LVL62
+ 3132 01d0 14000000 		.4byte	.LVL65
+ 3133 01d4 0100     		.2byte	0x1
+ 3134 01d6 54       		.byte	0x54
+ 3135 01d7 14000000 		.4byte	.LVL65
+ 3136 01db 18000000 		.4byte	.LFE72
+ 3137 01df 0600     		.2byte	0x6
+ 3138 01e1 F3       		.byte	0xf3
+ 3139 01e2 03       		.uleb128 0x3
+ 3140 01e3 F5       		.byte	0xf5
+ 3141 01e4 01       		.uleb128 0x1
+ 3142 01e5 25       		.uleb128 0x25
+ 3143 01e6 9F       		.byte	0x9f
+ 3144 01e7 00000000 		.4byte	0
+ 3145 01eb 00000000 		.4byte	0
+ 3146              	.LLST13:
+ 3147 01ef 00000000 		.4byte	.LVL60
+ 3148 01f3 0E000000 		.4byte	.LVL63
+ 3149 01f7 0100     		.2byte	0x1
+ 3150 01f9 52       		.byte	0x52
+ 3151 01fa 0E000000 		.4byte	.LVL63
+ 3152 01fe 11000000 		.4byte	.LVL64-1
+ 3153 0202 0100     		.2byte	0x1
+ 3154 0204 53       		.byte	0x53
+ 3155 0205 11000000 		.4byte	.LVL64-1
+ 3156 0209 18000000 		.4byte	.LFE72
+ 3157 020d 0600     		.2byte	0x6
+ 3158 020f F3       		.byte	0xf3
+ 3159 0210 03       		.uleb128 0x3
+ 3160 0211 F5       		.byte	0xf5
+ 3161 0212 02       		.uleb128 0x2
+ 3162 0213 25       		.uleb128 0x25
+ 3163 0214 9F       		.byte	0x9f
+ 3164 0215 00000000 		.4byte	0
+ 3165 0219 00000000 		.4byte	0
+ 3166              	.LLST14:
+ 3167 021d 00000000 		.4byte	.LVL66
+ 3168 0221 0A000000 		.4byte	.LVL67
+ 3169 0225 0100     		.2byte	0x1
+ 3170 0227 50       		.byte	0x50
+ 3171 0228 0A000000 		.4byte	.LVL67
+ 3172 022c 1C000000 		.4byte	.LFE73
+ 3173 0230 0400     		.2byte	0x4
+ 3174 0232 F3       		.byte	0xf3
+ 3175 0233 01       		.uleb128 0x1
+ 3176 0234 50       		.byte	0x50
+ 3177 0235 9F       		.byte	0x9f
+ 3178 0236 00000000 		.4byte	0
+ 3179 023a 00000000 		.4byte	0
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 63
 
 
- 3126 023e 00000000 		.4byte	.LVL68
- 3127 0242 0A000000 		.4byte	.LVL69
- 3128 0246 0100     		.2byte	0x1
- 3129 0248 50       		.byte	0x50
- 3130 0249 0A000000 		.4byte	.LVL69
- 3131 024d 1C000000 		.4byte	.LFE74
- 3132 0251 0400     		.2byte	0x4
- 3133 0253 F3       		.byte	0xf3
- 3134 0254 01       		.uleb128 0x1
- 3135 0255 50       		.byte	0x50
- 3136 0256 9F       		.byte	0x9f
- 3137 0257 00000000 		.4byte	0
- 3138 025b 00000000 		.4byte	0
- 3139              		.section	.debug_aranges,"",%progbits
- 3140 0000 74000000 		.4byte	0x74
- 3141 0004 0200     		.2byte	0x2
- 3142 0006 00000000 		.4byte	.Ldebug_info0
- 3143 000a 04       		.byte	0x4
- 3144 000b 00       		.byte	0
- 3145 000c 0000     		.2byte	0
- 3146 000e 0000     		.2byte	0
- 3147 0010 00000000 		.4byte	.LFB65
- 3148 0014 B8000000 		.4byte	.LFE65-.LFB65
- 3149 0018 00000000 		.4byte	.LFB63
- 3150 001c 7C000000 		.4byte	.LFE63-.LFB63
- 3151 0020 00000000 		.4byte	.LFB64
- 3152 0024 30000000 		.4byte	.LFE64-.LFB64
- 3153 0028 00000000 		.4byte	.LFB66
- 3154 002c 9C000000 		.4byte	.LFE66-.LFB66
- 3155 0030 00000000 		.4byte	.LFB67
- 3156 0034 10000000 		.4byte	.LFE67-.LFB67
- 3157 0038 00000000 		.4byte	.LFB68
- 3158 003c 1C000000 		.4byte	.LFE68-.LFB68
- 3159 0040 00000000 		.4byte	.LFB69
- 3160 0044 24000000 		.4byte	.LFE69-.LFB69
- 3161 0048 00000000 		.4byte	.LFB70
- 3162 004c 28000000 		.4byte	.LFE70-.LFB70
- 3163 0050 00000000 		.4byte	.LFB71
- 3164 0054 18000000 		.4byte	.LFE71-.LFB71
- 3165 0058 00000000 		.4byte	.LFB72
- 3166 005c 18000000 		.4byte	.LFE72-.LFB72
- 3167 0060 00000000 		.4byte	.LFB73
- 3168 0064 1C000000 		.4byte	.LFE73-.LFB73
- 3169 0068 00000000 		.4byte	.LFB74
- 3170 006c 1C000000 		.4byte	.LFE74-.LFB74
- 3171 0070 00000000 		.4byte	0
- 3172 0074 00000000 		.4byte	0
- 3173              		.section	.debug_ranges,"",%progbits
- 3174              	.Ldebug_ranges0:
- 3175 0000 00000000 		.4byte	.LFB65
- 3176 0004 B8000000 		.4byte	.LFE65
- 3177 0008 00000000 		.4byte	.LFB63
- 3178 000c 7C000000 		.4byte	.LFE63
- 3179 0010 00000000 		.4byte	.LFB64
- 3180 0014 30000000 		.4byte	.LFE64
- 3181 0018 00000000 		.4byte	.LFB66
- 3182 001c 9C000000 		.4byte	.LFE66
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 61
+ 3180              	.LLST15:
+ 3181 023e 00000000 		.4byte	.LVL68
+ 3182 0242 0A000000 		.4byte	.LVL69
+ 3183 0246 0100     		.2byte	0x1
+ 3184 0248 50       		.byte	0x50
+ 3185 0249 0A000000 		.4byte	.LVL69
+ 3186 024d 1C000000 		.4byte	.LFE74
+ 3187 0251 0400     		.2byte	0x4
+ 3188 0253 F3       		.byte	0xf3
+ 3189 0254 01       		.uleb128 0x1
+ 3190 0255 50       		.byte	0x50
+ 3191 0256 9F       		.byte	0x9f
+ 3192 0257 00000000 		.4byte	0
+ 3193 025b 00000000 		.4byte	0
+ 3194              		.section	.debug_aranges,"",%progbits
+ 3195 0000 74000000 		.4byte	0x74
+ 3196 0004 0200     		.2byte	0x2
+ 3197 0006 00000000 		.4byte	.Ldebug_info0
+ 3198 000a 04       		.byte	0x4
+ 3199 000b 00       		.byte	0
+ 3200 000c 0000     		.2byte	0
+ 3201 000e 0000     		.2byte	0
+ 3202 0010 00000000 		.4byte	.LFB65
+ 3203 0014 B8000000 		.4byte	.LFE65-.LFB65
+ 3204 0018 00000000 		.4byte	.LFB63
+ 3205 001c 7C000000 		.4byte	.LFE63-.LFB63
+ 3206 0020 00000000 		.4byte	.LFB64
+ 3207 0024 30000000 		.4byte	.LFE64-.LFB64
+ 3208 0028 00000000 		.4byte	.LFB66
+ 3209 002c 9C000000 		.4byte	.LFE66-.LFB66
+ 3210 0030 00000000 		.4byte	.LFB67
+ 3211 0034 10000000 		.4byte	.LFE67-.LFB67
+ 3212 0038 00000000 		.4byte	.LFB68
+ 3213 003c 1C000000 		.4byte	.LFE68-.LFB68
+ 3214 0040 00000000 		.4byte	.LFB69
+ 3215 0044 24000000 		.4byte	.LFE69-.LFB69
+ 3216 0048 00000000 		.4byte	.LFB70
+ 3217 004c 28000000 		.4byte	.LFE70-.LFB70
+ 3218 0050 00000000 		.4byte	.LFB71
+ 3219 0054 18000000 		.4byte	.LFE71-.LFB71
+ 3220 0058 00000000 		.4byte	.LFB72
+ 3221 005c 18000000 		.4byte	.LFE72-.LFB72
+ 3222 0060 00000000 		.4byte	.LFB73
+ 3223 0064 1C000000 		.4byte	.LFE73-.LFB73
+ 3224 0068 00000000 		.4byte	.LFB74
+ 3225 006c 1C000000 		.4byte	.LFE74-.LFB74
+ 3226 0070 00000000 		.4byte	0
+ 3227 0074 00000000 		.4byte	0
+ 3228              		.section	.debug_ranges,"",%progbits
+ 3229              	.Ldebug_ranges0:
+ 3230 0000 00000000 		.4byte	.LFB65
+ 3231 0004 B8000000 		.4byte	.LFE65
+ 3232 0008 00000000 		.4byte	.LFB63
+ 3233 000c 7C000000 		.4byte	.LFE63
+ 3234 0010 00000000 		.4byte	.LFB64
+ 3235 0014 30000000 		.4byte	.LFE64
+ 3236 0018 00000000 		.4byte	.LFB66
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 64
 
 
- 3183 0020 00000000 		.4byte	.LFB67
- 3184 0024 10000000 		.4byte	.LFE67
- 3185 0028 00000000 		.4byte	.LFB68
- 3186 002c 1C000000 		.4byte	.LFE68
- 3187 0030 00000000 		.4byte	.LFB69
- 3188 0034 24000000 		.4byte	.LFE69
- 3189 0038 00000000 		.4byte	.LFB70
- 3190 003c 28000000 		.4byte	.LFE70
- 3191 0040 00000000 		.4byte	.LFB71
- 3192 0044 18000000 		.4byte	.LFE71
- 3193 0048 00000000 		.4byte	.LFB72
- 3194 004c 18000000 		.4byte	.LFE72
- 3195 0050 00000000 		.4byte	.LFB73
- 3196 0054 1C000000 		.4byte	.LFE73
- 3197 0058 00000000 		.4byte	.LFB74
- 3198 005c 1C000000 		.4byte	.LFE74
- 3199 0060 00000000 		.4byte	0
- 3200 0064 00000000 		.4byte	0
- 3201              		.section	.debug_line,"",%progbits
- 3202              	.Ldebug_line0:
- 3203 0000 07030000 		.section	.debug_str,"MS",%progbits,1
- 3203      0200CC01 
- 3203      00000201 
- 3203      FB0E0D00 
- 3203      01010101 
- 3204              	.LASF121:
- 3205 0000 43794465 		.ascii	"CyDelay\000"
- 3205      6C617900 
- 3206              	.LASF23:
- 3207 0008 57484545 		.ascii	"WHEEL_BOTH\000"
- 3207      4C5F424F 
- 3207      544800
- 3208              	.LASF52:
- 3209 0013 4155544F 		.ascii	"AUTOMATIC\000"
- 3209      4D415449 
- 3209      4300
- 3210              	.LASF57:
- 3211 001d 696E7075 		.ascii	"input\000"
- 3211      7400
- 3212              	.LASF37:
- 3213 0023 5F656570 		.ascii	"_eeprom_tag\000"
- 3213      726F6D5F 
- 3213      74616700 
- 3214              	.LASF25:
- 3215 002f 4745545F 		.ascii	"GET_ENCODER_FUNC_TYPE\000"
- 3215      454E434F 
- 3215      4445525F 
- 3215      46554E43 
- 3215      5F545950 
- 3216              	.LASF103:
- 3217 0045 72696768 		.ascii	"right_pid\000"
- 3217      745F7069 
- 3217      6400
- 3218              	.LASF32:
- 3219 004f 43414C5F 		.ascii	"CAL_DATA_TYPE\000"
- 3219      44415441 
- 3219      5F545950 
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 62
+ 3237 001c 9C000000 		.4byte	.LFE66
+ 3238 0020 00000000 		.4byte	.LFB67
+ 3239 0024 10000000 		.4byte	.LFE67
+ 3240 0028 00000000 		.4byte	.LFB68
+ 3241 002c 1C000000 		.4byte	.LFE68
+ 3242 0030 00000000 		.4byte	.LFB69
+ 3243 0034 24000000 		.4byte	.LFE69
+ 3244 0038 00000000 		.4byte	.LFB70
+ 3245 003c 28000000 		.4byte	.LFE70
+ 3246 0040 00000000 		.4byte	.LFB71
+ 3247 0044 18000000 		.4byte	.LFE71
+ 3248 0048 00000000 		.4byte	.LFB72
+ 3249 004c 18000000 		.4byte	.LFE72
+ 3250 0050 00000000 		.4byte	.LFB73
+ 3251 0054 1C000000 		.4byte	.LFE73
+ 3252 0058 00000000 		.4byte	.LFB74
+ 3253 005c 1C000000 		.4byte	.LFE74
+ 3254 0060 00000000 		.4byte	0
+ 3255 0064 00000000 		.4byte	0
+ 3256              		.section	.debug_line,"",%progbits
+ 3257              	.Ldebug_line0:
+ 3258 0000 07030000 		.section	.debug_str,"MS",%progbits,1
+ 3258      0200CC01 
+ 3258      00000201 
+ 3258      FB0E0D00 
+ 3258      01010101 
+ 3259              	.LASF121:
+ 3260 0000 43794465 		.ascii	"CyDelay\000"
+ 3260      6C617900 
+ 3261              	.LASF23:
+ 3262 0008 57484545 		.ascii	"WHEEL_BOTH\000"
+ 3262      4C5F424F 
+ 3262      544800
+ 3263              	.LASF52:
+ 3264 0013 4155544F 		.ascii	"AUTOMATIC\000"
+ 3264      4D415449 
+ 3264      4300
+ 3265              	.LASF57:
+ 3266 001d 696E7075 		.ascii	"input\000"
+ 3266      7400
+ 3267              	.LASF37:
+ 3268 0023 5F656570 		.ascii	"_eeprom_tag\000"
+ 3268      726F6D5F 
+ 3268      74616700 
+ 3269              	.LASF25:
+ 3270 002f 4745545F 		.ascii	"GET_ENCODER_FUNC_TYPE\000"
+ 3270      454E434F 
+ 3270      4445525F 
+ 3270      46554E43 
+ 3270      5F545950 
+ 3271              	.LASF103:
+ 3272 0045 72696768 		.ascii	"right_pid\000"
+ 3272      745F7069 
+ 3272      6400
+ 3273              	.LASF32:
+ 3274 004f 43414C5F 		.ascii	"CAL_DATA_TYPE\000"
+ 3274      44415441 
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 65
 
 
- 3219      4500
- 3220              	.LASF9:
- 3221 005d 756E7369 		.ascii	"unsigned int\000"
- 3221      676E6564 
- 3221      20696E74 
- 3221      00
- 3222              	.LASF96:
- 3223 006a 5069645F 		.ascii	"Pid_Enable\000"
- 3223      456E6162 
- 3223      6C6500
- 3224              	.LASF24:
- 3225 0075 57484545 		.ascii	"WHEEL_TYPE\000"
- 3225      4C5F5459 
- 3225      504500
- 3226              	.LASF12:
- 3227 0080 5F5F696E 		.ascii	"__int32_t\000"
- 3227      7433325F 
- 3227      7400
- 3228              	.LASF46:
- 3229 008a 72696768 		.ascii	"right_motor_fwd\000"
- 3229      745F6D6F 
- 3229      746F725F 
- 3229      66776400 
- 3230              	.LASF95:
- 3231 009a 5069645F 		.ascii	"Pid_SetLeftRightTarget\000"
- 3231      5365744C 
- 3231      65667452 
- 3231      69676874 
- 3231      54617267 
- 3232              	.LASF92:
- 3233 00b1 72696768 		.ascii	"right_target\000"
- 3233      745F7461 
- 3233      72676574 
- 3233      00
- 3234              	.LASF22:
- 3235 00be 57484545 		.ascii	"WHEEL_RIGHT\000"
- 3235      4C5F5249 
- 3235      47485400 
- 3236              	.LASF127:
- 3237 00ca 5049444D 		.ascii	"PIDModeSet\000"
- 3237      6F646553 
- 3237      657400
- 3238              	.LASF41:
- 3239 00d5 6C656674 		.ascii	"left_gains\000"
- 3239      5F676169 
- 3239      6E7300
- 3240              	.LASF111:
- 3241 00e0 50494453 		.ascii	"PIDSetpointSet\000"
- 3241      6574706F 
- 3241      696E7453 
- 3241      657400
- 3242              	.LASF114:
- 3243 00ef 50494443 		.ascii	"PIDCompute\000"
- 3243      6F6D7075 
- 3243      746500
- 3244              	.LASF72:
- 3245 00fa 6D6F6465 		.ascii	"mode\000"
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 63
+ 3274      5F545950 
+ 3274      4500
+ 3275              	.LASF9:
+ 3276 005d 756E7369 		.ascii	"unsigned int\000"
+ 3276      676E6564 
+ 3276      20696E74 
+ 3276      00
+ 3277              	.LASF96:
+ 3278 006a 5069645F 		.ascii	"Pid_Enable\000"
+ 3278      456E6162 
+ 3278      6C6500
+ 3279              	.LASF24:
+ 3280 0075 57484545 		.ascii	"WHEEL_TYPE\000"
+ 3280      4C5F5459 
+ 3280      504500
+ 3281              	.LASF12:
+ 3282 0080 5F5F696E 		.ascii	"__int32_t\000"
+ 3282      7433325F 
+ 3282      7400
+ 3283              	.LASF46:
+ 3284 008a 72696768 		.ascii	"right_motor_fwd\000"
+ 3284      745F6D6F 
+ 3284      746F725F 
+ 3284      66776400 
+ 3285              	.LASF95:
+ 3286 009a 5069645F 		.ascii	"Pid_SetLeftRightTarget\000"
+ 3286      5365744C 
+ 3286      65667452 
+ 3286      69676874 
+ 3286      54617267 
+ 3287              	.LASF92:
+ 3288 00b1 72696768 		.ascii	"right_target\000"
+ 3288      745F7461 
+ 3288      72676574 
+ 3288      00
+ 3289              	.LASF22:
+ 3290 00be 57484545 		.ascii	"WHEEL_RIGHT\000"
+ 3290      4C5F5249 
+ 3290      47485400 
+ 3291              	.LASF127:
+ 3292 00ca 5049444D 		.ascii	"PIDModeSet\000"
+ 3292      6F646553 
+ 3292      657400
+ 3293              	.LASF41:
+ 3294 00d5 6C656674 		.ascii	"left_gains\000"
+ 3294      5F676169 
+ 3294      6E7300
+ 3295              	.LASF111:
+ 3296 00e0 50494453 		.ascii	"PIDSetpointSet\000"
+ 3296      6574706F 
+ 3296      696E7453 
+ 3296      657400
+ 3297              	.LASF114:
+ 3298 00ef 50494443 		.ascii	"PIDCompute\000"
+ 3298      6F6D7075 
+ 3298      746500
+ 3299              	.LASF72:
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 66
 
 
- 3245      00
- 3246              	.LASF65:
- 3247 00ff 616C7465 		.ascii	"alteredKd\000"
- 3247      7265644B 
- 3247      6400
- 3248              	.LASF64:
- 3249 0109 616C7465 		.ascii	"alteredKi\000"
- 3249      7265644B 
- 3249      6900
- 3250              	.LASF76:
- 3251 0113 77686565 		.ascii	"wheel\000"
- 3251      6C00
- 3252              	.LASF63:
- 3253 0119 616C7465 		.ascii	"alteredKp\000"
- 3253      7265644B 
- 3253      7000
- 3254              	.LASF100:
- 3255 0123 5069645F 		.ascii	"Pid_LeftGetGains\000"
- 3255      4C656674 
- 3255      47657447 
- 3255      61696E73 
- 3255      00
- 3256              	.LASF80:
- 3257 0134 6765745F 		.ascii	"get_pwm\000"
- 3257      70776D00 
- 3258              	.LASF82:
- 3259 013c 7467745F 		.ascii	"tgt_speed\000"
- 3259      73706565 
- 3259      6400
- 3260              	.LASF0:
- 3261 0146 666C6F61 		.ascii	"float\000"
- 3261      7400
- 3262              	.LASF91:
- 3263 014c 6C656674 		.ascii	"left_target\000"
- 3263      5F746172 
- 3263      67657400 
- 3264              	.LASF39:
- 3265 0158 63686563 		.ascii	"checksum\000"
- 3265      6B73756D 
- 3265      00
- 3266              	.LASF101:
- 3267 0161 5069645F 		.ascii	"Pid_RightGetGains\000"
- 3267      52696768 
- 3267      74476574 
- 3267      4761696E 
- 3267      7300
- 3268              	.LASF18:
- 3269 0173 696E7433 		.ascii	"int32\000"
- 3269      3200
- 3270              	.LASF117:
- 3271 0179 43616C5F 		.ascii	"Cal_LeftGetPidGains\000"
- 3271      4C656674 
- 3271      47657450 
- 3271      69644761 
- 3271      696E7300 
- 3272              	.LASF8:
- 3273 018d 6C6F6E67 		.ascii	"long long unsigned int\000"
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 64
+ 3300 00fa 6D6F6465 		.ascii	"mode\000"
+ 3300      00
+ 3301              	.LASF65:
+ 3302 00ff 616C7465 		.ascii	"alteredKd\000"
+ 3302      7265644B 
+ 3302      6400
+ 3303              	.LASF64:
+ 3304 0109 616C7465 		.ascii	"alteredKi\000"
+ 3304      7265644B 
+ 3304      6900
+ 3305              	.LASF76:
+ 3306 0113 77686565 		.ascii	"wheel\000"
+ 3306      6C00
+ 3307              	.LASF63:
+ 3308 0119 616C7465 		.ascii	"alteredKp\000"
+ 3308      7265644B 
+ 3308      7000
+ 3309              	.LASF100:
+ 3310 0123 5069645F 		.ascii	"Pid_LeftGetGains\000"
+ 3310      4C656674 
+ 3310      47657447 
+ 3310      61696E73 
+ 3310      00
+ 3311              	.LASF80:
+ 3312 0134 6765745F 		.ascii	"get_pwm\000"
+ 3312      70776D00 
+ 3313              	.LASF82:
+ 3314 013c 7467745F 		.ascii	"tgt_speed\000"
+ 3314      73706565 
+ 3314      6400
+ 3315              	.LASF0:
+ 3316 0146 666C6F61 		.ascii	"float\000"
+ 3316      7400
+ 3317              	.LASF91:
+ 3318 014c 6C656674 		.ascii	"left_target\000"
+ 3318      5F746172 
+ 3318      67657400 
+ 3319              	.LASF39:
+ 3320 0158 63686563 		.ascii	"checksum\000"
+ 3320      6B73756D 
+ 3320      00
+ 3321              	.LASF101:
+ 3322 0161 5069645F 		.ascii	"Pid_RightGetGains\000"
+ 3322      52696768 
+ 3322      74476574 
+ 3322      4761696E 
+ 3322      7300
+ 3323              	.LASF18:
+ 3324 0173 696E7433 		.ascii	"int32\000"
+ 3324      3200
+ 3325              	.LASF117:
+ 3326 0179 43616C5F 		.ascii	"Cal_LeftGetPidGains\000"
+ 3326      4C656674 
+ 3326      47657450 
+ 3326      69644761 
+ 3326      696E7300 
+ 3327              	.LASF8:
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 67
 
 
- 3273      206C6F6E 
- 3273      6720756E 
- 3273      7369676E 
- 3273      65642069 
- 3274              	.LASF84:
- 3275 01a4 5069645F 		.ascii	"Pid_Init\000"
- 3275      496E6974 
- 3275      00
- 3276              	.LASF110:
- 3277 01ad 666F726D 		.ascii	"formatted_string\000"
- 3277      61747465 
- 3277      645F7374 
- 3277      72696E67 
- 3277      00
- 3278              	.LASF71:
- 3279 01be 636F6E74 		.ascii	"controllerDirection\000"
- 3279      726F6C6C 
- 3279      65724469 
- 3279      72656374 
- 3279      696F6E00 
- 3280              	.LASF62:
- 3281 01d2 64697370 		.ascii	"dispKd\000"
- 3281      4B6400
- 3282              	.LASF61:
- 3283 01d9 64697370 		.ascii	"dispKi\000"
- 3283      4B6900
- 3284              	.LASF30:
- 3285 01e0 70776D5F 		.ascii	"pwm_data\000"
- 3285      64617461 
- 3285      00
- 3286              	.LASF60:
- 3287 01e9 64697370 		.ascii	"dispKp\000"
- 3287      4B7000
- 3288              	.LASF29:
- 3289 01f0 6370735F 		.ascii	"cps_data\000"
- 3289      64617461 
- 3289      00
- 3290              	.LASF97:
- 3291 01f9 656E6162 		.ascii	"enable\000"
- 3291      6C6500
- 3292              	.LASF90:
- 3293 0200 64656C74 		.ascii	"delta_time\000"
- 3293      615F7469 
- 3293      6D6500
- 3294              	.LASF79:
- 3295 020b 7365745F 		.ascii	"set_motor\000"
- 3295      6D6F746F 
- 3295      7200
- 3296              	.LASF43:
- 3297 0215 72657665 		.ascii	"reversed_32\000"
- 3297      72736564 
- 3297      5F333200 
- 3298              	.LASF109:
- 3299 0221 64656275 		.ascii	"debug_control_enabled\000"
- 3299      675F636F 
- 3299      6E74726F 
- 3299      6C5F656E 
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 65
+ 3328 018d 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 3328      206C6F6E 
+ 3328      6720756E 
+ 3328      7369676E 
+ 3328      65642069 
+ 3329              	.LASF84:
+ 3330 01a4 5069645F 		.ascii	"Pid_Init\000"
+ 3330      496E6974 
+ 3330      00
+ 3331              	.LASF109:
+ 3332 01ad 666F726D 		.ascii	"formatted_string\000"
+ 3332      61747465 
+ 3332      645F7374 
+ 3332      72696E67 
+ 3332      00
+ 3333              	.LASF71:
+ 3334 01be 636F6E74 		.ascii	"controllerDirection\000"
+ 3334      726F6C6C 
+ 3334      65724469 
+ 3334      72656374 
+ 3334      696F6E00 
+ 3335              	.LASF62:
+ 3336 01d2 64697370 		.ascii	"dispKd\000"
+ 3336      4B6400
+ 3337              	.LASF61:
+ 3338 01d9 64697370 		.ascii	"dispKi\000"
+ 3338      4B6900
+ 3339              	.LASF30:
+ 3340 01e0 70776D5F 		.ascii	"pwm_data\000"
+ 3340      64617461 
+ 3340      00
+ 3341              	.LASF60:
+ 3342 01e9 64697370 		.ascii	"dispKp\000"
+ 3342      4B7000
+ 3343              	.LASF29:
+ 3344 01f0 6370735F 		.ascii	"cps_data\000"
+ 3344      64617461 
+ 3344      00
+ 3345              	.LASF97:
+ 3346 01f9 656E6162 		.ascii	"enable\000"
+ 3346      6C6500
+ 3347              	.LASF90:
+ 3348 0200 64656C74 		.ascii	"delta_time\000"
+ 3348      615F7469 
+ 3348      6D6500
+ 3349              	.LASF79:
+ 3350 020b 7365745F 		.ascii	"set_motor\000"
+ 3350      6D6F746F 
+ 3350      7200
+ 3351              	.LASF43:
+ 3352 0215 72657665 		.ascii	"reversed_32\000"
+ 3352      72736564 
+ 3352      5F333200 
+ 3353              	.LASF110:
+ 3354 0221 64656275 		.ascii	"debug_control_enabled\000"
+ 3354      675F636F 
+ 3354      6E74726F 
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 68
 
 
- 3299      61626C65 
- 3300              	.LASF33:
- 3301 0237 5F43414C 		.ascii	"_CAL_DATA_TYPE\000"
- 3301      5F444154 
- 3301      415F5459 
- 3301      504500
- 3302              	.LASF116:
- 3303 0246 50494449 		.ascii	"PIDInit\000"
- 3303      6E697400 
- 3304              	.LASF59:
- 3305 024e 6F757470 		.ascii	"output\000"
- 3305      757400
- 3306              	.LASF113:
- 3307 0255 5F426F6F 		.ascii	"_Bool\000"
- 3307      6C00
- 3308              	.LASF112:
- 3309 025b 50494449 		.ascii	"PIDInputSet\000"
- 3309      6E707574 
- 3309      53657400 
- 3310              	.LASF68:
- 3311 0267 6F75744D 		.ascii	"outMin\000"
- 3311      696E00
- 3312              	.LASF81:
- 3313 026e 5049445F 		.ascii	"PID_TYPE\000"
- 3313      54595045 
- 3313      00
- 3314              	.LASF34:
- 3315 0277 5F63616C 		.ascii	"_cal_pid_tag\000"
- 3315      5F706964 
- 3315      5F746167 
- 3315      00
- 3316              	.LASF74:
- 3317 0284 5F706964 		.ascii	"_pid_tag\000"
- 3317      5F746167 
- 3317      00
- 3318              	.LASF45:
- 3319 028d 6C656674 		.ascii	"left_motor_bwd\000"
- 3319      5F6D6F74 
- 3319      6F725F62 
- 3319      776400
- 3320              	.LASF119:
- 3321 029c 43616C5F 		.ascii	"Cal_RightGetPidGains\000"
- 3321      52696768 
- 3321      74476574 
- 3321      50696447 
- 3321      61696E73 
- 3322              	.LASF11:
- 3323 02b1 63686172 		.ascii	"char\000"
- 3323      00
- 3324              	.LASF54:
- 3325 02b6 44495245 		.ascii	"DIRECT\000"
- 3325      435400
- 3326              	.LASF28:
- 3327 02bd 6370735F 		.ascii	"cps_scale\000"
- 3327      7363616C 
- 3327      6500
- 3328              	.LASF15:
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 66
+ 3354      6C5F656E 
+ 3354      61626C65 
+ 3355              	.LASF33:
+ 3356 0237 5F43414C 		.ascii	"_CAL_DATA_TYPE\000"
+ 3356      5F444154 
+ 3356      415F5459 
+ 3356      504500
+ 3357              	.LASF116:
+ 3358 0246 50494449 		.ascii	"PIDInit\000"
+ 3358      6E697400 
+ 3359              	.LASF59:
+ 3360 024e 6F757470 		.ascii	"output\000"
+ 3360      757400
+ 3361              	.LASF113:
+ 3362 0255 5F426F6F 		.ascii	"_Bool\000"
+ 3362      6C00
+ 3363              	.LASF112:
+ 3364 025b 50494449 		.ascii	"PIDInputSet\000"
+ 3364      6E707574 
+ 3364      53657400 
+ 3365              	.LASF68:
+ 3366 0267 6F75744D 		.ascii	"outMin\000"
+ 3366      696E00
+ 3367              	.LASF81:
+ 3368 026e 5049445F 		.ascii	"PID_TYPE\000"
+ 3368      54595045 
+ 3368      00
+ 3369              	.LASF34:
+ 3370 0277 5F63616C 		.ascii	"_cal_pid_tag\000"
+ 3370      5F706964 
+ 3370      5F746167 
+ 3370      00
+ 3371              	.LASF74:
+ 3372 0284 5F706964 		.ascii	"_pid_tag\000"
+ 3372      5F746167 
+ 3372      00
+ 3373              	.LASF45:
+ 3374 028d 6C656674 		.ascii	"left_motor_bwd\000"
+ 3374      5F6D6F74 
+ 3374      6F725F62 
+ 3374      776400
+ 3375              	.LASF119:
+ 3376 029c 43616C5F 		.ascii	"Cal_RightGetPidGains\000"
+ 3376      52696768 
+ 3376      74476574 
+ 3376      50696447 
+ 3376      61696E73 
+ 3377              	.LASF11:
+ 3378 02b1 63686172 		.ascii	"char\000"
+ 3378      00
+ 3379              	.LASF54:
+ 3380 02b6 44495245 		.ascii	"DIRECT\000"
+ 3380      435400
+ 3381              	.LASF28:
+ 3382 02bd 6370735F 		.ascii	"cps_scale\000"
+ 3382      7363616C 
+ 3382      6500
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 69
 
 
- 3329 02c7 75696E74 		.ascii	"uint16\000"
- 3329      313600
- 3330              	.LASF17:
- 3331 02ce 696E7438 		.ascii	"int8\000"
- 3331      00
- 3332              	.LASF88:
- 3333 02d3 6C617374 		.ascii	"last_update_time\000"
- 3333      5F757064 
- 3333      6174655F 
- 3333      74696D65 
- 3333      00
- 3334              	.LASF40:
- 3335 02e4 72657365 		.ascii	"reserved_4\000"
- 3335      72766564 
- 3335      5F3400
- 3336              	.LASF120:
- 3337 02ef 6D696C6C 		.ascii	"millis\000"
- 3337      697300
- 3338              	.LASF38:
- 3339 02f6 73746174 		.ascii	"status\000"
- 3339      757300
- 3340              	.LASF85:
- 3341 02fd 5069645F 		.ascii	"Pid_Start\000"
- 3341      53746172 
- 3341      7400
- 3342              	.LASF86:
- 3343 0307 705F6761 		.ascii	"p_gains\000"
- 3343      696E7300 
- 3344              	.LASF48:
- 3345 030f 43414C5F 		.ascii	"CAL_EEPROM_TYPE\000"
- 3345      45455052 
- 3345      4F4D5F54 
- 3345      59504500 
- 3346              	.LASF66:
- 3347 031f 69546572 		.ascii	"iTerm\000"
- 3347      6D00
- 3348              	.LASF124:
- 3349 0325 2E2E5C73 		.ascii	"..\\source\\pid.c\000"
- 3349      6F757263 
- 3349      655C7069 
- 3349      642E6300 
- 3350              	.LASF26:
- 3351 0335 6370735F 		.ascii	"cps_min\000"
- 3351      6D696E00 
- 3352              	.LASF98:
- 3353 033d 5069645F 		.ascii	"Pid_LeftSetGains\000"
- 3353      4C656674 
- 3353      53657447 
- 3353      61696E73 
- 3353      00
- 3354              	.LASF7:
- 3355 034e 6C6F6E67 		.ascii	"long long int\000"
- 3355      206C6F6E 
- 3355      6720696E 
- 3355      7400
- 3356              	.LASF102:
- 3357 035c 6C656674 		.ascii	"left_pid\000"
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 67
-
-
- 3357      5F706964 
- 3357      00
- 3358              	.LASF44:
- 3359 0365 6C656674 		.ascii	"left_motor_fwd\000"
- 3359      5F6D6F74 
- 3359      6F725F66 
- 3359      776400
- 3360              	.LASF20:
- 3361 0374 4745545F 		.ascii	"GET_TARGET_FUNC_TYPE\000"
- 3361      54415247 
- 3361      45545F46 
- 3361      554E435F 
- 3361      54595045 
- 3362              	.LASF47:
- 3363 0389 72696768 		.ascii	"right_motor_bwd\000"
- 3363      745F6D6F 
- 3363      746F725F 
- 3363      62776400 
- 3364              	.LASF42:
- 3365 0399 72696768 		.ascii	"right_gains\000"
- 3365      745F6761 
- 3365      696E7300 
- 3366              	.LASF125:
- 3367 03a5 443A5C70 		.ascii	"D:\\projects\\ArloBot\\arlobot_freesoc\\freesoc.cyd"
- 3367      726F6A65 
- 3367      6374735C 
- 3367      41726C6F 
- 3367      426F745C 
- 3368 03d4 736E00   		.ascii	"sn\000"
- 3369              	.LASF78:
- 3370 03d7 6765745F 		.ascii	"get_encoder\000"
- 3370      656E636F 
- 3370      64657200 
- 3371              	.LASF51:
- 3372 03e3 4D414E55 		.ascii	"MANUAL\000"
- 3372      414C00
- 3373              	.LASF35:
- 3374 03ea 72657665 		.ascii	"reversed\000"
- 3374      72736564 
- 3374      00
- 3375              	.LASF16:
- 3376 03f3 75696E74 		.ascii	"uint32\000"
- 3376      333200
- 3377              	.LASF122:
- 3378 03fa 44756D70 		.ascii	"DumpPid\000"
- 3378      50696400 
- 3379              	.LASF77:
- 3380 0402 6765745F 		.ascii	"get_target\000"
- 3380      74617267 
- 3380      657400
- 3381              	.LASF73:
- 3382 040d 50494443 		.ascii	"PIDControl\000"
- 3382      6F6E7472 
- 3382      6F6C00
- 3383              	.LASF56:
- 3384 0418 50494444 		.ascii	"PIDDirection\000"
- 3384      69726563 
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 68
-
-
- 3384      74696F6E 
- 3384      00
- 3385              	.LASF89:
- 3386 0425 7069645F 		.ascii	"pid_sched_offset_applied\000"
- 3386      73636865 
- 3386      645F6F66 
- 3386      66736574 
- 3386      5F617070 
- 3387              	.LASF99:
- 3388 043e 5069645F 		.ascii	"Pid_RightSetGains\000"
- 3388      52696768 
- 3388      74536574 
- 3388      4761696E 
- 3388      7300
- 3389              	.LASF126:
- 3390 0450 50726F63 		.ascii	"ProcessPid\000"
- 3390      65737350 
- 3390      696400
- 3391              	.LASF36:
- 3392 045b 43414C5F 		.ascii	"CAL_PID_TYPE\000"
- 3392      5049445F 
- 3392      54595045 
- 3392      00
- 3393              	.LASF115:
- 3394 0468 43616C5F 		.ascii	"Cal_CpsToPwm\000"
- 3394      43707354 
- 3394      6F50776D 
- 3394      00
- 3395              	.LASF106:
- 3396 0475 705F6361 		.ascii	"p_cal_eeprom\000"
- 3396      6C5F6565 
- 3396      70726F6D 
- 3396      00
- 3397              	.LASF49:
- 3398 0482 5345545F 		.ascii	"SET_MOTOR_PWM_FUNC_TYPE\000"
- 3398      4D4F544F 
- 3398      525F5057 
- 3398      4D5F4655 
- 3398      4E435F54 
- 3399              	.LASF3:
- 3400 049a 73686F72 		.ascii	"short int\000"
- 3400      7420696E 
- 3400      7400
- 3401              	.LASF107:
- 3402 04a4 43616C5F 		.ascii	"Cal_LeftTarget\000"
- 3402      4C656674 
- 3402      54617267 
- 3402      657400
- 3403              	.LASF5:
- 3404 04b3 6C6F6E67 		.ascii	"long int\000"
- 3404      20696E74 
- 3404      00
- 3405              	.LASF105:
- 3406 04bc 49544D5F 		.ascii	"ITM_RxBuffer\000"
- 3406      52784275 
- 3406      66666572 
- 3406      00
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 69
-
-
- 3407              	.LASF53:
- 3408 04c9 5049444D 		.ascii	"PIDMode\000"
- 3408      6F646500 
- 3409              	.LASF94:
- 3410 04d1 5069645F 		.ascii	"Pid_Reset\000"
- 3410      52657365 
+ 3383              	.LASF15:
+ 3384 02c7 75696E74 		.ascii	"uint16\000"
+ 3384      313600
+ 3385              	.LASF17:
+ 3386 02ce 696E7438 		.ascii	"int8\000"
+ 3386      00
+ 3387              	.LASF88:
+ 3388 02d3 6C617374 		.ascii	"last_update_time\000"
+ 3388      5F757064 
+ 3388      6174655F 
+ 3388      74696D65 
+ 3388      00
+ 3389              	.LASF40:
+ 3390 02e4 72657365 		.ascii	"reserved_4\000"
+ 3390      72766564 
+ 3390      5F3400
+ 3391              	.LASF120:
+ 3392 02ef 6D696C6C 		.ascii	"millis\000"
+ 3392      697300
+ 3393              	.LASF38:
+ 3394 02f6 73746174 		.ascii	"status\000"
+ 3394      757300
+ 3395              	.LASF85:
+ 3396 02fd 5069645F 		.ascii	"Pid_Start\000"
+ 3396      53746172 
+ 3396      7400
+ 3397              	.LASF86:
+ 3398 0307 705F6761 		.ascii	"p_gains\000"
+ 3398      696E7300 
+ 3399              	.LASF48:
+ 3400 030f 43414C5F 		.ascii	"CAL_EEPROM_TYPE\000"
+ 3400      45455052 
+ 3400      4F4D5F54 
+ 3400      59504500 
+ 3401              	.LASF66:
+ 3402 031f 69546572 		.ascii	"iTerm\000"
+ 3402      6D00
+ 3403              	.LASF124:
+ 3404 0325 2E2E5C73 		.ascii	"..\\source\\pid.c\000"
+ 3404      6F757263 
+ 3404      655C7069 
+ 3404      642E6300 
+ 3405              	.LASF26:
+ 3406 0335 6370735F 		.ascii	"cps_min\000"
+ 3406      6D696E00 
+ 3407              	.LASF98:
+ 3408 033d 5069645F 		.ascii	"Pid_LeftSetGains\000"
+ 3408      4C656674 
+ 3408      53657447 
+ 3408      61696E73 
+ 3408      00
+ 3409              	.LASF7:
+ 3410 034e 6C6F6E67 		.ascii	"long long int\000"
+ 3410      206C6F6E 
+ 3410      6720696E 
  3410      7400
- 3411              	.LASF118:
- 3412 04db 50494454 		.ascii	"PIDTuningsSet\000"
- 3412      756E696E 
- 3412      67735365 
- 3412      7400
- 3413              	.LASF104:
- 3414 04e9 7069645F 		.ascii	"pid_enabled\000"
- 3414      656E6162 
- 3414      6C656400 
- 3415              	.LASF70:
- 3416 04f5 73657470 		.ascii	"setpoint\000"
- 3416      6F696E74 
- 3416      00
- 3417              	.LASF75:
- 3418 04fe 6E616D65 		.ascii	"name\000"
- 3418      00
- 3419              	.LASF10:
- 3420 0503 73697A65 		.ascii	"sizetype\000"
- 3420      74797065 
- 3420      00
- 3421              	.LASF6:
- 3422 050c 6C6F6E67 		.ascii	"long unsigned int\000"
- 3422      20756E73 
- 3422      69676E65 
- 3422      6420696E 
- 3422      7400
- 3423              	.LASF13:
- 3424 051e 696E7433 		.ascii	"int32_t\000"
- 3424      325F7400 
- 3425              	.LASF93:
- 3426 0526 5069645F 		.ascii	"Pid_RestoreLeftRightTarget\000"
- 3426      52657374 
- 3426      6F72654C 
- 3426      65667452 
- 3426      69676874 
- 3427              	.LASF55:
- 3428 0541 52455645 		.ascii	"REVERSE\000"
- 3428      52534500 
- 3429              	.LASF2:
- 3430 0549 756E7369 		.ascii	"unsigned char\000"
- 3430      676E6564 
- 3430      20636861 
- 3430      7200
- 3431              	.LASF123:
- 3432 0557 474E5520 		.ascii	"GNU C 4.9.3 20150303 (release) [ARM/embedded-4_9-br"
- 3432      4320342E 
- 3432      392E3320 
- 3432      32303135 
- 3432      30333033 
- 3433 058a 616E6368 		.ascii	"anch revision 221220] -mcpu=cortex-m3 -mthumb -g -O"
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 70
+ 3411              	.LASF102:
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 70
 
 
- 3433      20726576 
- 3433      6973696F 
- 3433      6E203232 
- 3433      31323230 
- 3434 05bd 67202D66 		.ascii	"g -ffunction-sections -ffat-lto-objects\000"
- 3434      66756E63 
- 3434      74696F6E 
- 3434      2D736563 
- 3434      74696F6E 
- 3435              	.LASF69:
- 3436 05e5 6F75744D 		.ascii	"outMax\000"
- 3436      617800
- 3437              	.LASF21:
- 3438 05ec 57484545 		.ascii	"WHEEL_LEFT\000"
- 3438      4C5F4C45 
- 3438      465400
- 3439              	.LASF58:
- 3440 05f7 6C617374 		.ascii	"lastInput\000"
- 3440      496E7075 
- 3440      7400
- 3441              	.LASF1:
- 3442 0601 7369676E 		.ascii	"signed char\000"
- 3442      65642063 
- 3442      68617200 
- 3443              	.LASF4:
- 3444 060d 73686F72 		.ascii	"short unsigned int\000"
- 3444      7420756E 
- 3444      7369676E 
- 3444      65642069 
- 3444      6E7400
- 3445              	.LASF67:
- 3446 0620 73616D70 		.ascii	"sampleTime\000"
- 3446      6C655469 
- 3446      6D6500
- 3447              	.LASF31:
- 3448 062b 72657365 		.ascii	"reserved\000"
- 3448      72766564 
- 3448      00
- 3449              	.LASF87:
- 3450 0634 5069645F 		.ascii	"Pid_Update\000"
- 3450      55706461 
- 3450      746500
- 3451              	.LASF14:
- 3452 063f 75696E74 		.ascii	"uint8\000"
- 3452      3800
- 3453              	.LASF19:
- 3454 0645 646F7562 		.ascii	"double\000"
- 3454      6C6500
- 3455              	.LASF83:
- 3456 064c 656E635F 		.ascii	"enc_speed\000"
- 3456      73706565 
- 3456      6400
- 3457              	.LASF50:
- 3458 0656 4745545F 		.ascii	"GET_MOTOR_PWM_FUNC_TYPE\000"
- 3458      4D4F544F 
- 3458      525F5057 
- 3458      4D5F4655 
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\cc11mp0q.s 			page 71
+ 3412 035c 6C656674 		.ascii	"left_pid\000"
+ 3412      5F706964 
+ 3412      00
+ 3413              	.LASF44:
+ 3414 0365 6C656674 		.ascii	"left_motor_fwd\000"
+ 3414      5F6D6F74 
+ 3414      6F725F66 
+ 3414      776400
+ 3415              	.LASF20:
+ 3416 0374 4745545F 		.ascii	"GET_TARGET_FUNC_TYPE\000"
+ 3416      54415247 
+ 3416      45545F46 
+ 3416      554E435F 
+ 3416      54595045 
+ 3417              	.LASF47:
+ 3418 0389 72696768 		.ascii	"right_motor_bwd\000"
+ 3418      745F6D6F 
+ 3418      746F725F 
+ 3418      62776400 
+ 3419              	.LASF42:
+ 3420 0399 72696768 		.ascii	"right_gains\000"
+ 3420      745F6761 
+ 3420      696E7300 
+ 3421              	.LASF125:
+ 3422 03a5 443A5C70 		.ascii	"D:\\projects\\ArloBot\\arlobot_freesoc\\freesoc.cyd"
+ 3422      726F6A65 
+ 3422      6374735C 
+ 3422      41726C6F 
+ 3422      426F745C 
+ 3423 03d4 736E00   		.ascii	"sn\000"
+ 3424              	.LASF78:
+ 3425 03d7 6765745F 		.ascii	"get_encoder\000"
+ 3425      656E636F 
+ 3425      64657200 
+ 3426              	.LASF51:
+ 3427 03e3 4D414E55 		.ascii	"MANUAL\000"
+ 3427      414C00
+ 3428              	.LASF35:
+ 3429 03ea 72657665 		.ascii	"reversed\000"
+ 3429      72736564 
+ 3429      00
+ 3430              	.LASF16:
+ 3431 03f3 75696E74 		.ascii	"uint32\000"
+ 3431      333200
+ 3432              	.LASF122:
+ 3433 03fa 44756D70 		.ascii	"DumpPid\000"
+ 3433      50696400 
+ 3434              	.LASF77:
+ 3435 0402 6765745F 		.ascii	"get_target\000"
+ 3435      74617267 
+ 3435      657400
+ 3436              	.LASF73:
+ 3437 040d 50494443 		.ascii	"PIDControl\000"
+ 3437      6F6E7472 
+ 3437      6F6C00
+ 3438              	.LASF56:
+ 3439 0418 50494444 		.ascii	"PIDDirection\000"
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 71
 
 
- 3458      4E435F54 
- 3459              	.LASF27:
- 3460 066e 6370735F 		.ascii	"cps_max\000"
- 3460      6D617800 
- 3461              	.LASF108:
- 3462 0676 43616C5F 		.ascii	"Cal_RightTarget\000"
- 3462      52696768 
- 3462      74546172 
- 3462      67657400 
- 3463              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 4.9.3 20150303 (release) [ARM/embedded-4_9-br
+ 3439      69726563 
+ 3439      74696F6E 
+ 3439      00
+ 3440              	.LASF89:
+ 3441 0425 7069645F 		.ascii	"pid_sched_offset_applied\000"
+ 3441      73636865 
+ 3441      645F6F66 
+ 3441      66736574 
+ 3441      5F617070 
+ 3442              	.LASF99:
+ 3443 043e 5069645F 		.ascii	"Pid_RightSetGains\000"
+ 3443      52696768 
+ 3443      74536574 
+ 3443      4761696E 
+ 3443      7300
+ 3444              	.LASF126:
+ 3445 0450 50726F63 		.ascii	"ProcessPid\000"
+ 3445      65737350 
+ 3445      696400
+ 3446              	.LASF36:
+ 3447 045b 43414C5F 		.ascii	"CAL_PID_TYPE\000"
+ 3447      5049445F 
+ 3447      54595045 
+ 3447      00
+ 3448              	.LASF115:
+ 3449 0468 43616C5F 		.ascii	"Cal_CpsToPwm\000"
+ 3449      43707354 
+ 3449      6F50776D 
+ 3449      00
+ 3450              	.LASF106:
+ 3451 0475 705F6361 		.ascii	"p_cal_eeprom\000"
+ 3451      6C5F6565 
+ 3451      70726F6D 
+ 3451      00
+ 3452              	.LASF49:
+ 3453 0482 5345545F 		.ascii	"SET_MOTOR_PWM_FUNC_TYPE\000"
+ 3453      4D4F544F 
+ 3453      525F5057 
+ 3453      4D5F4655 
+ 3453      4E435F54 
+ 3454              	.LASF3:
+ 3455 049a 73686F72 		.ascii	"short int\000"
+ 3455      7420696E 
+ 3455      7400
+ 3456              	.LASF107:
+ 3457 04a4 43616C5F 		.ascii	"Cal_LeftTarget\000"
+ 3457      4C656674 
+ 3457      54617267 
+ 3457      657400
+ 3458              	.LASF5:
+ 3459 04b3 6C6F6E67 		.ascii	"long int\000"
+ 3459      20696E74 
+ 3459      00
+ 3460              	.LASF105:
+ 3461 04bc 49544D5F 		.ascii	"ITM_RxBuffer\000"
+ 3461      52784275 
+ 3461      66666572 
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 72
+
+
+ 3461      00
+ 3462              	.LASF53:
+ 3463 04c9 5049444D 		.ascii	"PIDMode\000"
+ 3463      6F646500 
+ 3464              	.LASF94:
+ 3465 04d1 5069645F 		.ascii	"Pid_Reset\000"
+ 3465      52657365 
+ 3465      7400
+ 3466              	.LASF118:
+ 3467 04db 50494454 		.ascii	"PIDTuningsSet\000"
+ 3467      756E696E 
+ 3467      67735365 
+ 3467      7400
+ 3468              	.LASF104:
+ 3469 04e9 7069645F 		.ascii	"pid_enabled\000"
+ 3469      656E6162 
+ 3469      6C656400 
+ 3470              	.LASF70:
+ 3471 04f5 73657470 		.ascii	"setpoint\000"
+ 3471      6F696E74 
+ 3471      00
+ 3472              	.LASF75:
+ 3473 04fe 6E616D65 		.ascii	"name\000"
+ 3473      00
+ 3474              	.LASF10:
+ 3475 0503 73697A65 		.ascii	"sizetype\000"
+ 3475      74797065 
+ 3475      00
+ 3476              	.LASF6:
+ 3477 050c 6C6F6E67 		.ascii	"long unsigned int\000"
+ 3477      20756E73 
+ 3477      69676E65 
+ 3477      6420696E 
+ 3477      7400
+ 3478              	.LASF13:
+ 3479 051e 696E7433 		.ascii	"int32_t\000"
+ 3479      325F7400 
+ 3480              	.LASF93:
+ 3481 0526 5069645F 		.ascii	"Pid_RestoreLeftRightTarget\000"
+ 3481      52657374 
+ 3481      6F72654C 
+ 3481      65667452 
+ 3481      69676874 
+ 3482              	.LASF55:
+ 3483 0541 52455645 		.ascii	"REVERSE\000"
+ 3483      52534500 
+ 3484              	.LASF2:
+ 3485 0549 756E7369 		.ascii	"unsigned char\000"
+ 3485      676E6564 
+ 3485      20636861 
+ 3485      7200
+ 3486              	.LASF123:
+ 3487 0557 474E5520 		.ascii	"GNU C 4.9.3 20150303 (release) [ARM/embedded-4_9-br"
+ 3487      4320342E 
+ 3487      392E3320 
+ 3487      32303135 
+ 3487      30333033 
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 73
+
+
+ 3488 058a 616E6368 		.ascii	"anch revision 221220] -mcpu=cortex-m3 -mthumb -g -O"
+ 3488      20726576 
+ 3488      6973696F 
+ 3488      6E203232 
+ 3488      31323230 
+ 3489 05bd 67202D66 		.ascii	"g -ffunction-sections -ffat-lto-objects\000"
+ 3489      66756E63 
+ 3489      74696F6E 
+ 3489      2D736563 
+ 3489      74696F6E 
+ 3490              	.LASF69:
+ 3491 05e5 6F75744D 		.ascii	"outMax\000"
+ 3491      617800
+ 3492              	.LASF21:
+ 3493 05ec 57484545 		.ascii	"WHEEL_LEFT\000"
+ 3493      4C5F4C45 
+ 3493      465400
+ 3494              	.LASF58:
+ 3495 05f7 6C617374 		.ascii	"lastInput\000"
+ 3495      496E7075 
+ 3495      7400
+ 3496              	.LASF1:
+ 3497 0601 7369676E 		.ascii	"signed char\000"
+ 3497      65642063 
+ 3497      68617200 
+ 3498              	.LASF4:
+ 3499 060d 73686F72 		.ascii	"short unsigned int\000"
+ 3499      7420756E 
+ 3499      7369676E 
+ 3499      65642069 
+ 3499      6E7400
+ 3500              	.LASF67:
+ 3501 0620 73616D70 		.ascii	"sampleTime\000"
+ 3501      6C655469 
+ 3501      6D6500
+ 3502              	.LASF31:
+ 3503 062b 72657365 		.ascii	"reserved\000"
+ 3503      72766564 
+ 3503      00
+ 3504              	.LASF87:
+ 3505 0634 5069645F 		.ascii	"Pid_Update\000"
+ 3505      55706461 
+ 3505      746500
+ 3506              	.LASF14:
+ 3507 063f 75696E74 		.ascii	"uint8\000"
+ 3507      3800
+ 3508              	.LASF19:
+ 3509 0645 646F7562 		.ascii	"double\000"
+ 3509      6C6500
+ 3510              	.LASF83:
+ 3511 064c 656E635F 		.ascii	"enc_speed\000"
+ 3511      73706565 
+ 3511      6400
+ 3512              	.LASF50:
+ 3513 0656 4745545F 		.ascii	"GET_MOTOR_PWM_FUNC_TYPE\000"
+ 3513      4D4F544F 
+ 3513      525F5057 
+ARM GAS  C:\Users\tslator\AppData\Local\Temp\ccZVrbja.s 			page 74
+
+
+ 3513      4D5F4655 
+ 3513      4E435F54 
+ 3514              	.LASF27:
+ 3515 066e 6370735F 		.ascii	"cps_max\000"
+ 3515      6D617800 
+ 3516              	.LASF108:
+ 3517 0676 43616C5F 		.ascii	"Cal_RightTarget\000"
+ 3517      52696768 
+ 3517      74546172 
+ 3517      67657400 
+ 3518              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 4.9.3 20150303 (release) [ARM/embedded-4_9-br

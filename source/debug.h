@@ -77,9 +77,7 @@ char formatted_string[256];
                                 
 #define ENCODER_DEBUG_CONTROL_ENABLED   (debug_control_enabled & DEBUG_LEFT_ENCODER_ENABLE_BIT || debug_control_enabled & DEBUG_RIGHT_ENCODER_ENABLE_BIT)
 #define PID_DEBUG_CONTROL_ENABLED       (debug_control_enabled & DEBUG_LEFT_PID_ENABLE_BIT ||        \
-                                         debug_control_enabled & DEBUG_RIGHT_PID_ENABLE_BIT ||       \
-                                         debug_control_enabled & DEBUG_CTRL_LINEAR_PID_ENABLE_BIT || \
-                                         debug_control_enabled & DEBUG_CTRL_ANGULAR_PID_ENABLE_BIT )
+                                         debug_control_enabled & DEBUG_RIGHT_PID_ENABLE_BIT )
 #define MOTOR_DEBUG_CONTROL_ENABLED     (debug_control_enabled & DEBUG_LEFT_MOTOR_ENABLE_BIT || debug_control_enabled & DEBUG_RIGHT_MOTOR_ENABLE_BIT)
 #define ODOM_DEBUG_CONTROL_ENABLED      (debug_control_enabled & DEBUG_ODOM_ENABLE_BIT)
 #define SAMPLE_DEBUG_CONTROL_ENABLED    (debug_control_enabled & DEBUG_SAMPLE_ENABLE_BIT)
