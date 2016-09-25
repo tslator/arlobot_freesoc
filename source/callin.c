@@ -23,6 +23,11 @@
 #define CALLIN_SAMPLE_RATE (PID_SAMPLE_RATE / 2)        
 #define CALLIN_SAMPLE_TIME_MS  SAMPLE_TIME_MS(CALLIN_SAMPLE_RATE)
 
+static CAL_LIN_PARAMS linear_params = {DIR_FORWARD, 5000, LINEAR_BIAS_DISTANCE, LINEAR_BIAS_VELOCITY};
+
+static uint32 start_time;
+static uint16 old_debug_control_enabled;
+
 static uint8 Init(CAL_STAGE_TYPE stage, void *params);
 static uint8 Start(CAL_STAGE_TYPE stage, void *params);
 static uint8 Update(CAL_STAGE_TYPE stage, void *params);
@@ -34,8 +39,8 @@ static float right_cmd_velocity;
 static uint32 last_time;
 
 static CALIBRATION_TYPE linear_calibration = {CAL_INIT_STATE,
-                                              CAL_CALIBRATE_STAGE,
-                                              0,
+                                              CAL_VALIDATE_STAGE,
+                                              &linear_params,
                                               Init,
                                               Start,
                                               Update,
@@ -69,26 +74,121 @@ static CALIBRATION_TYPE linear_calibration = {CAL_INIT_STATE,
 
 static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 {
+    CAL_LIN_PARAMS *p_lin_params = (CAL_LIN_PARAMS *)params;
+    char banner[64];
+
+    switch (stage)
+    {
+        case CAL_VALIDATE_STAGE:
+            sprintf(banner, "\r\n%s Linear validation\r\n", p_lin_params->direction == DIR_FORWARD ? "Forward" : "Backward");
+            Ser_PutString(banner);
+            Cal_SetLeftRightVelocity(0, 0);
+            Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
+
+            old_debug_control_enabled = debug_control_enabled;
+
+            debug_control_enabled = DEBUG_ODOM_ENABLE_BIT | DEBUG_LEFT_PID_ENABLE_BIT | DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_PID_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT;
+
+            break;
+
+        default:
+            break;
+    }
+
+
     return CAL_OK;
 }
 
 static uint8 Start(CAL_STAGE_TYPE stage, void *params)
 {
+    CAL_LIN_PARAMS *p_lin_params = (CAL_LIN_PARAMS *) params;
+
+    switch (stage)
+    {
+        case CAL_VALIDATE_STAGE:
+            Ser_PutString("Linear Validation Start\r\n");
+            Pid_Enable(TRUE);            
+            Encoder_Reset();
+            Pid_Reset();
+            Odom_Reset();
+
+            float velocity = p_lin_params->mps;
+            if( p_lin_params->direction == DIR_BACKWARD )
+            {
+                velocity = -velocity;
+            }
+
+            Cal_SetLeftRightVelocity(velocity, velocity);
+
+            Ser_PutString("\r\nCalibrating ");
+            Ser_PutString("\r\n");
+            start_time = millis();
+
+            break;
+
+        default:
+            break;
+    }
+
     return CAL_OK;
 }
 
 static uint8 Update(CAL_STAGE_TYPE stage, void *params)
 {
+    CAL_LIN_PARAMS * p_lin_params = (CAL_LIN_PARAMS *) params;
+
+    switch (stage)
+    {
+        case CAL_VALIDATE_STAGE:
+            if (millis() - start_time < p_lin_params->run_time)
+            {
+                return CAL_OK;    
+            }
+            break;
+
+        default:
+            break;
+    }
+
+    Ser_PutString("Linear Validation Update\r\n");
     return CAL_COMPLETE;
 }
 
 static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
 {
+    char output[64];
+    CAL_LIN_PARAMS *p_lin_params = (CAL_LIN_PARAMS *)params;
+
+    Cal_SetLeftRightVelocity(0, 0);
+
+    switch (stage)
+    {
+        case CAL_VALIDATE_STAGE:
+            sprintf(output, "\r\n%s Linear validation complete\r\n", p_lin_params->direction == DIR_FORWARD ? "Forward" : "Backward");
+            Ser_PutString(output);
+            break;
+    }
+
+    debug_control_enabled = old_debug_control_enabled;    
+
     return CAL_OK;
 }
 
 static uint8 Results(CAL_STAGE_TYPE stage, void *params)
 {
+    CAL_LIN_PARAMS *p_lin_params = (CAL_LIN_PARAMS *)params;
+
+    switch (stage)
+    {
+        case CAL_VALIDATE_STAGE:
+            Ser_PutString("\r\nPrinting Linear validation results\r\n");
+            /* Get the left, right and average distance traveled
+                Need to capture the left, right delta distance at the start (probably 0 because odometry is reset)
+                We want to see how far each wheel went and compute the error
+               */
+            break;
+    }
+
     return CAL_OK;
 }
 
@@ -105,9 +205,9 @@ static float CalLinearRightTarget()
 
 void CalLin_Init()
 {
-    CalLin_Calibration = &linear_calibration;
+    CalLin_Validation = &linear_calibration;
 }
-
+#ifdef NOT_NOW
 static void UpdateVelocity(float distance)
 {
     uint32 delta_time;
@@ -227,4 +327,4 @@ void ValidateLinearBias()
     DoLinearBiasMotion();
     Ser_PutString("Linear bias validation complete\r\n");
 }
-
+#endif

@@ -142,7 +142,7 @@ static void CalculateOdometry(uint32 delta_time)
     float right_dist;
     
     left_speed = Encoder_LeftGetMeterPerSec();
-    right_speed = Encoder_RightGetCntsPerSec();
+    right_speed = Encoder_RightGetMeterPerSec();
     left_dist = Encoder_LeftGetDist();
     right_dist = Encoder_RightGetDist();
     

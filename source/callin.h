@@ -4,7 +4,16 @@
 #include <project.h>    
 #include "cal.h"
     
-CALIBRATION_TYPE *CalLin_Calibration;
+typedef struct _linear_params
+{
+    DIR_TYPE direction;
+    uint32   run_time;
+    float    distance;
+    float    mps;
+} CAL_LIN_PARAMS;
+
+    
+CALIBRATION_TYPE *CalLin_Validation;
 
 void CalLin_Init();    
     

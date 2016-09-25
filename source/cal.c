@@ -44,6 +44,8 @@
 #define PID_LEFT_BWD_VAL_CMD    '4'
 #define PID_RIGHT_FWD_VAL_CMD   '5'
 #define PID_RIGHT_BWD_VAL_CMD   '6'
+#define LINEAR_FWD_VAL_CMD      '7'
+#define LINEAR_BWD_VAL_CMD      '8'
 
 #define MOTOR_LEFT_DISP_CMD  '1'
 #define MOTOR_RIGHT_DISP_CMD '2'
@@ -147,10 +149,12 @@ static void DisplayValMenu()
     Ser_PutString("    4. Left PID (backward) Validation - operates the left motor in the backward direction at various velocities.\r\n");
     Ser_PutString("    5. Right PID (forward) Validation - operates the right motor in the forward direction at various velocities.\r\n");
     Ser_PutString("    6. Right PID (backward) Validation - operates the right motor in the backward direction at various velocities.\r\n");
+    Ser_PutString("    7. Straight Line (forward) Validation - operates the robot in the forward direction at a constant (slow) velocity.\r\n");
+    Ser_PutString("    8. Straight Line (backward) Validation - operates the robot in the backward direction at a constant (slow) velocity.\r\n");
     Ser_PutString("\r\n");
     Ser_PutString("\r\nEnter X to exit validation\r\n");
     Ser_PutString("\r\n");
-    Ser_PutString("Make an entry [1-6,X]: ");
+    Ser_PutString("Make an entry [1-8,X]: ");
 }
 
 static void DisplayMenu(CAL_STAGE_TYPE stage)
@@ -316,7 +320,7 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
                     
         case PID_LEFT_FWD_VAL_CMD:
             Ser_WriteByte(cmd);
-            Ser_PutString("\r\nPerforing Left PID validation in the forward direction.\r\n");
+            Ser_PutString("\r\nPerforming Left PID validation in the forward direction.\r\n");
             CalPid_LeftValidation->stage = CAL_VALIDATE_STAGE;
             CalPid_LeftValidation->state = CAL_INIT_STATE;
             ((CAL_PID_PARAMS *)(CalPid_LeftValidation->params))->direction = DIR_FORWARD;
@@ -325,7 +329,7 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
 
         case PID_LEFT_BWD_VAL_CMD:
             Ser_WriteByte(cmd);
-            Ser_PutString("\r\nPerforing Left PID validation in the backward direction.\r\n");
+            Ser_PutString("\r\nPerforming Left PID validation in the backward direction.\r\n");
             CalPid_LeftValidation->stage = CAL_VALIDATE_STAGE;
             CalPid_LeftValidation->state = CAL_INIT_STATE;
             ((CAL_PID_PARAMS *)(CalPid_LeftValidation->params))->direction = DIR_BACKWARD;
@@ -334,7 +338,7 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
 
         case PID_RIGHT_FWD_VAL_CMD:
             Ser_WriteByte(cmd);
-            Ser_PutString("\r\nPerforing Right PID validation in the forward direction.\r\n");
+            Ser_PutString("\r\nPerforming Right PID validation in the forward direction.\r\n");
             CalPid_RightValidation->stage = CAL_VALIDATE_STAGE;
             CalPid_RightValidation->state = CAL_INIT_STATE;
             ((CAL_PID_PARAMS *)(CalPid_RightValidation->params))->direction = DIR_FORWARD;
@@ -343,13 +347,31 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
 
         case PID_RIGHT_BWD_VAL_CMD:
             Ser_WriteByte(cmd);
-            Ser_PutString("\r\nPerforing Right PID validation in the backward direction.\r\n");
+            Ser_PutString("\r\nPerforming Right PID validation in the backward direction.\r\n");
             CalPid_RightValidation->stage = CAL_VALIDATE_STAGE;
             CalPid_RightValidation->state = CAL_INIT_STATE;
             ((CAL_PID_PARAMS *)(CalPid_RightValidation->params))->direction = DIR_BACKWARD;
             return (CALIBRATION_TYPE *) CalPid_RightValidation;
             break;
-                                
+                       
+        case LINEAR_FWD_VAL_CMD:
+            Ser_WriteByte(cmd);
+            Ser_PutString("\r\nPerforming straight line validation in the forward direction.\r\n");
+            CalLin_Validation->stage = CAL_VALIDATE_STAGE;
+            CalLin_Validation->state = CAL_INIT_STATE;
+            ((CAL_LIN_PARAMS *)(CalLin_Validation->params))->direction = DIR_FORWARD;
+            return (CALIBRATION_TYPE *) CalLin_Validation;
+            break;
+                
+        case LINEAR_BWD_VAL_CMD:
+            Ser_WriteByte(cmd);
+            Ser_PutString("\r\nPerforming straight line validation in the backward direction.\r\n");
+            CalLin_Validation->stage = CAL_VALIDATE_STAGE;
+            CalLin_Validation->state = CAL_INIT_STATE;
+            ((CAL_LIN_PARAMS *)(CalLin_Validation->params))->direction = DIR_BACKWARD;
+            return (CALIBRATION_TYPE *) CalLin_Validation;
+            break;
+
         default:            
             break;
 
@@ -458,6 +480,7 @@ void Cal_Init()
     
     CalMotor_Init();
     CalPid_Init();
+    CalLin_Init();
 }
 
 void Cal_Start()

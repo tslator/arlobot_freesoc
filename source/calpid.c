@@ -138,7 +138,7 @@ static uint8 SetNextValidationVelocity(CAL_PID_PARAMS *p_pid_params)
     }
     
     ftoa(velocity, velocity_str, 3);
-    sprintf(outbuf, "%s\r\n", velocity_str);
+    sprintf(outbuf, "Speed: %s\r\n", velocity_str);
     Ser_PutString(outbuf);
     
     return vel_index < MAX_NUM_VELOCITIES ? 1 : 0;
@@ -245,15 +245,15 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
 
             
         case CAL_VALIDATE_STAGE:
-            Ser_PutString("\r\nValidating ");
-            Ser_PutString("\r\n");
-            start_time = millis();
-            
             Pid_Enable(TRUE);            
             Encoder_Reset();
             Pid_Reset();
             Odom_Reset();
 
+            Ser_PutString("\r\nValidating ");
+            Ser_PutString("\r\n");
+            start_time = millis();
+            
             SetNextValidationVelocity(p_pid_params);
 
             break;
