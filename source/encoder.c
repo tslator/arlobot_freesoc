@@ -405,6 +405,7 @@ void Encoder_Reset()
     left_enc.avg_mps = 0;
     left_enc.avg_cps_ma.last = 0;
     left_enc.count = 0;
+    left_enc.dist = 0;
     
     right_enc.write_counter(0);
     right_enc.last_count = 0;
@@ -415,6 +416,7 @@ void Encoder_Reset()
     right_enc.avg_mps = 0;
     right_enc.avg_cps_ma.last = 0;
     right_enc.count = 0;
+    right_enc.dist = 0;
     
     LEFT_DUMP_ENC(&left_enc);
     RIGHT_DUMP_ENC(&right_enc);    

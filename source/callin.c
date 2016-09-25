@@ -11,6 +11,11 @@
 #include "debug.h"
 #include "pwm.h"
 
+/* The purpose of linear validation will be move the robot in the forward/backward direction,
+   capture the odometry, and compare the results with the expected distance traveled.  The
+   goal is to see the robot moving in a straight line.
+ */
+
 #define LINEAR_BIAS_DISTANCE (1.0)
 #define LINEAR_BIAS_VELOCITY (0.150)
 #define LINEAR_BIAS_TOLERANCE (0.001)
@@ -23,7 +28,10 @@
 #define CALLIN_SAMPLE_RATE (PID_SAMPLE_RATE / 2)        
 #define CALLIN_SAMPLE_TIME_MS  SAMPLE_TIME_MS(CALLIN_SAMPLE_RATE)
 
-static CAL_LIN_PARAMS linear_params = {DIR_FORWARD, 5000, LINEAR_BIAS_DISTANCE, LINEAR_BIAS_VELOCITY};
+static CAL_LIN_PARAMS linear_params = {DIR_FORWARD, 
+                                       10000, 
+                                       LINEAR_BIAS_DISTANCE, 
+                                       LINEAR_BIAS_VELOCITY};
 
 static uint32 start_time;
 static uint16 old_debug_control_enabled;
@@ -47,29 +55,6 @@ static CALIBRATION_TYPE linear_calibration = {CAL_INIT_STATE,
                                               Stop,
                                               Results};
 
-/* The purpose of linear calibration will be to set the gains for the linear velocity PID.  The linear velocity PID
-   operates from within control and ensures that the commanded linear velocity is followed.  Its not clear at this
-   point how useful the linear velocity PID will be.  Each wheel has a PID controller whose purpose is to drive the
-   wheel at the specified velocity.  However, after left/right PID calibration the motor velocities are close but
-   they vary +/-.  Possibily the linear velocity PID could smooth the variations.  The velocity returned by odometry
-   is an average.  Its not clear if that will help or hurt.  The motion here will include a ramp up to prevent wheel
-   slipage.  Tracking will be done via the x distance parameter of odometry.
- 
-   Is it correct to say, that if the robot doesn't move the correct distance it is because it is not traveling at the
-   expected speed?  This isn't a timed motion, e.g., move at 0.1 m/s for 10 seconds to get 1 meter.  We're relying on
-   the accuracy of the encoding to tell us how far we've traveled.  Maybe there doesn't need to be a linear pid, just
-   a linear bias?
- 
-   The calibration the linear velocity PID, the following is done:
- 
-   Linear Velocity PID
-   1. Set the linear gains (try 0, 0, 0 to start)
-   2. Move the robot forward 1 meter
-   3. If the robot travel is less than or greater than 1 meter repeat.
-   Note: Each iteration will reverse the direction of the robot, e.g., forward 1 meter, reverse 1 meter, forward 1 meter, etc,
-   so it is necessary to re-align the robot before each run (or not if you have plenty of room).
-
- */
 
 
 static uint8 Init(CAL_STAGE_TYPE stage, void *params)
@@ -120,7 +105,7 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
 
             Cal_SetLeftRightVelocity(velocity, velocity);
 
-            Ser_PutString("\r\nCalibrating ");
+            Ser_PutString("\r\nValidating ");
             Ser_PutString("\r\n");
             start_time = millis();
 
@@ -142,21 +127,35 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
         case CAL_VALIDATE_STAGE:
             if (millis() - start_time < p_lin_params->run_time)
             {
-                return CAL_OK;    
+                float left_dist = abs(Encoder_LeftGetDist());
+                float right_dist = abs(Encoder_RightGetDist());
+
+                if ( left_dist < p_lin_params->distance && right_dist < p_lin_params->distance )
+                {
+                    return CAL_OK;
+                }
+
+                return CAL_COMPLETE;
             }
+            Ser_PutString("\r\nRun time expired\r\n");
             break;
 
         default:
             break;
     }
 
-    Ser_PutString("Linear Validation Update\r\n");
     return CAL_COMPLETE;
 }
 
 static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
 {
+    float left_dist;
+    float right_dist;
+    float heading;
     char output[64];
+    char left_dist_str[10];
+    char right_dist_str[10];
+    char heading_str[10];
     CAL_LIN_PARAMS *p_lin_params = (CAL_LIN_PARAMS *)params;
 
     Cal_SetLeftRightVelocity(0, 0);
@@ -164,8 +163,22 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
     switch (stage)
     {
         case CAL_VALIDATE_STAGE:
+            left_dist = abs(Encoder_LeftGetDist());
+            right_dist = abs(Encoder_RightGetDist());
+            heading = (left_dist - right_dist)/TRACK_WIDTH;
+
+            ftoa(left_dist, left_dist_str, 3);    
+            ftoa(right_dist, right_dist_str, 3);
+            ftoa(heading, heading_str, 3);
             sprintf(output, "\r\n%s Linear validation complete\r\n", p_lin_params->direction == DIR_FORWARD ? "Forward" : "Backward");
             Ser_PutString(output);
+            sprintf(output, "Left Wheel Distance: %s\r\nRight Wheel Distance: %s\r\n", left_dist_str, right_dist_str);
+            Ser_PutString(output);
+            sprintf(output, "Heading: %s\r\n", heading_str);
+            Ser_PutString(output);
+            break;
+            
+        default:
             break;
     }
 
