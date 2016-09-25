@@ -13,7 +13,7 @@
 #include "control.h"
 #include "odom.h"
 
-#define STEP_VELOCITY_PERCENT  (0.8)    // 80% of maximum velocity
+#define STEP_VELOCITY_PERCENT  (0.2)    // 80% of maximum velocity
 
 static uint8 Init(CAL_STAGE_TYPE stage, void *params);
 static uint8 Start(CAL_STAGE_TYPE stage, void *params);
@@ -93,7 +93,8 @@ static float GetStepVelocity()
     return mps;
 }
 
-static float velocities[] = {0.0, 0.2, 0.5, 0.7, 0.5, 0.2, 0.0};
+#define MAX_NUM_VELOCITIES (7)
+static float velocities[MAX_NUM_VELOCITIES] = {0.0, 0.2, 0.5, 0.7, 0.5, 0.2, 0.0};
 static uint8 vel_index = 0;
 
 static void ResetPidValidationVelocity()
@@ -108,20 +109,22 @@ static float GetNextValidationVelocity(DIR_TYPE dir)
     if (dir == DIR_FORWARD)
     {
         value = velocities[vel_index];
-        vel_index = (vel_index + 1) % (sizeof(velocities)/sizeof(float));
+        vel_index++;// = (vel_index + 1) % (sizeof(velocities)/sizeof(float));
     }
     if (dir == DIR_BACKWARD)
     {
         value = -velocities[vel_index];
-        vel_index = (vel_index + 1) % (sizeof(velocities)/sizeof(float));
+        vel_index++;// = (vel_index + 1) % (sizeof(velocities)/sizeof(float));
     }
 
     return value;
 }
 
-static void SetNextValidationVelocity(CAL_PID_PARAMS *p_pid_params)
+static uint8 SetNextValidationVelocity(CAL_PID_PARAMS *p_pid_params)
 {
-
+    char velocity_str[10];
+    char outbuf[64];
+    
     float velocity = GetNextValidationVelocity(p_pid_params->direction);
     switch (p_pid_params->pid_type)
     {
@@ -133,6 +136,12 @@ static void SetNextValidationVelocity(CAL_PID_PARAMS *p_pid_params)
             Cal_SetLeftRightVelocity(0, velocity);
             break;
     }
+    
+    ftoa(velocity, velocity_str, 3);
+    sprintf(outbuf, "%s\r\n", velocity_str);
+    Ser_PutString(outbuf);
+    
+    return vel_index < MAX_NUM_VELOCITIES ? 1 : 0;
 }
 
 /*----------------------------------------------------------------------------------------------------------------------
@@ -143,34 +152,35 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
     CAL_PID_PARAMS *p_pid_params = (CAL_PID_PARAMS *)params;
     char banner[64];
     
-    sprintf(banner, "\r\n%s PID calibration\r\n", p_pid_params->name);
-    Ser_PutString(banner);
-    old_debug_control_enabled = debug_control_enabled;
     
     switch (stage)
     {
         case CAL_CALIBRATE_STAGE:
-            {
-                Cal_SetLeftRightVelocity(0, 0);
-                Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
+            sprintf(banner, "\r\n%s PID calibration\r\n", p_pid_params->name);
+            Ser_PutString(banner);
+            Cal_SetLeftRightVelocity(0, 0);
+            Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
 
-                switch (p_pid_params->pid_type)
-                {
-                    case PID_TYPE_LEFT:
-                        debug_control_enabled = DEBUG_LEFT_PID_ENABLE_BIT;// | DEBUG_LEFT_ENCODER_ENABLE_BIT;
-                        break;
-                        
-                    case PID_TYPE_RIGHT:
-                        debug_control_enabled = DEBUG_RIGHT_PID_ENABLE_BIT;// | DEBUG_RIGHT_ENCODER_ENABLE_BIT;
-                        break;
-                }        
-            }
+            old_debug_control_enabled = debug_control_enabled;
+
+            switch (p_pid_params->pid_type)
+            {
+                case PID_TYPE_LEFT:
+                    debug_control_enabled = DEBUG_LEFT_PID_ENABLE_BIT;// | DEBUG_LEFT_ENCODER_ENABLE_BIT;
+                    break;
+                    
+                case PID_TYPE_RIGHT:
+                    debug_control_enabled = DEBUG_RIGHT_PID_ENABLE_BIT;// | DEBUG_RIGHT_ENCODER_ENABLE_BIT;
+                    break;
+            }        
             break;
             
         case CAL_VALIDATE_STAGE:
             sprintf(banner, "\r\n%s PID validation\r\n", p_pid_params->name);
             Ser_PutString(banner);
+            
             old_debug_control_enabled = debug_control_enabled;
+            
             Cal_SetLeftRightVelocity(0, 0);
             Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
             ResetPidValidationVelocity();
@@ -207,9 +217,11 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
             gains[2] = Cal_ReadResponse();
             Ser_PutString("\r\n");
             
+            Pid_Enable(TRUE);            
             Encoder_Reset();
             Pid_Reset();
             Odom_Reset();
+            
             float step_velocity = GetStepVelocity();
 
             switch (p_pid_params->pid_type)
@@ -233,16 +245,16 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
 
             
         case CAL_VALIDATE_STAGE:
-            /* Hmmm, what can we do for validation of the PID 
-             * 
-             * Maybe we can spit out the encoder values (count/sec, meter/second) in a format conducive to plotting
-             * 
-             */
-            SetNextValidationVelocity(p_pid_params);
-
-            Ser_PutString("\r\nValibrating ");
+            Ser_PutString("\r\nValidating ");
             Ser_PutString("\r\n");
             start_time = millis();
+            
+            Pid_Enable(TRUE);            
+            Encoder_Reset();
+            Pid_Reset();
+            Odom_Reset();
+
+            SetNextValidationVelocity(p_pid_params);
 
             break;
 
@@ -273,7 +285,14 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
             {
                 return CAL_OK;    
             }
-            SetNextValidationVelocity(p_pid_params);
+            start_time = millis();
+            uint8 result = SetNextValidationVelocity(p_pid_params);
+            if (!result)
+            {
+                return CAL_COMPLETE;
+            }
+            
+            return CAL_OK;
             break;
     }
 
@@ -326,18 +345,28 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
     float gains[3];
     CAL_PID_PARAMS *p_pid_params = (CAL_PID_PARAMS *)params;
     
-    Ser_PutString("\r\nPrinting PID calibration results\r\n");
-    
-    switch (p_pid_params->pid_type)
+    switch (stage)
     {
-        case PID_TYPE_LEFT:
-            Pid_LeftGetGains(&gains[0], &gains[1], &gains[2]);
-            Cal_PrintGains("Left PID", gains);
+        case CAL_CALIBRATE_STAGE:
+
+            Ser_PutString("\r\nPrinting PID calibration results\r\n");
+    
+            switch (p_pid_params->pid_type)
+            {
+                case PID_TYPE_LEFT:
+                    Pid_LeftGetGains(&gains[0], &gains[1], &gains[2]);
+                    Cal_PrintGains("Left PID", gains);
+                    break;
+                
+                case PID_TYPE_RIGHT:
+                    Pid_RightGetGains(&gains[0], &gains[1], &gains[2]);
+                    Cal_PrintGains("Right PID", gains);
+                    break;
+            }
             break;
-        
-        case PID_TYPE_RIGHT:
-            Pid_RightGetGains(&gains[0], &gains[1], &gains[2]);
-            Cal_PrintGains("Right PID", gains);
+            
+        case CAL_VALIDATE_STAGE:
+            Ser_PutString("\r\nPrinting PID validation results\r\n");
             break;
     }
         

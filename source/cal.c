@@ -319,16 +319,35 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
             Ser_PutString("\r\nPerforing Left PID validation in the forward direction.\r\n");
             CalPid_LeftValidation->stage = CAL_VALIDATE_STAGE;
             CalPid_LeftValidation->state = CAL_INIT_STATE;
+            ((CAL_PID_PARAMS *)(CalPid_LeftValidation->params))->direction = DIR_FORWARD;
             return (CALIBRATION_TYPE *) CalPid_LeftValidation;
             break;
 
         case PID_LEFT_BWD_VAL_CMD:
+            Ser_WriteByte(cmd);
+            Ser_PutString("\r\nPerforing Left PID validation in the backward direction.\r\n");
+            CalPid_LeftValidation->stage = CAL_VALIDATE_STAGE;
+            CalPid_LeftValidation->state = CAL_INIT_STATE;
+            ((CAL_PID_PARAMS *)(CalPid_LeftValidation->params))->direction = DIR_BACKWARD;
+            return (CALIBRATION_TYPE *) CalPid_LeftValidation;
             break;
 
         case PID_RIGHT_FWD_VAL_CMD:
+            Ser_WriteByte(cmd);
+            Ser_PutString("\r\nPerforing Right PID validation in the forward direction.\r\n");
+            CalPid_RightValidation->stage = CAL_VALIDATE_STAGE;
+            CalPid_RightValidation->state = CAL_INIT_STATE;
+            ((CAL_PID_PARAMS *)(CalPid_RightValidation->params))->direction = DIR_FORWARD;
+            return (CALIBRATION_TYPE *) CalPid_RightValidation;
             break;
 
         case PID_RIGHT_BWD_VAL_CMD:
+            Ser_WriteByte(cmd);
+            Ser_PutString("\r\nPerforing Right PID validation in the backward direction.\r\n");
+            CalPid_RightValidation->stage = CAL_VALIDATE_STAGE;
+            CalPid_RightValidation->state = CAL_INIT_STATE;
+            ((CAL_PID_PARAMS *)(CalPid_RightValidation->params))->direction = DIR_BACKWARD;
+            return (CALIBRATION_TYPE *) CalPid_RightValidation;
             break;
                                 
         default:            
@@ -421,11 +440,9 @@ static void ProcessCalibration(CALIBRATION_TYPE *cal)
             
         case CAL_DONE_STATE:
         default:
-            if (active_cal)
-            {
-                active_cal = (CALIBRATION_TYPE *) 0;
-                DisplayMenu(cal->stage);
-            }
+            active_cal = (CALIBRATION_TYPE *) 0;
+            active_val = (CALIBRATION_TYPE *) 0;
+            DisplayMenu(cal->stage);
             break;
     }
 }
@@ -540,6 +557,7 @@ void Cal_Update()
             
             if (active_val)
             {
+                Control_OverrideDebug(TRUE);
                 ProcessCalibration(active_val);
             }
             
