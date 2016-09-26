@@ -1,4 +1,21 @@
+/* ========================================
+ *
+ * Copyright YOUR COMPANY, THE YEAR
+ * All Rights Reserved
+ * UNPUBLISHED, LICENSED SOFTWARE.
+ *
+ * CONFIDENTIAL AND PROPRIETARY INFORMATION
+ * WHICH IS THE PROPERTY OF your company.
+ *
+ * ========================================
+*/
+
+
+/*---------------------------------------------------------------------------------------------------
+ * Includes
+ *-------------------------------------------------------------------------------------------------*/
 #include <stdio.h>
+#include <limits.h>
 #include "calmotor.h"
 #include "motor.h"
 #include "pwm.h"
@@ -11,6 +28,9 @@
 #include "pid.h"
 
 
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/
 #define MAX_MOTOR_CAL_ITERATION (3)
 #define MOTOR_VALIDATION_LOWER_BOUND_PERCENTAGE (0.2)
 #define MOTOR_VALIDATION_UPPER_BOUND_PERCENTAGE (0.8)
@@ -40,21 +60,22 @@
 
  */
 
-static uint8 Init(CAL_STAGE_TYPE stage, void *params);
-static uint8 Start(CAL_STAGE_TYPE stage, void *params);
-static uint8 Update(CAL_STAGE_TYPE stage, void *params);
-static uint8 Stop(CAL_STAGE_TYPE stage, void *params);
-static uint8 Results(CAL_STAGE_TYPE stage, void *params);
-
+/*---------------------------------------------------------------------------------------------------
+ * Variables
+ *-------------------------------------------------------------------------------------------------*/
 static int32 cps_samples[CAL_NUM_SAMPLES];
 static uint16 pwm_samples[CAL_NUM_SAMPLES];
 static int32 cps_sum[CAL_NUM_SAMPLES];
 static CAL_DATA_TYPE cal_data;
 
-
 static float fwd_cps_validate[11] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 static float bwd_cps_validate[11] = {-0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0};
 
+static uint8 Init(CAL_STAGE_TYPE stage, void *params);
+static uint8 Start(CAL_STAGE_TYPE stage, void *params);
+static uint8 Update(CAL_STAGE_TYPE stage, void *params);
+static uint8 Stop(CAL_STAGE_TYPE stage, void *params);
+static uint8 Results(CAL_STAGE_TYPE stage, void *params);
 
 static CALIBRATION_TYPE motor_calibration = {CAL_INIT_STATE, 
                                              CAL_CALIBRATE_STAGE,
@@ -65,6 +86,62 @@ static CALIBRATION_TYPE motor_calibration = {CAL_INIT_STATE,
                                              Stop, 
                                              Results };
 
+/*---------------------------------------------------------------------------------------------------
+ * Functions
+ *-------------------------------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------------------------------
+ * Print Functions
+ *-------------------------------------------------------------------------------------------------*/
+
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: PrintAllMotorParams
+ * Description: Prints the left/right, forward/backward count/sec and pwm calibration values
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+static void PrintAllMotorParams()
+{
+    Ser_PutString("\r\n");
+    Cal_PrintSamples("Left-Backward", (int32 *) p_cal_eeprom->left_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_bwd.pwm_data);
+    Cal_PrintSamples("Left-Forward", (int32 *) p_cal_eeprom->left_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_fwd.pwm_data);
+    Cal_PrintSamples("Right-Backward", (int32 *) p_cal_eeprom->right_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_bwd.pwm_data);
+    Cal_PrintSamples("Right-Forward", (int32 *) p_cal_eeprom->right_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_fwd.pwm_data);
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: PrintVelocityParams
+ * Description: Prints the specified count/sec, meter/sec, and pwm values
+ * Parameters: label - string identifying the wheel 
+ *             cps - count/sec value
+ *             mps - meter/sec value
+ *             pwm - pulse-width modulation value
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+static void PrintVelocityParams(char *label, float cps, float mps, uint16 pwm)
+{
+    char cps_str[10];
+    char mps_str[10];
+    char output[64];
+    
+    ftoa(cps, cps_str, 3);
+    ftoa(mps, mps_str, 3);
+    
+    sprintf(output, "%s - cps: %s, mps: %s, pwm: %d\r\n", label, cps_str, mps_str, pwm);
+    Ser_PutString(output);
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: CalculateValidationValues
+ * Description: Calculates an array of values using a triangle profile based on calibration motor 
+ *              values. 
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static void CalculateValidationValues()
 /* This routine calculates a series of count/second values in a triangle profile (slow, fast, slow).  It uses the motor
    calibration data to determine a range  of forward and reverse values for each wheel.  The routine is called from
@@ -72,12 +149,9 @@ static void CalculateValidationValues()
  */
 {
     uint8 ii;
-    char outbuf[64];
-    char str_val[10];
     
     if (p_cal_eeprom->status & CAL_MOTOR_BIT)
-    {
-    
+    {    
         float left_forward_cps_max = p_cal_eeprom->left_motor_fwd.cps_max / p_cal_eeprom->left_motor_fwd.cps_scale;
         float right_forward_cps_max = p_cal_eeprom->right_motor_fwd.cps_max / p_cal_eeprom->right_motor_fwd.cps_scale;
         float left_backward_cps_min = p_cal_eeprom->left_motor_bwd.cps_min / p_cal_eeprom->left_motor_bwd.cps_scale;
@@ -112,6 +186,16 @@ static void CalculateValidationValues()
     }
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: CalculatePwmSamples
+ * Description: Calculates an array of pwm values based on the specified wheel, and direction. 
+ * Parameters: wheel - left/right wheel 
+ *             dir - forward/backward direction
+ *             pwm_samples - array of pwm values
+ *             reverse_pwm - indicates the ordering within the pwm samples
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static void CalculatePwmSamples(WHEEL_TYPE wheel, DIR_TYPE dir, uint16 *pwm_samples, uint8 *reverse_pwm)
 {
     /*
@@ -189,6 +273,14 @@ static void CalculatePwmSamples(WHEEL_TYPE wheel, DIR_TYPE dir, uint16 *pwm_samp
     }
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: AddSamplesToSum
+ * Description: Adds an array of values to a sum 
+ * Parameters: cap_samples - array of count/sec samples
+ *             cps_sum - resulting sum
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static void AddSamplesToSum(int32 *cps_samples, int32 *cps_sum)
 {
     uint8 ii;
@@ -198,6 +290,15 @@ static void AddSamplesToSum(int32 *cps_samples, int32 *cps_sum)
     }
 }
     
+/*---------------------------------------------------------------------------------------------------
+ * Name: CalculateAvgCpsSamples
+ * Description: Calculates an average for each array entry
+ * Parameters: cps_sum - array of count/sec sums
+ *             num_runs - number of runs used to collect the sum
+ *             avg_cps_samples - array of averages
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static void CalculateAvgCpsSamples(int32 *cps_sum, uint8 num_runs, int32 *avg_cps_samples)
 {
     uint8 ii;
@@ -207,11 +308,21 @@ static void CalculateAvgCpsSamples(int32 *cps_sum, uint8 num_runs, int32 *avg_cp
     }
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: CalculateMinMaxCpsSample
+ * Description: Calculates the min/max from an array of values
+ * Parameters: samples - array of values
+ *             num_samples - the number of samples in the array
+ *             min - the minimum value of the array
+ *             max - the maximum value of the array
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static void CalculateMinMaxCpsSample(int32 *samples, uint8 num_samples, int32 *min, int32 *max)
 {
     uint8 ii;
-    *min = 2147483647;
-    *max = -2147483648;    
+    *min = INT_MAX;
+    *max = INT_MIN;    
     
     for (ii = 0; ii < num_samples; ++ii)
     {
@@ -226,6 +337,16 @@ static void CalculateMinMaxCpsSample(int32 *samples, uint8 num_samples, int32 *m
     }
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: CollectCpsPwmSamples
+ * Description: Collects count/sec values at a given pwm value
+ * Parameters: set_pwm - motor set pwm function
+ *             cnts_per_sec - encoder get count/sec function
+ *             pwm - the pwm to be driven
+ *             num_avg_iter - 
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static int32 CollectCpsPwmSamples(SET_MOTOR_PWM_FUNC_TYPE set_pwm, GET_ENCODER_FUNC_TYPE cnts_per_sec, uint16 pwm, uint8 num_avg_iter)
 {
     uint8 ii;
@@ -251,6 +372,17 @@ static int32 CollectCpsPwmSamples(SET_MOTOR_PWM_FUNC_TYPE set_pwm, GET_ENCODER_F
     return (int32) cnts_per_sec_sum / num_avg_iter;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: CollectPwmCpsSamples
+ * Description: 
+ * Parameters: wheel - 
+ *             reverse_pwm -
+ *             num_avg_iter -
+ *             pwm_samples -
+ *             cps_samples - 
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static void CollectPwmCpsSamples(WHEEL_TYPE wheel, uint8 reverse_pwm, uint8 num_avg_iter, uint16 *pwm_samples, int32 *cps_samples)
 {
     uint8 index;
@@ -276,13 +408,13 @@ static void CollectPwmCpsSamples(WHEEL_TYPE wheel, uint8 reverse_pwm, uint8 num_
     memset(cps_samples, 0, CAL_NUM_SAMPLES * sizeof(int32));
     
     if (reverse_pwm)
-{
+    {
         for ( index = 0; index < CAL_NUM_SAMPLES; ++index)
         {
             uint8 offset = CAL_NUM_SAMPLES - 1 - index;
             cps_samples[offset] = CollectCpsPwmSamples(set_pwm, get_cps, pwm_samples[offset], num_avg_iter);
         }
-}
+    }
     else
     {
         for ( index = 0; index < CAL_NUM_SAMPLES; ++index)
@@ -295,6 +427,17 @@ static void CollectPwmCpsSamples(WHEEL_TYPE wheel, uint8 reverse_pwm, uint8 num_
     set_pwm(PWM_STOP);
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: CalibrateWheelSpeed
+ * Description: 
+ * Parameters: wheel - 
+ *             dir -
+ *             num_runs -
+ *             cps_samples -
+ *             pwm_samples - 
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static void CalibrateWheelSpeed(WHEEL_TYPE wheel, DIR_TYPE dir, uint8 num_runs, int32 *cps_samples, uint16 *pwm_samples)
 /*
     calculate the PWM samples
@@ -324,6 +467,16 @@ static void CalibrateWheelSpeed(WHEEL_TYPE wheel, DIR_TYPE dir, uint8 num_runs, 
     CalculateAvgCpsSamples(cps_sum, num_runs, cps_samples);
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: StoreWheelSpeedSamples
+ * Description: 
+ * Parameters: wheel - 
+ *             dir -
+ *             cps_samples -
+ *             pwm_samples - 
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static void StoreWheelSpeedSamples(WHEEL_TYPE wheel, DIR_TYPE dir, int32 *cps_samples, uint16 *pwm_samples)
 {
     CalculateMinMaxCpsSample(cps_samples, CAL_NUM_SAMPLES, &cal_data.cps_min, &cal_data.cps_max);
@@ -337,29 +490,16 @@ static void StoreWheelSpeedSamples(WHEEL_TYPE wheel, DIR_TYPE dir, int32 *cps_sa
     Nvstore_WriteBytes((uint8 *) &cal_data, sizeof(cal_data), offset);
 }
 
-static void PrintAllMotorParams()
-{
-    Ser_PutString("\r\n");
-    Cal_PrintSamples("Left-Backward", (int32 *) p_cal_eeprom->left_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_bwd.pwm_data);
-    Cal_PrintSamples("Left-Forward", (int32 *) p_cal_eeprom->left_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_fwd.pwm_data);
-    Cal_PrintSamples("Right-Backward", (int32 *) p_cal_eeprom->right_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_bwd.pwm_data);
-    Cal_PrintSamples("Right-Forward", (int32 *) p_cal_eeprom->right_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_fwd.pwm_data);
-}
-
-
-static void PrintVelocityParams(char *label, float cps, float mps, uint16 pwm)
-{
-    char cps_str[10];
-    char mps_str[10];
-    char output[64];
-    
-    ftoa(cps, cps_str, 3);
-    ftoa(mps, mps_str, 3);
-    
-    sprintf(output, "%s - cps: %s, mps: %s, pwm: %d\r\n", label, cps_str, mps_str, pwm);
-    Ser_PutString(output);
-}
-
+/*---------------------------------------------------------------------------------------------------
+ * Name: DoVelocityValidation
+ * Description: 
+ * Parameters: label - 
+ *             cps -
+ *             num_cps -
+ *             wheel - 
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static void DoVelocityValidation(char *label, float *cps, uint8 num_cps, WHEEL_TYPE wheel)
 {
     uint8 ii;
@@ -369,8 +509,6 @@ static void DoVelocityValidation(char *label, float *cps, uint8 num_cps, WHEEL_T
     SET_MOTOR_PWM_FUNC_TYPE set_pwm;
     GET_MOTOR_PWM_FUNC_TYPE get_pwm;
     GET_ENCODER_FUNC_TYPE get_mps;
-    char outbuf[64];
-    char str_val[10];
     
     switch (wheel)
     {
@@ -414,19 +552,29 @@ static void DoVelocityValidation(char *label, float *cps, uint8 num_cps, WHEEL_T
  * Calibration Interface Routines
  *---------------------------------------------------------------------------------------------------------------------*/
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Init
+ * Description: Calibration/Validation interface Init function.  Performs initialization for Linear 
+ *              Validation.
+ * Parameters: stage - the calibration/validation stage 
+ *             params - PID calibration/validation parameters, e.g. direction, run time, etc. 
+ * Return: uint8 - CAL_OK
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 {
     params = params;
+
+    Pid_Enable(FALSE);
+
     switch (stage)
     {
         case CAL_CALIBRATE_STAGE:
             Ser_PutString("\r\nInitialize motor calibration\r\n");            
-            Pid_Enable(FALSE);
             break;
             
         case CAL_VALIDATE_STAGE:
             Ser_PutString("\r\nInitialize motor validation\r\n");
-            Pid_Enable(FALSE);
             CalculateValidationValues();
             break;
     }
@@ -434,6 +582,14 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
     return CAL_OK;    
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Start
+ * Description: Calibration/Validation interface Start function.  Start Linear Validation.
+ * Parameters: stage - the calibration/validation stage 
+ *             params - motor validation parameters, e.g. direction, run time, etc. 
+ * Return: uint8 - CAL_OK
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static uint8 Start(CAL_STAGE_TYPE stage, void *params)
 {
     params = params;
@@ -452,6 +608,15 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
     return CAL_OK;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Update
+ * Description: Calibration/Validation interface Update function.  Called periodically to evaluate 
+ *              the termination condition.
+ * Parameters: stage - the calibration/validation stage 
+ *             params - motor validation parameters, e.g. direction, run time, etc. 
+ * Return: uint8 - CAL_OK, CAL_COMPLETE
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static uint8 Update(CAL_STAGE_TYPE stage, void *params)
 {
     uint16 last_debug_control_enabled;
@@ -498,6 +663,14 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
     return CAL_OK;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Stop
+ * Description: Calibration/Validation interface Stop function.  Called to stop validation.
+ * Parameters: stage - the calibration/validation stage
+ *             params - motor validation parameters 
+ * Return: uint8 - CAL_OK
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
 {
     params = params;
@@ -515,6 +688,15 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
     return CAL_OK;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Results
+ * Description: Calibration/Validation interface Results function.  Called to display calibration/ 
+ *              validation results. 
+ * Parameters: stage - the calibration/validation stage 
+ *             params - motor calibration/validation parameters 
+ * Return: uint8 - CAL_OK
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static uint8 Results(CAL_STAGE_TYPE stage, void *params)
 {
     switch (stage)

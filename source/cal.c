@@ -9,6 +9,10 @@
  *
  * ========================================
 */
+
+/*---------------------------------------------------------------------------------------------------
+ * Includes
+ *-------------------------------------------------------------------------------------------------*/
 #include <stdio.h>
 #include <stdlib.h>
 #include "cal.h"
@@ -26,6 +30,10 @@
 #include "calang.h"
 #include "debug.h"
 #include "control.h"
+
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/
 
 /* Calibration interface commands */
 #define NO_CMD              '0'
@@ -52,12 +60,17 @@
 #define PID_DISP_CMD         '3'
 #define ALL_DISP_CMD         '4'
 
-char* cal_stage_to_string[] = {"CALIBRATION", "VALIDATE"};
-char* cal_state_to_string[] = {"INIT STATE", "START STATE", "RUNNING STATE", "STOP STATE", "RESULTS STATE", "DONE STATE"};
-
-
+/*---------------------------------------------------------------------------------------------------
+ * Types
+ *-------------------------------------------------------------------------------------------------*/
 typedef enum {UI_STATE_INIT, UI_STATE_CALIBRATION, UI_STATE_VALIDATION, UI_STATE_SETTINGS, UI_STATE_EXIT} UI_STATE_ENUM;
 
+/*---------------------------------------------------------------------------------------------------
+ * Variables
+ *-------------------------------------------------------------------------------------------------*/
+
+char* cal_stage_to_string[] = {"CALIBRATION", "VALIDATE"};
+char* cal_state_to_string[] = {"INIT STATE", "START STATE", "RUNNING STATE", "STOP STATE", "RESULTS STATE", "DONE STATE"};
 
 static UI_STATE_ENUM ui_state;
 
@@ -67,6 +80,20 @@ static CALIBRATION_TYPE *active_val;
 static float left_cmd_velocity;
 static float right_cmd_velocity;
 
+/*---------------------------------------------------------------------------------------------------
+ * Functions
+ *-------------------------------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: LeftTarget/RightTarget
+ * Description: Local functions used to replace the left/right velocity source for calibration/validation.
+ *              Normally, the left/right velocity is received from the I2C module via the Control
+ *              module.  However, for calibration/validation left/right velocity values under control
+ *              of the calibration module via Left/RightTarget.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static float LeftTarget()
 {
     return left_cmd_velocity;
@@ -77,6 +104,14 @@ static float RightTarget()
     return right_cmd_velocity;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: ClearCalibrationStatusBit/SetCalibrationStatusBit
+ * Description: Clears/Sets the specified bit in the calibration status register and the EEPROM 
+ *              status field.
+ * Parameters: bit - the bit number to be Cleared/Set - 0 .. 15.
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void ClearCalibrationStatusBit(uint16 bit)
 {
     uint16 status = p_cal_eeprom->status &= ~bit;
@@ -92,7 +127,22 @@ void SetCalibrationStatusBit(uint16 bit)
 }
 
 
-/* Calibration Print Routines */
+/*---------------------------------------------------------------------------------------------------
+ * Calibration Print Routines 
+ *  
+ * Routines used by other calibration modules for printing values to the serial port 
+ *-------------------------------------------------------------------------------------------------*/    
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: Cal_PrintSamples
+ * Description: Prints the count/sec and pwm samples.  Called from the CalMotor module.
+ * Parameters: label - string containing the motor identifier, e.g., left or right 
+ *             cps_samples - an array of count/sec samples
+ *             pwm_samples - an array of pwm samples
+ *             Note: Array size is given by CAL_NUM_SAMPLES
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Cal_PrintSamples(char *label, int32 *cps_samples, uint16 *pwm_samples)
 {
     uint8 ii;
@@ -111,6 +161,14 @@ void Cal_PrintSamples(char *label, int32 *cps_samples, uint16 *pwm_samples)
     Ser_PutString(buffer);
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Cal_PrintGains
+ * Description: Prints the PID gains.  Called from the CalPid module.
+ * Parameters: label - string containing the pid identifier, e.g., left pid or right pid. 
+ *             gains - an array of float values corresponding to Kp, Ki, and Kd. 
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Cal_PrintGains(char *label, float *gains)
 {
     char output[64];
@@ -126,6 +184,17 @@ void Cal_PrintGains(char *label, float *gains)
     Ser_PutString(output);
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Calibration Menu Routines 
+ *-------------------------------------------------------------------------------------------------*/    
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: DisplayCalMenu
+ * Description: Prints the Calibration Menu to the serial port
+ * Parameters: None 
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static void DisplayCalMenu()
 {
     Ser_PutString("\r\nWelcome to the Arlobot calibration interface.\r\n");
@@ -136,9 +205,16 @@ static void DisplayCalMenu()
     Ser_PutString("\r\n");
     Ser_PutString("\r\nEnter X to exit calibration\r\n");
     Ser_PutString("\r\n");
-    Ser_PutString("Make an entry [1-5,X]: ");
+    Ser_PutString("Make an entry [1-3,X]: ");
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: DisplayValMenu
+ * Description: Prints the Validation Menu to the serial port
+ * Parameters: None 
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static void DisplayValMenu()
 {
     Ser_PutString("\r\nWelcome to the Arlobot validation interface.\r\n");
@@ -157,6 +233,47 @@ static void DisplayValMenu()
     Ser_PutString("Make an entry [1-8,X]: ");
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: DisplaySettingsMenu
+ * Description: Prints the settings menu used to display the current calibration state.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+static void DisplaySettingsMenu()
+{
+    Ser_PutString("\r\nWelcome to the Arlobot settings display\r\n");
+    Ser_PutString("The following settings can be displayed\r\n");
+    Ser_PutString("    1. Left Motor Calibration\r\n");
+    Ser_PutString("    2. Right Motor Calibration\r\n");
+    Ser_PutString("    3. PID Gains: left pid and right pid\r\n");
+    Ser_PutString("    4. Display All\r\n");
+    Ser_PutString("\r\n");
+    Ser_PutString("\r\nEnter X to exit validation\r\n");
+    Ser_PutString("\r\n");
+    Ser_PutString("Make an entry [1-4,X]: ");
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: DisplayExit
+ * Description: Prints the exit menu.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+static void DisplayExit()
+{
+    Ser_PutString("\r\nExiting Arlobot calibration/validation interface.");
+    Ser_PutString("\r\nType 'C' to enter calibration, 'V' to enter validation, 'D' to display settings\r\n");
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: DisplayMenu
+ * Description: Displays a menu, either calibration or validation, depending on the stage
+ * Parameters: stage - the current calibration/validation stage 
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static void DisplayMenu(CAL_STAGE_TYPE stage)
 {
     debug_control_enabled = 0;
@@ -172,27 +289,14 @@ static void DisplayMenu(CAL_STAGE_TYPE stage)
 
 }
 
-static void DisplaySettingsMenu()
-{
-    Ser_PutString("\r\nWelcome to the Arlobot settings display\r\n");
-    Ser_PutString("The following settings can be displayed\r\n");
-    Ser_PutString("    1. Left Motor Calibration\r\n");
-    Ser_PutString("    2. Right Motor Calibration\r\n");
-    Ser_PutString("    3. PID Gains: left pid and right pid\r\n");
-    Ser_PutString("    4. Display All\r\n");
-    Ser_PutString("\r\n");
-    Ser_PutString("\r\nEnter X to exit validation\r\n");
-    Ser_PutString("\r\n");
-    Ser_PutString("Make an entry [1-5,X]: ");
-}
-
-static void DisplayExit()
-{
-    Ser_PutString("\r\nExiting Arlobot calibration/validation interface.");
-    Ser_PutString("\r\nType 'C' to enter calibration, 'V' to enter validation, 'D' to display settings\r\n");
-}
-
-static void ProcessSettings(uint8 cmd)
+/*---------------------------------------------------------------------------------------------------
+ * Name: ProcessSettingsCmd
+ * Description: Processes the setting command request to display the requested calibration values
+ * Parameters: cmd - the calibration/validation command requested
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+static void ProcessSettingsCmd(uint8 cmd)
 {
     switch (cmd)
     {
@@ -238,6 +342,13 @@ static void ProcessSettings(uint8 cmd)
     }
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: GetCommand
+ * Description: Gets the calibration/validation/display command from the serial port
+ * Parameters: None
+ * Return: the command entered on the serial port.
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static uint8 GetCommand()
 {
     char value = Ser_ReadByte();
@@ -268,6 +379,13 @@ static uint8 GetCommand()
     return value;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: GetCalibration
+ * Description: Gets the calibration specified by command
+ * Parameters: cmd - the requested calibration.
+ * Return: the specified calibration type; otherwise, NULL.
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static CALIBRATION_TYPE* GetCalibration(uint8 cmd)
 {
     CAL_PID_PARAMS *p_pid_params;
@@ -298,6 +416,13 @@ static CALIBRATION_TYPE* GetCalibration(uint8 cmd)
     return (CALIBRATION_TYPE *) 0;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: GetValidation
+ * Description: Gets the validation specified by command
+ * Parameters: cmd - the requested validation.
+ * Return: the specified validation type; otherwise, NULL.
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static CALIBRATION_TYPE* GetValidation(uint8 cmd)
 {
     switch (cmd)
@@ -380,51 +505,66 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
     return (CALIBRATION_TYPE *) 0;
 }
 
-static void HandleError(CALIBRATION_TYPE *cal)
+/*---------------------------------------------------------------------------------------------------
+ * Name: HandleError
+ * Description: Prints an error message to the serial for the specified calibration/validation
+ * Parameters: calval - the requested calibration/validation.
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+static void HandleError(CALIBRATION_TYPE *calval)
 {
     char outbuf[64];
     
     /* Maybe more can go here, but for now, just print an error */
     
-    sprintf(outbuf, "Error processing stage %s, state %s\r\n", CAL_STAGE_TO_STRING(cal->stage), CAL_STATE_TO_STRING(cal->state));
+    sprintf(outbuf, "Error processing stage %s, state %s\r\n", CAL_STAGE_TO_STRING(calval->stage), CAL_STATE_TO_STRING(calval->state));
     Ser_PutString(outbuf);
 }
 
-static void ProcessCalibration(CALIBRATION_TYPE *cal)
+/*---------------------------------------------------------------------------------------------------
+ * Name: Process
+ * Description: The main routine for processing a calibration/validation.  Each calibration/validation 
+ *              module provides a common function interface: init, start, update, stop, results. 
+ * Parameters: calval - the requested calibration/validation.
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+static void Process(CALIBRATION_TYPE *calval)
 {
     uint8 result;
     
-    switch (cal->state)
+    switch (calval->state)
     {
         case CAL_INIT_STATE:
-            result = cal->init(cal->stage, cal->params);
+            result = calval->init(calval->stage, calval->params);
             if (result == CAL_OK)
             {
-                cal->state = CAL_START_STATE;
+                calval->state = CAL_START_STATE;
             }
             else
             {
-                HandleError(cal);
+                HandleError(calval);
             }
             break;
             
         case CAL_START_STATE:
-            result = cal->start(cal->stage, cal->params);
+            result = calval->start(calval->stage, calval->params);
             if (result == CAL_OK)
             {
-                cal->state = CAL_RUNNING_STATE;
+                calval->state = CAL_RUNNING_STATE;
             }
             else
             {
-                HandleError(cal);
+                HandleError(calval);
             }
             break;
             
         case CAL_RUNNING_STATE:
-            result = cal->update(cal->stage, cal->params);
+            result = calval->update(calval->stage, calval->params);
             if (result == CAL_COMPLETE)
             {
-                cal->state = CAL_STOP_STATE;
+                calval->state = CAL_STOP_STATE;
             }
             else if (result == CAL_OK)
             {
@@ -432,31 +572,31 @@ static void ProcessCalibration(CALIBRATION_TYPE *cal)
             }
             else
             {
-                HandleError(cal);
+                HandleError(calval);
             }
             break;
             
         case CAL_STOP_STATE:
-            result = cal->stop(cal->stage, cal->params);
+            result = calval->stop(calval->stage, calval->params);
             if (result == CAL_OK)
             {
-                cal->state = CAL_RESULTS_STATE;
+                calval->state = CAL_RESULTS_STATE;
             }
             else
             {
-                HandleError(cal);
+                HandleError(calval);
             }
             break;
             
         case CAL_RESULTS_STATE:
-            result = cal->results(cal->stage, cal->params);
+            result = calval->results(calval->stage, calval->params);
             if (result == CAL_OK)
             {
-                cal->state = CAL_DONE_STATE;                
+                calval->state = CAL_DONE_STATE;                
             }
             else
             {
-                HandleError(cal);
+                HandleError(calval);
             }
             break;
             
@@ -464,14 +604,54 @@ static void ProcessCalibration(CALIBRATION_TYPE *cal)
         default:
             active_cal = (CALIBRATION_TYPE *) 0;
             active_val = (CALIBRATION_TYPE *) 0;
-            DisplayMenu(cal->stage);
+            DisplayMenu(calval->stage);
             break;
     }
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: CpsToPwm
+ * Description: Converts count/sec to PWM 
+ *              This routine searches the count/sec array (cps_data) to find values immediately less 
+ *              than and greater than the specified count/sec value (cps) to obtain the corresponding
+ *              indicies - upper/lower.  The indicies are then used to interpolate a PWM value.
+ *  
+ * Parameters: cps       - the specified count/sec
+ *             cps_data  - an array of count/sec values to be searched
+ *             pwm_data  - an array of pwm values for selection
+ *             data_size - the number of values in each array
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+static uint16 CpsToPwm(int32 cps, int32 *cps_data, uint16 *pwm_data, uint8 data_size)
+{   
+    uint16 pwm = PWM_STOP;
+    uint8 lower = 0;
+    uint8 upper = 0;
+
+    if (cps > 0 || cps < 0)
+    {
+        BinaryRangeSearch(cps, cps_data, data_size, &lower, &upper);
+        
+        pwm = Interpolate(cps, cps_data[lower], cps_data[upper], pwm_data[lower], pwm_data[upper]);
+
+        return constrain(pwm, MIN_PWM_VALUE, MAX_PWM_VALUE);
+    }
+
+    return pwm;
 }
 
 /*----------------------------------------------------------------------------------------------------------------------
  * Module Interface Routines
  *---------------------------------------------------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: Cal_Init
+ * Description: Initializes the calibration module and submodules.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Cal_Init()
 {
     p_cal_eeprom = NVSTORE_CAL_EEPROM_BASE;
@@ -483,6 +663,14 @@ void Cal_Init()
     CalLin_Init();
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Cal_Start
+ * Description: Reads the current calibration status from EEPROM and sets it into the I2C module. 
+ *              Note: This can only be done after the non-volatile memory module has been initialized. 
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Cal_Start()
 {
     //Nvstore_WriteBytes((uint8 *) &left_fwd_cal_data, sizeof(CAL_DATA_TYPE), NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_motor_fwd));
@@ -497,6 +685,13 @@ void Cal_Start()
     I2c_SetCalibrationStatus(status);        
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Cal_Update
+ * Description: Called from the main loop to process calibration/validation. 
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Cal_Update()
 /* 
     The following options are available in this modules:
@@ -563,7 +758,7 @@ void Cal_Update()
             if (active_cal)
             {
                 Control_OverrideDebug(TRUE);
-                ProcessCalibration(active_cal);
+                Process(active_cal);
             }                        
             
             if (cmd == EXIT_CMD)
@@ -581,7 +776,7 @@ void Cal_Update()
             if (active_val)
             {
                 Control_OverrideDebug(TRUE);
-                ProcessCalibration(active_val);
+                Process(active_val);
             }
             
             if (cmd == EXIT_CMD)
@@ -591,7 +786,7 @@ void Cal_Update()
             break;
             
         case UI_STATE_SETTINGS:
-            ProcessSettings(cmd);
+            ProcessSettingsCmd(cmd);
             
             if (cmd == EXIT_CMD)
             {
@@ -612,6 +807,13 @@ void Cal_Update()
     
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Cal_ReadResponse
+ * Description: Read a floating point value from the serial port. 
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 float Cal_ReadResponse()
 {
     uint8 digits[6];
@@ -637,18 +839,13 @@ float Cal_ReadResponse()
     return result;
 }
 
-void Cal_LeftGetMotorCalData(CAL_DATA_TYPE **fwd_cal_data, CAL_DATA_TYPE **bwd_cal_data)
-{
-    *fwd_cal_data = (CAL_DATA_TYPE *) &(p_cal_eeprom->left_motor_fwd);
-    *bwd_cal_data = (CAL_DATA_TYPE *) &(p_cal_eeprom->left_motor_bwd);
-}
-
-void Cal_RightGetMotorCalData(CAL_DATA_TYPE **fwd_cal_data, CAL_DATA_TYPE **bwd_cal_data)
-{
-    *fwd_cal_data = (CAL_DATA_TYPE *) &(p_cal_eeprom->right_motor_fwd);
-    *bwd_cal_data = (CAL_DATA_TYPE *) &(p_cal_eeprom->right_motor_bwd);
-}
-
+/*---------------------------------------------------------------------------------------------------
+ * Name: Cal_LeftGetPidGains/Cal_RightGetPidGains
+ * Description: Returns the left/right PID gains from EEPROM. 
+ * Parameters: None
+ * Return: pointer to CAL_PID_TYPE
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 CAL_PID_TYPE * Cal_LeftGetPidGains()
 {
     return (CAL_PID_TYPE *) &p_cal_eeprom->left_gains;
@@ -659,30 +856,29 @@ CAL_PID_TYPE * Cal_RightGetPidGains()
     return (CAL_PID_TYPE *) &p_cal_eeprom->right_gains;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Cal_SetLeftRightVelocity
+ * Description: Sets the left/right velocity for calibration/validation.  This routine is called from 
+ *              calibration submodules to set wheel speed. 
+ * Parameters: left - the left wheel speed in meter/second 
+ *             right - the right wheel speed in meter/second 
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Cal_SetLeftRightVelocity(float left, float right)
 {
     left_cmd_velocity = left;
     right_cmd_velocity = right;
 }
 
-static uint16 CalcPwm(int32 cps, int32 *cps_data, uint16 *pwm_data, uint8 data_size)
-{   
-    uint16 pwm = PWM_STOP;
-    uint8 lower = 0;
-    uint8 upper = 0;
-
-    if (cps > 0 || cps < 0)
-    {
-        BinaryRangeSearch(cps, cps_data, data_size, &lower, &upper);
-        
-        pwm = Interpolate(cps, cps_data[lower], cps_data[upper], pwm_data[lower], pwm_data[upper]);
-
-        return constrain(pwm, MIN_PWM_VALUE, MAX_PWM_VALUE);
-    }
-
-    return pwm;
-}
-
+/*---------------------------------------------------------------------------------------------------
+ * Name: Cal_CpsToPwm
+ * Description: Public routine used to obtain a PWM value for a given wheel and count/sec 
+ * Parameters: wheel - left/right wheel 
+ *             cps - count/second
+ * Return: uint16 - PWM
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 uint16 Cal_CpsToPwm(WHEEL_TYPE wheel, float cps)
 {
     uint16 pwm;
@@ -698,7 +894,7 @@ uint16 Cal_CpsToPwm(WHEEL_TYPE wheel, float cps)
         CAL_DATA_TYPE *p_cal_data = WHEEL_DIR_TO_CAL_DATA[wheel][cps > 0 ? 0 : 1];
         
         cps = constrain((int32)(cps * p_cal_data->cps_scale), p_cal_data->cps_min, p_cal_data->cps_max);
-        pwm = CalcPwm(cps, &p_cal_data->cps_data[0], &p_cal_data->pwm_data[0], CAL_DATA_SIZE);
+        pwm = CpsToPwm(cps, &p_cal_data->cps_data[0], &p_cal_data->pwm_data[0], CAL_DATA_SIZE);
     }
     else
     {
@@ -708,10 +904,17 @@ uint16 Cal_CpsToPwm(WHEEL_TYPE wheel, float cps)
     return pwm;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Cal_Clear
+ * Description: Clears the motor and PID calibration bits. 
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Cal_Clear()
 {
-    ClearCalibrationStatusBit(CAL_MOTOR_BIT); // Clear Count to PWM calibration
-    ClearCalibrationStatusBit(CAL_PID_BIT); // Clear PID calibration
+    ClearCalibrationStatusBit(CAL_MOTOR_BIT);
+    ClearCalibrationStatusBit(CAL_PID_BIT);
 }
 
 /*-------------------------------------------------------------------------------*/

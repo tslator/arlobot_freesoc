@@ -1,3 +1,19 @@
+/* ========================================
+ *
+ * Copyright YOUR COMPANY, THE YEAR
+ * All Rights Reserved
+ * UNPUBLISHED, LICENSED SOFTWARE.
+ *
+ * CONFIDENTIAL AND PROPRIETARY INFORMATION
+ * WHICH IS THE PROPERTY OF your company.
+ *
+ * ========================================
+*/
+
+
+/*---------------------------------------------------------------------------------------------------
+ * Includes
+ *-------------------------------------------------------------------------------------------------*/
 #include <stdio.h>
 #include "config.h"
 #include "calpid.h"
@@ -13,22 +29,26 @@
 #include "control.h"
 #include "odom.h"
 
-#define STEP_VELOCITY_PERCENT  (0.2)    // 80% of maximum velocity
+/*---------------------------------------------------------------------------------------------------
+ * Includes
+ *-------------------------------------------------------------------------------------------------*/
+#define STEP_VELOCITY_PERCENT  (0.2)    // 20% of maximum velocity
+#define MAX_NUM_VELOCITIES     (7)
+
+/*---------------------------------------------------------------------------------------------------
+ * Variables
+ *-------------------------------------------------------------------------------------------------*/
+static uint32 start_time;
+static uint16 old_debug_control_enabled;
+
+static CAL_PID_PARAMS left_pid_params = {"left", PID_TYPE_LEFT, DIR_FORWARD, 5000};
+static CAL_PID_PARAMS right_pid_params = {"right", PID_TYPE_RIGHT, DIR_FORWARD, 5000};
 
 static uint8 Init(CAL_STAGE_TYPE stage, void *params);
 static uint8 Start(CAL_STAGE_TYPE stage, void *params);
 static uint8 Update(CAL_STAGE_TYPE stage, void *params);
 static uint8 Stop(CAL_STAGE_TYPE stage, void *params);
 static uint8 Results(CAL_STAGE_TYPE stage, void *params);
-
-extern volatile CAL_EEPROM_TYPE *p_cal_eeprom;
-
-static uint32 start_time;
-static uint16 old_debug_control_enabled;
-
-
-static CAL_PID_PARAMS left_pid_params = {"left", PID_TYPE_LEFT, DIR_FORWARD, 5000};
-static CAL_PID_PARAMS right_pid_params = {"right", PID_TYPE_RIGHT, DIR_FORWARD, 5000};
 
 static CALIBRATION_TYPE left_pid_calibration = {CAL_INIT_STATE,
                                                 CAL_CALIBRATE_STAGE,
@@ -48,6 +68,23 @@ static CALIBRATION_TYPE right_pid_calibration = {CAL_INIT_STATE,
                                                  Stop,
                                                  Results};
 
+
+static float velocities[MAX_NUM_VELOCITIES] = {0.0, 0.2, 0.5, 0.7, 0.5, 0.2, 0.0};
+static uint8 vel_index = 0;
+
+
+/*---------------------------------------------------------------------------------------------------
+ * Functions
+ *-------------------------------------------------------------------------------------------------*/
+
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: StoreLeftGains/StoreRightGains
+ * Description: Stores the specified gain values into the EEPROM for the left PID. 
+ * Parameters: gains - array of float values corresponding to Kp, Ki, Kd.
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static void StoreLeftGains(float *gains)
 {
     Nvstore_WriteFloat(gains[0], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.kp));
@@ -62,6 +99,13 @@ static void StoreRightGains(float *gains)
     Nvstore_WriteFloat(gains[2], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.kd));
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: GetStepVelocity
+ * Description: Calculates a step velocity at the percent based on the calibration motor values. 
+ * Parameters: None
+ * Return: float - velocity (meter/second)
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static float GetStepVelocity()
 /* The step input velocity is 80% of maximum wheel velocity.
    Maximum wheel velocity is determined by wheel calibration.  We take the min of all maximums, e.g., left forward max,
@@ -93,33 +137,56 @@ static float GetStepVelocity()
     return mps;
 }
 
-#define MAX_NUM_VELOCITIES (7)
-static float velocities[MAX_NUM_VELOCITIES] = {0.0, 0.2, 0.5, 0.7, 0.5, 0.2, 0.0};
-static uint8 vel_index = 0;
-
+/*---------------------------------------------------------------------------------------------------
+ * Name: ResetPidValidationVelocity
+ * Description: Resets the index for the validation velocities. 
+ * Parameters: None
+ * Return: float - velocity (meter/second)
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static void ResetPidValidationVelocity()
 {
     vel_index = 0;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: GetNextValidationVelocity
+ * Description: Returns the next validation velocity from the array. 
+ * Parameters: dir - specifies whether the validation is in the forward or backward direction
+ * Return: float - velocity (meter/second)
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static float GetNextValidationVelocity(DIR_TYPE dir)
 {
     float value;
 
-    if (dir == DIR_FORWARD)
+    switch( dir )
     {
-        value = velocities[vel_index];
-        vel_index++;// = (vel_index + 1) % (sizeof(velocities)/sizeof(float));
+        case DIR_FORWARD:
+            value = velocities[vel_index];
+            break;
+    
+        case DIR_BACKWARD:
+            value = -velocities[vel_index];
+            break;
+
+        default:
+            value = 0;
+            break;
     }
-    if (dir == DIR_BACKWARD)
-    {
-        value = -velocities[vel_index];
-        vel_index++;// = (vel_index + 1) % (sizeof(velocities)/sizeof(float));
-    }
+
+    vel_index++;
 
     return value;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: SetNextValidationVelocity
+ * Description: Gets and sets the next validation velocity.
+ * Parameters: p_pid_params - pointer to PID params
+ * Return: 0 if all the velocities have been used; otherwise 1.
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static uint8 SetNextValidationVelocity(CAL_PID_PARAMS *p_pid_params)
 {
     char velocity_str[10];
@@ -147,6 +214,16 @@ static uint8 SetNextValidationVelocity(CAL_PID_PARAMS *p_pid_params)
 /*----------------------------------------------------------------------------------------------------------------------
  * Calibration Interface Routines
  *---------------------------------------------------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: Init
+ * Description: Calibration/Validation interface Init function.  Performs initialization for Linear 
+ *              Validation.
+ * Parameters: stage - the calibration/validation stage 
+ *             params - PID calibration/validation parameters, e.g. direction, run time, etc. 
+ * Return: uint8 - CAL_OK
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 {
     CAL_PID_PARAMS *p_pid_params = (CAL_PID_PARAMS *)params;
@@ -200,7 +277,14 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
     return CAL_OK;
 }
 
-
+/*---------------------------------------------------------------------------------------------------
+ * Name: Start
+ * Description: Calibration/Validation interface Start function.  Starts PID Calibration/Validation.
+ * Parameters: stage - the calibration/validation stage 
+ *             params - PID validation parameters. 
+ * Return: uint8 - CAL_OK
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static uint8 Start(CAL_STAGE_TYPE stage, void *params)
 {
     float gains[3];       
@@ -263,6 +347,15 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
     return CAL_OK;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Update
+ * Description: Calibration/Validation interface Update function.  Called periodically to evaluate 
+ *              the termination condition.
+ * Parameters: stage - the calibration/validation stage 
+ *             params - PID calibration/validation parameters, e.g. direction, run time, etc. 
+ * Return: uint8 - CAL_OK, CAL_COMPLETE
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static uint8 Update(CAL_STAGE_TYPE stage, void *params)
 {
     CAL_PID_PARAMS * p_pid_params = (CAL_PID_PARAMS *) params;
@@ -299,6 +392,14 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
     return CAL_COMPLETE;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Stop
+ * Description: Calibration/Validation interface Stop function.  Called to stop validation.
+ * Parameters: stage - the calibration/validation stage 
+ *             params - PID calibration/validation parameters, e.g. direction, run time, etc. 
+ * Return: uint8 - CAL_OK
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
 {
     char output[64];
@@ -340,6 +441,15 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
     return CAL_OK;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Results
+ * Description: Calibration/Validation interface Results function.  Called to display calibration/ 
+ *              validation results. 
+ * Parameters: stage - the calibration/validation stage 
+ *             params - PID calibration/validation parameters, e.g. direction, run time, etc. 
+ * Return: uint8 - CAL_OK
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static uint8 Results(CAL_STAGE_TYPE stage, void *params)
 {
     float gains[3];
@@ -376,6 +486,14 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
 /*----------------------------------------------------------------------------------------------------------------------
  * Module Interface Routines
  *---------------------------------------------------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: CalPid_Init
+ * Description: Initializes the PID calibration module 
+ * Parameters: None 
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void CalPid_Init()
 {
     CalPid_LeftCalibration = &left_pid_calibration;
@@ -383,3 +501,6 @@ void CalPid_Init()
     CalPid_LeftValidation = &left_pid_calibration;
     CalPid_RightValidation = &right_pid_calibration;
 }
+
+/*-------------------------------------------------------------------------------*/
+/* [] END OF FILE */
