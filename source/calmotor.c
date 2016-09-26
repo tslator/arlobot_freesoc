@@ -186,6 +186,22 @@ static void CalculateValidationValues()
     }
 }
 
+typedef struct _pwm_params
+{
+    uint16 start;
+    uint16 end;
+    uint16 step;
+    uint8  reverse;
+} PWM_PARAMS_TYPE;
+
+PWM_PARAMS_TYPE pwm_params[2][2] = {{{LEFT_PWM_STOP, LEFT_PWM_FULL_FORWARD, LEFT_PWM_FORWARD_DOMAIN / (CAL_NUM_SAMPLES - 1), 0}, 
+                                     {LEFT_PWM_FULL_BACKWARD, LEFT_PWM_STOP, LEFT_PWM_BACKWARD_DOMAIN / (CAL_NUM_SAMPLES - 1), 1}
+                                    }, 
+                                    {
+                                     {RIGHT_PWM_STOP, RIGHT_PWM_FULL_FORWARD, RIGHT_PWM_FORWARD_DOMAIN / (CAL_NUM_SAMPLES - 1), 0}, 
+                                     {RIGHT_PWM_FULL_BACKWARD, RIGHT_PWM_STOP, RIGHT_PWM_BACKWARD_DOMAIN / (CAL_NUM_SAMPLES - 1), 1}
+                                    }};
+
 /*---------------------------------------------------------------------------------------------------
  * Name: CalculatePwmSamples
  * Description: Calculates an array of pwm values based on the specified wheel, and direction. 
@@ -196,7 +212,7 @@ static void CalculateValidationValues()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void CalculatePwmSamples(WHEEL_TYPE wheel, DIR_TYPE dir, uint16 *pwm_samples, uint8 *reverse_pwm)
+static void CalculatePwmSamples(WHEEL_TYPE wheel, DIR_TYPE dir, uint16 *pwm_samples, uint8 *pwm_reverse)
 {
     /*
         if wheel is left
@@ -220,11 +236,25 @@ static void CalculatePwmSamples(WHEEL_TYPE wheel, DIR_TYPE dir, uint16 *pwm_samp
                 pwm step = (2000 - 1500) / num_samples
     */
     
+    #define CONDITION(wheel)   (wheel == WHEEL_LEFT ? ++ii, pwm <= pwm_end : ++ii, pwm >= pwm_end)
+    #define STEP(wheel)        (wheel == WHEEL_LEFT ? ++ii, pwm += pwm_step : ++ii, pwm -= pwm_step)
+    
+    uint8 ii;
     uint16 pwm;
     uint16 pwm_start;
     uint16 pwm_end;
     uint16 pwm_step;
-    
+
+    pwm_start = pwm_params[wheel][dir].start;
+    pwm_end = pwm_params[wheel][dir].end;
+    pwm_step = pwm_params[wheel][dir].step;
+    *pwm_reverse = pwm_params[wheel][dir].reverse;
+    for (ii = 0, pwm = pwm_start; CONDITION(wheel); STEP(wheel))
+    {
+        pwm_samples[ii] = pwm;
+    }
+#ifdef XXX
+
     if (wheel == WHEEL_LEFT)
     {
         if (dir == DIR_FORWARD)
@@ -271,6 +301,7 @@ static void CalculatePwmSamples(WHEEL_TYPE wheel, DIR_TYPE dir, uint16 *pwm_samp
         }
         
     }
+#endif
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -438,7 +469,7 @@ static void CollectPwmCpsSamples(WHEEL_TYPE wheel, uint8 reverse_pwm, uint8 num_
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void CalibrateWheelSpeed(WHEEL_TYPE wheel, DIR_TYPE dir, uint8 num_runs, int32 *cps_samples, uint16 *pwm_samples)
+static void CalibrateWheelSpeed(WHEEL_TYPE wheel, DIR_TYPE dir, int32 *cps_samples, uint16 *pwm_samples)
 /*
     calculate the PWM samples
         Note: the pwm samples depend on the wheel and direction
@@ -458,13 +489,13 @@ static void CalibrateWheelSpeed(WHEEL_TYPE wheel, DIR_TYPE dir, uint8 num_runs, 
 
     memset(cps_sum, 0, CAL_NUM_SAMPLES * sizeof(int32));
     
-    for (run = 0; run < num_runs; ++run)
+    for (run = 0; run < MAX_MOTOR_CAL_ITERATION; ++run)
     {
         CollectPwmCpsSamples(wheel, reverse_pwm, num_avg_iter, pwm_samples, cps_samples);
         AddSamplesToSum(cps_samples, cps_sum);
     }
     
-    CalculateAvgCpsSamples(cps_sum, num_runs, cps_samples);
+    CalculateAvgCpsSamples(cps_sum, MAX_MOTOR_CAL_ITERATION, cps_samples);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -631,20 +662,20 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
             Ser_PutString("Left-Forward Calibration\r\n");
             debug_control_enabled = DEBUG_LEFT_ENCODER_ENABLE_BIT;
 
-            CalibrateWheelSpeed(WHEEL_LEFT, DIR_FORWARD, MAX_MOTOR_CAL_ITERATION, cps_samples, pwm_samples);
+            CalibrateWheelSpeed(WHEEL_LEFT, DIR_FORWARD, cps_samples, pwm_samples);
             StoreWheelSpeedSamples(WHEEL_LEFT, DIR_FORWARD, cps_samples, pwm_samples);
             
             Ser_PutString("Left-Backward Calibration\r\n");
-            CalibrateWheelSpeed(WHEEL_LEFT, DIR_BACKWARD, MAX_MOTOR_CAL_ITERATION, cps_samples, pwm_samples);
+            CalibrateWheelSpeed(WHEEL_LEFT, DIR_BACKWARD, cps_samples, pwm_samples);
             StoreWheelSpeedSamples(WHEEL_LEFT, DIR_BACKWARD, cps_samples, pwm_samples);
             
             Ser_PutString("Right-Forward Calibration\r\n");
             debug_control_enabled = DEBUG_RIGHT_ENCODER_ENABLE_BIT;                    
-            CalibrateWheelSpeed(WHEEL_RIGHT, DIR_FORWARD, MAX_MOTOR_CAL_ITERATION, cps_samples, pwm_samples);
+            CalibrateWheelSpeed(WHEEL_RIGHT, DIR_FORWARD, cps_samples, pwm_samples);
             StoreWheelSpeedSamples(WHEEL_RIGHT, DIR_FORWARD, cps_samples, pwm_samples);
             
             Ser_PutString("Right-Backward Calibration\r\n");
-            CalibrateWheelSpeed(WHEEL_RIGHT, DIR_BACKWARD, MAX_MOTOR_CAL_ITERATION, cps_samples, pwm_samples);
+            CalibrateWheelSpeed(WHEEL_RIGHT, DIR_BACKWARD, cps_samples, pwm_samples);
             StoreWheelSpeedSamples(WHEEL_RIGHT, DIR_BACKWARD, cps_samples, pwm_samples);
 
             debug_control_enabled = last_debug_control_enabled;
