@@ -13,20 +13,34 @@
 #ifndef HWCONFIG_H
 #define HWCONFIG_H
     
+/*---------------------------------------------------------------------------------------------------
+ * Includes
+ *-------------------------------------------------------------------------------------------------*/
 #include <project.h>
     
+/*---------------------------------------------------------------------------------------------------
+ * Macros
+ *-------------------------------------------------------------------------------------------------*/
+
 /* There is a known issue with printf/sprintf and float formating which can be resolved by converting floats to string
    and then using format to include into a string.  However, the gcc compiler does not support ftoa so I had to role my
    own (stolen from others who rolled their own).  This define enables the home-grown ftoa (in utils.c)
  */
 #define USE_FTOA
     
+/*---------------------------------------------------------------------------------------------------
+ * Types
+ *-------------------------------------------------------------------------------------------------*/
 typedef float (*GET_TARGET_FUNC_TYPE)();
 
 typedef enum {WHEEL_LEFT, WHEEL_RIGHT, WHEEL_BOTH} WHEEL_TYPE;
 typedef enum {DIR_FORWARD, DIR_BACKWARD} DIR_TYPE;
     
     
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/
+
 /*---------------------------------------------------------------------------------------------------------------------- 
     Communication
 ----------------------------------------------------------------------------------------------------------------------*/
@@ -44,7 +58,6 @@ typedef enum {DIR_FORWARD, DIR_BACKWARD} DIR_TYPE;
 #define LAST_FRONT_ULTRASONIC_SENSOR (NUM_FRONT_ULTRASONIC_SENSORS - 1)
 #define FIRST_REAR_ULTRASONIC_SENSOR (0)
 #define LAST_REAR_ULTRASONIC_SENSOR (NUM_REAR_ULTRASONIC_SENSORS - 1)
-
    
 #define NUM_FRONT_INFRARED_SENSORS (8)
 #define NUM_REAR_INFRARED_SENSORS (8)
@@ -53,6 +66,10 @@ typedef enum {DIR_FORWARD, DIR_BACKWARD} DIR_TYPE;
 #define LAST_FRONT_INFRARED_SENSOR (NUM_FRONT_INFRARED_SENSORS - 1)    
 #define FIRST_REAR_INFRARED_SENSOR (0)    
 #define LAST_REAR_INFRARED_SENSOR (NUM_REAR_INFRARED_SENSORS - 1)    
+
+/*---------------------------------------------------------------------------------------------------
+ * Motors
+ *-------------------------------------------------------------------------------------------------*/
 
 #define PI (3.1415926535897932384626433832795)
 #define WHEEL_RADIUS   (0.0762)
@@ -66,7 +83,6 @@ typedef enum {DIR_FORWARD, DIR_BACKWARD} DIR_TYPE;
 #define COUNT_PER_METER (COUNTS_PER_REVOLUTION/METER_PER_REVOLUTION)
 #define RADIAN_PER_COUNT (PI * (WHEEL_DIAMETER/(TRACK_WIDTH*COUNT_PER_REVOLUTION)))
 #define RADIAN_PER_METER (PI * (WHEEL_DIAMETER/(TRACK_WIDTH*METER_PER_REVOLUTION)))
-
 
 // Note: These are the theoretical values, so it may be prudent to back these down to more conservative values
 #define MAX_METER_PER_SECOND    (0.7579)

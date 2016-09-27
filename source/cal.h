@@ -20,6 +20,7 @@
 #include <project.h>
 #include "config.h"
 #include "calstore.h"
+#include "pwm.h"
     
 /* The calibration module supports the following calibrations:
     
@@ -114,12 +115,13 @@ float Cal_ReadResponse();
 CAL_PID_TYPE* Cal_LeftGetPidGains();
 CAL_PID_TYPE* Cal_RightGetPidGains();
 void Cal_SetLeftRightVelocity(float left, float right);
-uint16 Cal_CpsToPwm(WHEEL_TYPE wheel, float cps);
+PWM_TYPE Cal_CpsToPwm(WHEEL_TYPE wheel, float cps);
 void Cal_Clear();
 void ClearCalibrationStatusBit(uint16 bit);
 void SetCalibrationStatusBit(uint16 bit);
-void Cal_PrintSamples(char *label, int32 *cps_samples, uint16 *pwm_samples);
+void Cal_PrintSamples(char *label, int32 *cps_samples, PWM_TYPE *pwm_samples);
 void Cal_PrintGains(char *label, float *gains);
+void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_limit, float *forward_output, float *backward_output);
 
 #endif
 

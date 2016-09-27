@@ -47,9 +47,6 @@ static uint32 start_time;
 static uint32 end_time;
 static uint16 old_debug_control_enabled;
 
-static float left_cmd_velocity;
-static float right_cmd_velocity;
-
 static CAL_LIN_PARAMS linear_params = {DIR_FORWARD, 
                                        LINEAR_MAX_TIME, 
                                        LINEAR_DISTANCE, 

@@ -50,20 +50,18 @@
 /*---------------------------------------------------------------------------------------------------
  * Types
  *-------------------------------------------------------------------------------------------------*/    
-typedef void (*HB25_ENABLE_TYPE)(uint8);
-typedef void (*START_PWM_TYPE)();
-typedef void (*STOP_PWM_TYPE)();
-typedef void (*SET_PWM_TYPE)(uint16);
-typedef uint16 (*GET_PWM_TYPE) ();
+typedef void (*HB25_ENABLE_FUNC_TYPE)(uint8);
+typedef void (*START_PWM_FUNC_TYPE)();
+typedef void (*STOP_PWM_FUNC_TYPE)();
 
 typedef struct _motor_tag
 {
     char name[6];
-    HB25_ENABLE_TYPE enable;
-    START_PWM_TYPE   start;
-    STOP_PWM_TYPE    stop;
-    SET_PWM_TYPE     set_pwm;
-    GET_PWM_TYPE     get_pwm;
+    HB25_ENABLE_FUNC_TYPE   enable;
+    START_PWM_FUNC_TYPE     start;
+    STOP_PWM_FUNC_TYPE      stop;
+    SET_MOTOR_PWM_FUNC_TYPE set_pwm;
+    GET_MOTOR_PWM_FUNC_TYPE get_pwm;
 } MOTOR_TYPE;
 
 static MOTOR_TYPE left_motor = {
@@ -148,7 +146,7 @@ void Motor_Start()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Motor_LeftSetPwm(uint16 pwm)
+void Motor_LeftSetPwm(PWM_TYPE pwm)
 {
     pwm = constrain(pwm, MIN_PWM_VALUE, MAX_PWM_VALUE);
     left_motor.set_pwm(pwm);
@@ -161,7 +159,7 @@ void Motor_LeftSetPwm(uint16 pwm)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Motor_RightSetPwm(uint16 pwm)
+void Motor_RightSetPwm(PWM_TYPE pwm)
 {
     pwm = constrain(pwm, MIN_PWM_VALUE, MAX_PWM_VALUE);
     right_motor.set_pwm(pwm);
@@ -175,7 +173,7 @@ void Motor_RightSetPwm(uint16 pwm)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Motor_SetPwm(uint16 left_pwm, uint16 right_pwm)
+void Motor_SetPwm(PWM_TYPE left_pwm, PWM_TYPE right_pwm)
 {
     Motor_LeftSetPwm(left_pwm);
     Motor_RightSetPwm(right_pwm);
@@ -188,7 +186,7 @@ void Motor_SetPwm(uint16 left_pwm, uint16 right_pwm)
  * Return: uint16
  * 
  *-------------------------------------------------------------------------------------------------*/
-uint16 Motor_LeftGetPwm()
+PWM_TYPE Motor_LeftGetPwm()
 {
     return left_motor.get_pwm();
 }
@@ -200,7 +198,7 @@ uint16 Motor_LeftGetPwm()
  * Return: uint16
  * 
  *-------------------------------------------------------------------------------------------------*/
-uint16 Motor_RightGetPwm()
+PWM_TYPE Motor_RightGetPwm()
 {
     return right_motor.get_pwm();
 }
@@ -213,7 +211,7 @@ uint16 Motor_RightGetPwm()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Motor_GetPwm(uint16 *left, uint16 *right)
+void Motor_GetPwm(PWM_TYPE *left, PWM_TYPE *right)
 {
     *left = left_motor.get_pwm();
     *right = right_motor.get_pwm();
@@ -248,18 +246,18 @@ void Motor_Stop()
 static void RampDown(MOTOR_TYPE *motor, uint32 millis)
 {
     #define MAX_PWM_STEP (10)
-    static int16 pwm;
+    static PWM_TYPE pwm;
     static int16 delta_pwm;
     static uint32 time_delay;
     static int16 pwm_step;
     
-    pwm = (int16) motor->get_pwm();    
-    if (pwm == (int16) PWM_STOP)
+    pwm = motor->get_pwm();    
+    if (pwm == PWM_STOP)
     {
         return;
     }
     
-    delta_pwm = ((int16) PWM_STOP) - pwm;
+    delta_pwm = ((int16) PWM_STOP) - ((int16) pwm);
     time_delay = (millis * MAX_PWM_STEP)/((uint32) abs(delta_pwm));
     pwm_step = delta_pwm > 0 ? MAX_PWM_STEP : -MAX_PWM_STEP;
     

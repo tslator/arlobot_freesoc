@@ -625,7 +625,7 @@ static void Process(CALIBRATION_TYPE *calval)
  *-------------------------------------------------------------------------------------------------*/
 static uint16 CpsToPwm(int32 cps, int32 *cps_data, uint16 *pwm_data, uint8 data_size)
 {   
-    uint16 pwm = PWM_STOP;
+    PWM_TYPE pwm = PWM_STOP;
     uint8 lower = 0;
     uint8 upper = 0;
 
@@ -876,12 +876,12 @@ void Cal_SetLeftRightVelocity(float left, float right)
  * Description: Public routine used to obtain a PWM value for a given wheel and count/sec 
  * Parameters: wheel - left/right wheel 
  *             cps - count/second
- * Return: uint16 - PWM
+ * Return: PWM_TYPE - PWM
  * 
  *-------------------------------------------------------------------------------------------------*/
-uint16 Cal_CpsToPwm(WHEEL_TYPE wheel, float cps)
+PWM_TYPE Cal_CpsToPwm(WHEEL_TYPE wheel, float cps)
 {
-    uint16 pwm;
+    PWM_TYPE pwm;
     
     
     pwm = PWM_STOP;
@@ -915,6 +915,82 @@ void Cal_Clear()
 {
     ClearCalibrationStatusBit(CAL_MOTOR_BIT);
     ClearCalibrationStatusBit(CAL_PID_BIT);
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: Cal_CalcTriangularProfile
+ * Description: Calculates an array of values using a triangle profile based on a calibrated motor 
+ *              values. 
+ * Parameters: num_points - the number of points in the profile (must be odd) 
+ *             lower_limit - the start/end value as a percentage of the maximum motor value
+ *             upper_limit - the maximum value as a percentage of the maximum motor value
+ *             forward_profile - profile for the forward direction
+ *             backward_profile - profile for the backward direction
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_limit, float *forward_profile, float *backward_profile)
+/* This routine calculates a series of count/second values in a triangle profile (slow, fast, slow).  It uses the motor
+   calibration data to determine a range  of forward and reverse values for each wheel.  The routine is called from
+   motor validation to confirm that motor calibration conversion from count/second to pwm is reasonably accurate.
+ */
+{
+    uint8 ii;
+
+    memset(forward_profile, 0, num_points * sizeof(float));
+    memset(backward_profile, 0, num_points * sizeof(float));
+
+    if( num_points % 2 == 0 )
+    {
+        return;
+    }
+    
+    if (p_cal_eeprom->status & CAL_MOTOR_BIT)
+    {    
+        float left_forward_cps_max = p_cal_eeprom->left_motor_fwd.cps_max / p_cal_eeprom->left_motor_fwd.cps_scale;
+        float right_forward_cps_max = p_cal_eeprom->right_motor_fwd.cps_max / p_cal_eeprom->right_motor_fwd.cps_scale;
+        float left_backward_cps_min = p_cal_eeprom->left_motor_bwd.cps_min / p_cal_eeprom->left_motor_bwd.cps_scale;
+        float right_backward_cps_min = p_cal_eeprom->right_motor_bwd.cps_min / p_cal_eeprom->right_motor_bwd.cps_scale;
+
+        float forward_cps_max = min(left_forward_cps_max, right_forward_cps_max);
+        /* Note: Backward values are negative */
+        float backward_cps_max = max(left_backward_cps_min, right_backward_cps_min);
+        
+        float fwd_cps_start = lower_limit * forward_cps_max;
+        float fwd_cps_end = upper_limit * forward_cps_max;
+        float bwd_cps_start = lower_limit * backward_cps_max;
+        float bwd_cps_end = upper_limit * backward_cps_max;
+        
+        float fwd_cps_delta = (fwd_cps_end - fwd_cps_start)/num_points;
+        float bwd_cps_delta = (bwd_cps_end - bwd_cps_start)/num_points;
+
+        uint8 mid_sample_offset = num_points / 2;
+        
+        forward_profile[mid_sample_offset] = forward_cps_max;
+        backward_profile[mid_sample_offset] = backward_cps_max;
+        
+        float fwd_value = fwd_cps_start;
+        float bwd_value = bwd_cps_start;
+        for (ii = 0; ii < mid_sample_offset; ++ii)
+        {
+            forward_profile[ii] = fwd_value;
+            backward_profile[ii] = bwd_value;
+            
+            fwd_value += fwd_cps_delta;
+            bwd_value += bwd_cps_delta;
+        }
+        
+        fwd_value = fwd_cps_end;
+        bwd_value = bwd_cps_end;
+        for (ii = 1; ii < num_points; ++ii)
+        {
+            forward_profile[mid_sample_offset + ii] = fwd_value;
+            backward_profile[mid_sample_offset + ii] = bwd_value;
+
+            fwd_value -= fwd_cps_delta;
+            bwd_value -= bwd_cps_delta;
+        }
+    }
 }
 
 /*-------------------------------------------------------------------------------*/

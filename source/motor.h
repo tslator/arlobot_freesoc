@@ -23,8 +23,8 @@
 /*---------------------------------------------------------------------------------------------------
  * Types
  *-------------------------------------------------------------------------------------------------*/    
-typedef void (*SET_MOTOR_PWM_FUNC_TYPE)(uint16 pwm);
-typedef uint16 (*GET_MOTOR_PWM_FUNC_TYPE)();
+typedef void (*SET_MOTOR_PWM_FUNC_TYPE)(PWM_TYPE pwm);
+typedef PWM_TYPE (*GET_MOTOR_PWM_FUNC_TYPE)();
 typedef void (*RAMP_DOWN_PWM_FUNC_TYPE)(uint32 millis);
 
     
@@ -35,13 +35,13 @@ void Motor_Init();
 void Motor_Start();
 void Motor_Stop();
 
-void Motor_LeftSetPwm(uint16 pwm);
-void Motor_RightSetPwm(uint16 pwm);
-void Motor_SetPwm(uint16 left_pwm, uint16 right_pwm);
+void Motor_LeftSetPwm(PWM_TYPE pwm);
+void Motor_RightSetPwm(PWM_TYPE pwm);
+void Motor_SetPwm(PWM_TYPE left_pwm, PWM_TYPE right_pwm);
 
-uint16 Motor_LeftGetPwm();
-uint16 Motor_RightGetPwm();
-void Motor_GetPwm(uint16 *left, uint16 *right);
+PWM_TYPE Motor_LeftGetPwm();
+PWM_TYPE Motor_RightGetPwm();
+void Motor_GetPwm(PWM_TYPE *left, PWM_TYPE *right);
 
 void Motor_LeftRampDown(uint32 millis);
 void Motor_RightRampDown(uint32 millis);

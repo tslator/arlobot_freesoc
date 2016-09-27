@@ -69,7 +69,8 @@ static CALIBRATION_TYPE right_pid_calibration = {CAL_INIT_STATE,
                                                  Results};
 
 
-static float velocities[MAX_NUM_VELOCITIES] = {0.0, 0.2, 0.5, 0.7, 0.5, 0.2, 0.0};
+static float fwd_velocities[MAX_NUM_VELOCITIES] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+static float bwd_velocities[MAX_NUM_VELOCITIES] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 static uint8 vel_index = 0;
 
 
@@ -163,11 +164,11 @@ static float GetNextValidationVelocity(DIR_TYPE dir)
     switch( dir )
     {
         case DIR_FORWARD:
-            value = velocities[vel_index];
+            value = fwd_velocities[vel_index];
             break;
     
         case DIR_BACKWARD:
-            value = -velocities[vel_index];
+            value = bwd_velocities[vel_index];
             break;
 
         default:
@@ -257,6 +258,8 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
             Ser_PutString(banner);
             
             old_debug_control_enabled = debug_control_enabled;
+
+            Cal_CalcTriangularProfile(MAX_NUM_VELOCITIES, 0.2, 0.8, fwd_velocities, bwd_velocities);
             
             Cal_SetLeftRightVelocity(0, 0);
             Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);

@@ -13,7 +13,14 @@
 #ifndef PWM_H
 #define PWM_H
 
+/*---------------------------------------------------------------------------------------------------
+ * Includes
+ *-------------------------------------------------------------------------------------------------*/
 #include <project.h>
+
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/
 
 /* Note: While technically the motors are reverse relative to each other, it is clearer to hide this difference from
    the code.  Therefore, while the pwm values will be different, for a code perspective the functionality will be the 
@@ -52,6 +59,12 @@
 #define RIGHT_PWM_FULL_BACKWARD     (MAX_PWM_VALUE)
 #define RIGHT_PWM_BACKWARD_DOMAIN   (RIGHT_PWM_FULL_BACKWARD - RIGHT_PWM_STOP)
     
+
+/*---------------------------------------------------------------------------------------------------
+ * Types
+ *-------------------------------------------------------------------------------------------------*/
+typedef uint16 PWM_TYPE;
+
 #endif
 
 /* [] END OF FILE */
