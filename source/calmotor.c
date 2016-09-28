@@ -101,7 +101,7 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params);
 static uint8 Stop(CAL_STAGE_TYPE stage, void *params);
 static uint8 Results(CAL_STAGE_TYPE stage, void *params);
 
-static CAL_MOTOR_PARMS cal_motor_params = { 2000 };
+static CAL_MOTOR_PARAMS cal_motor_params = { 2000 };
 
 static CALIBRATION_TYPE motor_calibration = {CAL_INIT_STATE, 
                                              CAL_CALIBRATE_STAGE,
@@ -454,17 +454,17 @@ static void CalibrateWheelSpeed(WHEEL_TYPE wheel, DIR_TYPE dir)
 
     motor = &motor_cal[wheel];
 
-    CalculatePwmSamples(wheel, dir, pwm_samples);
+    CalculatePwmSamples(wheel, dir, cal_pwm_samples);
 
-    memset(cps_sum, 0, sizeof(cps_sum));
+    memset(cal_cps_sum, 0, sizeof(cal_cps_sum));
     
     for (run = 0; run < MAX_MOTOR_CAL_ITERATION; ++run)
     {
         CollectCpsSamples(motor, cal_pwm_samples, dir, cal_cps_samples);
-        AddSamplesToSum(cps_samples, cps_sum);
+        AddSamplesToSum(cal_cps_samples, cal_cps_sum);
     }
     
-    CalculateAvgCpsSamples(cps_sum, MAX_MOTOR_CAL_ITERATION, cal_cps_samples);
+    CalculateAvgCpsSamples(cal_cps_sum, MAX_MOTOR_CAL_ITERATION, cal_cps_samples);
 
     p_cal_data = WHEEL_DIR_TO_CAL_DATA[wheel][dir];
     StoreWheelSpeedCalibration(p_cal_data, cal_cps_samples, cal_pwm_samples);
