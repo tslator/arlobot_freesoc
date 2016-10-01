@@ -358,25 +358,21 @@ static uint8 GetCommand()
         case 'c':
         case 'C':
             value = CAL_REQUEST;
-            Ser_PutString("Received c command\r\n");
             break;
             
         case 'v':
         case 'V':
             value = VAL_REQUEST;
-            Ser_PutString("Received v command\r\n");
             break;
             
         case 'd':
         case 'D':
             value = SETTING_REQUEST;
-            Ser_PutString("Received d command\r\n");
             break;
 
         case 'x':
         case 'X':            
             value = EXIT_CMD;
-            Ser_PutString("Received x command\r\n");
             break;
     }
     
@@ -969,14 +965,15 @@ void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_
         float fwd_cps_end = upper_limit * forward_cps_max;
         float bwd_cps_start = lower_limit * backward_cps_max;
         float bwd_cps_end = upper_limit * backward_cps_max;
-        
-        float fwd_cps_delta = (fwd_cps_end - fwd_cps_start)/num_points;
-        float bwd_cps_delta = (bwd_cps_end - bwd_cps_start)/num_points;
 
         uint8 mid_sample_offset = num_points / 2;
         
-        forward_profile[mid_sample_offset] = forward_cps_max;
-        backward_profile[mid_sample_offset] = backward_cps_max;
+        float fwd_cps_delta = (fwd_cps_end - fwd_cps_start)/mid_sample_offset;
+        float bwd_cps_delta = (bwd_cps_end - bwd_cps_start)/mid_sample_offset;
+
+        
+        forward_profile[mid_sample_offset] = fwd_cps_end;
+        backward_profile[mid_sample_offset] = bwd_cps_end;
         
         float fwd_value = fwd_cps_start;
         float bwd_value = bwd_cps_start;
@@ -991,10 +988,10 @@ void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_
         
         fwd_value = fwd_cps_end;
         bwd_value = bwd_cps_end;
-        for (ii = 1; ii < num_points; ++ii)
+        for (ii = mid_sample_offset; ii < num_points; ++ii)
         {
-            forward_profile[mid_sample_offset + ii] = fwd_value;
-            backward_profile[mid_sample_offset + ii] = bwd_value;
+            forward_profile[ii] = fwd_value;
+            backward_profile[ii] = bwd_value;
 
             fwd_value -= fwd_cps_delta;
             bwd_value -= bwd_cps_delta;

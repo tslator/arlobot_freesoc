@@ -162,7 +162,36 @@ MOTOR_CALIBRATION_TYPE motor_cal[2] =
       WHEEL_RIGHT}};
 
 
-static float val_cps_velocities[MAX_CPS_ARRAY];
+typedef struct 
+{
+    char label[30]; 
+    DIR_TYPE direction;
+    MOTOR_CALIBRATION_TYPE *motor;
+}VAL_MOTOR_PARAMS;
+
+#define NUM_MOTOR_VAL_PARAMS (4)
+
+VAL_MOTOR_PARAMS motor_val_params[4] = {{
+                                        "left-forward", 
+                                        DIR_FORWARD,
+                                        &motor_cal[WHEEL_LEFT]
+                                        }, 
+                                        {
+                                        "right-forward",
+                                        DIR_FORWARD,
+                                        &motor_cal[WHEEL_RIGHT]
+                                        }, 
+                                        {
+                                        "left-backward",
+                                        DIR_BACKWARD,
+                                        &motor_cal[WHEEL_LEFT]
+                                        }, 
+                                        {
+                                        "right-backward",
+                                        DIR_BACKWARD,
+                                        &motor_cal[WHEEL_RIGHT]
+                                        }};
+static uint8 motor_val_index;
 
 
 /*---------------------------------------------------------------------------------------------------
@@ -473,7 +502,7 @@ static void CalibrateWheelSpeed(WHEEL_TYPE wheel, DIR_TYPE dir)
     StoreWheelSpeedCalibration(p_cal_data, cal_cps_samples, cal_pwm_samples);
 }
 
-static uint8 GetNextCps(WHEEL_TYPE wheel, float *cps)
+static uint8 GetNextCps(DIR_TYPE dir, float *cps)
 /* Return the next value in the array and increment the index
    Return 0 if the index is in range 0 to N-1
    Return 1 if the index rolls over
@@ -487,25 +516,42 @@ static uint8 GetNextCps(WHEEL_TYPE wheel, float *cps)
         index = 0;
         return 1;
     }
-
-    *cps = val_cps_velocities[index];
+    
+    switch (dir)
+    {
+        case DIR_FORWARD:
+            *cps = val_fwd_cps[index];
+            break;
+            
+        case DIR_BACKWARD:
+            *cps = val_bwd_cps[index];
+            break;
+            
+        default:
+            *cps = 0.0;
+            break;
+    }
+    
     index++;
     
     return 0;
 }
 
-static uint8 ValidateMotorCalibration(char *label, MOTOR_CALIBRATION_TYPE *motor, uint32 run_time)
+static uint8 ValidateMotorCalibration(VAL_MOTOR_PARAMS *val_params, uint32 run_time)
 {
     static uint8 running = FALSE;
     static uint32 start_time = 0;
     uint8 result;
     float cps;
     PWM_TYPE pwm;
+    MOTOR_CALIBRATION_TYPE *motor;
+
+    motor = val_params->motor;
 
     if( !running )
     {
         motor->set_pwm(PWM_STOP);
-        result = GetNextCps(motor->wheel, &cps);
+        result = GetNextCps(val_params->direction, &cps);
         if( result )
         {
             return CAL_COMPLETE;
@@ -518,9 +564,13 @@ static uint8 ValidateMotorCalibration(char *label, MOTOR_CALIBRATION_TYPE *motor
 
     if( running )
     {
+        uint32 delta_time = millis() - start_time;
         if ( millis() - start_time < run_time )
         {
-            PrintWheelVelocity(label, cps, motor->get_mps(), motor->get_pwm());
+            if (delta_time % 100)
+            {
+                PrintWheelVelocity(val_params->label, cps, motor->get_mps(), motor->get_pwm());
+            }
             return CAL_OK;
         }
         
@@ -530,7 +580,7 @@ static uint8 ValidateMotorCalibration(char *label, MOTOR_CALIBRATION_TYPE *motor
            Consider doing the same for the PID -- auto reset, it's better that way
          
          */
-        result = GetNextCps(motor->wheel, &cps);
+        result = GetNextCps(val_params->direction, &cps);
         if( result )
         {
             running = FALSE;
@@ -611,35 +661,6 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
     return CAL_OK;
 }
 
-typedef struct 
-{
-    char label[30]; 
-    DIR_TYPE direction;
-    MOTOR_CALIBRATION_TYPE *motor;
-}VAL_MOTOR_PARAMS;
-#define NUM_MOTOR_VAL_PARAMS (4)
-VAL_MOTOR_PARAMS motor_val_params[4] = {{
-                                        "left-forward", 
-                                        DIR_FORWARD,
-                                        &motor_cal[WHEEL_LEFT]
-                                        }, 
-                                        {
-                                        "right-forward",
-                                        DIR_FORWARD,
-                                        &motor_cal[WHEEL_RIGHT]
-                                        }, 
-                                        {
-                                        "left-backward",
-                                        DIR_BACKWARD,
-                                        &motor_cal[WHEEL_LEFT]
-                                        }, 
-                                        {
-                                        "right-backward",
-                                        DIR_BACKWARD,
-                                        &motor_cal[WHEEL_RIGHT]
-                                        }};
-static uint8 motor_val_index;
-
 /*---------------------------------------------------------------------------------------------------
  * Name: Update
  * Description: Calibration/Validation interface Update function.  Called periodically to evaluate 
@@ -694,9 +715,7 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
                 CAL_MOTOR_PARAMS *p_motor_params = (CAL_MOTOR_PARAMS *) params;
                 VAL_MOTOR_PARAMS *val_params = &motor_val_params[motor_val_index];
     
-                uint8 result = ValidateMotorCalibration(val_params->label, 
-                                                        val_params->motor, 
-                                                        p_motor_params->run_time);
+                uint8 result = ValidateMotorCalibration(val_params, p_motor_params->run_time);
                 if( result == VALIDATION_INTERATION_DONE )
                 {
                     motor_val_index++;
