@@ -266,7 +266,7 @@ static void RampDown(MOTOR_TYPE *motor, uint32 millis)
         pwm += pwm_step;
         motor->set_pwm(pwm);
         CyDelay(time_delay);        
-    } while (pwm > PWM_STOP);
+    } while (pwm != PWM_STOP);
 }
 
 /*---------------------------------------------------------------------------------------------------

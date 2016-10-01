@@ -363,7 +363,7 @@ static int32 CalcCpsAvgAtPwm(MOTOR_CALIBRATION_TYPE *motor, uint16 pwm)
  *-------------------------------------------------------------------------------------------------*/
 static void CollectCpsSamples(MOTOR_CALIBRATION_TYPE *motor, 
                               PWM_TYPE               *pwm_samples, 
-                              DIR_TYPE               dir, 
+                              uint8                  reverse, 
                               int32                  *cps_samples)
 {
     /* The count/sec samples must be placed into the array in numeric order, i.e., lower to higher,
@@ -375,10 +375,8 @@ static void CollectCpsSamples(MOTOR_CALIBRATION_TYPE *motor,
        cps for reverse motion, it is necessary to run the PWM from the last sample (1500) or motor stop
        to the first sample (1000) or motor max.
      
-       Use the direction (dir) parameter to adjust the index to start with the last PWM sample for the
-       case of backward motion.
      */
-    #define CALC_OFFSET(index)  ((dir == DIR_BACKWARD) ? CAL_NUM_SAMPLES - 1 - index : index)
+    #define CALC_OFFSET(index)  (reverse ? CAL_NUM_SAMPLES - 1 - index : index)
 
     uint8 index;
     
@@ -451,8 +449,13 @@ static void CalibrateWheelSpeed(WHEEL_TYPE wheel, DIR_TYPE dir)
     uint8 run;
     MOTOR_CALIBRATION_TYPE *motor;
     CAL_DATA_TYPE *p_cal_data;
+    uint8 reverse;
 
     motor = &motor_cal[wheel];
+    /* The case of left wheel forward and right wheel backward, the pwm values must index from last to first.  Its just
+       the way the motors work
+     */
+    reverse = ((wheel == WHEEL_LEFT) && (dir == DIR_BACKWARD)) || ((wheel == WHEEL_RIGHT) && (dir == DIR_FORWARD));
 
     CalculatePwmSamples(wheel, dir, cal_pwm_samples);
 
@@ -460,7 +463,7 @@ static void CalibrateWheelSpeed(WHEEL_TYPE wheel, DIR_TYPE dir)
     
     for (run = 0; run < MAX_MOTOR_CAL_ITERATION; ++run)
     {
-        CollectCpsSamples(motor, cal_pwm_samples, dir, cal_cps_samples);
+        CollectCpsSamples(motor, cal_pwm_samples, reverse, cal_cps_samples);
         AddSamplesToSum(cal_cps_samples, cal_cps_sum);
     }
     
@@ -662,8 +665,10 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
                Instead, there is a loop for each calibration cycle, e.g., left-forward,
                left-backward, right-forward, right-backward
              */
+        
+            Motor_SetPwm(PWM_STOP, PWM_STOP);
 
-            debug_control_enabled = DEBUG_LEFT_ENCODER_ENABLE_BIT;
+            debug_control_enabled = DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_LEFT_MOTOR_ENABLE_BIT;
 
             Ser_PutString("Left-Forward Calibration\r\n");
             CalibrateWheelSpeed(WHEEL_LEFT, DIR_FORWARD);
@@ -671,7 +676,7 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
             Ser_PutString("Left-Backward Calibration\r\n");
             CalibrateWheelSpeed(WHEEL_LEFT, DIR_BACKWARD);
             
-            debug_control_enabled = DEBUG_RIGHT_ENCODER_ENABLE_BIT;
+            debug_control_enabled = DEBUG_RIGHT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_MOTOR_ENABLE_BIT;
 
             Ser_PutString("Right-Forward Calibration\r\n");
             CalibrateWheelSpeed(WHEEL_RIGHT, DIR_FORWARD);

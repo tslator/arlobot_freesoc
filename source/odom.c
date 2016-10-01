@@ -171,7 +171,7 @@ void Odom_Update()
         APPLY_SCHED_OFFSET(ODOM_SCHED_OFFSET, odom_sched_offset_applied);
         
         CalculateOdometry(delta_time);
-        I2c_WriteOdom(left_speed, right_speed, left_delta_dist, right_delta_dist);
+        I2c_WriteOdom(left_speed, right_speed, left_delta_dist, right_delta_dist, heading);
         DUMP_ODOM();
     }
 }
@@ -190,7 +190,7 @@ void Odom_Reset()
     left_delta_dist = 0;
     right_delta_dist = 0;
     heading = 0;
-    I2c_WriteOdom(left_speed, right_speed, left_delta_dist, right_delta_dist);
+    I2c_WriteOdom(left_speed, right_speed, left_delta_dist, right_delta_dist, heading);
 }
 
 /* [] END OF FILE */

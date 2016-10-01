@@ -42,7 +42,7 @@ void I2c_SetCalibrationStatus(uint16 status);
 void I2c_WriteUltrasonicDistances(uint8 offset, float* distances, uint8 num_entries);
 void I2c_WriteInfraredDistances(uint8 offset, float* distances, uint8 num_entries);
 
-void I2c_WriteOdom(float left_speed, float right_speed, float left_delta_dist, float right_delta_dist);
+void I2c_WriteOdom(float left_speed, float right_speed, float left_delta_dist, float right_delta_dist, float heading);
 
 void I2c_UpdateHeartbeat(uint32 counter);
 

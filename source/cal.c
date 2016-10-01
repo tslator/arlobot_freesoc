@@ -358,21 +358,25 @@ static uint8 GetCommand()
         case 'c':
         case 'C':
             value = CAL_REQUEST;
+            Ser_PutString("Received c command\r\n");
             break;
             
         case 'v':
         case 'V':
             value = VAL_REQUEST;
+            Ser_PutString("Received v command\r\n");
             break;
             
         case 'd':
         case 'D':
             value = SETTING_REQUEST;
+            Ser_PutString("Received d command\r\n");
             break;
 
         case 'x':
         case 'X':            
             value = EXIT_CMD;
+            Ser_PutString("Received x command\r\n");
             break;
     }
     
@@ -881,6 +885,7 @@ void Cal_SetLeftRightVelocity(float left, float right)
  *-------------------------------------------------------------------------------------------------*/
 PWM_TYPE Cal_CpsToPwm(WHEEL_TYPE wheel, float cps)
 {
+    static uint8 send_once = 0;
     PWM_TYPE pwm;
     
     
@@ -898,7 +903,11 @@ PWM_TYPE Cal_CpsToPwm(WHEEL_TYPE wheel, float cps)
     }
     else
     {
-        Ser_PutString("Motor calibration status not set\r\n");
+        if (!send_once)
+        {
+            Ser_PutString("Motor calibration status not set\r\n");
+            send_once = 1;
+        }
     }
 
     return pwm;

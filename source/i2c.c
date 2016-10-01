@@ -73,16 +73,24 @@
            <------ Odometry ------>
       16           4         [left speed]                   measured left speed
       20           4         [right speed]                  measured right speed
-      28           4         [left delta distance]          measured delta left distance 
-      32           4         [right delta distance]         measured delta right distance 
+      24           4         [left delta distance]          measured delta left distance 
+      28           4         [right delta distance]         measured delta right distance
+      32           4         [heading]                      measured heading
           <------ Ultrasonic ------>
       36          64         [ultrasonic distance]          ultrasonic distance is an array of 
                                                             distances from the ultrasonic sensors in 
                                                             meters, range 0.02 to 4
+                                                            
+                                                            Front sensors - 32 bytes
+                                                            Rear sensors - 32 bytes
            <------ Infrared ------>
      100          64         [infrared distance]            infrared distance is an array of distances 
                                                             from the infrared sensors in meters, 
                                                             range 0.1 to 0.8
+                                                            
+                                                            Front sensors - 32 bytes
+                                                            Rear sensors - 32 bytes
+
      164           4         [heartbeat]                    used for testing the i2c communication
  */
 
@@ -104,6 +112,7 @@ typedef struct
     float right_speed;
     float left_delta_dist;
     float right_delta_dist;
+    float heading;
 } __attribute__ ((packed)) ODOMETRY;
 
 /* Define the structure for ultrasonic sensors */
@@ -220,7 +229,6 @@ void I2c_ReadDebugControl()
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
     value = i2c_buf.read_write.debug_control;
-    i2c_buf.read_write.debug_control = 0;
     EZI2C_Slave_EnableInt();
     
     /* Internally, there is control over debug for each encoder, pid and motor; however, that is not exposed via i2c.
@@ -290,6 +298,13 @@ void I2c_ReadCmdVelocity(float *left, float *right, uint32 *timeout)
     if (i2c_write_occurred & EZI2C_Slave_STATUS_WRITE1)
     {
         cmd_velocity_timeout = 0;
+        char lcv_str[10];
+        char rcv_str[10];
+        char out_buf[64];
+        ftoa(i2c_buf.read_write.left_cmd_velocity, lcv_str, 3);
+        ftoa(i2c_buf.read_write.right_cmd_velocity, rcv_str, 3);
+        sprintf(out_buf, "%s - %s\r\n", lcv_str, rcv_str);
+        Ser_PutString(out_buf);
     }
     else
     {
@@ -300,7 +315,7 @@ void I2c_ReadCmdVelocity(float *left, float *right, uint32 *timeout)
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
     *left = i2c_buf.read_write.left_cmd_velocity;
-    *right = i2c_buf.read_write.left_cmd_velocity;
+    *right = i2c_buf.read_write.right_cmd_velocity;
     EZI2C_Slave_EnableInt();
     
     *timeout = cmd_velocity_timeout;
@@ -395,7 +410,7 @@ void I2c_SetCalibrationStatus(uint16 status)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void I2c_WriteOdom(float left_speed, float right_speed, float left_delta_dist, float right_delta_dist)
+void I2c_WriteOdom(float left_speed, float right_speed, float left_delta_dist, float right_delta_dist, float heading)
 {
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
@@ -412,6 +427,10 @@ void I2c_WriteOdom(float left_speed, float right_speed, float left_delta_dist, f
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
     i2c_buf.read_only.odom.right_delta_dist = right_delta_dist;
+    EZI2C_Slave_EnableInt();
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
+    i2c_buf.read_only.odom.heading = heading;
     EZI2C_Slave_EnableInt();
 }
 
