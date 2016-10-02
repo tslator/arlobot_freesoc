@@ -39,8 +39,10 @@ void I2c_ClearDeviceStatusBit(uint16 bit);
 void I2c_SetCalibrationStatusBit(uint16 bit);
 void I2c_ClearCalibrationStatusBit(uint16 bit);
 void I2c_SetCalibrationStatus(uint16 status);
-void I2c_WriteUltrasonicDistances(uint8 offset, float* distances, uint8 num_entries);
-void I2c_WriteInfraredDistances(uint8 offset, float* distances, uint8 num_entries);
+void I2c_WriteUltrasonicFrontDistances(float* distances);
+void I2c_WriteUltrasonicRearDistances(float* distances);
+void I2c_WriteInfraredFrontDistances(float* distances);
+void I2c_WriteInfraredRearDistances(float* distances);
 
 void I2c_WriteOdom(float left_speed, float right_speed, float left_delta_dist, float right_delta_dist, float heading);
 

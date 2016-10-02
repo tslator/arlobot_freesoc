@@ -51,6 +51,7 @@
 //#define ODOM_UPDATE_DELTA_ENABLED
 //#define CTRL_UPDATE_DELTA_ENABLED
 //#define MAIN_LOOP_DELTA_ENABLED
+//#define SENSOR_UPDATE_DELTA_ENABLED
     
 char formatted_string[256];
 

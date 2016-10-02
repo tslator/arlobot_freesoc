@@ -511,7 +511,7 @@ static uint8 GetNextCps(DIR_TYPE dir, float *cps)
 {
     static uint8 index = 0;
     
-    if (index == MAX_CPS_ARRAY)
+    if (index == VAL_NUM_PROFILE_DATA_POINTS)
     {
         index = 0;
         return 1;
@@ -541,8 +541,8 @@ static uint8 ValidateMotorCalibration(VAL_MOTOR_PARAMS *val_params, uint32 run_t
 {
     static uint8 running = FALSE;
     static uint32 start_time = 0;
+    static float cps;
     uint8 result;
-    float cps;
     PWM_TYPE pwm;
     MOTOR_CALIBRATION_TYPE *motor;
 
@@ -567,7 +567,7 @@ static uint8 ValidateMotorCalibration(VAL_MOTOR_PARAMS *val_params, uint32 run_t
         uint32 delta_time = millis() - start_time;
         if ( millis() - start_time < run_time )
         {
-            if (delta_time % 100)
+            if (delta_time % 250)
             {
                 PrintWheelVelocity(val_params->label, cps, motor->get_mps(), motor->get_pwm());
             }
@@ -584,6 +584,7 @@ static uint8 ValidateMotorCalibration(VAL_MOTOR_PARAMS *val_params, uint32 run_t
         if( result )
         {
             running = FALSE;
+            motor->set_pwm(PWM_STOP);
             return VALIDATION_INTERATION_DONE;
         }
         pwm = Cal_CpsToPwm(motor->wheel, cps);
@@ -752,6 +753,8 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
             break;
         case CAL_VALIDATE_STAGE:
             Ser_PutString("Motor validation complete\r\n");
+            Motor_LeftSetPwm(PWM_STOP);
+            Motor_RightSetPwm(PWM_STOP);
             break;
     }
     return CAL_OK;

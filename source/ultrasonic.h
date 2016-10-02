@@ -17,7 +17,7 @@
 
 void Ultrasonic_Init();
 void Ultrasonic_Start();
-void Ultrasonic_Test();
+void Ultrasonic_Update();
 
 #endif
 

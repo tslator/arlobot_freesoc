@@ -118,13 +118,15 @@ typedef struct
 /* Define the structure for ultrasonic sensors */
 typedef struct
 {
-    float dist[NUM_ULTRASONIC_SENSORS];
+    float front[NUM_ULTRASONIC_SENSORS];
+    float rear[];
 } __attribute__ ((packed)) ULTRASONIC;
 
 /* Define the structure for infrared sensors */
 typedef struct
 {
-    float dist[NUM_INFRARED_SENSORS];
+    float front[NUM_INFRARED_SENSORS];
+    float rear[];
 } __attribute__((packed)) INFRARED;
 
 /* Define the I2C Slave that Read Only */
@@ -435,42 +437,48 @@ void I2c_WriteOdom(float left_speed, float right_speed, float left_delta_dist, f
 }
 
 /*---------------------------------------------------------------------------------------------------
- * Name: I2c_WriteInfraredDistances
+ * Name: I2c_WriteUltrasonicFrontDistances/I2c_WriteUltrasonicRearDistances
  * Description: Accessor function used to write the current infrared distance values to I2C.
- * Parameters: offset - an offset into the ir.dist array.  The array is partitioned into front and
- *             read distance values such that the front values are written to the first 8 entries
- *             and the rear values are written to the last 8 entries.
- *             distances - array of distance values
- *             num_entries - the number of entries in the array.  Typically will be a constant
- *             derived from the configuration of the number of sensors, e.g., 8 per call.
+ * Parameters: distances - array of distance values
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void I2c_WriteInfraredDistances(uint8 offset, float* distances, uint8 num_entries)
+void I2c_WriteUltrasonicFrontDistances(float* distances)
 {
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
-    memcpy(&i2c_buf.read_only.ir.dist[offset], distances, num_entries);
+    memcpy(&i2c_buf.read_only.ir.front, distances, NUM_FRONT_ULTRASONIC_SENSORS);
+    EZI2C_Slave_EnableInt();
+}
+
+void I2c_WriteUltrasonicRearDistances(float* distances)
+{
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
+    memcpy(&i2c_buf.read_only.ir.front, distances, NUM_REAR_ULTRASONIC_SENSORS);
     EZI2C_Slave_EnableInt();
 }
 
 /*---------------------------------------------------------------------------------------------------
- * Name: I2c_WriteUltrasonicDistances
+ * Name: I2c_WriteInfraredFrontDistances/I2c_WriteInfraredRearDistances
  * Description: Accessor function used to write the current infrared distance values to I2C.
- * Parameters: offset - an offset into the us.dist array.  The array is partitioned into front and
- *             read distance values such that the front values are written to the first 8 entries
- *             and the rear values are written to the last 8 entries.
- *             distances - array of distance values
- *             num_entries - the number of entries in the array.  Typically will be a constant
- *             derived from the configuration of the number of sensors, e.g., 8 per call.
+ * Parameters: distances - array of distance values
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void I2c_WriteUltrasonicDistances(uint8 offset, float* distances, uint8 num_entries)
+void I2c_WriteInfraredFrontDistances(float* distances)
 {
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
-    memcpy(&i2c_buf.read_only.us.dist[offset], distances, num_entries);
+    memcpy(&i2c_buf.read_only.us.front, distances, NUM_FRONT_INFRARED_SENSORS);
+    EZI2C_Slave_EnableInt();
+}
+
+void I2c_WriteInfraredRearDistances(float* distances)
+{
+    I2C_WAIT_FOR_ACCESS();
+    EZI2C_Slave_DisableInt();
+    memcpy(&i2c_buf.read_only.us.rear, distances, NUM_REAR_INFRARED_SENSORS);
     EZI2C_Slave_EnableInt();
 }
 

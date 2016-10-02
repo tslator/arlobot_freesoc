@@ -25,7 +25,7 @@
 #include "infrared.h"
 #include "cal.h"
 #include "nvstore.h"
-#include "spi.h"
+#include "sensor.h"
 
 #ifdef MAIN_LOOP_DELTA_ENABLED
 static uint32 main_loop_delta;
@@ -60,9 +60,7 @@ int main()
     Motor_Init();
     Pid_Init();
     Odom_Init();
-    Spi_Init();
-    //Ultrasonic_Init();
-    //Infrared_Init();
+    Sensor_Init();
 
     Nvstore_Start();
     Ser_Start();
@@ -74,7 +72,7 @@ int main()
     Motor_Start();
     Pid_Start();
     Odom_Start();
-    Spi_Start();
+    Sensor_Start();
 
     DEBUG_PRINT_STR("Hello, my name is ArloSoc!\r\n");
     DEBUG_PRINT_STR("I am the microcontroller for Arlobot.\r\n");
@@ -99,8 +97,8 @@ int main()
         /* Update the odometry calculation */
         Odom_Update();
         
-        /* Read the SPI devices */
-        Spi_Update();
+        /* Read the sensors devices */
+        Sensor_Update();
         
         /* Diagnostic update */
         Diag_Update();        
