@@ -304,8 +304,8 @@ static void ProcessSettingsCmd(uint8 cmd)
             Ser_WriteByte(cmd);
             Ser_PutString("\r\nDisplaying left motor calibration: count/sec, pwm mapping");
             Ser_PutString("\r\n");
-            Cal_PrintSamples("Left-Forward", (int32 *) p_cal_eeprom->left_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_fwd.pwm_data);
             Cal_PrintSamples("Left-Backward", (int32 *) p_cal_eeprom->left_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_bwd.pwm_data);
+            Cal_PrintSamples("Left-Forward", (int32 *) p_cal_eeprom->left_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_fwd.pwm_data);
             Ser_PutString("\r\n");
             
             DisplaySettingsMenu();
@@ -315,8 +315,8 @@ static void ProcessSettingsCmd(uint8 cmd)
             Ser_WriteByte(cmd);
             Ser_PutString("\r\nDisplaying right motor calibration: count/sec, pwm mapping");
             Ser_PutString("\r\n");
-            Cal_PrintSamples("Right-Forward", (int32 *) p_cal_eeprom->right_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_fwd.pwm_data);
             Cal_PrintSamples("Right-Backward", (int32 *) p_cal_eeprom->right_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_bwd.pwm_data);
+            Cal_PrintSamples("Right-Forward", (int32 *) p_cal_eeprom->right_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_fwd.pwm_data);
             Ser_PutString("\r\n");
             
             DisplaySettingsMenu();

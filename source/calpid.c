@@ -69,8 +69,8 @@ static CALIBRATION_TYPE right_pid_calibration = {CAL_INIT_STATE,
                                                  Results};
 
 
-static float fwd_velocities[MAX_NUM_VELOCITIES] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-static float bwd_velocities[MAX_NUM_VELOCITIES] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+static float val_fwd_cps[MAX_NUM_VELOCITIES] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+static float val_bwd_cps[MAX_NUM_VELOCITIES] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 static uint8 vel_index = 0;
 
 
@@ -164,11 +164,11 @@ static float GetNextValidationVelocity(DIR_TYPE dir)
     switch( dir )
     {
         case DIR_FORWARD:
-            value = fwd_velocities[vel_index];
+            value = val_fwd_cps[vel_index];
             break;
     
         case DIR_BACKWARD:
-            value = bwd_velocities[vel_index];
+            value = val_bwd_cps[vel_index];
             break;
 
         default:
@@ -178,7 +178,8 @@ static float GetNextValidationVelocity(DIR_TYPE dir)
 
     vel_index++;
 
-    return value;
+    /* Note: Convert CPS to MPS */
+    return value * METER_PER_COUNT;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -259,7 +260,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
             
             old_debug_control_enabled = debug_control_enabled;
 
-            Cal_CalcTriangularProfile(MAX_NUM_VELOCITIES, 0.2, 0.8, fwd_velocities, bwd_velocities);
+            Cal_CalcTriangularProfile(MAX_NUM_VELOCITIES, 0.2, 0.8, val_fwd_cps, val_bwd_cps);
             
             Cal_SetLeftRightVelocity(0, 0);
             Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
@@ -374,8 +375,8 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
             break;
 
         case CAL_VALIDATE_STAGE:
-            /* Assume we have an array of validation velocities that we want to run through.
-               We would use update to measure the time and advance through the array
+            /* Assume an array of validation velocities that we want to run through.
+               We use update to measure the time and advance through the array
              */
             if (millis() - start_time < p_pid_params->run_time)
             {

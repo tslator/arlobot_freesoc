@@ -60,7 +60,7 @@ int main()
     Motor_Init();
     Pid_Init();
     Odom_Init();
-    Sensor_Init();
+    //Sensor_Init();
 
     Nvstore_Start();
     Ser_Start();
@@ -72,7 +72,7 @@ int main()
     Motor_Start();
     Pid_Start();
     Odom_Start();
-    Sensor_Start();
+    //Sensor_Start();
 
     DEBUG_PRINT_STR("Hello, my name is ArloSoc!\r\n");
     DEBUG_PRINT_STR("I am the microcontroller for Arlobot.\r\n");
@@ -98,7 +98,7 @@ int main()
         Odom_Update();
         
         /* Read the sensors devices */
-        Sensor_Update();
+        //Sensor_Update();
         
         /* Diagnostic update */
         Diag_Update();        
