@@ -131,6 +131,9 @@ static uint8 IsValidMessage(SPI_MSG_TYPE *msg)
  *-------------------------------------------------------------------------------------------------*/
 void RecvMessage(SPI_NODE_TYPE node, SPI_MSG_TYPE *message)
 {
+    #define MAX_SPI_TIMEOUT (100)
+    uint32 start_time;
+    uint32 elapsed_time;
     uint8 *p_msg;
     
     /* Get a pointer to the start of the message since the SPI interface is byte-based */
@@ -143,13 +146,45 @@ void RecvMessage(SPI_NODE_TYPE node, SPI_MSG_TYPE *message)
 
     /* Wait for the end of the transfer. The number of transmitted data
      * elements has to be equal to the number of received data elements.
+     *
+     * Note: The expectation is that the sensor nodes will be connected to the Psoc via SPI.  But, if they are not
+     * then the while loop will loop forever.  So, a timeout and check was added.  Also, this allows for injecting
+     * fake data to testing purposes.  Just enable the define.
      */
     uint8 size = SPIM_GET_RX_BUFFER_SIZE();
-    while (MAX_MSG_SIZE != size)
-    {
+    start_time = millis();
+    elapsed_time = 0;
+    while (MAX_MSG_SIZE != size && elapsed_time < MAX_SPI_TIMEOUT)
+    {        
         size = SPIM_GET_RX_BUFFER_SIZE();
+        elapsed_time = millis() - start_time;
     }
 
+    if (elapsed_time >= MAX_SPI_TIMEOUT)
+    {
+//#define FAKE_SENSOR    
+#ifdef FAKE_SENSOR
+        message->som = SOM;
+        message->eom = EOM;
+        message->data.floats[0] = 1.0;
+        message->data.floats[1] = 2.0;
+        message->data.floats[2] = 3.0;
+        message->data.floats[3] = 4.0;
+        message->data.floats[4] = 5.0;
+        message->data.floats[5] = 6.0;
+        message->data.floats[6] = 7.0;
+        message->data.floats[7] = 8.0;
+        message->type = IR_TYPE;
+
+        if (sensor == 1 || sensor == 3)
+        {
+            message->type = US_TYPE;
+        }
+#endif   
+        memset(message, 0, sizeof(SPI_MSG_TYPE));
+        return;
+    }
+    
     /* Clear dummy bytes from TX buffer */
     SPIM_CLEAR_TX_BUFFER();
 
@@ -163,26 +198,6 @@ void RecvMessage(SPI_NODE_TYPE node, SPI_MSG_TYPE *message)
         ii++;
     }
     SPIM_CLEAR_RX_BUFFER();
-    
-//#define FAKE_SENSOR    
-#ifdef FAKE_SENSOR
-    message->som = SOM;
-    message->eom = EOM;
-    message->data.floats[0] = 1.0;
-    message->data.floats[1] = 2.0;
-    message->data.floats[2] = 3.0;
-    message->data.floats[3] = 4.0;
-    message->data.floats[4] = 5.0;
-    message->data.floats[5] = 6.0;
-    message->data.floats[6] = 7.0;
-    message->data.floats[7] = 8.0;
-    message->type = IR_TYPE;
-
-    if (sensor == 1 || sensor == 3)
-    {
-        message->type = US_TYPE;
-    }
-#endif    
 }
 
 /*---------------------------------------------------------------------------------------------------

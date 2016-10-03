@@ -447,7 +447,7 @@ void I2c_WriteUltrasonicFrontDistances(float* distances)
 {
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
-    memcpy(&i2c_buf.read_only.ir.front, distances, NUM_FRONT_ULTRASONIC_SENSORS);
+    memcpy(&i2c_buf.read_only.ir.front, distances, NUM_FRONT_ULTRASONIC_SENSORS*sizeof(float));
     EZI2C_Slave_EnableInt();
 }
 
@@ -455,7 +455,7 @@ void I2c_WriteUltrasonicRearDistances(float* distances)
 {
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
-    memcpy(&i2c_buf.read_only.ir.front, distances, NUM_REAR_ULTRASONIC_SENSORS);
+    memcpy(&i2c_buf.read_only.ir.front, distances, NUM_REAR_ULTRASONIC_SENSORS*sizeof(float));
     EZI2C_Slave_EnableInt();
 }
 
@@ -470,7 +470,7 @@ void I2c_WriteInfraredFrontDistances(float* distances)
 {
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
-    memcpy(&i2c_buf.read_only.us.front, distances, NUM_FRONT_INFRARED_SENSORS);
+    memcpy(&i2c_buf.read_only.us.front, distances, NUM_FRONT_INFRARED_SENSORS*sizeof(float));
     EZI2C_Slave_EnableInt();
 }
 
@@ -478,7 +478,7 @@ void I2c_WriteInfraredRearDistances(float* distances)
 {
     I2C_WAIT_FOR_ACCESS();
     EZI2C_Slave_DisableInt();
-    memcpy(&i2c_buf.read_only.us.rear, distances, NUM_REAR_INFRARED_SENSORS);
+    memcpy(&i2c_buf.read_only.us.rear, distances, NUM_REAR_INFRARED_SENSORS*sizeof(float));
     EZI2C_Slave_EnableInt();
 }
 

@@ -44,9 +44,9 @@
  * Functions
  *-------------------------------------------------------------------------------------------------*/
 
-static void PrintSensorDataFloat(char *label, float *data)
+static void PrintDistanceSensorData(char *label, float *data)
 {
-    /* Need to fix this to write to the serial port an array of floats as a string */
+    /* Need to write to the serial port an array of floats as a string */
 }
 
 
@@ -97,6 +97,25 @@ static void ReadUltratronicRear()
 }
 
 /*---------------------------------------------------------------------------------------------------
+ * Name: ReadFrontDistanceSensors/ReadReadDistanceSensors
+ * Description: Reads the front/rear distance sensors
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+static void ReadFrontDistanceSensors()
+{
+    ReadInfraredFront();
+    ReadUltrasonicFront();
+}
+
+static void ReadReadDistanceSensors()
+{
+    ReadInfraredRear();
+    ReadUltratronicRear();
+}
+
+/*---------------------------------------------------------------------------------------------------
  * Name: Sensor_Init
  * Description: Initializes the sensor module.  The sensor module is an abstraction for various sensors
  *              supported on the Psoc.
@@ -137,10 +156,8 @@ void Sensor_Update()
     SENSOR_DEBUG_DELTA(delta_time);
     if (delta_time >= SENSOR_SAMPLE_TIME_MS)
     {
-        ReadInfraredFront();
-        ReadUltrasonicFront();
-        ReadInfraredRear();
-        ReadUltratronicRear();
+        ReadFrontDistanceSensors();
+        ReadReadDistanceSensors();
         
         // Read the IMU
     }
