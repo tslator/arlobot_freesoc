@@ -51,6 +51,9 @@
 #define VALIDATION_INTERATION_DONE (255)
 #define MAX_CPS_ARRAY (51)
 
+#define NUM_MOTOR_VAL_PARAMS (4)
+
+
 /*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/
@@ -82,6 +85,12 @@ typedef struct _pwm_params
     int16 step;
 } PWM_PARAMS_TYPE;
 
+typedef struct 
+{
+    char label[30]; 
+    DIR_TYPE direction;
+    MOTOR_CALIBRATION_TYPE *motor;
+}VAL_MOTOR_PARAMS;
 
 /*---------------------------------------------------------------------------------------------------
  * Variables
@@ -178,15 +187,6 @@ MOTOR_CALIBRATION_TYPE motor_cal[2] =
       WHEEL_RIGHT}};
 
 
-typedef struct 
-{
-    char label[30]; 
-    DIR_TYPE direction;
-    MOTOR_CALIBRATION_TYPE *motor;
-}VAL_MOTOR_PARAMS;
-
-#define NUM_MOTOR_VAL_PARAMS (4)
-
 VAL_MOTOR_PARAMS motor_val_params[4] = {{
                                         "left-forward", 
                                         DIR_FORWARD,
@@ -249,16 +249,19 @@ static void PrintWheelVelocity(char *label, float cps, float mps, uint16 pwm)
     char cps_str[10];
     char mps_str[10];
     char calc_mps_str[10];
+    char delta_mps_str[10];
     char output[64];
 
     float calc_mps = cps * METER_PER_COUNT;
+    float delta_mps = calc_mps - mps;
 
     ftoa(cps, cps_str, 3);
     ftoa(mps, mps_str, 3);
     ftoa(calc_mps, calc_mps_str, 3);
+    ftoa(delta_mps, delta_mps_str, 6);
     
     
-    sprintf(output, "%s - cps: %s cmpd: %s mps: %s pwm: %d\r\n", label, cps_str, calc_mps_str, mps_str, pwm);
+    sprintf(output, "%s - cps: %s cmpd: %s mps: %s dmps: %s, pwm: %d\r\n", label, cps_str, calc_mps_str, mps_str, delta_mps_str, pwm);
     Ser_PutString(output);
 }
 
@@ -279,14 +282,16 @@ static void CalculatePwmSamples(WHEEL_TYPE wheel, DIR_TYPE dir, uint16 *pwm_samp
  */
 {
     uint8 ii;
-    uint8 offset;
     uint16 pwm;
     uint16 pwm_start;
-    uint16 pwm_end;
+    //uint16 pwm_end;
     int16 pwm_step;
 
     pwm_start = pwm_params[wheel][dir].start;
-    pwm_end = pwm_params[wheel][dir].end;
+    // Note: The code becomes more complicated to use pwm_end because sometimes the pwm is incrementing and sometimes
+    // it is decrementing.  Ultimately, I chose to just loop over the number of sample points and make pwm_step a 
+    // positive or negative number.  I will remove end at some point when I'm confident about how everything works.
+    //pwm_end = pwm_params[wheel][dir].end;
     pwm_step = pwm_params[wheel][dir].step;
     
     for (ii =0, pwm = pwm_start; ii < CAL_NUM_SAMPLES; ++ii, pwm += pwm_step)
@@ -563,45 +568,43 @@ static uint8 GetNextCps(DIR_TYPE dir, float *cps)
     return 0;
 }
 
+static void SetNextVelocity(MOTOR_CALIBRATION_TYPE *motor, float cps)
+{
+    float mps = cps * METER_PER_COUNT;
+    if (motor->wheel == WHEEL_LEFT)
+    {
+        Cal_SetLeftRightVelocity(mps, 0);
+    }
+    if (motor->wheel == WHEEL_RIGHT)
+    {
+        Cal_SetLeftRightVelocity(0, mps);
+    }
+}
+
+
 static uint8 ValidateMotorCalibration(VAL_MOTOR_PARAMS *val_params, uint32 run_time)
 {
     static uint8 running = FALSE;
     static uint32 start_time = 0;
-    static uint32 print_time = 0;
     static float cps;
     uint8 result;
-    PWM_TYPE pwm;
     MOTOR_CALIBRATION_TYPE *motor;
 
     motor = val_params->motor;
 
     if( !running )
     {
-        Ser_PutString("validation is not running\r\n");
-        motor->set_pwm(PWM_STOP);
+        Cal_SetLeftRightVelocity(0, 0);
         result = GetNextCps(val_params->direction, &cps);
         if( result )
         {
-            Ser_PutString("no more cps values\r\n");
             motor->set_pwm(PWM_STOP);
             return CAL_COMPLETE;
         }
         
-        //pwm = Cal_CpsToPwm(motor->wheel, cps);
-        //motor->set_pwm(pwm);
-        float mps = cps * METER_PER_COUNT;
-        if (motor->wheel == WHEEL_LEFT)
-        {
-            Cal_SetLeftRightVelocity(mps, 0);
-        }
-        if (motor->wheel == WHEEL_RIGHT)
-        {
-            Cal_SetLeftRightVelocity(0, mps);
-        }
+        SetNextVelocity(motor, cps);
         start_time = millis();
         running = TRUE;
-        print_time = 0;
-        Ser_PutString("validation running set to true\r\n");
     }
 
     if( running )
@@ -621,16 +624,11 @@ static uint8 ValidateMotorCalibration(VAL_MOTOR_PARAMS *val_params, uint32 run_t
         result = GetNextCps(val_params->direction, &cps);
         if( result )
         {
-            Ser_PutString("no more cps values\r\n");
             running = FALSE;
-            Ser_PutString("validation running set to false\r\n");
-            motor->set_pwm(PWM_STOP);
+            Cal_SetLeftRightVelocity(0, 0);
             return VALIDATION_INTERATION_DONE;
         }
-        //pwm = Cal_CpsToPwm(motor->wheel, cps);
-        //motor->set_pwm(pwm);
-        float mps = cps * METER_PER_COUNT;
-        Cal_SetLeftRightVelocity(mps, mps);        
+        SetNextVelocity(motor, cps);
         start_time = millis();
         return CAL_OK;
     }
@@ -664,14 +662,16 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
         case CAL_VALIDATE_STAGE:
             Ser_PutString("\r\nInitialize motor validation\r\n");
 
-            /* Note: For motor calibration, there is no need for PID control so it is disabled */
-            Pid_Enable(FALSE);
-
             Cal_CalcTriangularProfile(VAL_NUM_PROFILE_DATA_POINTS, 
                                       VAL_LOWER_BOUND_PERCENTAGE, 
                                       VAL_UPPER_BOUND_PERCENTAGE, 
                                       val_fwd_cps, 
                                       val_bwd_cps);
+            
+            /* Left/Right wheel validation uses the main loop so the PID must be enabled */
+            Pid_Enable(TRUE);
+            Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);         
+
             break;
     }
     
@@ -699,7 +699,6 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
         case CAL_VALIDATE_STAGE:
             Ser_PutString("\r\nPerforming motor validation\r\n");
             Cal_SetLeftRightVelocity(0, 0);            
-            Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);         
             break;
     }
     
@@ -818,6 +817,8 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Results(CAL_STAGE_TYPE stage, void *params)
 {
+    params = params;
+    
     switch (stage)
     {
         case CAL_CALIBRATE_STAGE:
