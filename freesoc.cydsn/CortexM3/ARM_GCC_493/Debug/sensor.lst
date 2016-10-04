@@ -1,4 +1,4 @@
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 1
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 1
 
 
    1              		.syntax unified
@@ -18,13 +18,13 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 1
   15              		.text
   16              	.Ltext0:
   17              		.cfi_sections	.debug_frame
-  18              		.section	.text.ReadInfraredFront,"ax",%progbits
+  18              		.section	.text.ReadInfraredRear,"ax",%progbits
   19              		.align	2
   20              		.thumb
   21              		.thumb_func
-  22              		.type	ReadInfraredFront, %function
-  23              	ReadInfraredFront:
-  24              	.LFB64:
+  22              		.type	ReadInfraredRear, %function
+  23              	ReadInfraredRear:
+  24              	.LFB65:
   25              		.file 1 "..\\source\\sensor.c"
    1:..\source/sensor.c **** /* ========================================
    2:..\source/sensor.c ****  *
@@ -58,7 +58,7 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 1
   30:..\source/sensor.c **** #include "utils.h"
   31:..\source/sensor.c **** 
   32:..\source/sensor.c **** /*-------------------------------------------------------------------------------------------------
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 2
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 2
 
 
   33:..\source/sensor.c ****  * Macros
@@ -71,26 +71,58 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 1
   40:..\source/sensor.c **** 
   41:..\source/sensor.c **** #define SENSOR_SAMPLE_TIME_MS  SAMPLE_TIME_MS(SENSOR_SAMPLE_RATE)
   42:..\source/sensor.c **** 
-  43:..\source/sensor.c **** /*-------------------------------------------------------------------------------------------------
-  44:..\source/sensor.c ****  * Functions
-  45:..\source/sensor.c ****  *-------------------------------------------------------------------------------------------------
-  46:..\source/sensor.c **** 
-  47:..\source/sensor.c **** static void PrintDistanceSensorData(char *label, float *data)
-  48:..\source/sensor.c **** {
-  49:..\source/sensor.c ****     /* Need to write to the serial port an array of floats as a string */
-  50:..\source/sensor.c **** }
-  51:..\source/sensor.c **** 
-  52:..\source/sensor.c **** 
-  53:..\source/sensor.c **** /*-------------------------------------------------------------------------------------------------
-  54:..\source/sensor.c ****  * Name: ReadInfraredFront/ReadInfraredRear
-  55:..\source/sensor.c ****  * Description: Reads the infrared front/rear distances from the SPI network
-  56:..\source/sensor.c ****  * Parameters: None
-  57:..\source/sensor.c ****  * Return: None
-  58:..\source/sensor.c ****  * 
-  59:..\source/sensor.c ****  *-------------------------------------------------------------------------------------------------
-  60:..\source/sensor.c **** static void ReadInfraredFront()
-  61:..\source/sensor.c **** {
-  26              		.loc 1 61 0
+  43:..\source/sensor.c **** #define NUM_SENSOR_ENTRIES (2)
+  44:..\source/sensor.c **** 
+  45:..\source/sensor.c **** 
+  46:..\source/sensor.c **** /*-------------------------------------------------------------------------------------------------
+  47:..\source/sensor.c ****  * Types
+  48:..\source/sensor.c ****  *-------------------------------------------------------------------------------------------------
+  49:..\source/sensor.c **** typedef void (*SENSOR_READ_FUNC_TYPE)();
+  50:..\source/sensor.c **** 
+  51:..\source/sensor.c **** /*-------------------------------------------------------------------------------------------------
+  52:..\source/sensor.c ****  * Variables
+  53:..\source/sensor.c ****  *-------------------------------------------------------------------------------------------------
+  54:..\source/sensor.c **** /* Note: The main loop timing is very sensitive so it is very important that module "update" functi
+  55:..\source/sensor.c ****    limit their processing time.  There are a number of sensors that need to be aread and this is th
+  56:..\source/sensor.c ****    area where extension is most likely.  To minimize processing time, only one "sensor group" is
+  57:..\source/sensor.c ****    read on each update call.  The sensor array is an array of functions that is looped through cont
+  58:..\source/sensor.c ****    to ensure that all the sensors are read, but at the same time, each "read" minimizes the amount 
+  59:..\source/sensor.c ****    spent in the update call.
+  60:..\source/sensor.c ****  */
+  61:..\source/sensor.c **** static SENSOR_READ_FUNC_TYPE sensor_array[NUM_SENSOR_ENTRIES];
+  62:..\source/sensor.c **** 
+  63:..\source/sensor.c **** 
+  64:..\source/sensor.c **** /*-------------------------------------------------------------------------------------------------
+  65:..\source/sensor.c ****  * Functions
+  66:..\source/sensor.c ****  *-------------------------------------------------------------------------------------------------
+  67:..\source/sensor.c **** 
+  68:..\source/sensor.c **** static void PrintDistanceSensorData(char *label, float *data)
+  69:..\source/sensor.c **** {
+  70:..\source/sensor.c ****     /* Need to write to the serial port an array of floats as a string */
+  71:..\source/sensor.c **** }
+  72:..\source/sensor.c **** 
+  73:..\source/sensor.c **** 
+  74:..\source/sensor.c **** /*-------------------------------------------------------------------------------------------------
+  75:..\source/sensor.c ****  * Name: ReadInfraredFront/ReadInfraredRear
+  76:..\source/sensor.c ****  * Description: Reads the infrared front/rear distances from the SPI network
+  77:..\source/sensor.c ****  * Parameters: None
+  78:..\source/sensor.c ****  * Return: None
+  79:..\source/sensor.c ****  * 
+  80:..\source/sensor.c ****  *-------------------------------------------------------------------------------------------------
+  81:..\source/sensor.c **** static void ReadInfraredFront()
+  82:..\source/sensor.c **** {
+  83:..\source/sensor.c ****     float data[NUM_FRONT_INFRARED_SENSORS];
+  84:..\source/sensor.c ****     
+  85:..\source/sensor.c ****     Spi_ReadNode(SPI_NODE_1, (void *) data);
+  86:..\source/sensor.c ****     I2c_WriteInfraredFrontDistances(data);
+  87:..\source/sensor.c **** }
+  88:..\source/sensor.c **** 
+  89:..\source/sensor.c **** static void ReadInfraredRear()
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 3
+
+
+  90:..\source/sensor.c **** {
+  26              		.loc 1 90 0
   27              		.cfi_startproc
   28              		@ args = 0, pretend = 0, frame = 32
   29              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -99,57 +131,57 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 1
   32              		.cfi_offset 14, -4
   33 0002 89B0     		sub	sp, sp, #36
   34              		.cfi_def_cfa_offset 40
-  62:..\source/sensor.c ****     float data[NUM_FRONT_INFRARED_SENSORS];
-  63:..\source/sensor.c ****     
-  64:..\source/sensor.c ****     Spi_ReadNode(SPI_NODE_1, (void *) data);
-  35              		.loc 1 64 0
-  36 0004 0020     		movs	r0, #0
+  91:..\source/sensor.c ****     float data[NUM_REAR_INFRARED_SENSORS];
+  92:..\source/sensor.c ****     
+  93:..\source/sensor.c ****     Spi_ReadNode(SPI_NODE_2, (void *) data);
+  35              		.loc 1 93 0
+  36 0004 0120     		movs	r0, #1
   37 0006 6946     		mov	r1, sp
   38 0008 FFF7FEFF 		bl	Spi_ReadNode
   39              	.LVL0:
-  65:..\source/sensor.c ****     I2c_WriteInfraredFrontDistances(data);
-  40              		.loc 1 65 0
+  94:..\source/sensor.c ****     I2c_WriteInfraredRearDistances(data);
+  40              		.loc 1 94 0
   41 000c 6846     		mov	r0, sp
-  42 000e FFF7FEFF 		bl	I2c_WriteInfraredFrontDistances
+  42 000e FFF7FEFF 		bl	I2c_WriteInfraredRearDistances
   43              	.LVL1:
-  66:..\source/sensor.c **** }
-  44              		.loc 1 66 0
+  95:..\source/sensor.c **** }
+  44              		.loc 1 95 0
   45 0012 09B0     		add	sp, sp, #36
   46              		.cfi_def_cfa_offset 4
   47              		@ sp needed
   48 0014 5DF804FB 		ldr	pc, [sp], #4
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 3
-
-
   49              		.cfi_endproc
-  50              	.LFE64:
-  51              		.size	ReadInfraredFront, .-ReadInfraredFront
-  52              		.section	.text.ReadUltrasonicFront,"ax",%progbits
+  50              	.LFE65:
+  51              		.size	ReadInfraredRear, .-ReadInfraredRear
+  52              		.section	.text.ReadUltratronicRear,"ax",%progbits
   53              		.align	2
   54              		.thumb
   55              		.thumb_func
-  56              		.type	ReadUltrasonicFront, %function
-  57              	ReadUltrasonicFront:
-  58              	.LFB66:
-  67:..\source/sensor.c **** 
-  68:..\source/sensor.c **** static void ReadInfraredRear()
-  69:..\source/sensor.c **** {
-  70:..\source/sensor.c ****     float data[NUM_REAR_INFRARED_SENSORS];
-  71:..\source/sensor.c ****     
-  72:..\source/sensor.c ****     Spi_ReadNode(SPI_NODE_2, (void *) data);
-  73:..\source/sensor.c ****     I2c_WriteInfraredRearDistances(data);
-  74:..\source/sensor.c **** }
-  75:..\source/sensor.c **** 
-  76:..\source/sensor.c **** /*-------------------------------------------------------------------------------------------------
-  77:..\source/sensor.c ****  * Name: ReadUltrasonicFront/ReadUltratronicRear
-  78:..\source/sensor.c ****  * Description: Reads the ultrasonic front/rear distances from the SPI network
-  79:..\source/sensor.c ****  * Parameters: None
-  80:..\source/sensor.c ****  * Return: None
-  81:..\source/sensor.c ****  * 
-  82:..\source/sensor.c ****  *-------------------------------------------------------------------------------------------------
-  83:..\source/sensor.c **** static void ReadUltrasonicFront()
-  84:..\source/sensor.c **** {
-  59              		.loc 1 84 0
+  56              		.type	ReadUltratronicRear, %function
+  57              	ReadUltratronicRear:
+  58              	.LFB67:
+  96:..\source/sensor.c **** 
+  97:..\source/sensor.c **** /*-------------------------------------------------------------------------------------------------
+  98:..\source/sensor.c ****  * Name: ReadUltrasonicFront/ReadUltratronicRear
+  99:..\source/sensor.c ****  * Description: Reads the ultrasonic front/rear distances from the SPI network
+ 100:..\source/sensor.c ****  * Parameters: None
+ 101:..\source/sensor.c ****  * Return: None
+ 102:..\source/sensor.c ****  * 
+ 103:..\source/sensor.c ****  *-------------------------------------------------------------------------------------------------
+ 104:..\source/sensor.c **** static void ReadUltrasonicFront()
+ 105:..\source/sensor.c **** {
+ 106:..\source/sensor.c ****     float data[NUM_FRONT_ULTRASONIC_SENSORS];
+ 107:..\source/sensor.c ****     
+ 108:..\source/sensor.c ****     Spi_ReadNode(SPI_NODE_3, (void *) data);
+ 109:..\source/sensor.c ****     I2c_WriteUltrasonicFrontDistances(data);
+ 110:..\source/sensor.c **** }
+ 111:..\source/sensor.c **** 
+ 112:..\source/sensor.c **** static void ReadUltratronicRear()
+ 113:..\source/sensor.c **** {
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 4
+
+
+  59              		.loc 1 113 0
   60              		.cfi_startproc
   61              		@ args = 0, pretend = 0, frame = 32
   62              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -158,89 +190,84 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 1
   65              		.cfi_offset 14, -4
   66 0002 89B0     		sub	sp, sp, #36
   67              		.cfi_def_cfa_offset 40
-  85:..\source/sensor.c ****     float data[NUM_FRONT_ULTRASONIC_SENSORS];
-  86:..\source/sensor.c ****     
-  87:..\source/sensor.c ****     Spi_ReadNode(SPI_NODE_3, (void *) data);
-  68              		.loc 1 87 0
-  69 0004 0220     		movs	r0, #2
+ 114:..\source/sensor.c ****     float data[NUM_REAR_ULTRASONIC_SENSORS];
+ 115:..\source/sensor.c ****     
+ 116:..\source/sensor.c ****     Spi_ReadNode(SPI_NODE_4, (void *) data);
+  68              		.loc 1 116 0
+  69 0004 0320     		movs	r0, #3
   70 0006 6946     		mov	r1, sp
   71 0008 FFF7FEFF 		bl	Spi_ReadNode
   72              	.LVL2:
-  88:..\source/sensor.c ****     I2c_WriteUltrasonicFrontDistances(data);
-  73              		.loc 1 88 0
+ 117:..\source/sensor.c ****     I2c_WriteUltrasonicRearDistances(data);
+  73              		.loc 1 117 0
   74 000c 6846     		mov	r0, sp
-  75 000e FFF7FEFF 		bl	I2c_WriteUltrasonicFrontDistances
+  75 000e FFF7FEFF 		bl	I2c_WriteUltrasonicRearDistances
   76              	.LVL3:
-  89:..\source/sensor.c **** }
-  77              		.loc 1 89 0
+ 118:..\source/sensor.c **** }
+  77              		.loc 1 118 0
   78 0012 09B0     		add	sp, sp, #36
   79              		.cfi_def_cfa_offset 4
   80              		@ sp needed
   81 0014 5DF804FB 		ldr	pc, [sp], #4
   82              		.cfi_endproc
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 4
-
-
-  83              	.LFE66:
-  84              		.size	ReadUltrasonicFront, .-ReadUltrasonicFront
-  85              		.section	.text.ReadFrontDistanceSensors,"ax",%progbits
+  83              	.LFE67:
+  84              		.size	ReadUltratronicRear, .-ReadUltratronicRear
+  85              		.section	.text.ReadReadDistanceSensors,"ax",%progbits
   86              		.align	2
   87              		.thumb
   88              		.thumb_func
-  89              		.type	ReadFrontDistanceSensors, %function
-  90              	ReadFrontDistanceSensors:
-  91              	.LFB68:
-  90:..\source/sensor.c **** 
-  91:..\source/sensor.c **** static void ReadUltratronicRear()
-  92:..\source/sensor.c **** {
-  93:..\source/sensor.c ****     float data[NUM_REAR_ULTRASONIC_SENSORS];
-  94:..\source/sensor.c ****     
-  95:..\source/sensor.c ****     Spi_ReadNode(SPI_NODE_4, (void *) data);
-  96:..\source/sensor.c ****     I2c_WriteUltrasonicRearDistances(data);
-  97:..\source/sensor.c **** }
-  98:..\source/sensor.c **** 
-  99:..\source/sensor.c **** /*-------------------------------------------------------------------------------------------------
- 100:..\source/sensor.c ****  * Name: ReadFrontDistanceSensors/ReadReadDistanceSensors
- 101:..\source/sensor.c ****  * Description: Reads the front/rear distance sensors
- 102:..\source/sensor.c ****  * Parameters: None
- 103:..\source/sensor.c ****  * Return: None
- 104:..\source/sensor.c ****  * 
- 105:..\source/sensor.c ****  *-------------------------------------------------------------------------------------------------
- 106:..\source/sensor.c **** static void ReadFrontDistanceSensors()
- 107:..\source/sensor.c **** {
-  92              		.loc 1 107 0
+  89              		.type	ReadReadDistanceSensors, %function
+  90              	ReadReadDistanceSensors:
+  91              	.LFB69:
+ 119:..\source/sensor.c **** 
+ 120:..\source/sensor.c **** /*-------------------------------------------------------------------------------------------------
+ 121:..\source/sensor.c ****  * Name: ReadFrontDistanceSensors/ReadReadDistanceSensors
+ 122:..\source/sensor.c ****  * Description: Reads the front/rear distance sensors
+ 123:..\source/sensor.c ****  * Parameters: None
+ 124:..\source/sensor.c ****  * Return: None
+ 125:..\source/sensor.c ****  * 
+ 126:..\source/sensor.c ****  *-------------------------------------------------------------------------------------------------
+ 127:..\source/sensor.c **** static void ReadFrontDistanceSensors()
+ 128:..\source/sensor.c **** {
+ 129:..\source/sensor.c ****     ReadInfraredFront();
+ 130:..\source/sensor.c ****     ReadUltrasonicFront();
+ 131:..\source/sensor.c **** }
+ 132:..\source/sensor.c **** 
+ 133:..\source/sensor.c **** static void ReadReadDistanceSensors()
+ 134:..\source/sensor.c **** {
+  92              		.loc 1 134 0
   93              		.cfi_startproc
   94              		@ args = 0, pretend = 0, frame = 0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 5
+
+
   95              		@ frame_needed = 0, uses_anonymous_args = 0
   96 0000 08B5     		push	{r3, lr}
   97              		.cfi_def_cfa_offset 8
   98              		.cfi_offset 3, -8
   99              		.cfi_offset 14, -4
- 108:..\source/sensor.c ****     ReadInfraredFront();
- 100              		.loc 1 108 0
- 101 0002 FFF7FEFF 		bl	ReadInfraredFront
+ 135:..\source/sensor.c ****     ReadInfraredRear();
+ 100              		.loc 1 135 0
+ 101 0002 FFF7FEFF 		bl	ReadInfraredRear
  102              	.LVL4:
- 109:..\source/sensor.c ****     ReadUltrasonicFront();
- 103              		.loc 1 109 0
- 104 0006 FFF7FEFF 		bl	ReadUltrasonicFront
+ 136:..\source/sensor.c ****     ReadUltratronicRear();
+ 103              		.loc 1 136 0
+ 104 0006 FFF7FEFF 		bl	ReadUltratronicRear
  105              	.LVL5:
  106 000a 08BD     		pop	{r3, pc}
  107              		.cfi_endproc
- 108              	.LFE68:
- 109              		.size	ReadFrontDistanceSensors, .-ReadFrontDistanceSensors
- 110              		.section	.text.ReadInfraredRear,"ax",%progbits
+ 108              	.LFE69:
+ 109              		.size	ReadReadDistanceSensors, .-ReadReadDistanceSensors
+ 110              		.section	.text.ReadInfraredFront,"ax",%progbits
  111              		.align	2
  112              		.thumb
  113              		.thumb_func
- 114              		.type	ReadInfraredRear, %function
- 115              	ReadInfraredRear:
- 116              	.LFB65:
-  69:..\source/sensor.c ****     float data[NUM_REAR_INFRARED_SENSORS];
- 117              		.loc 1 69 0
+ 114              		.type	ReadInfraredFront, %function
+ 115              	ReadInfraredFront:
+ 116              	.LFB64:
+  82:..\source/sensor.c ****     float data[NUM_FRONT_INFRARED_SENSORS];
+ 117              		.loc 1 82 0
  118              		.cfi_startproc
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 5
-
-
  119              		@ args = 0, pretend = 0, frame = 32
  120              		@ frame_needed = 0, uses_anonymous_args = 0
  121 0000 00B5     		push	{lr}
@@ -248,35 +275,38 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 1
  123              		.cfi_offset 14, -4
  124 0002 89B0     		sub	sp, sp, #36
  125              		.cfi_def_cfa_offset 40
-  72:..\source/sensor.c ****     I2c_WriteInfraredRearDistances(data);
- 126              		.loc 1 72 0
- 127 0004 0120     		movs	r0, #1
+  85:..\source/sensor.c ****     I2c_WriteInfraredFrontDistances(data);
+ 126              		.loc 1 85 0
+ 127 0004 0020     		movs	r0, #0
  128 0006 6946     		mov	r1, sp
  129 0008 FFF7FEFF 		bl	Spi_ReadNode
  130              	.LVL6:
-  73:..\source/sensor.c **** }
- 131              		.loc 1 73 0
+  86:..\source/sensor.c **** }
+ 131              		.loc 1 86 0
  132 000c 6846     		mov	r0, sp
- 133 000e FFF7FEFF 		bl	I2c_WriteInfraredRearDistances
+ 133 000e FFF7FEFF 		bl	I2c_WriteInfraredFrontDistances
  134              	.LVL7:
-  74:..\source/sensor.c **** 
- 135              		.loc 1 74 0
+  87:..\source/sensor.c **** 
+ 135              		.loc 1 87 0
  136 0012 09B0     		add	sp, sp, #36
  137              		.cfi_def_cfa_offset 4
  138              		@ sp needed
  139 0014 5DF804FB 		ldr	pc, [sp], #4
  140              		.cfi_endproc
- 141              	.LFE65:
- 142              		.size	ReadInfraredRear, .-ReadInfraredRear
- 143              		.section	.text.ReadUltratronicRear,"ax",%progbits
+ 141              	.LFE64:
+ 142              		.size	ReadInfraredFront, .-ReadInfraredFront
+ 143              		.section	.text.ReadUltrasonicFront,"ax",%progbits
  144              		.align	2
  145              		.thumb
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 6
+
+
  146              		.thumb_func
- 147              		.type	ReadUltratronicRear, %function
- 148              	ReadUltratronicRear:
- 149              	.LFB67:
-  92:..\source/sensor.c ****     float data[NUM_REAR_ULTRASONIC_SENSORS];
- 150              		.loc 1 92 0
+ 147              		.type	ReadUltrasonicFront, %function
+ 148              	ReadUltrasonicFront:
+ 149              	.LFB66:
+ 105:..\source/sensor.c ****     float data[NUM_FRONT_ULTRASONIC_SENSORS];
+ 150              		.loc 1 105 0
  151              		.cfi_startproc
  152              		@ args = 0, pretend = 0, frame = 32
  153              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -285,41 +315,35 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 1
  156              		.cfi_offset 14, -4
  157 0002 89B0     		sub	sp, sp, #36
  158              		.cfi_def_cfa_offset 40
-  95:..\source/sensor.c ****     I2c_WriteUltrasonicRearDistances(data);
- 159              		.loc 1 95 0
- 160 0004 0320     		movs	r0, #3
+ 108:..\source/sensor.c ****     I2c_WriteUltrasonicFrontDistances(data);
+ 159              		.loc 1 108 0
+ 160 0004 0220     		movs	r0, #2
  161 0006 6946     		mov	r1, sp
  162 0008 FFF7FEFF 		bl	Spi_ReadNode
  163              	.LVL8:
-  96:..\source/sensor.c **** }
- 164              		.loc 1 96 0
+ 109:..\source/sensor.c **** }
+ 164              		.loc 1 109 0
  165 000c 6846     		mov	r0, sp
- 166 000e FFF7FEFF 		bl	I2c_WriteUltrasonicRearDistances
+ 166 000e FFF7FEFF 		bl	I2c_WriteUltrasonicFrontDistances
  167              	.LVL9:
-  97:..\source/sensor.c **** 
- 168              		.loc 1 97 0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 6
-
-
+ 110:..\source/sensor.c **** 
+ 168              		.loc 1 110 0
  169 0012 09B0     		add	sp, sp, #36
  170              		.cfi_def_cfa_offset 4
  171              		@ sp needed
  172 0014 5DF804FB 		ldr	pc, [sp], #4
  173              		.cfi_endproc
- 174              	.LFE67:
- 175              		.size	ReadUltratronicRear, .-ReadUltratronicRear
- 176              		.section	.text.ReadReadDistanceSensors,"ax",%progbits
+ 174              	.LFE66:
+ 175              		.size	ReadUltrasonicFront, .-ReadUltrasonicFront
+ 176              		.section	.text.ReadFrontDistanceSensors,"ax",%progbits
  177              		.align	2
  178              		.thumb
  179              		.thumb_func
- 180              		.type	ReadReadDistanceSensors, %function
- 181              	ReadReadDistanceSensors:
- 182              	.LFB69:
- 110:..\source/sensor.c **** }
- 111:..\source/sensor.c **** 
- 112:..\source/sensor.c **** static void ReadReadDistanceSensors()
- 113:..\source/sensor.c **** {
- 183              		.loc 1 113 0
+ 180              		.type	ReadFrontDistanceSensors, %function
+ 181              	ReadFrontDistanceSensors:
+ 182              	.LFB68:
+ 128:..\source/sensor.c ****     ReadInfraredFront();
+ 183              		.loc 1 128 0
  184              		.cfi_startproc
  185              		@ args = 0, pretend = 0, frame = 0
  186              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -327,18 +351,21 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 1
  188              		.cfi_def_cfa_offset 8
  189              		.cfi_offset 3, -8
  190              		.cfi_offset 14, -4
- 114:..\source/sensor.c ****     ReadInfraredRear();
- 191              		.loc 1 114 0
- 192 0002 FFF7FEFF 		bl	ReadInfraredRear
+ 129:..\source/sensor.c ****     ReadUltrasonicFront();
+ 191              		.loc 1 129 0
+ 192 0002 FFF7FEFF 		bl	ReadInfraredFront
  193              	.LVL10:
- 115:..\source/sensor.c ****     ReadUltratronicRear();
- 194              		.loc 1 115 0
- 195 0006 FFF7FEFF 		bl	ReadUltratronicRear
+ 130:..\source/sensor.c **** }
+ 194              		.loc 1 130 0
+ 195 0006 FFF7FEFF 		bl	ReadUltrasonicFront
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 7
+
+
  196              	.LVL11:
  197 000a 08BD     		pop	{r3, pc}
  198              		.cfi_endproc
- 199              	.LFE69:
- 200              		.size	ReadReadDistanceSensors, .-ReadReadDistanceSensors
+ 199              	.LFE68:
+ 200              		.size	ReadFrontDistanceSensors, .-ReadFrontDistanceSensors
  201              		.section	.text.Sensor_Init,"ax",%progbits
  202              		.align	2
  203              		.global	Sensor_Init
@@ -347,22 +374,19 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 1
  206              		.type	Sensor_Init, %function
  207              	Sensor_Init:
  208              	.LFB70:
- 116:..\source/sensor.c **** }
- 117:..\source/sensor.c **** 
- 118:..\source/sensor.c **** /*-------------------------------------------------------------------------------------------------
- 119:..\source/sensor.c ****  * Name: Sensor_Init
- 120:..\source/sensor.c ****  * Description: Initializes the sensor module.  The sensor module is an abstraction for various sen
- 121:..\source/sensor.c ****  *              supported on the Psoc.
- 122:..\source/sensor.c ****  * Parameters: None
- 123:..\source/sensor.c ****  * Return: None
- 124:..\source/sensor.c ****  * 
- 125:..\source/sensor.c ****  *-------------------------------------------------------------------------------------------------
- 126:..\source/sensor.c **** void Sensor_Init()
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 7
-
-
- 127:..\source/sensor.c **** {
- 209              		.loc 1 127 0
+ 137:..\source/sensor.c **** }
+ 138:..\source/sensor.c **** 
+ 139:..\source/sensor.c **** /*-------------------------------------------------------------------------------------------------
+ 140:..\source/sensor.c ****  * Name: Sensor_Init
+ 141:..\source/sensor.c ****  * Description: Initializes the sensor module.  The sensor module is an abstraction for various sen
+ 142:..\source/sensor.c ****  *              supported on the Psoc.
+ 143:..\source/sensor.c ****  * Parameters: None
+ 144:..\source/sensor.c ****  * Return: None
+ 145:..\source/sensor.c ****  * 
+ 146:..\source/sensor.c ****  *-------------------------------------------------------------------------------------------------
+ 147:..\source/sensor.c **** void Sensor_Init()
+ 148:..\source/sensor.c **** {
+ 209              		.loc 1 148 0
  210              		.cfi_startproc
  211              		@ args = 0, pretend = 0, frame = 0
  212              		@ frame_needed = 0, uses_anonymous_args = 0
@@ -370,1384 +394,1485 @@ ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 1
  214              		.cfi_def_cfa_offset 8
  215              		.cfi_offset 3, -8
  216              		.cfi_offset 14, -4
- 128:..\source/sensor.c ****     Spi_Init();
- 217              		.loc 1 128 0
+ 149:..\source/sensor.c ****     Spi_Init();
+ 217              		.loc 1 149 0
  218 0002 FFF7FEFF 		bl	Spi_Init
  219              	.LVL12:
- 220 0006 08BD     		pop	{r3, pc}
- 221              		.cfi_endproc
- 222              	.LFE70:
- 223              		.size	Sensor_Init, .-Sensor_Init
- 224              		.section	.text.Sensor_Start,"ax",%progbits
- 225              		.align	2
- 226              		.global	Sensor_Start
- 227              		.thumb
- 228              		.thumb_func
- 229              		.type	Sensor_Start, %function
- 230              	Sensor_Start:
- 231              	.LFB71:
- 129:..\source/sensor.c **** }
- 130:..\source/sensor.c **** 
- 131:..\source/sensor.c **** /*-------------------------------------------------------------------------------------------------
- 132:..\source/sensor.c ****  * Name: Sensor_Start
- 133:..\source/sensor.c ****  * Description: Starts components within the sensor module.
- 134:..\source/sensor.c ****  * Parameters: None
- 135:..\source/sensor.c ****  * Return: None
- 136:..\source/sensor.c ****  * 
- 137:..\source/sensor.c ****  *-------------------------------------------------------------------------------------------------
- 138:..\source/sensor.c **** void Sensor_Start()
- 139:..\source/sensor.c **** {
- 232              		.loc 1 139 0
- 233              		.cfi_startproc
- 234              		@ args = 0, pretend = 0, frame = 0
- 235              		@ frame_needed = 0, uses_anonymous_args = 0
- 236 0000 08B5     		push	{r3, lr}
- 237              		.cfi_def_cfa_offset 8
- 238              		.cfi_offset 3, -8
- 239              		.cfi_offset 14, -4
- 140:..\source/sensor.c ****     Spi_Start();
- 240              		.loc 1 140 0
- 241 0002 FFF7FEFF 		bl	Spi_Start
- 242              	.LVL13:
- 243 0006 08BD     		pop	{r3, pc}
- 244              		.cfi_endproc
- 245              	.LFE71:
- 246              		.size	Sensor_Start, .-Sensor_Start
- 247              		.global	__aeabi_ui2d
- 248              		.global	__aeabi_dcmpge
- 249              		.section	.text.Sensor_Update,"ax",%progbits
- 250              		.align	2
- 251              		.global	Sensor_Update
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 8
+ 150:..\source/sensor.c ****     
+ 151:..\source/sensor.c ****     sensor_array[0] = ReadFrontDistanceSensors;
+ 220              		.loc 1 151 0
+ 221 0006 034B     		ldr	r3, .L15
+ 222 0008 034A     		ldr	r2, .L15+4
+ 223 000a 1A60     		str	r2, [r3]
+ 152:..\source/sensor.c ****     sensor_array[1] = ReadReadDistanceSensors;
+ 224              		.loc 1 152 0
+ 225 000c 034A     		ldr	r2, .L15+8
+ 226 000e 5A60     		str	r2, [r3, #4]
+ 227 0010 08BD     		pop	{r3, pc}
+ 228              	.L16:
+ 229 0012 00BF     		.align	2
+ 230              	.L15:
+ 231 0014 00000000 		.word	.LANCHOR0
+ 232 0018 00000000 		.word	ReadFrontDistanceSensors
+ 233 001c 00000000 		.word	ReadReadDistanceSensors
+ 234              		.cfi_endproc
+ 235              	.LFE70:
+ 236              		.size	Sensor_Init, .-Sensor_Init
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 8
 
 
- 252              		.thumb
- 253              		.thumb_func
- 254              		.type	Sensor_Update, %function
- 255              	Sensor_Update:
- 256              	.LFB72:
- 141:..\source/sensor.c **** }
- 142:..\source/sensor.c **** 
- 143:..\source/sensor.c **** /*-------------------------------------------------------------------------------------------------
- 144:..\source/sensor.c ****  * Name: Sensor_Update
- 145:..\source/sensor.c ****  * Description: Called peridically from the main loop to update the sensor values.
- 146:..\source/sensor.c ****  * Parameters: None
- 147:..\source/sensor.c ****  * Return: None
- 148:..\source/sensor.c ****  * 
- 149:..\source/sensor.c ****  *-------------------------------------------------------------------------------------------------
- 150:..\source/sensor.c **** void Sensor_Update()
- 151:..\source/sensor.c **** {
- 257              		.loc 1 151 0
- 258              		.cfi_startproc
- 259              		@ args = 0, pretend = 0, frame = 0
- 260              		@ frame_needed = 0, uses_anonymous_args = 0
- 261 0000 08B5     		push	{r3, lr}
- 262              		.cfi_def_cfa_offset 8
- 263              		.cfi_offset 3, -8
- 264              		.cfi_offset 14, -4
- 152:..\source/sensor.c ****     static uint32 last_update_time = 0;
- 153:..\source/sensor.c ****     uint32 delta_time;
- 154:..\source/sensor.c ****     
- 155:..\source/sensor.c ****     delta_time = millis() - last_update_time;
- 265              		.loc 1 155 0
- 266 0002 FFF7FEFF 		bl	millis
- 267              	.LVL14:
- 156:..\source/sensor.c ****     SENSOR_DEBUG_DELTA(delta_time);
- 157:..\source/sensor.c ****     if (delta_time >= SENSOR_SAMPLE_TIME_MS)
- 268              		.loc 1 157 0
- 269 0006 FFF7FEFF 		bl	__aeabi_ui2d
- 270              	.LVL15:
- 271 000a 0022     		movs	r2, #0
- 272 000c 044B     		ldr	r3, .L22
- 273 000e FFF7FEFF 		bl	__aeabi_dcmpge
- 274              	.LVL16:
- 275 0012 18B1     		cbz	r0, .L17
- 158:..\source/sensor.c ****     {
- 159:..\source/sensor.c ****         ReadFrontDistanceSensors();
- 276              		.loc 1 159 0
- 277 0014 FFF7FEFF 		bl	ReadFrontDistanceSensors
- 278              	.LVL17:
- 160:..\source/sensor.c ****         ReadReadDistanceSensors();
- 279              		.loc 1 160 0
- 280 0018 FFF7FEFF 		bl	ReadReadDistanceSensors
- 281              	.LVL18:
- 282              	.L17:
- 283 001c 08BD     		pop	{r3, pc}
- 284              	.L23:
- 285 001e 00BF     		.align	2
- 286              	.L22:
- 287 0020 00005940 		.word	1079574528
- 288              		.cfi_endproc
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 9
+ 237              		.section	.text.Sensor_Start,"ax",%progbits
+ 238              		.align	2
+ 239              		.global	Sensor_Start
+ 240              		.thumb
+ 241              		.thumb_func
+ 242              		.type	Sensor_Start, %function
+ 243              	Sensor_Start:
+ 244              	.LFB71:
+ 153:..\source/sensor.c **** }
+ 154:..\source/sensor.c **** 
+ 155:..\source/sensor.c **** /*-------------------------------------------------------------------------------------------------
+ 156:..\source/sensor.c ****  * Name: Sensor_Start
+ 157:..\source/sensor.c ****  * Description: Starts components within the sensor module.
+ 158:..\source/sensor.c ****  * Parameters: None
+ 159:..\source/sensor.c ****  * Return: None
+ 160:..\source/sensor.c ****  * 
+ 161:..\source/sensor.c ****  *-------------------------------------------------------------------------------------------------
+ 162:..\source/sensor.c **** void Sensor_Start()
+ 163:..\source/sensor.c **** {
+ 245              		.loc 1 163 0
+ 246              		.cfi_startproc
+ 247              		@ args = 0, pretend = 0, frame = 0
+ 248              		@ frame_needed = 0, uses_anonymous_args = 0
+ 249 0000 08B5     		push	{r3, lr}
+ 250              		.cfi_def_cfa_offset 8
+ 251              		.cfi_offset 3, -8
+ 252              		.cfi_offset 14, -4
+ 164:..\source/sensor.c ****     Spi_Start();
+ 253              		.loc 1 164 0
+ 254 0002 FFF7FEFF 		bl	Spi_Start
+ 255              	.LVL13:
+ 256 0006 08BD     		pop	{r3, pc}
+ 257              		.cfi_endproc
+ 258              	.LFE71:
+ 259              		.size	Sensor_Start, .-Sensor_Start
+ 260              		.global	__aeabi_ui2d
+ 261              		.global	__aeabi_dcmpge
+ 262              		.section	.text.Sensor_Update,"ax",%progbits
+ 263              		.align	2
+ 264              		.global	Sensor_Update
+ 265              		.thumb
+ 266              		.thumb_func
+ 267              		.type	Sensor_Update, %function
+ 268              	Sensor_Update:
+ 269              	.LFB72:
+ 165:..\source/sensor.c **** }
+ 166:..\source/sensor.c **** 
+ 167:..\source/sensor.c **** /*-------------------------------------------------------------------------------------------------
+ 168:..\source/sensor.c ****  * Name: Sensor_Update
+ 169:..\source/sensor.c ****  * Description: Called peridically from the main loop to update the sensor values.
+ 170:..\source/sensor.c ****  * Parameters: None
+ 171:..\source/sensor.c ****  * Return: None
+ 172:..\source/sensor.c ****  * 
+ 173:..\source/sensor.c ****  *-------------------------------------------------------------------------------------------------
+ 174:..\source/sensor.c **** void Sensor_Update()
+ 175:..\source/sensor.c **** {
+ 270              		.loc 1 175 0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 9
 
 
- 289              	.LFE72:
- 290              		.size	Sensor_Update, .-Sensor_Update
- 291              		.comm	debug_control_enabled,2,2
- 292              		.comm	formatted_string,256,4
- 293              		.text
- 294              	.Letext0:
- 295              		.file 2 "c:\\program files (x86)\\cypress\\psoc creator\\3.3\\psoc creator\\import\\gnu\\arm\\4.9.
- 296              		.file 3 "c:\\program files (x86)\\cypress\\psoc creator\\3.3\\psoc creator\\import\\gnu\\arm\\4.9.
- 297              		.file 4 "Generated_Source\\PSoC5/cytypes.h"
- 298              		.file 5 "..\\source\\spi.h"
- 299              		.file 6 "Generated_Source\\PSoC5/core_cm3.h"
- 300              		.file 7 "..\\source\\debug.h"
- 301              		.file 8 "..\\source\\i2c.h"
- 302              		.file 9 "..\\source\\time.h"
- 303              		.section	.debug_info,"",%progbits
- 304              	.Ldebug_info0:
- 305 0000 D3030000 		.4byte	0x3d3
- 306 0004 0400     		.2byte	0x4
- 307 0006 00000000 		.4byte	.Ldebug_abbrev0
- 308 000a 04       		.byte	0x4
- 309 000b 01       		.uleb128 0x1
- 310 000c 91010000 		.4byte	.LASF46
- 311 0010 01       		.byte	0x1
- 312 0011 34000000 		.4byte	.LASF47
- 313 0015 50010000 		.4byte	.LASF48
- 314 0019 00000000 		.4byte	.Ldebug_ranges0+0
- 315 001d 00000000 		.4byte	0
- 316 0021 00000000 		.4byte	.Ldebug_line0
- 317 0025 02       		.uleb128 0x2
- 318 0026 01       		.byte	0x1
- 319 0027 06       		.byte	0x6
- 320 0028 8A000000 		.4byte	.LASF0
- 321 002c 02       		.uleb128 0x2
- 322 002d 01       		.byte	0x1
- 323 002e 08       		.byte	0x8
- 324 002f 96000000 		.4byte	.LASF1
- 325 0033 02       		.uleb128 0x2
- 326 0034 02       		.byte	0x2
- 327 0035 05       		.byte	0x5
- 328 0036 3F010000 		.4byte	.LASF2
- 329 003a 02       		.uleb128 0x2
- 330 003b 02       		.byte	0x2
- 331 003c 07       		.byte	0x7
- 332 003d 21000000 		.4byte	.LASF3
- 333 0041 03       		.uleb128 0x3
- 334 0042 09000000 		.4byte	.LASF9
- 335 0046 02       		.byte	0x2
- 336 0047 3F       		.byte	0x3f
- 337 0048 4C000000 		.4byte	0x4c
- 338 004c 02       		.uleb128 0x2
- 339 004d 04       		.byte	0x4
- 340 004e 05       		.byte	0x5
- 341 004f 19030000 		.4byte	.LASF4
- 342 0053 02       		.uleb128 0x2
- 343 0054 04       		.byte	0x4
- 344 0055 07       		.byte	0x7
- 345 0056 B2000000 		.4byte	.LASF5
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 10
+ 271              		.cfi_startproc
+ 272              		@ args = 0, pretend = 0, frame = 0
+ 273              		@ frame_needed = 0, uses_anonymous_args = 0
+ 274 0000 10B5     		push	{r4, lr}
+ 275              		.cfi_def_cfa_offset 8
+ 276              		.cfi_offset 4, -8
+ 277              		.cfi_offset 14, -4
+ 176:..\source/sensor.c ****     static uint32 last_update_time = 0;
+ 177:..\source/sensor.c ****     static uint8 sensor_index = 0;
+ 178:..\source/sensor.c ****     uint32 delta_time;
+ 179:..\source/sensor.c ****     
+ 180:..\source/sensor.c ****     delta_time = millis() - last_update_time;
+ 278              		.loc 1 180 0
+ 279 0002 FFF7FEFF 		bl	millis
+ 280              	.LVL14:
+ 181:..\source/sensor.c ****     SENSOR_DEBUG_DELTA(delta_time);
+ 182:..\source/sensor.c ****     if (delta_time >= SENSOR_SAMPLE_TIME_MS)
+ 281              		.loc 1 182 0
+ 282 0006 FFF7FEFF 		bl	__aeabi_ui2d
+ 283              	.LVL15:
+ 284 000a 0022     		movs	r2, #0
+ 285 000c 074B     		ldr	r3, .L25
+ 286 000e FFF7FEFF 		bl	__aeabi_dcmpge
+ 287              	.LVL16:
+ 288 0012 48B1     		cbz	r0, .L19
+ 183:..\source/sensor.c ****     {
+ 184:..\source/sensor.c ****         sensor_array[sensor_index]();        
+ 289              		.loc 1 184 0
+ 290 0014 064C     		ldr	r4, .L25+4
+ 291 0016 237A     		ldrb	r3, [r4, #8]	@ zero_extendqisi2
+ 292 0018 54F82330 		ldr	r3, [r4, r3, lsl #2]
+ 293 001c 9847     		blx	r3
+ 294              	.LVL17:
+ 185:..\source/sensor.c ****         sensor_index = (sensor_index + 1) % NUM_SENSOR_ENTRIES;
+ 295              		.loc 1 185 0
+ 296 001e 237A     		ldrb	r3, [r4, #8]	@ zero_extendqisi2
+ 297 0020 0133     		adds	r3, r3, #1
+ 298 0022 03F00103 		and	r3, r3, #1
+ 299 0026 2372     		strb	r3, [r4, #8]
+ 300              	.L19:
+ 301 0028 10BD     		pop	{r4, pc}
+ 302              	.L26:
+ 303 002a 00BF     		.align	2
+ 304              	.L25:
+ 305 002c 00004940 		.word	1078525952
+ 306 0030 00000000 		.word	.LANCHOR0
+ 307              		.cfi_endproc
+ 308              	.LFE72:
+ 309              		.size	Sensor_Update, .-Sensor_Update
+ 310              		.comm	debug_control_enabled,2,2
+ 311              		.comm	formatted_string,256,4
+ 312              		.bss
+ 313              		.align	2
+ 314              		.set	.LANCHOR0,. + 0
+ 315              		.type	sensor_array, %object
+ 316              		.size	sensor_array, 8
+ 317              	sensor_array:
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 10
 
 
- 346 005a 02       		.uleb128 0x2
- 347 005b 08       		.byte	0x8
- 348 005c 05       		.byte	0x5
- 349 005d CB020000 		.4byte	.LASF6
- 350 0061 02       		.uleb128 0x2
- 351 0062 08       		.byte	0x8
- 352 0063 07       		.byte	0x7
- 353 0064 37020000 		.4byte	.LASF7
- 354 0068 04       		.uleb128 0x4
- 355 0069 04       		.byte	0x4
- 356 006a 05       		.byte	0x5
- 357 006b 696E7400 		.ascii	"int\000"
- 358 006f 02       		.uleb128 0x2
- 359 0070 04       		.byte	0x4
- 360 0071 07       		.byte	0x7
- 361 0072 2A020000 		.4byte	.LASF8
- 362 0076 03       		.uleb128 0x3
- 363 0077 77020000 		.4byte	.LASF10
- 364 007b 03       		.byte	0x3
- 365 007c 2C       		.byte	0x2c
- 366 007d 41000000 		.4byte	0x41
- 367 0081 05       		.uleb128 0x5
- 368 0082 49010000 		.4byte	.LASF11
- 369 0086 04       		.byte	0x4
- 370 0087 3901     		.2byte	0x139
- 371 0089 3A000000 		.4byte	0x3a
- 372 008d 05       		.uleb128 0x5
- 373 008e 8A010000 		.4byte	.LASF12
- 374 0092 04       		.byte	0x4
- 375 0093 3A01     		.2byte	0x13a
- 376 0095 53000000 		.4byte	0x53
- 377 0099 02       		.uleb128 0x2
- 378 009a 04       		.byte	0x4
- 379 009b 04       		.byte	0x4
- 380 009c 7F000000 		.4byte	.LASF13
- 381 00a0 02       		.uleb128 0x2
- 382 00a1 08       		.byte	0x8
- 383 00a2 04       		.byte	0x4
- 384 00a3 16010000 		.4byte	.LASF14
- 385 00a7 02       		.uleb128 0x2
- 386 00a8 01       		.byte	0x1
- 387 00a9 08       		.byte	0x8
- 388 00aa E2020000 		.4byte	.LASF15
- 389 00ae 02       		.uleb128 0x2
- 390 00af 04       		.byte	0x4
- 391 00b0 07       		.byte	0x7
- 392 00b1 D9020000 		.4byte	.LASF16
- 393 00b5 06       		.uleb128 0x6
- 394 00b6 04       		.byte	0x4
- 395 00b7 07       		.uleb128 0x7
- 396 00b8 01       		.byte	0x1
- 397 00b9 05       		.byte	0x5
- 398 00ba 18       		.byte	0x18
- 399 00bb DE000000 		.4byte	0xde
- 400 00bf 08       		.uleb128 0x8
- 401 00c0 3F030000 		.4byte	.LASF17
- 402 00c4 00       		.sleb128 0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 11
+ 318 0000 00000000 		.space	8
+ 318      00000000 
+ 319              		.type	sensor_index.7395, %object
+ 320              		.size	sensor_index.7395, 1
+ 321              	sensor_index.7395:
+ 322 0008 00       		.space	1
+ 323 0009 000000   		.text
+ 324              	.Letext0:
+ 325              		.file 2 "c:\\program files (x86)\\cypress\\psoc creator\\3.3\\psoc creator\\import\\gnu\\arm\\4.9.
+ 326              		.file 3 "c:\\program files (x86)\\cypress\\psoc creator\\3.3\\psoc creator\\import\\gnu\\arm\\4.9.
+ 327              		.file 4 "Generated_Source\\PSoC5/cytypes.h"
+ 328              		.file 5 "..\\source\\spi.h"
+ 329              		.file 6 "Generated_Source\\PSoC5/core_cm3.h"
+ 330              		.file 7 "..\\source\\debug.h"
+ 331              		.file 8 "..\\source\\i2c.h"
+ 332              		.file 9 "..\\source\\time.h"
+ 333              		.section	.debug_info,"",%progbits
+ 334              	.Ldebug_info0:
+ 335 0000 17040000 		.4byte	0x417
+ 336 0004 0400     		.2byte	0x4
+ 337 0006 00000000 		.4byte	.Ldebug_abbrev0
+ 338 000a 04       		.byte	0x4
+ 339 000b 01       		.uleb128 0x1
+ 340 000c F4010000 		.4byte	.LASF50
+ 341 0010 01       		.byte	0x1
+ 342 0011 4D000000 		.4byte	.LASF51
+ 343 0015 5D010000 		.4byte	.LASF52
+ 344 0019 00000000 		.4byte	.Ldebug_ranges0+0
+ 345 001d 00000000 		.4byte	0
+ 346 0021 00000000 		.4byte	.Ldebug_line0
+ 347 0025 02       		.uleb128 0x2
+ 348 0026 01       		.byte	0x1
+ 349 0027 06       		.byte	0x6
+ 350 0028 97000000 		.4byte	.LASF0
+ 351 002c 02       		.uleb128 0x2
+ 352 002d 01       		.byte	0x1
+ 353 002e 08       		.byte	0x8
+ 354 002f A3000000 		.4byte	.LASF1
+ 355 0033 02       		.uleb128 0x2
+ 356 0034 02       		.byte	0x2
+ 357 0035 05       		.byte	0x5
+ 358 0036 4C010000 		.4byte	.LASF2
+ 359 003a 02       		.uleb128 0x2
+ 360 003b 02       		.byte	0x2
+ 361 003c 07       		.byte	0x7
+ 362 003d 3A000000 		.4byte	.LASF3
+ 363 0041 03       		.uleb128 0x3
+ 364 0042 22000000 		.4byte	.LASF9
+ 365 0046 02       		.byte	0x2
+ 366 0047 3F       		.byte	0x3f
+ 367 0048 4C000000 		.4byte	0x4c
+ 368 004c 02       		.uleb128 0x2
+ 369 004d 04       		.byte	0x4
+ 370 004e 05       		.byte	0x5
+ 371 004f 4F030000 		.4byte	.LASF4
+ 372 0053 02       		.uleb128 0x2
+ 373 0054 04       		.byte	0x4
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 11
 
 
- 403 00c5 08       		.uleb128 0x8
- 404 00c6 1F020000 		.4byte	.LASF18
- 405 00ca 01       		.sleb128 1
- 406 00cb 08       		.uleb128 0x8
- 407 00cc E1000000 		.4byte	.LASF19
- 408 00d0 02       		.sleb128 2
- 409 00d1 08       		.uleb128 0x8
- 410 00d2 EC000000 		.4byte	.LASF20
- 411 00d6 03       		.sleb128 3
- 412 00d7 08       		.uleb128 0x8
- 413 00d8 13000000 		.4byte	.LASF21
- 414 00dc 04       		.sleb128 4
- 415 00dd 00       		.byte	0
- 416 00de 03       		.uleb128 0x3
- 417 00df A4000000 		.4byte	.LASF22
- 418 00e3 05       		.byte	0x5
- 419 00e4 18       		.byte	0x18
- 420 00e5 B7000000 		.4byte	0xb7
- 421 00e9 09       		.uleb128 0x9
- 422 00ea F7000000 		.4byte	.LASF23
- 423 00ee 01       		.byte	0x1
- 424 00ef 3C       		.byte	0x3c
- 425 00f0 00000000 		.4byte	.LFB64
- 426 00f4 18000000 		.4byte	.LFE64-.LFB64
- 427 00f8 01       		.uleb128 0x1
- 428 00f9 9C       		.byte	0x9c
- 429 00fa 36010000 		.4byte	0x136
- 430 00fe 0A       		.uleb128 0xa
- 431 00ff 85000000 		.4byte	.LASF25
- 432 0103 01       		.byte	0x1
- 433 0104 3E       		.byte	0x3e
- 434 0105 36010000 		.4byte	0x136
- 435 0109 02       		.uleb128 0x2
- 436 010a 91       		.byte	0x91
- 437 010b 58       		.sleb128 -40
- 438 010c 0B       		.uleb128 0xb
- 439 010d 0C000000 		.4byte	.LVL0
- 440 0111 4F030000 		.4byte	0x34f
- 441 0115 25010000 		.4byte	0x125
- 442 0119 0C       		.uleb128 0xc
- 443 011a 01       		.uleb128 0x1
- 444 011b 51       		.byte	0x51
- 445 011c 02       		.uleb128 0x2
- 446 011d 7D       		.byte	0x7d
- 447 011e 00       		.sleb128 0
- 448 011f 0C       		.uleb128 0xc
- 449 0120 01       		.uleb128 0x1
- 450 0121 50       		.byte	0x50
- 451 0122 01       		.uleb128 0x1
- 452 0123 30       		.byte	0x30
- 453 0124 00       		.byte	0
- 454 0125 0D       		.uleb128 0xd
- 455 0126 12000000 		.4byte	.LVL1
- 456 012a 65030000 		.4byte	0x365
- 457 012e 0C       		.uleb128 0xc
- 458 012f 01       		.uleb128 0x1
- 459 0130 50       		.byte	0x50
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 12
+ 374 0055 07       		.byte	0x7
+ 375 0056 BF000000 		.4byte	.LASF5
+ 376 005a 02       		.uleb128 0x2
+ 377 005b 08       		.byte	0x8
+ 378 005c 05       		.byte	0x5
+ 379 005d EE020000 		.4byte	.LASF6
+ 380 0061 02       		.uleb128 0x2
+ 381 0062 08       		.byte	0x8
+ 382 0063 07       		.byte	0x7
+ 383 0064 CC010000 		.4byte	.LASF7
+ 384 0068 04       		.uleb128 0x4
+ 385 0069 04       		.byte	0x4
+ 386 006a 05       		.byte	0x5
+ 387 006b 696E7400 		.ascii	"int\000"
+ 388 006f 02       		.uleb128 0x2
+ 389 0070 04       		.byte	0x4
+ 390 0071 07       		.byte	0x7
+ 391 0072 BF010000 		.4byte	.LASF8
+ 392 0076 03       		.uleb128 0x3
+ 393 0077 9A020000 		.4byte	.LASF10
+ 394 007b 03       		.byte	0x3
+ 395 007c 2C       		.byte	0x2c
+ 396 007d 41000000 		.4byte	0x41
+ 397 0081 05       		.uleb128 0x5
+ 398 0082 3C030000 		.4byte	.LASF11
+ 399 0086 04       		.byte	0x4
+ 400 0087 3801     		.2byte	0x138
+ 401 0089 2C000000 		.4byte	0x2c
+ 402 008d 05       		.uleb128 0x5
+ 403 008e 56010000 		.4byte	.LASF12
+ 404 0092 04       		.byte	0x4
+ 405 0093 3901     		.2byte	0x139
+ 406 0095 3A000000 		.4byte	0x3a
+ 407 0099 05       		.uleb128 0x5
+ 408 009a 97010000 		.4byte	.LASF13
+ 409 009e 04       		.byte	0x4
+ 410 009f 3A01     		.2byte	0x13a
+ 411 00a1 53000000 		.4byte	0x53
+ 412 00a5 02       		.uleb128 0x2
+ 413 00a6 04       		.byte	0x4
+ 414 00a7 04       		.byte	0x4
+ 415 00a8 8C000000 		.4byte	.LASF14
+ 416 00ac 02       		.uleb128 0x2
+ 417 00ad 08       		.byte	0x8
+ 418 00ae 04       		.byte	0x4
+ 419 00af 23010000 		.4byte	.LASF15
+ 420 00b3 02       		.uleb128 0x2
+ 421 00b4 01       		.byte	0x1
+ 422 00b5 08       		.byte	0x8
+ 423 00b6 05030000 		.4byte	.LASF16
+ 424 00ba 02       		.uleb128 0x2
+ 425 00bb 04       		.byte	0x4
+ 426 00bc 07       		.byte	0x7
+ 427 00bd FC020000 		.4byte	.LASF17
+ 428 00c1 06       		.uleb128 0x6
+ 429 00c2 04       		.byte	0x4
+ 430 00c3 07       		.uleb128 0x7
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 12
 
 
- 460 0131 02       		.uleb128 0x2
- 461 0132 7D       		.byte	0x7d
- 462 0133 00       		.sleb128 0
- 463 0134 00       		.byte	0
- 464 0135 00       		.byte	0
- 465 0136 0E       		.uleb128 0xe
- 466 0137 99000000 		.4byte	0x99
- 467 013b 46010000 		.4byte	0x146
- 468 013f 0F       		.uleb128 0xf
- 469 0140 AE000000 		.4byte	0xae
- 470 0144 07       		.byte	0x7
- 471 0145 00       		.byte	0
- 472 0146 09       		.uleb128 0x9
- 473 0147 5E030000 		.4byte	.LASF24
- 474 014b 01       		.byte	0x1
- 475 014c 53       		.byte	0x53
- 476 014d 00000000 		.4byte	.LFB66
- 477 0151 18000000 		.4byte	.LFE66-.LFB66
- 478 0155 01       		.uleb128 0x1
- 479 0156 9C       		.byte	0x9c
- 480 0157 93010000 		.4byte	0x193
- 481 015b 0A       		.uleb128 0xa
- 482 015c 85000000 		.4byte	.LASF25
- 483 0160 01       		.byte	0x1
- 484 0161 55       		.byte	0x55
- 485 0162 36010000 		.4byte	0x136
- 486 0166 02       		.uleb128 0x2
- 487 0167 91       		.byte	0x91
- 488 0168 58       		.sleb128 -40
- 489 0169 0B       		.uleb128 0xb
- 490 016a 0C000000 		.4byte	.LVL2
- 491 016e 4F030000 		.4byte	0x34f
- 492 0172 82010000 		.4byte	0x182
- 493 0176 0C       		.uleb128 0xc
- 494 0177 01       		.uleb128 0x1
- 495 0178 51       		.byte	0x51
- 496 0179 02       		.uleb128 0x2
- 497 017a 7D       		.byte	0x7d
- 498 017b 00       		.sleb128 0
- 499 017c 0C       		.uleb128 0xc
- 500 017d 01       		.uleb128 0x1
- 501 017e 50       		.byte	0x50
- 502 017f 01       		.uleb128 0x1
- 503 0180 32       		.byte	0x32
- 504 0181 00       		.byte	0
- 505 0182 0D       		.uleb128 0xd
- 506 0183 12000000 		.4byte	.LVL3
- 507 0187 7C030000 		.4byte	0x37c
- 508 018b 0C       		.uleb128 0xc
- 509 018c 01       		.uleb128 0x1
- 510 018d 50       		.byte	0x50
- 511 018e 02       		.uleb128 0x2
- 512 018f 7D       		.byte	0x7d
- 513 0190 00       		.sleb128 0
- 514 0191 00       		.byte	0
- 515 0192 00       		.byte	0
- 516 0193 09       		.uleb128 0x9
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 13
+ 431 00c4 01       		.byte	0x1
+ 432 00c5 05       		.byte	0x5
+ 433 00c6 18       		.byte	0x18
+ 434 00c7 EA000000 		.4byte	0xea
+ 435 00cb 08       		.uleb128 0x8
+ 436 00cc 75030000 		.4byte	.LASF18
+ 437 00d0 00       		.sleb128 0
+ 438 00d1 08       		.uleb128 0x8
+ 439 00d2 B4010000 		.4byte	.LASF19
+ 440 00d6 01       		.sleb128 1
+ 441 00d7 08       		.uleb128 0x8
+ 442 00d8 EE000000 		.4byte	.LASF20
+ 443 00dc 02       		.sleb128 2
+ 444 00dd 08       		.uleb128 0x8
+ 445 00de F9000000 		.4byte	.LASF21
+ 446 00e2 03       		.sleb128 3
+ 447 00e3 08       		.uleb128 0x8
+ 448 00e4 2C000000 		.4byte	.LASF22
+ 449 00e8 04       		.sleb128 4
+ 450 00e9 00       		.byte	0
+ 451 00ea 03       		.uleb128 0x3
+ 452 00eb B1000000 		.4byte	.LASF23
+ 453 00ef 05       		.byte	0x5
+ 454 00f0 18       		.byte	0x18
+ 455 00f1 C3000000 		.4byte	0xc3
+ 456 00f5 03       		.uleb128 0x3
+ 457 00f6 9E010000 		.4byte	.LASF24
+ 458 00fa 01       		.byte	0x1
+ 459 00fb 31       		.byte	0x31
+ 460 00fc 00010000 		.4byte	0x100
+ 461 0100 09       		.uleb128 0x9
+ 462 0101 04       		.byte	0x4
+ 463 0102 06010000 		.4byte	0x106
+ 464 0106 0A       		.uleb128 0xa
+ 465 0107 0D010000 		.4byte	0x10d
+ 466 010b 0B       		.uleb128 0xb
+ 467 010c 00       		.byte	0
+ 468 010d 0C       		.uleb128 0xc
+ 469 010e DD000000 		.4byte	.LASF25
+ 470 0112 01       		.byte	0x1
+ 471 0113 59       		.byte	0x59
+ 472 0114 00000000 		.4byte	.LFB65
+ 473 0118 18000000 		.4byte	.LFE65-.LFB65
+ 474 011c 01       		.uleb128 0x1
+ 475 011d 9C       		.byte	0x9c
+ 476 011e 5A010000 		.4byte	0x15a
+ 477 0122 0D       		.uleb128 0xd
+ 478 0123 92000000 		.4byte	.LASF27
+ 479 0127 01       		.byte	0x1
+ 480 0128 5B       		.byte	0x5b
+ 481 0129 5A010000 		.4byte	0x15a
+ 482 012d 02       		.uleb128 0x2
+ 483 012e 91       		.byte	0x91
+ 484 012f 58       		.sleb128 -40
+ 485 0130 0E       		.uleb128 0xe
+ 486 0131 0C000000 		.4byte	.LVL0
+ 487 0135 93030000 		.4byte	0x393
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 13
 
 
- 517 0194 66000000 		.4byte	.LASF26
- 518 0198 01       		.byte	0x1
- 519 0199 6A       		.byte	0x6a
- 520 019a 00000000 		.4byte	.LFB68
- 521 019e 0C000000 		.4byte	.LFE68-.LFB68
- 522 01a2 01       		.uleb128 0x1
- 523 01a3 9C       		.byte	0x9c
- 524 01a4 BB010000 		.4byte	0x1bb
- 525 01a8 10       		.uleb128 0x10
- 526 01a9 06000000 		.4byte	.LVL4
- 527 01ad E9000000 		.4byte	0xe9
- 528 01b1 10       		.uleb128 0x10
- 529 01b2 0A000000 		.4byte	.LVL5
- 530 01b6 46010000 		.4byte	0x146
- 531 01ba 00       		.byte	0
- 532 01bb 09       		.uleb128 0x9
- 533 01bc D0000000 		.4byte	.LASF27
- 534 01c0 01       		.byte	0x1
- 535 01c1 44       		.byte	0x44
- 536 01c2 00000000 		.4byte	.LFB65
- 537 01c6 18000000 		.4byte	.LFE65-.LFB65
- 538 01ca 01       		.uleb128 0x1
- 539 01cb 9C       		.byte	0x9c
- 540 01cc 08020000 		.4byte	0x208
- 541 01d0 0A       		.uleb128 0xa
- 542 01d1 85000000 		.4byte	.LASF25
- 543 01d5 01       		.byte	0x1
- 544 01d6 46       		.byte	0x46
- 545 01d7 36010000 		.4byte	0x136
- 546 01db 02       		.uleb128 0x2
- 547 01dc 91       		.byte	0x91
- 548 01dd 58       		.sleb128 -40
- 549 01de 0B       		.uleb128 0xb
- 550 01df 0C000000 		.4byte	.LVL6
- 551 01e3 4F030000 		.4byte	0x34f
- 552 01e7 F7010000 		.4byte	0x1f7
- 553 01eb 0C       		.uleb128 0xc
- 554 01ec 01       		.uleb128 0x1
- 555 01ed 51       		.byte	0x51
- 556 01ee 02       		.uleb128 0x2
- 557 01ef 7D       		.byte	0x7d
- 558 01f0 00       		.sleb128 0
- 559 01f1 0C       		.uleb128 0xc
- 560 01f2 01       		.uleb128 0x1
- 561 01f3 50       		.byte	0x50
- 562 01f4 01       		.uleb128 0x1
- 563 01f5 31       		.byte	0x31
- 564 01f6 00       		.byte	0
- 565 01f7 0D       		.uleb128 0xd
- 566 01f8 12000000 		.4byte	.LVL7
- 567 01fc 8D030000 		.4byte	0x38d
- 568 0200 0C       		.uleb128 0xc
- 569 0201 01       		.uleb128 0x1
- 570 0202 50       		.byte	0x50
- 571 0203 02       		.uleb128 0x2
- 572 0204 7D       		.byte	0x7d
- 573 0205 00       		.sleb128 0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 14
+ 488 0139 49010000 		.4byte	0x149
+ 489 013d 0F       		.uleb128 0xf
+ 490 013e 01       		.uleb128 0x1
+ 491 013f 51       		.byte	0x51
+ 492 0140 02       		.uleb128 0x2
+ 493 0141 7D       		.byte	0x7d
+ 494 0142 00       		.sleb128 0
+ 495 0143 0F       		.uleb128 0xf
+ 496 0144 01       		.uleb128 0x1
+ 497 0145 50       		.byte	0x50
+ 498 0146 01       		.uleb128 0x1
+ 499 0147 31       		.byte	0x31
+ 500 0148 00       		.byte	0
+ 501 0149 10       		.uleb128 0x10
+ 502 014a 12000000 		.4byte	.LVL1
+ 503 014e A9030000 		.4byte	0x3a9
+ 504 0152 0F       		.uleb128 0xf
+ 505 0153 01       		.uleb128 0x1
+ 506 0154 50       		.byte	0x50
+ 507 0155 02       		.uleb128 0x2
+ 508 0156 7D       		.byte	0x7d
+ 509 0157 00       		.sleb128 0
+ 510 0158 00       		.byte	0
+ 511 0159 00       		.byte	0
+ 512 015a 11       		.uleb128 0x11
+ 513 015b A5000000 		.4byte	0xa5
+ 514 015f 6A010000 		.4byte	0x16a
+ 515 0163 12       		.uleb128 0x12
+ 516 0164 BA000000 		.4byte	0xba
+ 517 0168 07       		.byte	0x7
+ 518 0169 00       		.byte	0
+ 519 016a 0C       		.uleb128 0xc
+ 520 016b 80030000 		.4byte	.LASF26
+ 521 016f 01       		.byte	0x1
+ 522 0170 70       		.byte	0x70
+ 523 0171 00000000 		.4byte	.LFB67
+ 524 0175 18000000 		.4byte	.LFE67-.LFB67
+ 525 0179 01       		.uleb128 0x1
+ 526 017a 9C       		.byte	0x9c
+ 527 017b B7010000 		.4byte	0x1b7
+ 528 017f 0D       		.uleb128 0xd
+ 529 0180 92000000 		.4byte	.LASF27
+ 530 0184 01       		.byte	0x1
+ 531 0185 72       		.byte	0x72
+ 532 0186 5A010000 		.4byte	0x15a
+ 533 018a 02       		.uleb128 0x2
+ 534 018b 91       		.byte	0x91
+ 535 018c 58       		.sleb128 -40
+ 536 018d 0E       		.uleb128 0xe
+ 537 018e 0C000000 		.4byte	.LVL2
+ 538 0192 93030000 		.4byte	0x393
+ 539 0196 A6010000 		.4byte	0x1a6
+ 540 019a 0F       		.uleb128 0xf
+ 541 019b 01       		.uleb128 0x1
+ 542 019c 51       		.byte	0x51
+ 543 019d 02       		.uleb128 0x2
+ 544 019e 7D       		.byte	0x7d
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 14
 
 
- 574 0206 00       		.byte	0
- 575 0207 00       		.byte	0
- 576 0208 09       		.uleb128 0x9
- 577 0209 4A030000 		.4byte	.LASF28
- 578 020d 01       		.byte	0x1
- 579 020e 5B       		.byte	0x5b
- 580 020f 00000000 		.4byte	.LFB67
- 581 0213 18000000 		.4byte	.LFE67-.LFB67
- 582 0217 01       		.uleb128 0x1
- 583 0218 9C       		.byte	0x9c
- 584 0219 55020000 		.4byte	0x255
- 585 021d 0A       		.uleb128 0xa
- 586 021e 85000000 		.4byte	.LASF25
- 587 0222 01       		.byte	0x1
- 588 0223 5D       		.byte	0x5d
- 589 0224 36010000 		.4byte	0x136
- 590 0228 02       		.uleb128 0x2
- 591 0229 91       		.byte	0x91
- 592 022a 58       		.sleb128 -40
- 593 022b 0B       		.uleb128 0xb
- 594 022c 0C000000 		.4byte	.LVL8
- 595 0230 4F030000 		.4byte	0x34f
- 596 0234 44020000 		.4byte	0x244
- 597 0238 0C       		.uleb128 0xc
- 598 0239 01       		.uleb128 0x1
- 599 023a 51       		.byte	0x51
- 600 023b 02       		.uleb128 0x2
- 601 023c 7D       		.byte	0x7d
- 602 023d 00       		.sleb128 0
- 603 023e 0C       		.uleb128 0xc
- 604 023f 01       		.uleb128 0x1
- 605 0240 50       		.byte	0x50
- 606 0241 01       		.uleb128 0x1
- 607 0242 33       		.byte	0x33
- 608 0243 00       		.byte	0
- 609 0244 0D       		.uleb128 0xd
- 610 0245 12000000 		.4byte	.LVL9
- 611 0249 9E030000 		.4byte	0x39e
- 612 024d 0C       		.uleb128 0xc
- 613 024e 01       		.uleb128 0x1
- 614 024f 50       		.byte	0x50
- 615 0250 02       		.uleb128 0x2
- 616 0251 7D       		.byte	0x7d
- 617 0252 00       		.sleb128 0
- 618 0253 00       		.byte	0
- 619 0254 00       		.byte	0
- 620 0255 09       		.uleb128 0x9
- 621 0256 E7020000 		.4byte	.LASF29
- 622 025a 01       		.byte	0x1
- 623 025b 70       		.byte	0x70
- 624 025c 00000000 		.4byte	.LFB69
- 625 0260 0C000000 		.4byte	.LFE69-.LFB69
- 626 0264 01       		.uleb128 0x1
- 627 0265 9C       		.byte	0x9c
- 628 0266 7D020000 		.4byte	0x27d
- 629 026a 10       		.uleb128 0x10
- 630 026b 06000000 		.4byte	.LVL10
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 15
+ 545 019f 00       		.sleb128 0
+ 546 01a0 0F       		.uleb128 0xf
+ 547 01a1 01       		.uleb128 0x1
+ 548 01a2 50       		.byte	0x50
+ 549 01a3 01       		.uleb128 0x1
+ 550 01a4 33       		.byte	0x33
+ 551 01a5 00       		.byte	0
+ 552 01a6 10       		.uleb128 0x10
+ 553 01a7 12000000 		.4byte	.LVL3
+ 554 01ab C0030000 		.4byte	0x3c0
+ 555 01af 0F       		.uleb128 0xf
+ 556 01b0 01       		.uleb128 0x1
+ 557 01b1 50       		.byte	0x50
+ 558 01b2 02       		.uleb128 0x2
+ 559 01b3 7D       		.byte	0x7d
+ 560 01b4 00       		.sleb128 0
+ 561 01b5 00       		.byte	0
+ 562 01b6 00       		.byte	0
+ 563 01b7 0C       		.uleb128 0xc
+ 564 01b8 0A030000 		.4byte	.LASF28
+ 565 01bc 01       		.byte	0x1
+ 566 01bd 85       		.byte	0x85
+ 567 01be 00000000 		.4byte	.LFB69
+ 568 01c2 0C000000 		.4byte	.LFE69-.LFB69
+ 569 01c6 01       		.uleb128 0x1
+ 570 01c7 9C       		.byte	0x9c
+ 571 01c8 DF010000 		.4byte	0x1df
+ 572 01cc 13       		.uleb128 0x13
+ 573 01cd 06000000 		.4byte	.LVL4
+ 574 01d1 0D010000 		.4byte	0x10d
+ 575 01d5 13       		.uleb128 0x13
+ 576 01d6 0A000000 		.4byte	.LVL5
+ 577 01da 6A010000 		.4byte	0x16a
+ 578 01de 00       		.byte	0
+ 579 01df 0C       		.uleb128 0xc
+ 580 01e0 04010000 		.4byte	.LASF29
+ 581 01e4 01       		.byte	0x1
+ 582 01e5 51       		.byte	0x51
+ 583 01e6 00000000 		.4byte	.LFB64
+ 584 01ea 18000000 		.4byte	.LFE64-.LFB64
+ 585 01ee 01       		.uleb128 0x1
+ 586 01ef 9C       		.byte	0x9c
+ 587 01f0 2C020000 		.4byte	0x22c
+ 588 01f4 0D       		.uleb128 0xd
+ 589 01f5 92000000 		.4byte	.LASF27
+ 590 01f9 01       		.byte	0x1
+ 591 01fa 53       		.byte	0x53
+ 592 01fb 5A010000 		.4byte	0x15a
+ 593 01ff 02       		.uleb128 0x2
+ 594 0200 91       		.byte	0x91
+ 595 0201 58       		.sleb128 -40
+ 596 0202 0E       		.uleb128 0xe
+ 597 0203 0C000000 		.4byte	.LVL6
+ 598 0207 93030000 		.4byte	0x393
+ 599 020b 1B020000 		.4byte	0x21b
+ 600 020f 0F       		.uleb128 0xf
+ 601 0210 01       		.uleb128 0x1
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 15
 
 
- 631 026f BB010000 		.4byte	0x1bb
- 632 0273 10       		.uleb128 0x10
- 633 0274 0A000000 		.4byte	.LVL11
- 634 0278 08020000 		.4byte	0x208
- 635 027c 00       		.byte	0
- 636 027d 11       		.uleb128 0x11
- 637 027e C4000000 		.4byte	.LASF30
- 638 0282 01       		.byte	0x1
- 639 0283 7E       		.byte	0x7e
- 640 0284 00000000 		.4byte	.LFB70
- 641 0288 08000000 		.4byte	.LFE70-.LFB70
- 642 028c 01       		.uleb128 0x1
- 643 028d 9C       		.byte	0x9c
- 644 028e 9C020000 		.4byte	0x29c
- 645 0292 10       		.uleb128 0x10
- 646 0293 06000000 		.4byte	.LVL12
- 647 0297 AF030000 		.4byte	0x3af
- 648 029b 00       		.byte	0
- 649 029c 11       		.uleb128 0x11
- 650 029d FF020000 		.4byte	.LASF31
- 651 02a1 01       		.byte	0x1
- 652 02a2 8A       		.byte	0x8a
- 653 02a3 00000000 		.4byte	.LFB71
- 654 02a7 08000000 		.4byte	.LFE71-.LFB71
- 655 02ab 01       		.uleb128 0x1
- 656 02ac 9C       		.byte	0x9c
- 657 02ad BB020000 		.4byte	0x2bb
- 658 02b1 10       		.uleb128 0x10
- 659 02b2 06000000 		.4byte	.LVL13
- 660 02b6 BC030000 		.4byte	0x3bc
- 661 02ba 00       		.byte	0
- 662 02bb 12       		.uleb128 0x12
- 663 02bc 5F020000 		.4byte	.LASF32
- 664 02c0 01       		.byte	0x1
- 665 02c1 96       		.byte	0x96
- 666 02c2 00000000 		.4byte	.LFB72
- 667 02c6 24000000 		.4byte	.LFE72-.LFB72
- 668 02ca 01       		.uleb128 0x1
- 669 02cb 9C       		.byte	0x9c
- 670 02cc 07030000 		.4byte	0x307
- 671 02d0 13       		.uleb128 0x13
- 672 02d1 4E020000 		.4byte	.LASF33
- 673 02d5 01       		.byte	0x1
- 674 02d6 98       		.byte	0x98
- 675 02d7 07030000 		.4byte	0x307
- 676 02db 00       		.byte	0
- 677 02dc 14       		.uleb128 0x14
- 678 02dd 7F020000 		.4byte	.LASF34
- 679 02e1 01       		.byte	0x1
- 680 02e2 99       		.byte	0x99
- 681 02e3 8D000000 		.4byte	0x8d
- 682 02e7 00000000 		.4byte	.LLST0
- 683 02eb 10       		.uleb128 0x10
- 684 02ec 06000000 		.4byte	.LVL14
- 685 02f0 C9030000 		.4byte	0x3c9
- 686 02f4 10       		.uleb128 0x10
- 687 02f5 18000000 		.4byte	.LVL17
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 16
+ 602 0211 51       		.byte	0x51
+ 603 0212 02       		.uleb128 0x2
+ 604 0213 7D       		.byte	0x7d
+ 605 0214 00       		.sleb128 0
+ 606 0215 0F       		.uleb128 0xf
+ 607 0216 01       		.uleb128 0x1
+ 608 0217 50       		.byte	0x50
+ 609 0218 01       		.uleb128 0x1
+ 610 0219 30       		.byte	0x30
+ 611 021a 00       		.byte	0
+ 612 021b 10       		.uleb128 0x10
+ 613 021c 12000000 		.4byte	.LVL7
+ 614 0220 D1030000 		.4byte	0x3d1
+ 615 0224 0F       		.uleb128 0xf
+ 616 0225 01       		.uleb128 0x1
+ 617 0226 50       		.byte	0x50
+ 618 0227 02       		.uleb128 0x2
+ 619 0228 7D       		.byte	0x7d
+ 620 0229 00       		.sleb128 0
+ 621 022a 00       		.byte	0
+ 622 022b 00       		.byte	0
+ 623 022c 0C       		.uleb128 0xc
+ 624 022d 94030000 		.4byte	.LASF30
+ 625 0231 01       		.byte	0x1
+ 626 0232 68       		.byte	0x68
+ 627 0233 00000000 		.4byte	.LFB66
+ 628 0237 18000000 		.4byte	.LFE66-.LFB66
+ 629 023b 01       		.uleb128 0x1
+ 630 023c 9C       		.byte	0x9c
+ 631 023d 79020000 		.4byte	0x279
+ 632 0241 0D       		.uleb128 0xd
+ 633 0242 92000000 		.4byte	.LASF27
+ 634 0246 01       		.byte	0x1
+ 635 0247 6A       		.byte	0x6a
+ 636 0248 5A010000 		.4byte	0x15a
+ 637 024c 02       		.uleb128 0x2
+ 638 024d 91       		.byte	0x91
+ 639 024e 58       		.sleb128 -40
+ 640 024f 0E       		.uleb128 0xe
+ 641 0250 0C000000 		.4byte	.LVL8
+ 642 0254 93030000 		.4byte	0x393
+ 643 0258 68020000 		.4byte	0x268
+ 644 025c 0F       		.uleb128 0xf
+ 645 025d 01       		.uleb128 0x1
+ 646 025e 51       		.byte	0x51
+ 647 025f 02       		.uleb128 0x2
+ 648 0260 7D       		.byte	0x7d
+ 649 0261 00       		.sleb128 0
+ 650 0262 0F       		.uleb128 0xf
+ 651 0263 01       		.uleb128 0x1
+ 652 0264 50       		.byte	0x50
+ 653 0265 01       		.uleb128 0x1
+ 654 0266 32       		.byte	0x32
+ 655 0267 00       		.byte	0
+ 656 0268 10       		.uleb128 0x10
+ 657 0269 12000000 		.4byte	.LVL9
+ 658 026d E2030000 		.4byte	0x3e2
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 16
 
 
- 688 02f9 93010000 		.4byte	0x193
- 689 02fd 10       		.uleb128 0x10
- 690 02fe 1C000000 		.4byte	.LVL18
- 691 0302 55020000 		.4byte	0x255
- 692 0306 00       		.byte	0
- 693 0307 15       		.uleb128 0x15
- 694 0308 8D000000 		.4byte	0x8d
- 695 030c 16       		.uleb128 0x16
- 696 030d 09010000 		.4byte	.LASF35
- 697 0311 06       		.byte	0x6
- 698 0312 5506     		.2byte	0x655
- 699 0314 18030000 		.4byte	0x318
- 700 0318 17       		.uleb128 0x17
- 701 0319 76000000 		.4byte	0x76
- 702 031d 0E       		.uleb128 0xe
- 703 031e A7000000 		.4byte	0xa7
- 704 0322 2D030000 		.4byte	0x32d
- 705 0326 0F       		.uleb128 0xf
- 706 0327 AE000000 		.4byte	0xae
- 707 032b FF       		.byte	0xff
- 708 032c 00       		.byte	0
- 709 032d 18       		.uleb128 0x18
- 710 032e 72030000 		.4byte	.LASF36
- 711 0332 07       		.byte	0x7
- 712 0333 38       		.byte	0x38
- 713 0334 1D030000 		.4byte	0x31d
- 714 0338 05       		.uleb128 0x5
- 715 0339 03       		.byte	0x3
- 716 033a 00000000 		.4byte	formatted_string
- 717 033e 18       		.uleb128 0x18
- 718 033f 29030000 		.4byte	.LASF37
- 719 0343 07       		.byte	0x7
- 720 0344 89       		.byte	0x89
- 721 0345 81000000 		.4byte	0x81
- 722 0349 05       		.uleb128 0x5
- 723 034a 03       		.byte	0x3
- 724 034b 00000000 		.4byte	debug_control_enabled
- 725 034f 19       		.uleb128 0x19
- 726 0350 0C030000 		.4byte	.LASF38
- 727 0354 05       		.byte	0x5
- 728 0355 1F       		.byte	0x1f
- 729 0356 65030000 		.4byte	0x365
- 730 035a 1A       		.uleb128 0x1a
- 731 035b DE000000 		.4byte	0xde
- 732 035f 1A       		.uleb128 0x1a
- 733 0360 B5000000 		.4byte	0xb5
- 734 0364 00       		.byte	0
- 735 0365 19       		.uleb128 0x19
- 736 0366 8A020000 		.4byte	.LASF39
- 737 036a 08       		.byte	0x8
- 738 036b 2C       		.byte	0x2c
- 739 036c 76030000 		.4byte	0x376
- 740 0370 1A       		.uleb128 0x1a
- 741 0371 76030000 		.4byte	0x376
- 742 0375 00       		.byte	0
- 743 0376 1B       		.uleb128 0x1b
- 744 0377 04       		.byte	0x4
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 17
+ 659 0271 0F       		.uleb128 0xf
+ 660 0272 01       		.uleb128 0x1
+ 661 0273 50       		.byte	0x50
+ 662 0274 02       		.uleb128 0x2
+ 663 0275 7D       		.byte	0x7d
+ 664 0276 00       		.sleb128 0
+ 665 0277 00       		.byte	0
+ 666 0278 00       		.byte	0
+ 667 0279 0C       		.uleb128 0xc
+ 668 027a 09000000 		.4byte	.LASF31
+ 669 027e 01       		.byte	0x1
+ 670 027f 7F       		.byte	0x7f
+ 671 0280 00000000 		.4byte	.LFB68
+ 672 0284 0C000000 		.4byte	.LFE68-.LFB68
+ 673 0288 01       		.uleb128 0x1
+ 674 0289 9C       		.byte	0x9c
+ 675 028a A1020000 		.4byte	0x2a1
+ 676 028e 13       		.uleb128 0x13
+ 677 028f 06000000 		.4byte	.LVL10
+ 678 0293 DF010000 		.4byte	0x1df
+ 679 0297 13       		.uleb128 0x13
+ 680 0298 0A000000 		.4byte	.LVL11
+ 681 029c 2C020000 		.4byte	0x22c
+ 682 02a0 00       		.byte	0
+ 683 02a1 14       		.uleb128 0x14
+ 684 02a2 D1000000 		.4byte	.LASF32
+ 685 02a6 01       		.byte	0x1
+ 686 02a7 93       		.byte	0x93
+ 687 02a8 00000000 		.4byte	.LFB70
+ 688 02ac 20000000 		.4byte	.LFE70-.LFB70
+ 689 02b0 01       		.uleb128 0x1
+ 690 02b1 9C       		.byte	0x9c
+ 691 02b2 C0020000 		.4byte	0x2c0
+ 692 02b6 13       		.uleb128 0x13
+ 693 02b7 06000000 		.4byte	.LVL12
+ 694 02bb F3030000 		.4byte	0x3f3
+ 695 02bf 00       		.byte	0
+ 696 02c0 14       		.uleb128 0x14
+ 697 02c1 22030000 		.4byte	.LASF33
+ 698 02c5 01       		.byte	0x1
+ 699 02c6 A2       		.byte	0xa2
+ 700 02c7 00000000 		.4byte	.LFB71
+ 701 02cb 08000000 		.4byte	.LFE71-.LFB71
+ 702 02cf 01       		.uleb128 0x1
+ 703 02d0 9C       		.byte	0x9c
+ 704 02d1 DF020000 		.4byte	0x2df
+ 705 02d5 13       		.uleb128 0x13
+ 706 02d6 06000000 		.4byte	.LVL13
+ 707 02da 00040000 		.4byte	0x400
+ 708 02de 00       		.byte	0
+ 709 02df 15       		.uleb128 0x15
+ 710 02e0 82020000 		.4byte	.LASF34
+ 711 02e4 01       		.byte	0x1
+ 712 02e5 AE       		.byte	0xae
+ 713 02e6 00000000 		.4byte	.LFB72
+ 714 02ea 34000000 		.4byte	.LFE72-.LFB72
+ 715 02ee 01       		.uleb128 0x1
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 17
 
 
- 745 0378 99000000 		.4byte	0x99
- 746 037c 19       		.uleb128 0x19
- 747 037d 1D010000 		.4byte	.LASF40
- 748 0381 08       		.byte	0x8
- 749 0382 2A       		.byte	0x2a
- 750 0383 8D030000 		.4byte	0x38d
- 751 0387 1A       		.uleb128 0x1a
- 752 0388 76030000 		.4byte	0x376
- 753 038c 00       		.byte	0
- 754 038d 19       		.uleb128 0x19
- 755 038e 47000000 		.4byte	.LASF41
- 756 0392 08       		.byte	0x8
- 757 0393 2D       		.byte	0x2d
- 758 0394 9E030000 		.4byte	0x39e
- 759 0398 1A       		.uleb128 0x1a
- 760 0399 76030000 		.4byte	0x376
- 761 039d 00       		.byte	0
- 762 039e 19       		.uleb128 0x19
- 763 039f AA020000 		.4byte	.LASF42
- 764 03a3 08       		.byte	0x8
- 765 03a4 2B       		.byte	0x2b
- 766 03a5 AF030000 		.4byte	0x3af
- 767 03a9 1A       		.uleb128 0x1a
- 768 03aa 76030000 		.4byte	0x376
- 769 03ae 00       		.byte	0
- 770 03af 1C       		.uleb128 0x1c
- 771 03b0 00000000 		.4byte	.LASF43
- 772 03b4 05       		.byte	0x5
- 773 03b5 1D       		.byte	0x1d
- 774 03b6 BC030000 		.4byte	0x3bc
- 775 03ba 1D       		.uleb128 0x1d
- 776 03bb 00       		.byte	0
- 777 03bc 1C       		.uleb128 0x1c
- 778 03bd 6D020000 		.4byte	.LASF44
- 779 03c1 05       		.byte	0x5
- 780 03c2 1E       		.byte	0x1e
- 781 03c3 C9030000 		.4byte	0x3c9
- 782 03c7 1D       		.uleb128 0x1d
- 783 03c8 00       		.byte	0
- 784 03c9 1E       		.uleb128 0x1e
- 785 03ca 22030000 		.4byte	.LASF45
- 786 03ce 09       		.byte	0x9
- 787 03cf 18       		.byte	0x18
- 788 03d0 8D000000 		.4byte	0x8d
- 789 03d4 1D       		.uleb128 0x1d
- 790 03d5 00       		.byte	0
- 791 03d6 00       		.byte	0
- 792              		.section	.debug_abbrev,"",%progbits
- 793              	.Ldebug_abbrev0:
- 794 0000 01       		.uleb128 0x1
- 795 0001 11       		.uleb128 0x11
- 796 0002 01       		.byte	0x1
- 797 0003 25       		.uleb128 0x25
- 798 0004 0E       		.uleb128 0xe
- 799 0005 13       		.uleb128 0x13
- 800 0006 0B       		.uleb128 0xb
- 801 0007 03       		.uleb128 0x3
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 18
+ 716 02ef 9C       		.byte	0x9c
+ 717 02f0 2A030000 		.4byte	0x32a
+ 718 02f4 16       		.uleb128 0x16
+ 719 02f5 E3010000 		.4byte	.LASF35
+ 720 02f9 01       		.byte	0x1
+ 721 02fa B0       		.byte	0xb0
+ 722 02fb 2A030000 		.4byte	0x32a
+ 723 02ff 00       		.byte	0
+ 724 0300 0D       		.uleb128 0xd
+ 725 0301 7F000000 		.4byte	.LASF36
+ 726 0305 01       		.byte	0x1
+ 727 0306 B1       		.byte	0xb1
+ 728 0307 81000000 		.4byte	0x81
+ 729 030b 05       		.uleb128 0x5
+ 730 030c 03       		.byte	0x3
+ 731 030d 08000000 		.4byte	sensor_index.7395
+ 732 0311 17       		.uleb128 0x17
+ 733 0312 A2020000 		.4byte	.LASF37
+ 734 0316 01       		.byte	0x1
+ 735 0317 B2       		.byte	0xb2
+ 736 0318 99000000 		.4byte	0x99
+ 737 031c 00000000 		.4byte	.LLST0
+ 738 0320 13       		.uleb128 0x13
+ 739 0321 06000000 		.4byte	.LVL14
+ 740 0325 0D040000 		.4byte	0x40d
+ 741 0329 00       		.byte	0
+ 742 032a 18       		.uleb128 0x18
+ 743 032b 99000000 		.4byte	0x99
+ 744 032f 11       		.uleb128 0x11
+ 745 0330 F5000000 		.4byte	0xf5
+ 746 0334 3F030000 		.4byte	0x33f
+ 747 0338 12       		.uleb128 0x12
+ 748 0339 BA000000 		.4byte	0xba
+ 749 033d 01       		.byte	0x1
+ 750 033e 00       		.byte	0
+ 751 033f 0D       		.uleb128 0xd
+ 752 0340 42030000 		.4byte	.LASF38
+ 753 0344 01       		.byte	0x1
+ 754 0345 3D       		.byte	0x3d
+ 755 0346 2F030000 		.4byte	0x32f
+ 756 034a 05       		.uleb128 0x5
+ 757 034b 03       		.byte	0x3
+ 758 034c 00000000 		.4byte	sensor_array
+ 759 0350 19       		.uleb128 0x19
+ 760 0351 16010000 		.4byte	.LASF39
+ 761 0355 06       		.byte	0x6
+ 762 0356 5506     		.2byte	0x655
+ 763 0358 5C030000 		.4byte	0x35c
+ 764 035c 1A       		.uleb128 0x1a
+ 765 035d 76000000 		.4byte	0x76
+ 766 0361 11       		.uleb128 0x11
+ 767 0362 B3000000 		.4byte	0xb3
+ 768 0366 71030000 		.4byte	0x371
+ 769 036a 12       		.uleb128 0x12
+ 770 036b BA000000 		.4byte	0xba
+ 771 036f FF       		.byte	0xff
+ 772 0370 00       		.byte	0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 18
 
 
- 802 0008 0E       		.uleb128 0xe
- 803 0009 1B       		.uleb128 0x1b
- 804 000a 0E       		.uleb128 0xe
- 805 000b 55       		.uleb128 0x55
- 806 000c 17       		.uleb128 0x17
- 807 000d 11       		.uleb128 0x11
- 808 000e 01       		.uleb128 0x1
- 809 000f 10       		.uleb128 0x10
- 810 0010 17       		.uleb128 0x17
- 811 0011 00       		.byte	0
- 812 0012 00       		.byte	0
- 813 0013 02       		.uleb128 0x2
- 814 0014 24       		.uleb128 0x24
- 815 0015 00       		.byte	0
- 816 0016 0B       		.uleb128 0xb
- 817 0017 0B       		.uleb128 0xb
- 818 0018 3E       		.uleb128 0x3e
- 819 0019 0B       		.uleb128 0xb
- 820 001a 03       		.uleb128 0x3
- 821 001b 0E       		.uleb128 0xe
- 822 001c 00       		.byte	0
- 823 001d 00       		.byte	0
- 824 001e 03       		.uleb128 0x3
- 825 001f 16       		.uleb128 0x16
- 826 0020 00       		.byte	0
- 827 0021 03       		.uleb128 0x3
- 828 0022 0E       		.uleb128 0xe
- 829 0023 3A       		.uleb128 0x3a
- 830 0024 0B       		.uleb128 0xb
- 831 0025 3B       		.uleb128 0x3b
- 832 0026 0B       		.uleb128 0xb
- 833 0027 49       		.uleb128 0x49
- 834 0028 13       		.uleb128 0x13
- 835 0029 00       		.byte	0
- 836 002a 00       		.byte	0
- 837 002b 04       		.uleb128 0x4
- 838 002c 24       		.uleb128 0x24
- 839 002d 00       		.byte	0
- 840 002e 0B       		.uleb128 0xb
- 841 002f 0B       		.uleb128 0xb
- 842 0030 3E       		.uleb128 0x3e
- 843 0031 0B       		.uleb128 0xb
- 844 0032 03       		.uleb128 0x3
- 845 0033 08       		.uleb128 0x8
- 846 0034 00       		.byte	0
- 847 0035 00       		.byte	0
- 848 0036 05       		.uleb128 0x5
- 849 0037 16       		.uleb128 0x16
- 850 0038 00       		.byte	0
- 851 0039 03       		.uleb128 0x3
- 852 003a 0E       		.uleb128 0xe
- 853 003b 3A       		.uleb128 0x3a
- 854 003c 0B       		.uleb128 0xb
- 855 003d 3B       		.uleb128 0x3b
- 856 003e 05       		.uleb128 0x5
- 857 003f 49       		.uleb128 0x49
- 858 0040 13       		.uleb128 0x13
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 19
+ 773 0371 1B       		.uleb128 0x1b
+ 774 0372 A8030000 		.4byte	.LASF40
+ 775 0376 07       		.byte	0x7
+ 776 0377 38       		.byte	0x38
+ 777 0378 61030000 		.4byte	0x361
+ 778 037c 05       		.uleb128 0x5
+ 779 037d 03       		.byte	0x3
+ 780 037e 00000000 		.4byte	formatted_string
+ 781 0382 1B       		.uleb128 0x1b
+ 782 0383 5F030000 		.4byte	.LASF41
+ 783 0387 07       		.byte	0x7
+ 784 0388 89       		.byte	0x89
+ 785 0389 8D000000 		.4byte	0x8d
+ 786 038d 05       		.uleb128 0x5
+ 787 038e 03       		.byte	0x3
+ 788 038f 00000000 		.4byte	debug_control_enabled
+ 789 0393 1C       		.uleb128 0x1c
+ 790 0394 2F030000 		.4byte	.LASF42
+ 791 0398 05       		.byte	0x5
+ 792 0399 1F       		.byte	0x1f
+ 793 039a A9030000 		.4byte	0x3a9
+ 794 039e 1D       		.uleb128 0x1d
+ 795 039f EA000000 		.4byte	0xea
+ 796 03a3 1D       		.uleb128 0x1d
+ 797 03a4 C1000000 		.4byte	0xc1
+ 798 03a8 00       		.byte	0
+ 799 03a9 1C       		.uleb128 0x1c
+ 800 03aa 60000000 		.4byte	.LASF43
+ 801 03ae 08       		.byte	0x8
+ 802 03af 2D       		.byte	0x2d
+ 803 03b0 BA030000 		.4byte	0x3ba
+ 804 03b4 1D       		.uleb128 0x1d
+ 805 03b5 BA030000 		.4byte	0x3ba
+ 806 03b9 00       		.byte	0
+ 807 03ba 09       		.uleb128 0x9
+ 808 03bb 04       		.byte	0x4
+ 809 03bc A5000000 		.4byte	0xa5
+ 810 03c0 1C       		.uleb128 0x1c
+ 811 03c1 CD020000 		.4byte	.LASF44
+ 812 03c5 08       		.byte	0x8
+ 813 03c6 2B       		.byte	0x2b
+ 814 03c7 D1030000 		.4byte	0x3d1
+ 815 03cb 1D       		.uleb128 0x1d
+ 816 03cc BA030000 		.4byte	0x3ba
+ 817 03d0 00       		.byte	0
+ 818 03d1 1C       		.uleb128 0x1c
+ 819 03d2 AD020000 		.4byte	.LASF45
+ 820 03d6 08       		.byte	0x8
+ 821 03d7 2C       		.byte	0x2c
+ 822 03d8 E2030000 		.4byte	0x3e2
+ 823 03dc 1D       		.uleb128 0x1d
+ 824 03dd BA030000 		.4byte	0x3ba
+ 825 03e1 00       		.byte	0
+ 826 03e2 1C       		.uleb128 0x1c
+ 827 03e3 2A010000 		.4byte	.LASF46
+ 828 03e7 08       		.byte	0x8
+ 829 03e8 2A       		.byte	0x2a
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 19
 
 
- 859 0041 00       		.byte	0
- 860 0042 00       		.byte	0
- 861 0043 06       		.uleb128 0x6
- 862 0044 0F       		.uleb128 0xf
- 863 0045 00       		.byte	0
- 864 0046 0B       		.uleb128 0xb
- 865 0047 0B       		.uleb128 0xb
- 866 0048 00       		.byte	0
- 867 0049 00       		.byte	0
- 868 004a 07       		.uleb128 0x7
- 869 004b 04       		.uleb128 0x4
- 870 004c 01       		.byte	0x1
- 871 004d 0B       		.uleb128 0xb
- 872 004e 0B       		.uleb128 0xb
- 873 004f 3A       		.uleb128 0x3a
- 874 0050 0B       		.uleb128 0xb
- 875 0051 3B       		.uleb128 0x3b
- 876 0052 0B       		.uleb128 0xb
- 877 0053 01       		.uleb128 0x1
- 878 0054 13       		.uleb128 0x13
- 879 0055 00       		.byte	0
- 880 0056 00       		.byte	0
- 881 0057 08       		.uleb128 0x8
- 882 0058 28       		.uleb128 0x28
- 883 0059 00       		.byte	0
- 884 005a 03       		.uleb128 0x3
- 885 005b 0E       		.uleb128 0xe
- 886 005c 1C       		.uleb128 0x1c
- 887 005d 0D       		.uleb128 0xd
- 888 005e 00       		.byte	0
- 889 005f 00       		.byte	0
- 890 0060 09       		.uleb128 0x9
- 891 0061 2E       		.uleb128 0x2e
- 892 0062 01       		.byte	0x1
- 893 0063 03       		.uleb128 0x3
- 894 0064 0E       		.uleb128 0xe
- 895 0065 3A       		.uleb128 0x3a
- 896 0066 0B       		.uleb128 0xb
- 897 0067 3B       		.uleb128 0x3b
- 898 0068 0B       		.uleb128 0xb
- 899 0069 11       		.uleb128 0x11
- 900 006a 01       		.uleb128 0x1
- 901 006b 12       		.uleb128 0x12
- 902 006c 06       		.uleb128 0x6
- 903 006d 40       		.uleb128 0x40
- 904 006e 18       		.uleb128 0x18
- 905 006f 9742     		.uleb128 0x2117
- 906 0071 19       		.uleb128 0x19
- 907 0072 01       		.uleb128 0x1
- 908 0073 13       		.uleb128 0x13
- 909 0074 00       		.byte	0
- 910 0075 00       		.byte	0
- 911 0076 0A       		.uleb128 0xa
- 912 0077 34       		.uleb128 0x34
- 913 0078 00       		.byte	0
- 914 0079 03       		.uleb128 0x3
- 915 007a 0E       		.uleb128 0xe
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 20
+ 830 03e9 F3030000 		.4byte	0x3f3
+ 831 03ed 1D       		.uleb128 0x1d
+ 832 03ee BA030000 		.4byte	0x3ba
+ 833 03f2 00       		.byte	0
+ 834 03f3 1E       		.uleb128 0x1e
+ 835 03f4 00000000 		.4byte	.LASF47
+ 836 03f8 05       		.byte	0x5
+ 837 03f9 1D       		.byte	0x1d
+ 838 03fa 00040000 		.4byte	0x400
+ 839 03fe 0B       		.uleb128 0xb
+ 840 03ff 00       		.byte	0
+ 841 0400 1E       		.uleb128 0x1e
+ 842 0401 90020000 		.4byte	.LASF48
+ 843 0405 05       		.byte	0x5
+ 844 0406 1E       		.byte	0x1e
+ 845 0407 0D040000 		.4byte	0x40d
+ 846 040b 0B       		.uleb128 0xb
+ 847 040c 00       		.byte	0
+ 848 040d 1F       		.uleb128 0x1f
+ 849 040e 58030000 		.4byte	.LASF49
+ 850 0412 09       		.byte	0x9
+ 851 0413 18       		.byte	0x18
+ 852 0414 99000000 		.4byte	0x99
+ 853 0418 0B       		.uleb128 0xb
+ 854 0419 00       		.byte	0
+ 855 041a 00       		.byte	0
+ 856              		.section	.debug_abbrev,"",%progbits
+ 857              	.Ldebug_abbrev0:
+ 858 0000 01       		.uleb128 0x1
+ 859 0001 11       		.uleb128 0x11
+ 860 0002 01       		.byte	0x1
+ 861 0003 25       		.uleb128 0x25
+ 862 0004 0E       		.uleb128 0xe
+ 863 0005 13       		.uleb128 0x13
+ 864 0006 0B       		.uleb128 0xb
+ 865 0007 03       		.uleb128 0x3
+ 866 0008 0E       		.uleb128 0xe
+ 867 0009 1B       		.uleb128 0x1b
+ 868 000a 0E       		.uleb128 0xe
+ 869 000b 55       		.uleb128 0x55
+ 870 000c 17       		.uleb128 0x17
+ 871 000d 11       		.uleb128 0x11
+ 872 000e 01       		.uleb128 0x1
+ 873 000f 10       		.uleb128 0x10
+ 874 0010 17       		.uleb128 0x17
+ 875 0011 00       		.byte	0
+ 876 0012 00       		.byte	0
+ 877 0013 02       		.uleb128 0x2
+ 878 0014 24       		.uleb128 0x24
+ 879 0015 00       		.byte	0
+ 880 0016 0B       		.uleb128 0xb
+ 881 0017 0B       		.uleb128 0xb
+ 882 0018 3E       		.uleb128 0x3e
+ 883 0019 0B       		.uleb128 0xb
+ 884 001a 03       		.uleb128 0x3
+ 885 001b 0E       		.uleb128 0xe
+ 886 001c 00       		.byte	0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 20
 
 
- 916 007b 3A       		.uleb128 0x3a
- 917 007c 0B       		.uleb128 0xb
- 918 007d 3B       		.uleb128 0x3b
- 919 007e 0B       		.uleb128 0xb
- 920 007f 49       		.uleb128 0x49
- 921 0080 13       		.uleb128 0x13
- 922 0081 02       		.uleb128 0x2
- 923 0082 18       		.uleb128 0x18
- 924 0083 00       		.byte	0
- 925 0084 00       		.byte	0
- 926 0085 0B       		.uleb128 0xb
- 927 0086 898201   		.uleb128 0x4109
- 928 0089 01       		.byte	0x1
- 929 008a 11       		.uleb128 0x11
- 930 008b 01       		.uleb128 0x1
- 931 008c 31       		.uleb128 0x31
- 932 008d 13       		.uleb128 0x13
- 933 008e 01       		.uleb128 0x1
- 934 008f 13       		.uleb128 0x13
- 935 0090 00       		.byte	0
- 936 0091 00       		.byte	0
- 937 0092 0C       		.uleb128 0xc
- 938 0093 8A8201   		.uleb128 0x410a
- 939 0096 00       		.byte	0
- 940 0097 02       		.uleb128 0x2
- 941 0098 18       		.uleb128 0x18
- 942 0099 9142     		.uleb128 0x2111
- 943 009b 18       		.uleb128 0x18
- 944 009c 00       		.byte	0
- 945 009d 00       		.byte	0
- 946 009e 0D       		.uleb128 0xd
- 947 009f 898201   		.uleb128 0x4109
- 948 00a2 01       		.byte	0x1
- 949 00a3 11       		.uleb128 0x11
- 950 00a4 01       		.uleb128 0x1
- 951 00a5 31       		.uleb128 0x31
- 952 00a6 13       		.uleb128 0x13
- 953 00a7 00       		.byte	0
- 954 00a8 00       		.byte	0
- 955 00a9 0E       		.uleb128 0xe
- 956 00aa 01       		.uleb128 0x1
- 957 00ab 01       		.byte	0x1
- 958 00ac 49       		.uleb128 0x49
- 959 00ad 13       		.uleb128 0x13
- 960 00ae 01       		.uleb128 0x1
- 961 00af 13       		.uleb128 0x13
- 962 00b0 00       		.byte	0
- 963 00b1 00       		.byte	0
- 964 00b2 0F       		.uleb128 0xf
- 965 00b3 21       		.uleb128 0x21
- 966 00b4 00       		.byte	0
- 967 00b5 49       		.uleb128 0x49
- 968 00b6 13       		.uleb128 0x13
- 969 00b7 2F       		.uleb128 0x2f
- 970 00b8 0B       		.uleb128 0xb
- 971 00b9 00       		.byte	0
- 972 00ba 00       		.byte	0
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 21
+ 887 001d 00       		.byte	0
+ 888 001e 03       		.uleb128 0x3
+ 889 001f 16       		.uleb128 0x16
+ 890 0020 00       		.byte	0
+ 891 0021 03       		.uleb128 0x3
+ 892 0022 0E       		.uleb128 0xe
+ 893 0023 3A       		.uleb128 0x3a
+ 894 0024 0B       		.uleb128 0xb
+ 895 0025 3B       		.uleb128 0x3b
+ 896 0026 0B       		.uleb128 0xb
+ 897 0027 49       		.uleb128 0x49
+ 898 0028 13       		.uleb128 0x13
+ 899 0029 00       		.byte	0
+ 900 002a 00       		.byte	0
+ 901 002b 04       		.uleb128 0x4
+ 902 002c 24       		.uleb128 0x24
+ 903 002d 00       		.byte	0
+ 904 002e 0B       		.uleb128 0xb
+ 905 002f 0B       		.uleb128 0xb
+ 906 0030 3E       		.uleb128 0x3e
+ 907 0031 0B       		.uleb128 0xb
+ 908 0032 03       		.uleb128 0x3
+ 909 0033 08       		.uleb128 0x8
+ 910 0034 00       		.byte	0
+ 911 0035 00       		.byte	0
+ 912 0036 05       		.uleb128 0x5
+ 913 0037 16       		.uleb128 0x16
+ 914 0038 00       		.byte	0
+ 915 0039 03       		.uleb128 0x3
+ 916 003a 0E       		.uleb128 0xe
+ 917 003b 3A       		.uleb128 0x3a
+ 918 003c 0B       		.uleb128 0xb
+ 919 003d 3B       		.uleb128 0x3b
+ 920 003e 05       		.uleb128 0x5
+ 921 003f 49       		.uleb128 0x49
+ 922 0040 13       		.uleb128 0x13
+ 923 0041 00       		.byte	0
+ 924 0042 00       		.byte	0
+ 925 0043 06       		.uleb128 0x6
+ 926 0044 0F       		.uleb128 0xf
+ 927 0045 00       		.byte	0
+ 928 0046 0B       		.uleb128 0xb
+ 929 0047 0B       		.uleb128 0xb
+ 930 0048 00       		.byte	0
+ 931 0049 00       		.byte	0
+ 932 004a 07       		.uleb128 0x7
+ 933 004b 04       		.uleb128 0x4
+ 934 004c 01       		.byte	0x1
+ 935 004d 0B       		.uleb128 0xb
+ 936 004e 0B       		.uleb128 0xb
+ 937 004f 3A       		.uleb128 0x3a
+ 938 0050 0B       		.uleb128 0xb
+ 939 0051 3B       		.uleb128 0x3b
+ 940 0052 0B       		.uleb128 0xb
+ 941 0053 01       		.uleb128 0x1
+ 942 0054 13       		.uleb128 0x13
+ 943 0055 00       		.byte	0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 21
 
 
- 973 00bb 10       		.uleb128 0x10
- 974 00bc 898201   		.uleb128 0x4109
- 975 00bf 00       		.byte	0
- 976 00c0 11       		.uleb128 0x11
- 977 00c1 01       		.uleb128 0x1
- 978 00c2 31       		.uleb128 0x31
- 979 00c3 13       		.uleb128 0x13
- 980 00c4 00       		.byte	0
- 981 00c5 00       		.byte	0
- 982 00c6 11       		.uleb128 0x11
- 983 00c7 2E       		.uleb128 0x2e
- 984 00c8 01       		.byte	0x1
- 985 00c9 3F       		.uleb128 0x3f
- 986 00ca 19       		.uleb128 0x19
- 987 00cb 03       		.uleb128 0x3
- 988 00cc 0E       		.uleb128 0xe
- 989 00cd 3A       		.uleb128 0x3a
- 990 00ce 0B       		.uleb128 0xb
- 991 00cf 3B       		.uleb128 0x3b
- 992 00d0 0B       		.uleb128 0xb
- 993 00d1 11       		.uleb128 0x11
- 994 00d2 01       		.uleb128 0x1
- 995 00d3 12       		.uleb128 0x12
- 996 00d4 06       		.uleb128 0x6
- 997 00d5 40       		.uleb128 0x40
- 998 00d6 18       		.uleb128 0x18
- 999 00d7 9742     		.uleb128 0x2117
- 1000 00d9 19       		.uleb128 0x19
- 1001 00da 01       		.uleb128 0x1
- 1002 00db 13       		.uleb128 0x13
- 1003 00dc 00       		.byte	0
- 1004 00dd 00       		.byte	0
- 1005 00de 12       		.uleb128 0x12
- 1006 00df 2E       		.uleb128 0x2e
- 1007 00e0 01       		.byte	0x1
- 1008 00e1 3F       		.uleb128 0x3f
- 1009 00e2 19       		.uleb128 0x19
- 1010 00e3 03       		.uleb128 0x3
- 1011 00e4 0E       		.uleb128 0xe
- 1012 00e5 3A       		.uleb128 0x3a
- 1013 00e6 0B       		.uleb128 0xb
- 1014 00e7 3B       		.uleb128 0x3b
- 1015 00e8 0B       		.uleb128 0xb
- 1016 00e9 11       		.uleb128 0x11
- 1017 00ea 01       		.uleb128 0x1
- 1018 00eb 12       		.uleb128 0x12
- 1019 00ec 06       		.uleb128 0x6
- 1020 00ed 40       		.uleb128 0x40
- 1021 00ee 18       		.uleb128 0x18
- 1022 00ef 9642     		.uleb128 0x2116
- 1023 00f1 19       		.uleb128 0x19
- 1024 00f2 01       		.uleb128 0x1
- 1025 00f3 13       		.uleb128 0x13
- 1026 00f4 00       		.byte	0
- 1027 00f5 00       		.byte	0
- 1028 00f6 13       		.uleb128 0x13
- 1029 00f7 34       		.uleb128 0x34
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 22
+ 944 0056 00       		.byte	0
+ 945 0057 08       		.uleb128 0x8
+ 946 0058 28       		.uleb128 0x28
+ 947 0059 00       		.byte	0
+ 948 005a 03       		.uleb128 0x3
+ 949 005b 0E       		.uleb128 0xe
+ 950 005c 1C       		.uleb128 0x1c
+ 951 005d 0D       		.uleb128 0xd
+ 952 005e 00       		.byte	0
+ 953 005f 00       		.byte	0
+ 954 0060 09       		.uleb128 0x9
+ 955 0061 0F       		.uleb128 0xf
+ 956 0062 00       		.byte	0
+ 957 0063 0B       		.uleb128 0xb
+ 958 0064 0B       		.uleb128 0xb
+ 959 0065 49       		.uleb128 0x49
+ 960 0066 13       		.uleb128 0x13
+ 961 0067 00       		.byte	0
+ 962 0068 00       		.byte	0
+ 963 0069 0A       		.uleb128 0xa
+ 964 006a 15       		.uleb128 0x15
+ 965 006b 01       		.byte	0x1
+ 966 006c 01       		.uleb128 0x1
+ 967 006d 13       		.uleb128 0x13
+ 968 006e 00       		.byte	0
+ 969 006f 00       		.byte	0
+ 970 0070 0B       		.uleb128 0xb
+ 971 0071 18       		.uleb128 0x18
+ 972 0072 00       		.byte	0
+ 973 0073 00       		.byte	0
+ 974 0074 00       		.byte	0
+ 975 0075 0C       		.uleb128 0xc
+ 976 0076 2E       		.uleb128 0x2e
+ 977 0077 01       		.byte	0x1
+ 978 0078 03       		.uleb128 0x3
+ 979 0079 0E       		.uleb128 0xe
+ 980 007a 3A       		.uleb128 0x3a
+ 981 007b 0B       		.uleb128 0xb
+ 982 007c 3B       		.uleb128 0x3b
+ 983 007d 0B       		.uleb128 0xb
+ 984 007e 11       		.uleb128 0x11
+ 985 007f 01       		.uleb128 0x1
+ 986 0080 12       		.uleb128 0x12
+ 987 0081 06       		.uleb128 0x6
+ 988 0082 40       		.uleb128 0x40
+ 989 0083 18       		.uleb128 0x18
+ 990 0084 9742     		.uleb128 0x2117
+ 991 0086 19       		.uleb128 0x19
+ 992 0087 01       		.uleb128 0x1
+ 993 0088 13       		.uleb128 0x13
+ 994 0089 00       		.byte	0
+ 995 008a 00       		.byte	0
+ 996 008b 0D       		.uleb128 0xd
+ 997 008c 34       		.uleb128 0x34
+ 998 008d 00       		.byte	0
+ 999 008e 03       		.uleb128 0x3
+ 1000 008f 0E       		.uleb128 0xe
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 22
 
 
- 1030 00f8 00       		.byte	0
- 1031 00f9 03       		.uleb128 0x3
- 1032 00fa 0E       		.uleb128 0xe
- 1033 00fb 3A       		.uleb128 0x3a
- 1034 00fc 0B       		.uleb128 0xb
- 1035 00fd 3B       		.uleb128 0x3b
- 1036 00fe 0B       		.uleb128 0xb
- 1037 00ff 49       		.uleb128 0x49
- 1038 0100 13       		.uleb128 0x13
- 1039 0101 1C       		.uleb128 0x1c
- 1040 0102 0B       		.uleb128 0xb
- 1041 0103 00       		.byte	0
- 1042 0104 00       		.byte	0
- 1043 0105 14       		.uleb128 0x14
- 1044 0106 34       		.uleb128 0x34
- 1045 0107 00       		.byte	0
- 1046 0108 03       		.uleb128 0x3
- 1047 0109 0E       		.uleb128 0xe
- 1048 010a 3A       		.uleb128 0x3a
- 1049 010b 0B       		.uleb128 0xb
- 1050 010c 3B       		.uleb128 0x3b
- 1051 010d 0B       		.uleb128 0xb
- 1052 010e 49       		.uleb128 0x49
- 1053 010f 13       		.uleb128 0x13
- 1054 0110 02       		.uleb128 0x2
- 1055 0111 17       		.uleb128 0x17
- 1056 0112 00       		.byte	0
- 1057 0113 00       		.byte	0
- 1058 0114 15       		.uleb128 0x15
- 1059 0115 26       		.uleb128 0x26
- 1060 0116 00       		.byte	0
- 1061 0117 49       		.uleb128 0x49
- 1062 0118 13       		.uleb128 0x13
- 1063 0119 00       		.byte	0
- 1064 011a 00       		.byte	0
- 1065 011b 16       		.uleb128 0x16
- 1066 011c 34       		.uleb128 0x34
- 1067 011d 00       		.byte	0
- 1068 011e 03       		.uleb128 0x3
- 1069 011f 0E       		.uleb128 0xe
- 1070 0120 3A       		.uleb128 0x3a
- 1071 0121 0B       		.uleb128 0xb
- 1072 0122 3B       		.uleb128 0x3b
- 1073 0123 05       		.uleb128 0x5
- 1074 0124 49       		.uleb128 0x49
- 1075 0125 13       		.uleb128 0x13
- 1076 0126 3F       		.uleb128 0x3f
- 1077 0127 19       		.uleb128 0x19
- 1078 0128 3C       		.uleb128 0x3c
- 1079 0129 19       		.uleb128 0x19
- 1080 012a 00       		.byte	0
- 1081 012b 00       		.byte	0
- 1082 012c 17       		.uleb128 0x17
- 1083 012d 35       		.uleb128 0x35
- 1084 012e 00       		.byte	0
- 1085 012f 49       		.uleb128 0x49
- 1086 0130 13       		.uleb128 0x13
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 23
+ 1001 0090 3A       		.uleb128 0x3a
+ 1002 0091 0B       		.uleb128 0xb
+ 1003 0092 3B       		.uleb128 0x3b
+ 1004 0093 0B       		.uleb128 0xb
+ 1005 0094 49       		.uleb128 0x49
+ 1006 0095 13       		.uleb128 0x13
+ 1007 0096 02       		.uleb128 0x2
+ 1008 0097 18       		.uleb128 0x18
+ 1009 0098 00       		.byte	0
+ 1010 0099 00       		.byte	0
+ 1011 009a 0E       		.uleb128 0xe
+ 1012 009b 898201   		.uleb128 0x4109
+ 1013 009e 01       		.byte	0x1
+ 1014 009f 11       		.uleb128 0x11
+ 1015 00a0 01       		.uleb128 0x1
+ 1016 00a1 31       		.uleb128 0x31
+ 1017 00a2 13       		.uleb128 0x13
+ 1018 00a3 01       		.uleb128 0x1
+ 1019 00a4 13       		.uleb128 0x13
+ 1020 00a5 00       		.byte	0
+ 1021 00a6 00       		.byte	0
+ 1022 00a7 0F       		.uleb128 0xf
+ 1023 00a8 8A8201   		.uleb128 0x410a
+ 1024 00ab 00       		.byte	0
+ 1025 00ac 02       		.uleb128 0x2
+ 1026 00ad 18       		.uleb128 0x18
+ 1027 00ae 9142     		.uleb128 0x2111
+ 1028 00b0 18       		.uleb128 0x18
+ 1029 00b1 00       		.byte	0
+ 1030 00b2 00       		.byte	0
+ 1031 00b3 10       		.uleb128 0x10
+ 1032 00b4 898201   		.uleb128 0x4109
+ 1033 00b7 01       		.byte	0x1
+ 1034 00b8 11       		.uleb128 0x11
+ 1035 00b9 01       		.uleb128 0x1
+ 1036 00ba 31       		.uleb128 0x31
+ 1037 00bb 13       		.uleb128 0x13
+ 1038 00bc 00       		.byte	0
+ 1039 00bd 00       		.byte	0
+ 1040 00be 11       		.uleb128 0x11
+ 1041 00bf 01       		.uleb128 0x1
+ 1042 00c0 01       		.byte	0x1
+ 1043 00c1 49       		.uleb128 0x49
+ 1044 00c2 13       		.uleb128 0x13
+ 1045 00c3 01       		.uleb128 0x1
+ 1046 00c4 13       		.uleb128 0x13
+ 1047 00c5 00       		.byte	0
+ 1048 00c6 00       		.byte	0
+ 1049 00c7 12       		.uleb128 0x12
+ 1050 00c8 21       		.uleb128 0x21
+ 1051 00c9 00       		.byte	0
+ 1052 00ca 49       		.uleb128 0x49
+ 1053 00cb 13       		.uleb128 0x13
+ 1054 00cc 2F       		.uleb128 0x2f
+ 1055 00cd 0B       		.uleb128 0xb
+ 1056 00ce 00       		.byte	0
+ 1057 00cf 00       		.byte	0
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 23
 
 
- 1087 0131 00       		.byte	0
- 1088 0132 00       		.byte	0
- 1089 0133 18       		.uleb128 0x18
- 1090 0134 34       		.uleb128 0x34
- 1091 0135 00       		.byte	0
- 1092 0136 03       		.uleb128 0x3
- 1093 0137 0E       		.uleb128 0xe
- 1094 0138 3A       		.uleb128 0x3a
- 1095 0139 0B       		.uleb128 0xb
- 1096 013a 3B       		.uleb128 0x3b
- 1097 013b 0B       		.uleb128 0xb
- 1098 013c 49       		.uleb128 0x49
- 1099 013d 13       		.uleb128 0x13
- 1100 013e 3F       		.uleb128 0x3f
- 1101 013f 19       		.uleb128 0x19
- 1102 0140 02       		.uleb128 0x2
- 1103 0141 18       		.uleb128 0x18
- 1104 0142 00       		.byte	0
- 1105 0143 00       		.byte	0
- 1106 0144 19       		.uleb128 0x19
- 1107 0145 2E       		.uleb128 0x2e
- 1108 0146 01       		.byte	0x1
- 1109 0147 3F       		.uleb128 0x3f
- 1110 0148 19       		.uleb128 0x19
- 1111 0149 03       		.uleb128 0x3
- 1112 014a 0E       		.uleb128 0xe
- 1113 014b 3A       		.uleb128 0x3a
- 1114 014c 0B       		.uleb128 0xb
- 1115 014d 3B       		.uleb128 0x3b
- 1116 014e 0B       		.uleb128 0xb
- 1117 014f 27       		.uleb128 0x27
- 1118 0150 19       		.uleb128 0x19
- 1119 0151 3C       		.uleb128 0x3c
- 1120 0152 19       		.uleb128 0x19
- 1121 0153 01       		.uleb128 0x1
- 1122 0154 13       		.uleb128 0x13
- 1123 0155 00       		.byte	0
- 1124 0156 00       		.byte	0
- 1125 0157 1A       		.uleb128 0x1a
- 1126 0158 05       		.uleb128 0x5
- 1127 0159 00       		.byte	0
- 1128 015a 49       		.uleb128 0x49
- 1129 015b 13       		.uleb128 0x13
- 1130 015c 00       		.byte	0
- 1131 015d 00       		.byte	0
- 1132 015e 1B       		.uleb128 0x1b
- 1133 015f 0F       		.uleb128 0xf
- 1134 0160 00       		.byte	0
- 1135 0161 0B       		.uleb128 0xb
- 1136 0162 0B       		.uleb128 0xb
- 1137 0163 49       		.uleb128 0x49
- 1138 0164 13       		.uleb128 0x13
- 1139 0165 00       		.byte	0
- 1140 0166 00       		.byte	0
- 1141 0167 1C       		.uleb128 0x1c
- 1142 0168 2E       		.uleb128 0x2e
- 1143 0169 01       		.byte	0x1
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 24
+ 1058 00d0 13       		.uleb128 0x13
+ 1059 00d1 898201   		.uleb128 0x4109
+ 1060 00d4 00       		.byte	0
+ 1061 00d5 11       		.uleb128 0x11
+ 1062 00d6 01       		.uleb128 0x1
+ 1063 00d7 31       		.uleb128 0x31
+ 1064 00d8 13       		.uleb128 0x13
+ 1065 00d9 00       		.byte	0
+ 1066 00da 00       		.byte	0
+ 1067 00db 14       		.uleb128 0x14
+ 1068 00dc 2E       		.uleb128 0x2e
+ 1069 00dd 01       		.byte	0x1
+ 1070 00de 3F       		.uleb128 0x3f
+ 1071 00df 19       		.uleb128 0x19
+ 1072 00e0 03       		.uleb128 0x3
+ 1073 00e1 0E       		.uleb128 0xe
+ 1074 00e2 3A       		.uleb128 0x3a
+ 1075 00e3 0B       		.uleb128 0xb
+ 1076 00e4 3B       		.uleb128 0x3b
+ 1077 00e5 0B       		.uleb128 0xb
+ 1078 00e6 11       		.uleb128 0x11
+ 1079 00e7 01       		.uleb128 0x1
+ 1080 00e8 12       		.uleb128 0x12
+ 1081 00e9 06       		.uleb128 0x6
+ 1082 00ea 40       		.uleb128 0x40
+ 1083 00eb 18       		.uleb128 0x18
+ 1084 00ec 9742     		.uleb128 0x2117
+ 1085 00ee 19       		.uleb128 0x19
+ 1086 00ef 01       		.uleb128 0x1
+ 1087 00f0 13       		.uleb128 0x13
+ 1088 00f1 00       		.byte	0
+ 1089 00f2 00       		.byte	0
+ 1090 00f3 15       		.uleb128 0x15
+ 1091 00f4 2E       		.uleb128 0x2e
+ 1092 00f5 01       		.byte	0x1
+ 1093 00f6 3F       		.uleb128 0x3f
+ 1094 00f7 19       		.uleb128 0x19
+ 1095 00f8 03       		.uleb128 0x3
+ 1096 00f9 0E       		.uleb128 0xe
+ 1097 00fa 3A       		.uleb128 0x3a
+ 1098 00fb 0B       		.uleb128 0xb
+ 1099 00fc 3B       		.uleb128 0x3b
+ 1100 00fd 0B       		.uleb128 0xb
+ 1101 00fe 11       		.uleb128 0x11
+ 1102 00ff 01       		.uleb128 0x1
+ 1103 0100 12       		.uleb128 0x12
+ 1104 0101 06       		.uleb128 0x6
+ 1105 0102 40       		.uleb128 0x40
+ 1106 0103 18       		.uleb128 0x18
+ 1107 0104 9642     		.uleb128 0x2116
+ 1108 0106 19       		.uleb128 0x19
+ 1109 0107 01       		.uleb128 0x1
+ 1110 0108 13       		.uleb128 0x13
+ 1111 0109 00       		.byte	0
+ 1112 010a 00       		.byte	0
+ 1113 010b 16       		.uleb128 0x16
+ 1114 010c 34       		.uleb128 0x34
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 24
 
 
- 1144 016a 3F       		.uleb128 0x3f
- 1145 016b 19       		.uleb128 0x19
- 1146 016c 03       		.uleb128 0x3
- 1147 016d 0E       		.uleb128 0xe
- 1148 016e 3A       		.uleb128 0x3a
- 1149 016f 0B       		.uleb128 0xb
- 1150 0170 3B       		.uleb128 0x3b
- 1151 0171 0B       		.uleb128 0xb
- 1152 0172 3C       		.uleb128 0x3c
- 1153 0173 19       		.uleb128 0x19
- 1154 0174 01       		.uleb128 0x1
- 1155 0175 13       		.uleb128 0x13
- 1156 0176 00       		.byte	0
- 1157 0177 00       		.byte	0
- 1158 0178 1D       		.uleb128 0x1d
- 1159 0179 18       		.uleb128 0x18
- 1160 017a 00       		.byte	0
- 1161 017b 00       		.byte	0
- 1162 017c 00       		.byte	0
- 1163 017d 1E       		.uleb128 0x1e
- 1164 017e 2E       		.uleb128 0x2e
- 1165 017f 01       		.byte	0x1
- 1166 0180 3F       		.uleb128 0x3f
- 1167 0181 19       		.uleb128 0x19
- 1168 0182 03       		.uleb128 0x3
- 1169 0183 0E       		.uleb128 0xe
- 1170 0184 3A       		.uleb128 0x3a
- 1171 0185 0B       		.uleb128 0xb
- 1172 0186 3B       		.uleb128 0x3b
- 1173 0187 0B       		.uleb128 0xb
- 1174 0188 49       		.uleb128 0x49
- 1175 0189 13       		.uleb128 0x13
- 1176 018a 3C       		.uleb128 0x3c
- 1177 018b 19       		.uleb128 0x19
- 1178 018c 00       		.byte	0
- 1179 018d 00       		.byte	0
- 1180 018e 00       		.byte	0
- 1181              		.section	.debug_loc,"",%progbits
- 1182              	.Ldebug_loc0:
- 1183              	.LLST0:
- 1184 0000 06000000 		.4byte	.LVL14
- 1185 0004 09000000 		.4byte	.LVL15-1
- 1186 0008 0100     		.2byte	0x1
- 1187 000a 50       		.byte	0x50
- 1188 000b 00000000 		.4byte	0
- 1189 000f 00000000 		.4byte	0
- 1190              		.section	.debug_aranges,"",%progbits
- 1191 0000 5C000000 		.4byte	0x5c
- 1192 0004 0200     		.2byte	0x2
- 1193 0006 00000000 		.4byte	.Ldebug_info0
- 1194 000a 04       		.byte	0x4
- 1195 000b 00       		.byte	0
- 1196 000c 0000     		.2byte	0
- 1197 000e 0000     		.2byte	0
- 1198 0010 00000000 		.4byte	.LFB64
- 1199 0014 18000000 		.4byte	.LFE64-.LFB64
- 1200 0018 00000000 		.4byte	.LFB66
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 25
+ 1115 010d 00       		.byte	0
+ 1116 010e 03       		.uleb128 0x3
+ 1117 010f 0E       		.uleb128 0xe
+ 1118 0110 3A       		.uleb128 0x3a
+ 1119 0111 0B       		.uleb128 0xb
+ 1120 0112 3B       		.uleb128 0x3b
+ 1121 0113 0B       		.uleb128 0xb
+ 1122 0114 49       		.uleb128 0x49
+ 1123 0115 13       		.uleb128 0x13
+ 1124 0116 1C       		.uleb128 0x1c
+ 1125 0117 0B       		.uleb128 0xb
+ 1126 0118 00       		.byte	0
+ 1127 0119 00       		.byte	0
+ 1128 011a 17       		.uleb128 0x17
+ 1129 011b 34       		.uleb128 0x34
+ 1130 011c 00       		.byte	0
+ 1131 011d 03       		.uleb128 0x3
+ 1132 011e 0E       		.uleb128 0xe
+ 1133 011f 3A       		.uleb128 0x3a
+ 1134 0120 0B       		.uleb128 0xb
+ 1135 0121 3B       		.uleb128 0x3b
+ 1136 0122 0B       		.uleb128 0xb
+ 1137 0123 49       		.uleb128 0x49
+ 1138 0124 13       		.uleb128 0x13
+ 1139 0125 02       		.uleb128 0x2
+ 1140 0126 17       		.uleb128 0x17
+ 1141 0127 00       		.byte	0
+ 1142 0128 00       		.byte	0
+ 1143 0129 18       		.uleb128 0x18
+ 1144 012a 26       		.uleb128 0x26
+ 1145 012b 00       		.byte	0
+ 1146 012c 49       		.uleb128 0x49
+ 1147 012d 13       		.uleb128 0x13
+ 1148 012e 00       		.byte	0
+ 1149 012f 00       		.byte	0
+ 1150 0130 19       		.uleb128 0x19
+ 1151 0131 34       		.uleb128 0x34
+ 1152 0132 00       		.byte	0
+ 1153 0133 03       		.uleb128 0x3
+ 1154 0134 0E       		.uleb128 0xe
+ 1155 0135 3A       		.uleb128 0x3a
+ 1156 0136 0B       		.uleb128 0xb
+ 1157 0137 3B       		.uleb128 0x3b
+ 1158 0138 05       		.uleb128 0x5
+ 1159 0139 49       		.uleb128 0x49
+ 1160 013a 13       		.uleb128 0x13
+ 1161 013b 3F       		.uleb128 0x3f
+ 1162 013c 19       		.uleb128 0x19
+ 1163 013d 3C       		.uleb128 0x3c
+ 1164 013e 19       		.uleb128 0x19
+ 1165 013f 00       		.byte	0
+ 1166 0140 00       		.byte	0
+ 1167 0141 1A       		.uleb128 0x1a
+ 1168 0142 35       		.uleb128 0x35
+ 1169 0143 00       		.byte	0
+ 1170 0144 49       		.uleb128 0x49
+ 1171 0145 13       		.uleb128 0x13
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 25
 
 
- 1201 001c 18000000 		.4byte	.LFE66-.LFB66
- 1202 0020 00000000 		.4byte	.LFB68
- 1203 0024 0C000000 		.4byte	.LFE68-.LFB68
- 1204 0028 00000000 		.4byte	.LFB65
- 1205 002c 18000000 		.4byte	.LFE65-.LFB65
- 1206 0030 00000000 		.4byte	.LFB67
- 1207 0034 18000000 		.4byte	.LFE67-.LFB67
- 1208 0038 00000000 		.4byte	.LFB69
- 1209 003c 0C000000 		.4byte	.LFE69-.LFB69
- 1210 0040 00000000 		.4byte	.LFB70
- 1211 0044 08000000 		.4byte	.LFE70-.LFB70
- 1212 0048 00000000 		.4byte	.LFB71
- 1213 004c 08000000 		.4byte	.LFE71-.LFB71
- 1214 0050 00000000 		.4byte	.LFB72
- 1215 0054 24000000 		.4byte	.LFE72-.LFB72
- 1216 0058 00000000 		.4byte	0
- 1217 005c 00000000 		.4byte	0
- 1218              		.section	.debug_ranges,"",%progbits
- 1219              	.Ldebug_ranges0:
- 1220 0000 00000000 		.4byte	.LFB64
- 1221 0004 18000000 		.4byte	.LFE64
- 1222 0008 00000000 		.4byte	.LFB66
- 1223 000c 18000000 		.4byte	.LFE66
- 1224 0010 00000000 		.4byte	.LFB68
- 1225 0014 0C000000 		.4byte	.LFE68
- 1226 0018 00000000 		.4byte	.LFB65
- 1227 001c 18000000 		.4byte	.LFE65
- 1228 0020 00000000 		.4byte	.LFB67
- 1229 0024 18000000 		.4byte	.LFE67
- 1230 0028 00000000 		.4byte	.LFB69
- 1231 002c 0C000000 		.4byte	.LFE69
- 1232 0030 00000000 		.4byte	.LFB70
- 1233 0034 08000000 		.4byte	.LFE70
- 1234 0038 00000000 		.4byte	.LFB71
- 1235 003c 08000000 		.4byte	.LFE71
- 1236 0040 00000000 		.4byte	.LFB72
- 1237 0044 24000000 		.4byte	.LFE72
- 1238 0048 00000000 		.4byte	0
- 1239 004c 00000000 		.4byte	0
- 1240              		.section	.debug_line,"",%progbits
- 1241              	.Ldebug_line0:
- 1242 0000 25020000 		.section	.debug_str,"MS",%progbits,1
- 1242      02007A01 
- 1242      00000201 
- 1242      FB0E0D00 
- 1242      01010101 
- 1243              	.LASF43:
- 1244 0000 5370695F 		.ascii	"Spi_Init\000"
- 1244      496E6974 
- 1244      00
- 1245              	.LASF9:
- 1246 0009 5F5F696E 		.ascii	"__int32_t\000"
- 1246      7433325F 
- 1246      7400
- 1247              	.LASF21:
- 1248 0013 4E554D5F 		.ascii	"NUM_SPI_NODES\000"
- 1248      5350495F 
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 26
+ 1172 0146 00       		.byte	0
+ 1173 0147 00       		.byte	0
+ 1174 0148 1B       		.uleb128 0x1b
+ 1175 0149 34       		.uleb128 0x34
+ 1176 014a 00       		.byte	0
+ 1177 014b 03       		.uleb128 0x3
+ 1178 014c 0E       		.uleb128 0xe
+ 1179 014d 3A       		.uleb128 0x3a
+ 1180 014e 0B       		.uleb128 0xb
+ 1181 014f 3B       		.uleb128 0x3b
+ 1182 0150 0B       		.uleb128 0xb
+ 1183 0151 49       		.uleb128 0x49
+ 1184 0152 13       		.uleb128 0x13
+ 1185 0153 3F       		.uleb128 0x3f
+ 1186 0154 19       		.uleb128 0x19
+ 1187 0155 02       		.uleb128 0x2
+ 1188 0156 18       		.uleb128 0x18
+ 1189 0157 00       		.byte	0
+ 1190 0158 00       		.byte	0
+ 1191 0159 1C       		.uleb128 0x1c
+ 1192 015a 2E       		.uleb128 0x2e
+ 1193 015b 01       		.byte	0x1
+ 1194 015c 3F       		.uleb128 0x3f
+ 1195 015d 19       		.uleb128 0x19
+ 1196 015e 03       		.uleb128 0x3
+ 1197 015f 0E       		.uleb128 0xe
+ 1198 0160 3A       		.uleb128 0x3a
+ 1199 0161 0B       		.uleb128 0xb
+ 1200 0162 3B       		.uleb128 0x3b
+ 1201 0163 0B       		.uleb128 0xb
+ 1202 0164 27       		.uleb128 0x27
+ 1203 0165 19       		.uleb128 0x19
+ 1204 0166 3C       		.uleb128 0x3c
+ 1205 0167 19       		.uleb128 0x19
+ 1206 0168 01       		.uleb128 0x1
+ 1207 0169 13       		.uleb128 0x13
+ 1208 016a 00       		.byte	0
+ 1209 016b 00       		.byte	0
+ 1210 016c 1D       		.uleb128 0x1d
+ 1211 016d 05       		.uleb128 0x5
+ 1212 016e 00       		.byte	0
+ 1213 016f 49       		.uleb128 0x49
+ 1214 0170 13       		.uleb128 0x13
+ 1215 0171 00       		.byte	0
+ 1216 0172 00       		.byte	0
+ 1217 0173 1E       		.uleb128 0x1e
+ 1218 0174 2E       		.uleb128 0x2e
+ 1219 0175 01       		.byte	0x1
+ 1220 0176 3F       		.uleb128 0x3f
+ 1221 0177 19       		.uleb128 0x19
+ 1222 0178 03       		.uleb128 0x3
+ 1223 0179 0E       		.uleb128 0xe
+ 1224 017a 3A       		.uleb128 0x3a
+ 1225 017b 0B       		.uleb128 0xb
+ 1226 017c 3B       		.uleb128 0x3b
+ 1227 017d 0B       		.uleb128 0xb
+ 1228 017e 3C       		.uleb128 0x3c
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 26
 
 
- 1248      4E4F4445 
- 1248      5300
- 1249              	.LASF3:
- 1250 0021 73686F72 		.ascii	"short unsigned int\000"
- 1250      7420756E 
- 1250      7369676E 
- 1250      65642069 
- 1250      6E7400
- 1251              	.LASF47:
- 1252 0034 2E2E5C73 		.ascii	"..\\source\\sensor.c\000"
- 1252      6F757263 
- 1252      655C7365 
- 1252      6E736F72 
- 1252      2E6300
- 1253              	.LASF41:
- 1254 0047 4932635F 		.ascii	"I2c_WriteInfraredRearDistances\000"
- 1254      57726974 
- 1254      65496E66 
- 1254      72617265 
- 1254      64526561 
- 1255              	.LASF26:
- 1256 0066 52656164 		.ascii	"ReadFrontDistanceSensors\000"
- 1256      46726F6E 
- 1256      74446973 
- 1256      74616E63 
- 1256      6553656E 
- 1257              	.LASF13:
- 1258 007f 666C6F61 		.ascii	"float\000"
- 1258      7400
- 1259              	.LASF25:
- 1260 0085 64617461 		.ascii	"data\000"
- 1260      00
- 1261              	.LASF0:
- 1262 008a 7369676E 		.ascii	"signed char\000"
- 1262      65642063 
- 1262      68617200 
- 1263              	.LASF1:
- 1264 0096 756E7369 		.ascii	"unsigned char\000"
- 1264      676E6564 
- 1264      20636861 
- 1264      7200
- 1265              	.LASF22:
- 1266 00a4 5350495F 		.ascii	"SPI_NODE_TYPE\000"
- 1266      4E4F4445 
- 1266      5F545950 
- 1266      4500
- 1267              	.LASF5:
- 1268 00b2 6C6F6E67 		.ascii	"long unsigned int\000"
- 1268      20756E73 
- 1268      69676E65 
- 1268      6420696E 
- 1268      7400
- 1269              	.LASF30:
- 1270 00c4 53656E73 		.ascii	"Sensor_Init\000"
- 1270      6F725F49 
- 1270      6E697400 
- 1271              	.LASF27:
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 27
+ 1229 017f 19       		.uleb128 0x19
+ 1230 0180 01       		.uleb128 0x1
+ 1231 0181 13       		.uleb128 0x13
+ 1232 0182 00       		.byte	0
+ 1233 0183 00       		.byte	0
+ 1234 0184 1F       		.uleb128 0x1f
+ 1235 0185 2E       		.uleb128 0x2e
+ 1236 0186 01       		.byte	0x1
+ 1237 0187 3F       		.uleb128 0x3f
+ 1238 0188 19       		.uleb128 0x19
+ 1239 0189 03       		.uleb128 0x3
+ 1240 018a 0E       		.uleb128 0xe
+ 1241 018b 3A       		.uleb128 0x3a
+ 1242 018c 0B       		.uleb128 0xb
+ 1243 018d 3B       		.uleb128 0x3b
+ 1244 018e 0B       		.uleb128 0xb
+ 1245 018f 49       		.uleb128 0x49
+ 1246 0190 13       		.uleb128 0x13
+ 1247 0191 3C       		.uleb128 0x3c
+ 1248 0192 19       		.uleb128 0x19
+ 1249 0193 00       		.byte	0
+ 1250 0194 00       		.byte	0
+ 1251 0195 00       		.byte	0
+ 1252              		.section	.debug_loc,"",%progbits
+ 1253              	.Ldebug_loc0:
+ 1254              	.LLST0:
+ 1255 0000 06000000 		.4byte	.LVL14
+ 1256 0004 09000000 		.4byte	.LVL15-1
+ 1257 0008 0100     		.2byte	0x1
+ 1258 000a 50       		.byte	0x50
+ 1259 000b 00000000 		.4byte	0
+ 1260 000f 00000000 		.4byte	0
+ 1261              		.section	.debug_aranges,"",%progbits
+ 1262 0000 5C000000 		.4byte	0x5c
+ 1263 0004 0200     		.2byte	0x2
+ 1264 0006 00000000 		.4byte	.Ldebug_info0
+ 1265 000a 04       		.byte	0x4
+ 1266 000b 00       		.byte	0
+ 1267 000c 0000     		.2byte	0
+ 1268 000e 0000     		.2byte	0
+ 1269 0010 00000000 		.4byte	.LFB65
+ 1270 0014 18000000 		.4byte	.LFE65-.LFB65
+ 1271 0018 00000000 		.4byte	.LFB67
+ 1272 001c 18000000 		.4byte	.LFE67-.LFB67
+ 1273 0020 00000000 		.4byte	.LFB69
+ 1274 0024 0C000000 		.4byte	.LFE69-.LFB69
+ 1275 0028 00000000 		.4byte	.LFB64
+ 1276 002c 18000000 		.4byte	.LFE64-.LFB64
+ 1277 0030 00000000 		.4byte	.LFB66
+ 1278 0034 18000000 		.4byte	.LFE66-.LFB66
+ 1279 0038 00000000 		.4byte	.LFB68
+ 1280 003c 0C000000 		.4byte	.LFE68-.LFB68
+ 1281 0040 00000000 		.4byte	.LFB70
+ 1282 0044 20000000 		.4byte	.LFE70-.LFB70
+ 1283 0048 00000000 		.4byte	.LFB71
+ 1284 004c 08000000 		.4byte	.LFE71-.LFB71
+ 1285 0050 00000000 		.4byte	.LFB72
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 27
 
 
- 1272 00d0 52656164 		.ascii	"ReadInfraredRear\000"
- 1272      496E6672 
- 1272      61726564 
- 1272      52656172 
- 1272      00
- 1273              	.LASF19:
- 1274 00e1 5350495F 		.ascii	"SPI_NODE_3\000"
- 1274      4E4F4445 
- 1274      5F3300
- 1275              	.LASF20:
- 1276 00ec 5350495F 		.ascii	"SPI_NODE_4\000"
- 1276      4E4F4445 
- 1276      5F3400
- 1277              	.LASF23:
- 1278 00f7 52656164 		.ascii	"ReadInfraredFront\000"
- 1278      496E6672 
- 1278      61726564 
- 1278      46726F6E 
- 1278      7400
- 1279              	.LASF35:
- 1280 0109 49544D5F 		.ascii	"ITM_RxBuffer\000"
- 1280      52784275 
- 1280      66666572 
- 1280      00
- 1281              	.LASF14:
- 1282 0116 646F7562 		.ascii	"double\000"
- 1282      6C6500
- 1283              	.LASF40:
- 1284 011d 4932635F 		.ascii	"I2c_WriteUltrasonicFrontDistances\000"
- 1284      57726974 
- 1284      65556C74 
- 1284      7261736F 
- 1284      6E696346 
- 1285              	.LASF2:
- 1286 013f 73686F72 		.ascii	"short int\000"
- 1286      7420696E 
- 1286      7400
- 1287              	.LASF11:
- 1288 0149 75696E74 		.ascii	"uint16\000"
- 1288      313600
- 1289              	.LASF48:
- 1290 0150 463A5C64 		.ascii	"F:\\d_drive\\projects\\ArloBot\\arlobot_freesoc\\fr"
- 1290      5F647269 
- 1290      76655C70 
- 1290      726F6A65 
- 1290      6374735C 
- 1291 017e 6565736F 		.ascii	"eesoc.cydsn\000"
- 1291      632E6379 
- 1291      64736E00 
- 1292              	.LASF12:
- 1293 018a 75696E74 		.ascii	"uint32\000"
- 1293      333200
- 1294              	.LASF46:
- 1295 0191 474E5520 		.ascii	"GNU C 4.9.3 20150303 (release) [ARM/embedded-4_9-br"
- 1295      4320342E 
- 1295      392E3320 
- 1295      32303135 
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 28
-
-
- 1295      30333033 
- 1296 01c4 616E6368 		.ascii	"anch revision 221220] -mcpu=cortex-m3 -mthumb -g -O"
- 1296      20726576 
- 1296      6973696F 
- 1296      6E203232 
- 1296      31323230 
- 1297 01f7 67202D66 		.ascii	"g -ffunction-sections -ffat-lto-objects\000"
- 1297      66756E63 
- 1297      74696F6E 
- 1297      2D736563 
- 1297      74696F6E 
- 1298              	.LASF18:
- 1299 021f 5350495F 		.ascii	"SPI_NODE_2\000"
- 1299      4E4F4445 
- 1299      5F3200
- 1300              	.LASF8:
- 1301 022a 756E7369 		.ascii	"unsigned int\000"
- 1301      676E6564 
- 1301      20696E74 
- 1301      00
- 1302              	.LASF7:
- 1303 0237 6C6F6E67 		.ascii	"long long unsigned int\000"
- 1303      206C6F6E 
- 1303      6720756E 
- 1303      7369676E 
- 1303      65642069 
- 1304              	.LASF33:
- 1305 024e 6C617374 		.ascii	"last_update_time\000"
- 1305      5F757064 
- 1305      6174655F 
- 1305      74696D65 
- 1305      00
- 1306              	.LASF32:
- 1307 025f 53656E73 		.ascii	"Sensor_Update\000"
- 1307      6F725F55 
- 1307      70646174 
- 1307      6500
- 1308              	.LASF44:
- 1309 026d 5370695F 		.ascii	"Spi_Start\000"
- 1309      53746172 
- 1309      7400
- 1310              	.LASF10:
- 1311 0277 696E7433 		.ascii	"int32_t\000"
- 1311      325F7400 
- 1312              	.LASF34:
- 1313 027f 64656C74 		.ascii	"delta_time\000"
- 1313      615F7469 
- 1313      6D6500
- 1314              	.LASF39:
- 1315 028a 4932635F 		.ascii	"I2c_WriteInfraredFrontDistances\000"
- 1315      57726974 
- 1315      65496E66 
- 1315      72617265 
- 1315      6446726F 
- 1316              	.LASF42:
- 1317 02aa 4932635F 		.ascii	"I2c_WriteUltrasonicRearDistances\000"
- 1317      57726974 
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 29
-
-
- 1317      65556C74 
- 1317      7261736F 
- 1317      6E696352 
- 1318              	.LASF6:
- 1319 02cb 6C6F6E67 		.ascii	"long long int\000"
- 1319      206C6F6E 
- 1319      6720696E 
+ 1286 0054 34000000 		.4byte	.LFE72-.LFB72
+ 1287 0058 00000000 		.4byte	0
+ 1288 005c 00000000 		.4byte	0
+ 1289              		.section	.debug_ranges,"",%progbits
+ 1290              	.Ldebug_ranges0:
+ 1291 0000 00000000 		.4byte	.LFB65
+ 1292 0004 18000000 		.4byte	.LFE65
+ 1293 0008 00000000 		.4byte	.LFB67
+ 1294 000c 18000000 		.4byte	.LFE67
+ 1295 0010 00000000 		.4byte	.LFB69
+ 1296 0014 0C000000 		.4byte	.LFE69
+ 1297 0018 00000000 		.4byte	.LFB64
+ 1298 001c 18000000 		.4byte	.LFE64
+ 1299 0020 00000000 		.4byte	.LFB66
+ 1300 0024 18000000 		.4byte	.LFE66
+ 1301 0028 00000000 		.4byte	.LFB68
+ 1302 002c 0C000000 		.4byte	.LFE68
+ 1303 0030 00000000 		.4byte	.LFB70
+ 1304 0034 20000000 		.4byte	.LFE70
+ 1305 0038 00000000 		.4byte	.LFB71
+ 1306 003c 08000000 		.4byte	.LFE71
+ 1307 0040 00000000 		.4byte	.LFB72
+ 1308 0044 34000000 		.4byte	.LFE72
+ 1309 0048 00000000 		.4byte	0
+ 1310 004c 00000000 		.4byte	0
+ 1311              		.section	.debug_line,"",%progbits
+ 1312              	.Ldebug_line0:
+ 1313 0000 28020000 		.section	.debug_str,"MS",%progbits,1
+ 1313      02007A01 
+ 1313      00000201 
+ 1313      FB0E0D00 
+ 1313      01010101 
+ 1314              	.LASF47:
+ 1315 0000 5370695F 		.ascii	"Spi_Init\000"
+ 1315      496E6974 
+ 1315      00
+ 1316              	.LASF31:
+ 1317 0009 52656164 		.ascii	"ReadFrontDistanceSensors\000"
+ 1317      46726F6E 
+ 1317      74446973 
+ 1317      74616E63 
+ 1317      6553656E 
+ 1318              	.LASF9:
+ 1319 0022 5F5F696E 		.ascii	"__int32_t\000"
+ 1319      7433325F 
  1319      7400
- 1320              	.LASF16:
- 1321 02d9 73697A65 		.ascii	"sizetype\000"
- 1321      74797065 
- 1321      00
- 1322              	.LASF15:
- 1323 02e2 63686172 		.ascii	"char\000"
- 1323      00
- 1324              	.LASF29:
- 1325 02e7 52656164 		.ascii	"ReadReadDistanceSensors\000"
- 1325      52656164 
- 1325      44697374 
- 1325      616E6365 
- 1325      53656E73 
- 1326              	.LASF31:
- 1327 02ff 53656E73 		.ascii	"Sensor_Start\000"
- 1327      6F725F53 
- 1327      74617274 
- 1327      00
- 1328              	.LASF38:
- 1329 030c 5370695F 		.ascii	"Spi_ReadNode\000"
- 1329      52656164 
- 1329      4E6F6465 
+ 1320              	.LASF22:
+ 1321 002c 4E554D5F 		.ascii	"NUM_SPI_NODES\000"
+ 1321      5350495F 
+ 1321      4E4F4445 
+ 1321      5300
+ 1322              	.LASF3:
+ 1323 003a 73686F72 		.ascii	"short unsigned int\000"
+ 1323      7420756E 
+ 1323      7369676E 
+ 1323      65642069 
+ 1323      6E7400
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 28
+
+
+ 1324              	.LASF51:
+ 1325 004d 2E2E5C73 		.ascii	"..\\source\\sensor.c\000"
+ 1325      6F757263 
+ 1325      655C7365 
+ 1325      6E736F72 
+ 1325      2E6300
+ 1326              	.LASF43:
+ 1327 0060 4932635F 		.ascii	"I2c_WriteInfraredRearDistances\000"
+ 1327      57726974 
+ 1327      65496E66 
+ 1327      72617265 
+ 1327      64526561 
+ 1328              	.LASF36:
+ 1329 007f 73656E73 		.ascii	"sensor_index\000"
+ 1329      6F725F69 
+ 1329      6E646578 
  1329      00
- 1330              	.LASF4:
- 1331 0319 6C6F6E67 		.ascii	"long int\000"
- 1331      20696E74 
- 1331      00
- 1332              	.LASF45:
- 1333 0322 6D696C6C 		.ascii	"millis\000"
- 1333      697300
- 1334              	.LASF37:
- 1335 0329 64656275 		.ascii	"debug_control_enabled\000"
- 1335      675F636F 
- 1335      6E74726F 
- 1335      6C5F656E 
- 1335      61626C65 
- 1336              	.LASF17:
- 1337 033f 5350495F 		.ascii	"SPI_NODE_1\000"
- 1337      4E4F4445 
- 1337      5F3100
- 1338              	.LASF28:
- 1339 034a 52656164 		.ascii	"ReadUltratronicRear\000"
- 1339      556C7472 
- 1339      6174726F 
- 1339      6E696352 
- 1339      65617200 
- 1340              	.LASF24:
- 1341 035e 52656164 		.ascii	"ReadUltrasonicFront\000"
- 1341      556C7472 
-ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccIBGqe8.s 			page 30
+ 1330              	.LASF14:
+ 1331 008c 666C6F61 		.ascii	"float\000"
+ 1331      7400
+ 1332              	.LASF27:
+ 1333 0092 64617461 		.ascii	"data\000"
+ 1333      00
+ 1334              	.LASF0:
+ 1335 0097 7369676E 		.ascii	"signed char\000"
+ 1335      65642063 
+ 1335      68617200 
+ 1336              	.LASF1:
+ 1337 00a3 756E7369 		.ascii	"unsigned char\000"
+ 1337      676E6564 
+ 1337      20636861 
+ 1337      7200
+ 1338              	.LASF23:
+ 1339 00b1 5350495F 		.ascii	"SPI_NODE_TYPE\000"
+ 1339      4E4F4445 
+ 1339      5F545950 
+ 1339      4500
+ 1340              	.LASF5:
+ 1341 00bf 6C6F6E67 		.ascii	"long unsigned int\000"
+ 1341      20756E73 
+ 1341      69676E65 
+ 1341      6420696E 
+ 1341      7400
+ 1342              	.LASF32:
+ 1343 00d1 53656E73 		.ascii	"Sensor_Init\000"
+ 1343      6F725F49 
+ 1343      6E697400 
+ 1344              	.LASF25:
+ 1345 00dd 52656164 		.ascii	"ReadInfraredRear\000"
+ 1345      496E6672 
+ 1345      61726564 
+ 1345      52656172 
+ 1345      00
+ 1346              	.LASF20:
+ 1347 00ee 5350495F 		.ascii	"SPI_NODE_3\000"
+ 1347      4E4F4445 
+ 1347      5F3300
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 29
 
 
- 1341      61736F6E 
- 1341      69634672 
- 1341      6F6E7400 
- 1342              	.LASF36:
- 1343 0372 666F726D 		.ascii	"formatted_string\000"
- 1343      61747465 
- 1343      645F7374 
- 1343      72696E67 
- 1343      00
- 1344              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 4.9.3 20150303 (release) [ARM/embedded-4_9-br
+ 1348              	.LASF21:
+ 1349 00f9 5350495F 		.ascii	"SPI_NODE_4\000"
+ 1349      4E4F4445 
+ 1349      5F3400
+ 1350              	.LASF29:
+ 1351 0104 52656164 		.ascii	"ReadInfraredFront\000"
+ 1351      496E6672 
+ 1351      61726564 
+ 1351      46726F6E 
+ 1351      7400
+ 1352              	.LASF39:
+ 1353 0116 49544D5F 		.ascii	"ITM_RxBuffer\000"
+ 1353      52784275 
+ 1353      66666572 
+ 1353      00
+ 1354              	.LASF15:
+ 1355 0123 646F7562 		.ascii	"double\000"
+ 1355      6C6500
+ 1356              	.LASF46:
+ 1357 012a 4932635F 		.ascii	"I2c_WriteUltrasonicFrontDistances\000"
+ 1357      57726974 
+ 1357      65556C74 
+ 1357      7261736F 
+ 1357      6E696346 
+ 1358              	.LASF2:
+ 1359 014c 73686F72 		.ascii	"short int\000"
+ 1359      7420696E 
+ 1359      7400
+ 1360              	.LASF12:
+ 1361 0156 75696E74 		.ascii	"uint16\000"
+ 1361      313600
+ 1362              	.LASF52:
+ 1363 015d 463A5C64 		.ascii	"F:\\d_drive\\projects\\ArloBot\\arlobot_freesoc\\fr"
+ 1363      5F647269 
+ 1363      76655C70 
+ 1363      726F6A65 
+ 1363      6374735C 
+ 1364 018b 6565736F 		.ascii	"eesoc.cydsn\000"
+ 1364      632E6379 
+ 1364      64736E00 
+ 1365              	.LASF13:
+ 1366 0197 75696E74 		.ascii	"uint32\000"
+ 1366      333200
+ 1367              	.LASF24:
+ 1368 019e 53454E53 		.ascii	"SENSOR_READ_FUNC_TYPE\000"
+ 1368      4F525F52 
+ 1368      4541445F 
+ 1368      46554E43 
+ 1368      5F545950 
+ 1369              	.LASF19:
+ 1370 01b4 5350495F 		.ascii	"SPI_NODE_2\000"
+ 1370      4E4F4445 
+ 1370      5F3200
+ 1371              	.LASF8:
+ 1372 01bf 756E7369 		.ascii	"unsigned int\000"
+ 1372      676E6564 
+ 1372      20696E74 
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 30
+
+
+ 1372      00
+ 1373              	.LASF7:
+ 1374 01cc 6C6F6E67 		.ascii	"long long unsigned int\000"
+ 1374      206C6F6E 
+ 1374      6720756E 
+ 1374      7369676E 
+ 1374      65642069 
+ 1375              	.LASF35:
+ 1376 01e3 6C617374 		.ascii	"last_update_time\000"
+ 1376      5F757064 
+ 1376      6174655F 
+ 1376      74696D65 
+ 1376      00
+ 1377              	.LASF50:
+ 1378 01f4 474E5520 		.ascii	"GNU C 4.9.3 20150303 (release) [ARM/embedded-4_9-br"
+ 1378      4320342E 
+ 1378      392E3320 
+ 1378      32303135 
+ 1378      30333033 
+ 1379 0227 616E6368 		.ascii	"anch revision 221220] -mcpu=cortex-m3 -mthumb -g -O"
+ 1379      20726576 
+ 1379      6973696F 
+ 1379      6E203232 
+ 1379      31323230 
+ 1380 025a 67202D66 		.ascii	"g -ffunction-sections -ffat-lto-objects\000"
+ 1380      66756E63 
+ 1380      74696F6E 
+ 1380      2D736563 
+ 1380      74696F6E 
+ 1381              	.LASF34:
+ 1382 0282 53656E73 		.ascii	"Sensor_Update\000"
+ 1382      6F725F55 
+ 1382      70646174 
+ 1382      6500
+ 1383              	.LASF48:
+ 1384 0290 5370695F 		.ascii	"Spi_Start\000"
+ 1384      53746172 
+ 1384      7400
+ 1385              	.LASF10:
+ 1386 029a 696E7433 		.ascii	"int32_t\000"
+ 1386      325F7400 
+ 1387              	.LASF37:
+ 1388 02a2 64656C74 		.ascii	"delta_time\000"
+ 1388      615F7469 
+ 1388      6D6500
+ 1389              	.LASF45:
+ 1390 02ad 4932635F 		.ascii	"I2c_WriteInfraredFrontDistances\000"
+ 1390      57726974 
+ 1390      65496E66 
+ 1390      72617265 
+ 1390      6446726F 
+ 1391              	.LASF44:
+ 1392 02cd 4932635F 		.ascii	"I2c_WriteUltrasonicRearDistances\000"
+ 1392      57726974 
+ 1392      65556C74 
+ 1392      7261736F 
+ 1392      6E696352 
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 31
+
+
+ 1393              	.LASF6:
+ 1394 02ee 6C6F6E67 		.ascii	"long long int\000"
+ 1394      206C6F6E 
+ 1394      6720696E 
+ 1394      7400
+ 1395              	.LASF17:
+ 1396 02fc 73697A65 		.ascii	"sizetype\000"
+ 1396      74797065 
+ 1396      00
+ 1397              	.LASF16:
+ 1398 0305 63686172 		.ascii	"char\000"
+ 1398      00
+ 1399              	.LASF28:
+ 1400 030a 52656164 		.ascii	"ReadReadDistanceSensors\000"
+ 1400      52656164 
+ 1400      44697374 
+ 1400      616E6365 
+ 1400      53656E73 
+ 1401              	.LASF33:
+ 1402 0322 53656E73 		.ascii	"Sensor_Start\000"
+ 1402      6F725F53 
+ 1402      74617274 
+ 1402      00
+ 1403              	.LASF42:
+ 1404 032f 5370695F 		.ascii	"Spi_ReadNode\000"
+ 1404      52656164 
+ 1404      4E6F6465 
+ 1404      00
+ 1405              	.LASF11:
+ 1406 033c 75696E74 		.ascii	"uint8\000"
+ 1406      3800
+ 1407              	.LASF38:
+ 1408 0342 73656E73 		.ascii	"sensor_array\000"
+ 1408      6F725F61 
+ 1408      72726179 
+ 1408      00
+ 1409              	.LASF4:
+ 1410 034f 6C6F6E67 		.ascii	"long int\000"
+ 1410      20696E74 
+ 1410      00
+ 1411              	.LASF49:
+ 1412 0358 6D696C6C 		.ascii	"millis\000"
+ 1412      697300
+ 1413              	.LASF41:
+ 1414 035f 64656275 		.ascii	"debug_control_enabled\000"
+ 1414      675F636F 
+ 1414      6E74726F 
+ 1414      6C5F656E 
+ 1414      61626C65 
+ 1415              	.LASF18:
+ 1416 0375 5350495F 		.ascii	"SPI_NODE_1\000"
+ 1416      4E4F4445 
+ 1416      5F3100
+ 1417              	.LASF26:
+ 1418 0380 52656164 		.ascii	"ReadUltratronicRear\000"
+ 1418      556C7472 
+ 1418      6174726F 
+ARM GAS  C:\Users\Tim\AppData\Local\Temp\ccEpFnyQ.s 			page 32
+
+
+ 1418      6E696352 
+ 1418      65617200 
+ 1419              	.LASF30:
+ 1420 0394 52656164 		.ascii	"ReadUltrasonicFront\000"
+ 1420      556C7472 
+ 1420      61736F6E 
+ 1420      69634672 
+ 1420      6F6E7400 
+ 1421              	.LASF40:
+ 1422 03a8 666F726D 		.ascii	"formatted_string\000"
+ 1422      61747465 
+ 1422      645F7374 
+ 1422      72696E67 
+ 1422      00
+ 1423              		.ident	"GCC: (GNU Tools for ARM Embedded Processors) 4.9.3 20150303 (release) [ARM/embedded-4_9-br

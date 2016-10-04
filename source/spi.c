@@ -131,37 +131,26 @@ static uint8 IsValidMessage(SPI_MSG_TYPE *msg)
  *-------------------------------------------------------------------------------------------------*/
 void RecvMessage(SPI_NODE_TYPE node, SPI_MSG_TYPE *message)
 {
-    #define MAX_SPI_TIMEOUT (100)
-    uint32 start_time;
-    uint32 elapsed_time;
     uint8 *p_msg;
+    uint8 ii;
     
-    /* Get a pointer to the start of the message since the SPI interface is byte-based */
-    p_msg = (uint8 *) message;
+    memset(message, 0, sizeof(SPI_MSG_TYPE));
     
     SPIM_SLAVE_SELECT(node);
     
     /* Start transfer */
     SPIM_PUT_ARRAY(dummy, MAX_MSG_SIZE);
 
-    /* Wait for the end of the transfer. The number of transmitted data
+    /* Check for the end of the transfer. The number of transmitted data
      * elements has to be equal to the number of received data elements.
      *
      * Note: The expectation is that the sensor nodes will be connected to the Psoc via SPI.  But, if they are not
-     * then the while loop will loop forever.  So, a timeout and check was added.  Also, this allows for injecting
-     * fake data to testing purposes.  Just enable the define.
+     * then the number of bytes in the buffer won't be the correct size.  So, we just checked if the size is correct
+     * and return if it isn't.  We'll get another chance on the next cycle.
      */
     uint8 size = SPIM_GET_RX_BUFFER_SIZE();
-    start_time = millis();
-    elapsed_time = 0;
-    while (MAX_MSG_SIZE != size && elapsed_time < MAX_SPI_TIMEOUT)
+    if (MAX_MSG_SIZE != size)
     {        
-        size = SPIM_GET_RX_BUFFER_SIZE();
-        elapsed_time = millis() - start_time;
-    }
-
-    if (elapsed_time >= MAX_SPI_TIMEOUT)
-    {
 //#define FAKE_SENSOR    
 #ifdef FAKE_SENSOR
         message->som = SOM;
@@ -181,7 +170,6 @@ void RecvMessage(SPI_NODE_TYPE node, SPI_MSG_TYPE *message)
             message->type = US_TYPE;
         }
 #endif   
-        memset(message, 0, sizeof(SPI_MSG_TYPE));
         return;
     }
     
@@ -189,7 +177,11 @@ void RecvMessage(SPI_NODE_TYPE node, SPI_MSG_TYPE *message)
     SPIM_CLEAR_TX_BUFFER();
 
     /* Read data from the RX buffer */
-    uint8 ii = 0;
+    ii = 0;
+    
+    /* Get a pointer to the start of the message since the SPI interface is byte-based */
+    p_msg = (uint8 *) message;
+    
     while (0u != SPIM_GET_RX_BUFFER_SIZE() && ii < MAX_MSG_SIZE)
     {
         static uint8 value;

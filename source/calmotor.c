@@ -762,11 +762,9 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
                 uint8 result = ValidateMotorCalibration(val_params, p_motor_params->run_time);
                 if( result == VALIDATION_INTERATION_DONE )
                 {
-                    Ser_PutString("validation itegration done\r\n");
                     motor_val_index++;
                     if( motor_val_index == NUM_MOTOR_VAL_PARAMS )
                     {
-                        Ser_PutString("no more validation iterations\r\n");
                         Cal_SetLeftRightVelocity(0, 0);            
                         return CAL_COMPLETE;
                     }

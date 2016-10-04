@@ -40,6 +40,27 @@
 
 #define SENSOR_SAMPLE_TIME_MS  SAMPLE_TIME_MS(SENSOR_SAMPLE_RATE)
 
+#define NUM_SENSOR_ENTRIES (2)
+
+
+/*---------------------------------------------------------------------------------------------------
+ * Types
+ *-------------------------------------------------------------------------------------------------*/
+typedef void (*SENSOR_READ_FUNC_TYPE)();
+
+/*---------------------------------------------------------------------------------------------------
+ * Variables
+ *-------------------------------------------------------------------------------------------------*/
+/* Note: The main loop timing is very sensitive so it is very important that module "update" functions
+   limit their processing time.  There are a number of sensors that need to be aread and this is the
+   area where extension is most likely.  To minimize processing time, only one "sensor group" is
+   read on each update call.  The sensor array is an array of functions that is looped through continuously
+   to ensure that all the sensors are read, but at the same time, each "read" minimizes the amount of time
+   spent in the update call.
+ */
+static SENSOR_READ_FUNC_TYPE sensor_array[NUM_SENSOR_ENTRIES];
+
+
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
@@ -126,6 +147,9 @@ static void ReadReadDistanceSensors()
 void Sensor_Init()
 {
     Spi_Init();
+    
+    sensor_array[0] = ReadFrontDistanceSensors;
+    sensor_array[1] = ReadReadDistanceSensors;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -150,16 +174,15 @@ void Sensor_Start()
 void Sensor_Update()
 {
     static uint32 last_update_time = 0;
+    static uint8 sensor_index = 0;
     uint32 delta_time;
     
     delta_time = millis() - last_update_time;
     SENSOR_DEBUG_DELTA(delta_time);
     if (delta_time >= SENSOR_SAMPLE_TIME_MS)
     {
-        ReadFrontDistanceSensors();
-        ReadReadDistanceSensors();
-        
-        // Read the IMU
+        sensor_array[sensor_index]();        
+        sensor_index = (sensor_index + 1) % NUM_SENSOR_ENTRIES;
     }
 }
 
