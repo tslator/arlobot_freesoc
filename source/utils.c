@@ -52,16 +52,24 @@ MA[i]= MA*[i]/N
 
 void Uint16ToTwoBytes(uint16 value, uint8* bytes)
 {
-    bytes[0] = (uint8) ((value & 0xFF00) >> 8);
-    bytes[1] = (uint8) (value & 0x00FF);
+    /* Note: We are not changing the endianess, we're just getting a pointer to the first byte */
+    
+    uint8 *p_bytes = (uint8 *) &value;
+    
+    bytes[0] = p_bytes[0];
+    bytes[1] = p_bytes[1];
 }
 
 void Uint32ToFourBytes(uint32 value, uint8* bytes)
 {
-    bytes[0] = (uint8) ((value & 0xFF000000) >> 24);
-    bytes[1] = (uint8) ((value & 0x00FF0000) >> 16);
-    bytes[2] = (uint8) ((value & 0x0000FF00) >> 8);
-    bytes[3] = (uint8) (value & 0x000000FF);
+    /* Note: We are not changing the endianess, we're just getting a pointer to the first byte */
+
+    uint8 *p_bytes = (uint8 *) &value;
+    
+    bytes[0] = p_bytes[0];
+    bytes[1] = p_bytes[1];
+    bytes[2] = p_bytes[2];
+    bytes[3] = p_bytes[3];
 }
 
 void Int32ToFourBytes(int32 value, uint8* bytes)
@@ -71,6 +79,8 @@ void Int32ToFourBytes(int32 value, uint8* bytes)
 
 void FloatToFourBytes(float value, uint8* bytes)
 {
+    /* Note: We are not changing the endianess, we're just getting a pointer to the first byte */
+
     uint8 *p_bytes = (uint8 *) &value;
     
     bytes[0] = p_bytes[0];
@@ -81,9 +91,8 @@ void FloatToFourBytes(float value, uint8* bytes)
 
 uint16 TwoBytesToUint16(uint8* bytes)
 {
-    uint16 upper = bytes[0] << 8;
-    uint16 lower = bytes[1];
-    return upper + lower;
+    uint16 value = *((uint16 *) bytes);
+    return value;
 }
 
 int16 TwoBytesInt16(uint8* bytes)
@@ -93,7 +102,8 @@ int16 TwoBytesInt16(uint8* bytes)
 
 uint32 FourBytesToUint32(uint8* bytes)
 {
-    return (uint32) ( (bytes[0] << 24) + (bytes[1] << 16) + (bytes[2] << 8) + bytes[3] );
+    uint32 value = *((uint32 *) bytes);
+    return value;
 }
 
 int32 FourBytesToInt32(uint8* bytes)

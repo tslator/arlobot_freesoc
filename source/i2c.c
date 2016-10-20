@@ -38,7 +38,7 @@
  */
 #define I2C_WAIT_FOR_ACCESS()   do  \
                                 {   \
-                                } while (0 !=  EZI2C_Slave_GetActivity())
+                                } while (EZI2C_STATUS_BUSY ==  EZI2C_Slave_GetActivity())
                                     
 
 /*---------------------------------------------------------------------------------------------------
@@ -118,15 +118,15 @@ typedef struct
 /* Define the structure for ultrasonic sensors */
 typedef struct
 {
-    float front[NUM_ULTRASONIC_SENSORS];
-    float rear[];
+    float front[NUM_FRONT_ULTRASONIC_SENSORS];
+    float rear[NUM_REAR_ULTRASONIC_SENSORS];
 } __attribute__ ((packed)) ULTRASONIC;
 
 /* Define the structure for infrared sensors */
 typedef struct
 {
-    float front[NUM_INFRARED_SENSORS];
-    float rear[];
+    float front[NUM_FRONT_INFRARED_SENSORS];
+    float rear[NUM_REAR_INFRARED_SENSORS];
 } __attribute__((packed)) INFRARED;
 
 /* Define the I2C Slave that Read Only */
@@ -148,18 +148,47 @@ typedef struct
     READONLY_TYPE read_only;
 } __attribute__ ((packed)) I2C_DATASTRUCT;
 
+#ifdef TEST_I2C
+typedef struct _read_write
+{
+    union 
+    {
+        uint8 bytes[8];
+        uint16 words[4];
+        uint32 longs[2];
+        float floats[2];
+    };
+} __attribute__ ((packed)) I2C_TEST_READ_WRITE;
+
+typedef struct _read_only
+{
+    uint32 rd1_busy;
+    uint32 busy;
+    uint32 err;
+    uint32 read1;
+    uint32 wr1_busy;
+    uint32 write1;
+} __attribute__ ((packed)) I2C_TEST_READ_ONLY;
+
+typedef struct
+{
+    I2C_TEST_READ_WRITE read_write;
+    I2C_TEST_READ_ONLY read_only;
+} __attribute__ ((packed)) I2C_TEST;
+
+static volatile I2C_TEST i2c_test;
+#endif
 
 /* Define the I2C Slave buffer (as seen by the slave on this Psoc) */
-static I2C_DATASTRUCT i2c_buf;
-/* Define a persistant device status that can be set and cleared */
-static uint16 device_status;
-/* Define a persistant calibration status that can be set and cleared */
-static uint16 calibration_status;
+static volatile I2C_DATASTRUCT i2c_buf;
 
 static uint32 last_cmd_velocity_time = 0;
 static uint32 cmd_velocity_timeout = 0;
 
 static uint16 i2c_debug;
+static uint16 calibration_status;
+static uint16 device_status;
+
 
 /*--------------------------------------------------------------------------------------------------
  * Functions
@@ -174,10 +203,13 @@ static uint16 i2c_debug;
  *-------------------------------------------------------------------------------------------------*/
 void I2c_Init()
 {
-    memset( &i2c_buf, 0, sizeof(i2c_buf));
-    device_status = 0;
-    calibration_status = 0;
+    memset( (void *) &i2c_buf, 0, sizeof(i2c_buf));
+#ifdef TEST_I2C    
+    memset( (void *) &i2c_test, 0, sizeof(i2c_test));
+#endif    
     i2c_debug = 0;
+    calibration_status = 0;
+    device_status = 0;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -194,7 +226,11 @@ void I2c_Start()
        re-initializes the component buffer pointers wiping out the set buffer setting.
      */
     EZI2C_Slave_Start();
+#ifdef TEST_I2C    
+    EZI2C_Slave_SetBuffer1(sizeof(i2c_test), sizeof(i2c_test.read_write), (volatile uint8 *) &i2c_test);
+#else
     EZI2C_Slave_SetBuffer1(sizeof(i2c_buf), sizeof(i2c_buf.read_write), (volatile uint8 *) &i2c_buf);
+#endif
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -208,11 +244,11 @@ uint16 I2c_ReadDeviceControl()
 {
     uint16 value;
 
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
+    //I2C_WAIT_FOR_ACCESS();
+    //EZI2C_Slave_DisableInt();
     value = i2c_buf.read_write.device_control;
     i2c_buf.read_write.device_control = 0;
-    EZI2C_Slave_EnableInt();
+    //EZI2C_Slave_EnableInt();
     
     return value;
 }
@@ -226,12 +262,10 @@ uint16 I2c_ReadDeviceControl()
  *-------------------------------------------------------------------------------------------------*/
 void I2c_ReadDebugControl()
 {
-    uint16 value;
-    
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
-    value = i2c_buf.read_write.debug_control;
-    EZI2C_Slave_EnableInt();
+    //I2C_WAIT_FOR_ACCESS();
+    //EZI2C_Slave_DisableInt();
+    i2c_debug = i2c_buf.read_write.debug_control;
+    //EZI2C_Slave_EnableInt();
     
     /* Internally, there is control over debug for each encoder, pid and motor; however, that is not exposed via i2c.
        Via the i2c interface, turning on debug for encoder, pid, and motor, turns on debug for both wheels.
@@ -240,9 +274,6 @@ void I2c_ReadDebugControl()
 #ifdef COMMS_DEBUG_ENABLED
     // When debug is enabled, the bitmap can be used to turn on/off specific debug, e.g., encoder, pid, odom, etc.
 
-    i2c_debug &= ~value;
-    i2c_debug |= value;
-    
     debug_control_enabled = 0;
     
     if (i2c_debug & ENCODER_DEBUG_BIT)
@@ -300,13 +331,13 @@ void I2c_ReadCmdVelocity(float *left, float *right, uint32 *timeout)
     if (i2c_write_occurred & EZI2C_Slave_STATUS_WRITE1)
     {
         cmd_velocity_timeout = 0;
-        char lcv_str[10];
-        char rcv_str[10];
-        char out_buf[64];
-        ftoa(i2c_buf.read_write.left_cmd_velocity, lcv_str, 3);
-        ftoa(i2c_buf.read_write.right_cmd_velocity, rcv_str, 3);
-        sprintf(out_buf, "%s - %s\r\n", lcv_str, rcv_str);
-        Ser_PutString(out_buf);
+        //char lcv_str[10];
+        //char rcv_str[10];
+        //char out_buf[64];
+        //ftoa(i2c_buf.read_write.left_cmd_velocity, lcv_str, 3);
+        //ftoa(i2c_buf.read_write.right_cmd_velocity, rcv_str, 3);
+        //sprintf(out_buf, "%s - %s\r\n", lcv_str, rcv_str);
+        //Ser_PutString(out_buf);
     }
     else
     {
@@ -314,11 +345,11 @@ void I2c_ReadCmdVelocity(float *left, float *right, uint32 *timeout)
         last_cmd_velocity_time = millis();
     }
 
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
+    //I2C_WAIT_FOR_ACCESS();
+    //EZI2C_Slave_DisableInt();
     *left = i2c_buf.read_write.left_cmd_velocity;
     *right = i2c_buf.read_write.right_cmd_velocity;
-    EZI2C_Slave_EnableInt();
+    //EZI2C_Slave_EnableInt();
     
     *timeout = cmd_velocity_timeout;
     
@@ -333,11 +364,11 @@ void I2c_ReadCmdVelocity(float *left, float *right, uint32 *timeout)
  *-------------------------------------------------------------------------------------------------*/
 void I2c_SetDeviceStatusBit(uint16 bit)
 {
+    //I2C_WAIT_FOR_ACCESS();
+    //EZI2C_Slave_DisableInt();
     device_status |= bit;
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
-    i2c_buf.read_only.device_status = device_status;
-    EZI2C_Slave_EnableInt();
+    CY_SET_REG16(&i2c_buf.read_only.device_status, device_status);
+    //EZI2C_Slave_EnableInt();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -349,11 +380,11 @@ void I2c_SetDeviceStatusBit(uint16 bit)
  *-------------------------------------------------------------------------------------------------*/
 void I2c_ClearDeviceStatusBit(uint16 bit)
 {
+    //I2C_WAIT_FOR_ACCESS();
+    //EZI2C_Slave_DisableInt();
     device_status &= ~bit;
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
-    i2c_buf.read_only.device_status = device_status;
-    EZI2C_Slave_EnableInt();
+    CY_SET_REG16(&i2c_buf.read_only.device_status, device_status);
+    //EZI2C_Slave_EnableInt();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -365,11 +396,11 @@ void I2c_ClearDeviceStatusBit(uint16 bit)
  *-------------------------------------------------------------------------------------------------*/
 void I2c_SetCalibrationStatusBit(uint16 bit)
 {
+    //I2C_WAIT_FOR_ACCESS();
+    //EZI2C_Slave_DisableInt();
     calibration_status |= bit;
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
-    i2c_buf.read_only.calibration_status = calibration_status;
-    EZI2C_Slave_EnableInt();
+    CY_SET_REG16(&i2c_buf.read_only.calibration_status, calibration_status);
+    //EZI2C_Slave_EnableInt();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -381,11 +412,11 @@ void I2c_SetCalibrationStatusBit(uint16 bit)
  *-------------------------------------------------------------------------------------------------*/
 void I2c_ClearCalibrationStatusBit(uint16 bit)
 {
+    //I2C_WAIT_FOR_ACCESS();
+    //EZI2C_Slave_DisableInt();
     calibration_status &= ~bit;
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
-    i2c_buf.read_only.calibration_status = calibration_status;
-    EZI2C_Slave_EnableInt();
+    CY_SET_REG16(&i2c_buf.read_only.calibration_status, calibration_status);
+    //EZI2C_Slave_EnableInt();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -398,11 +429,11 @@ void I2c_ClearCalibrationStatusBit(uint16 bit)
  *-------------------------------------------------------------------------------------------------*/
 void I2c_SetCalibrationStatus(uint16 status)
 {
+    //I2C_WAIT_FOR_ACCESS();
+    //EZI2C_Slave_DisableInt();
     calibration_status = status;
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
-    i2c_buf.read_only.calibration_status = calibration_status;
-    EZI2C_Slave_EnableInt();    
+    CY_SET_REG16(&i2c_buf.read_only.calibration_status, calibration_status);
+    //EZI2C_Slave_EnableInt();    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -414,26 +445,26 @@ void I2c_SetCalibrationStatus(uint16 status)
  *-------------------------------------------------------------------------------------------------*/
 void I2c_WriteOdom(float left_speed, float right_speed, float left_delta_dist, float right_delta_dist, float heading)
 {
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
+    //I2C_WAIT_FOR_ACCESS();
+    //EZI2C_Slave_DisableInt();
     i2c_buf.read_only.odom.left_speed = left_speed;
-    EZI2C_Slave_EnableInt();
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
+    //EZI2C_Slave_EnableInt();
+    //I2C_WAIT_FOR_ACCESS();
+    //EZI2C_Slave_DisableInt();
     i2c_buf.read_only.odom.right_speed = right_speed;
-    EZI2C_Slave_EnableInt();
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
+    //EZI2C_Slave_EnableInt();
+    //I2C_WAIT_FOR_ACCESS();
+    //EZI2C_Slave_DisableInt();
     i2c_buf.read_only.odom.left_delta_dist = left_delta_dist;
-    EZI2C_Slave_EnableInt();
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
+    //EZI2C_Slave_EnableInt();
+    //I2C_WAIT_FOR_ACCESS();
+    //EZI2C_Slave_DisableInt();
     i2c_buf.read_only.odom.right_delta_dist = right_delta_dist;
-    EZI2C_Slave_EnableInt();
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
+    //EZI2C_Slave_EnableInt();
+    //I2C_WAIT_FOR_ACCESS();
+    //EZI2C_Slave_DisableInt();
     i2c_buf.read_only.odom.heading = heading;
-    EZI2C_Slave_EnableInt();
+    //EZI2C_Slave_EnableInt();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -445,18 +476,30 @@ void I2c_WriteOdom(float left_speed, float right_speed, float left_delta_dist, f
  *-------------------------------------------------------------------------------------------------*/
 void I2c_WriteUltrasonicFrontDistances(float* distances)
 {
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
-    memcpy(&i2c_buf.read_only.ir.front, distances, NUM_FRONT_ULTRASONIC_SENSORS*sizeof(float));
-    EZI2C_Slave_EnableInt();
+    uint8 ii;
+    
+    //memcpy(&i2c_buf.read_only.ir.front, distances, NUM_FRONT_ULTRASONIC_SENSORS*sizeof(float));
+    for (ii = 0; ii < NUM_FRONT_ULTRASONIC_SENSORS; ++ii)
+    {
+        //I2C_WAIT_FOR_ACCESS();
+        //EZI2C_Slave_DisableInt();    
+        i2c_buf.read_only.us.front[ii] = distances[ii];
+        //EZI2C_Slave_EnableInt();
+    }
 }
 
 void I2c_WriteUltrasonicRearDistances(float* distances)
 {
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
-    memcpy(&i2c_buf.read_only.ir.front, distances, NUM_REAR_ULTRASONIC_SENSORS*sizeof(float));
-    EZI2C_Slave_EnableInt();
+    uint8 ii;
+    
+    //memcpy(&i2c_buf.read_only.ir.front, distances, NUM_REAR_ULTRASONIC_SENSORS*sizeof(float));
+    for (ii = 0; ii < NUM_REAR_ULTRASONIC_SENSORS; ++ii)
+    {
+        //I2C_WAIT_FOR_ACCESS();
+        //EZI2C_Slave_DisableInt();
+        i2c_buf.read_only.us.rear[ii] = distances[ii];
+        //EZI2C_Slave_EnableInt();
+    }
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -468,18 +511,30 @@ void I2c_WriteUltrasonicRearDistances(float* distances)
  *-------------------------------------------------------------------------------------------------*/
 void I2c_WriteInfraredFrontDistances(float* distances)
 {
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
-    memcpy(&i2c_buf.read_only.us.front, distances, NUM_FRONT_INFRARED_SENSORS*sizeof(float));
-    EZI2C_Slave_EnableInt();
+    uint8 ii;
+    
+    //memcpy(&i2c_buf.read_only.us.front, distances, NUM_FRONT_INFRARED_SENSORS*sizeof(float));
+    for (ii = 0; ii < NUM_FRONT_INFRARED_SENSORS; ++ii)
+    {
+        //I2C_WAIT_FOR_ACCESS();
+        //EZI2C_Slave_DisableInt();
+        i2c_buf.read_only.ir.front[ii] = distances[ii];
+        //EZI2C_Slave_EnableInt();
+    }
 }
 
 void I2c_WriteInfraredRearDistances(float* distances)
 {
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
-    memcpy(&i2c_buf.read_only.us.rear, distances, NUM_REAR_INFRARED_SENSORS*sizeof(float));
-    EZI2C_Slave_EnableInt();
+    uint8 ii;
+    
+    //memcpy(&i2c_buf.read_only.us.rear, distances, NUM_REAR_INFRARED_SENSORS*sizeof(float));
+    for (ii = 0; ii < NUM_REAR_INFRARED_SENSORS; ++ii)
+    {
+        //I2C_WAIT_FOR_ACCESS();
+        //EZI2C_Slave_DisableInt();
+        i2c_buf.read_only.ir.rear[ii] = distances[ii];
+        //EZI2C_Slave_EnableInt();
+    }
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -489,12 +544,47 @@ void I2c_WriteInfraredRearDistances(float* distances)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void I2c_UpdateHeartbeat(uint32 counter)
+void I2c_UpdateHeartbeat()
 {
-    I2C_WAIT_FOR_ACCESS();
-    EZI2C_Slave_DisableInt();
-    i2c_buf.read_only.heartbeat = counter;
-    EZI2C_Slave_EnableInt();
+    //static uint8 count = 0;
+    //I2C_WAIT_FOR_ACCESS();
+    //EZI2C_Slave_DisableInt();
+    i2c_buf.read_only.heartbeat++;
+    //i2c_test.read_value++;
+    //EZI2C_Slave_EnableInt();
+    //i2c_buf.read_write.device_control = count++;
 }
+
+#ifdef TEST_I2C
+void I2c_Test()
+{
+    uint32 activity = EZI2C_Slave_GetActivity();
+    
+    if (activity & EZI2C_Slave_STATUS_RD1BUSY)
+    {
+        i2c_test.read_only.rd1_busy++;
+    }
+    if (activity & EZI2C_Slave_STATUS_BUSY)
+    {
+        i2c_test.read_only.busy++;
+    }
+    if (activity & EZI2C_Slave_STATUS_ERR)
+    {
+        i2c_test.read_only.err++;
+    }
+    if (activity & EZI2C_Slave_STATUS_READ1)
+    {
+        i2c_test.read_only.read1++;
+    }
+    if (activity & EZI2C_Slave_STATUS_WR1BUSY)
+    {
+        i2c_test.read_only.wr1_busy++;
+    }
+    if (activity & EZI2C_Slave_STATUS_WRITE1)
+    {
+        i2c_test.read_only.write1++;
+    }
+}
+#endif    
 
 /* [] END OF FILE */

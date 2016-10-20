@@ -108,6 +108,10 @@ int main()
         /* Keep the serial connection active */
         Ser_Update();
         
+#ifdef TEST_I2C
+        I2c_Test();
+#endif        
+        
         LOOP_END();
     }
 }

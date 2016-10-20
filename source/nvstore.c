@@ -132,11 +132,14 @@ void Nvstore_WriteBytes(uint8 *bytes, uint16 num_bytes, uint16 offset)
  *-------------------------------------------------------------------------------------------------*/
 void Nvstore_WriteUint16(uint16 value, uint16 offset)
 {
+    uint8 ii;
     uint8 bytes[sizeof(uint16)];
     
     Uint16ToTwoBytes(value, bytes);
-    EEPROM_WriteByte(bytes[0], offset);
-    EEPROM_WriteByte(bytes[1], offset+1);
+    for (ii = 0; ii < sizeof(uint16); ++ii)
+    {
+        EEPROM_WriteByte(bytes[ii], offset +ii);
+    }
 }
 
 /*---------------------------------------------------------------------------------------------------

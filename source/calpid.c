@@ -237,6 +237,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
         case CAL_CALIBRATE_STAGE:
             sprintf(banner, "\r\n%s PID calibration\r\n", p_pid_params->name);
             Ser_PutString(banner);
+            ClearCalibrationStatusBit(CAL_PID_BIT);
             Cal_SetLeftRightVelocity(0, 0);
             Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
 
@@ -428,6 +429,7 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
                     StoreRightGains(gains);
                     break;
             }
+            SetCalibrationStatusBit(CAL_PID_BIT);
 
             Pid_RestoreLeftRightTarget();
             sprintf(output, "\r\n%s PID calibration complete\r\n", p_pid_params->name);

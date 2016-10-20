@@ -46,12 +46,12 @@
 #define ODOM_DUMP_ENABLED
 
 /* The following defines enable "cycle" logging for each feature */
-//#define ENC_UPDATE_DELTA_ENABLED
-//#define PID_UPDATE_DELTA_ENABLED
-//#define ODOM_UPDATE_DELTA_ENABLED
-//#define CTRL_UPDATE_DELTA_ENABLED
-//#define MAIN_LOOP_DELTA_ENABLED
-//#define SENSOR_UPDATE_DELTA_ENABLED
+#define ENC_UPDATE_DELTA_ENABLED
+#define PID_UPDATE_DELTA_ENABLED
+#define ODOM_UPDATE_DELTA_ENABLED
+#define CTRL_UPDATE_DELTA_ENABLED
+#define MAIN_LOOP_DELTA_ENABLED
+#define SENSOR_UPDATE_DELTA_ENABLED
     
 char formatted_string[256];
 

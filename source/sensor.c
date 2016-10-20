@@ -105,7 +105,7 @@ static void ReadUltrasonicFront()
 {
     float data[NUM_FRONT_ULTRASONIC_SENSORS];
     
-    Spi_ReadNode(SPI_NODE_3, (void *) data);
+    Spi_ReadNode(SPI_NODE_3, (void *) data);    
     I2c_WriteUltrasonicFrontDistances(data);
 }
 

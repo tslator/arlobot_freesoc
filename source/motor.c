@@ -24,6 +24,7 @@
 #include "pwm.h"
 #include "cal.h"
 #include "debug.h"
+#include "i2c.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -137,6 +138,8 @@ void Motor_Start()
     right_motor.enable(HB25_ENABLE);
     right_motor.start();
     right_motor.set_pwm(PWM_STOP);    
+    
+    I2c_SetDeviceStatusBit(STATUS_HB25_CNTRL_INIT_BIT);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -150,6 +153,7 @@ void Motor_LeftSetPwm(PWM_TYPE pwm)
 {
     pwm = constrain(pwm, MIN_PWM_VALUE, MAX_PWM_VALUE);
     left_motor.set_pwm(pwm);
+    MOTOR_DUMP(&left_motor);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -163,6 +167,7 @@ void Motor_RightSetPwm(PWM_TYPE pwm)
 {
     pwm = constrain(pwm, MIN_PWM_VALUE, MAX_PWM_VALUE);
     right_motor.set_pwm(pwm);
+    MOTOR_DUMP(&right_motor);
 }
     
 /*---------------------------------------------------------------------------------------------------
@@ -233,6 +238,8 @@ void Motor_Stop()
     right_motor.stop();
     left_motor.enable(HB25_DISABLE);
     right_motor.enable(HB25_DISABLE);
+    
+    I2c_ClearDeviceStatusBit(STATUS_HB25_CNTRL_INIT_BIT);
 }
 
 /*---------------------------------------------------------------------------------------------------

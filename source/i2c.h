@@ -46,8 +46,11 @@ void I2c_WriteInfraredRearDistances(float* distances);
 
 void I2c_WriteOdom(float left_speed, float right_speed, float left_delta_dist, float right_delta_dist, float heading);
 
-void I2c_UpdateHeartbeat(uint32 counter);
+void I2c_UpdateHeartbeat();
 
+#ifdef TEST_I2C
+void I2c_Test();
+#endif
 #endif
 
 /* [] END OF FILE */

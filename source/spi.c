@@ -151,7 +151,7 @@ void RecvMessage(SPI_NODE_TYPE node, SPI_MSG_TYPE *message)
     uint8 size = SPIM_GET_RX_BUFFER_SIZE();
     if (MAX_MSG_SIZE != size)
     {        
-//#define FAKE_SENSOR    
+#define FAKE_SENSOR    
 #ifdef FAKE_SENSOR
         message->som = SOM;
         message->eom = EOM;
@@ -165,7 +165,7 @@ void RecvMessage(SPI_NODE_TYPE node, SPI_MSG_TYPE *message)
         message->data.floats[7] = 8.0;
         message->type = IR_TYPE;
 
-        if (sensor == 1 || sensor == 3)
+        if (node == SPI_NODE_1 || node == SPI_NODE_3)
         {
             message->type = US_TYPE;
         }

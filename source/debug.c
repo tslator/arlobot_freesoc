@@ -40,7 +40,7 @@ void Debug_Init()
 #if defined ODOM_DUMP_ENABLED
     debug_control_enabled |= DEBUG_ODOM_ENABLE_BIT;
 #endif
-#if defined ENC_UPDATE_DELTA_ENABLED || defined PID_UPDATE_DELTA_ENABLED || defined ODOM_UPDATE_DELTA_ENABLED || defined MAIN_LOOP_DELTA_ENABLED
+#if defined ENC_UPDATE_DELTA_ENABLED || defined PID_UPDATE_DELTA_ENABLED || defined ODOM_UPDATE_DELTA_ENABLED || defined MAIN_LOOP_DELTA_ENABLED || defined SENSOR_UPDATE_DELTA_ENABLED
     debug_control_enabled |= DEBUG_SAMPLE_ENABLE_BIT;
 #endif
 

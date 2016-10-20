@@ -64,14 +64,13 @@ void Diag_Start()
  void Diag_Update()
 {
     static uint32 delta_time = 0;
-    static uint32 counter = 0;
     
     delta_time = millis() - last_heartbeat_time;
     // Increment a counter that can be read over I2C
     if (delta_time > DIAG_HEARTBEAT_MS)
     {
         last_heartbeat_time = millis();
-        I2c_UpdateHeartbeat(counter++);
+        I2c_UpdateHeartbeat();
     }
 }
 
