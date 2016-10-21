@@ -53,6 +53,7 @@
                                                                 - Bit 1: clear odometry (which includes the following:
                                                                     left/right speed
                                                                     left/right delta distance
+                                                                    heading
                                                                     encoder counts
                                                                 - Bit 2: clear calibration
       02           2         [debug control]                the debug register supports

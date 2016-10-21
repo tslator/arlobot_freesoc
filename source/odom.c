@@ -103,10 +103,11 @@ static void DumpOdom()
  *-------------------------------------------------------------------------------------------------*/
 void Odom_Init()
 {
-    left_speed = 0;
-    right_speed = 0;
-    left_delta_dist = 0;
-    right_delta_dist = 0;
+    left_speed = 0.0;
+    right_speed = 0.0;
+    left_delta_dist = 0.0;
+    right_delta_dist = 0.0;
+    heading = 0.0;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -139,10 +140,11 @@ static void CalculateOdometry(uint32 delta_time)
     left_dist = Encoder_LeftGetDist();
     right_dist = Encoder_RightGetDist();
 
-    heading = (left_dist - right_dist)/TRACK_WIDTH;
-    
     left_delta_dist = left_dist - last_left_dist;
     right_delta_dist = right_dist - last_right_dist;
+
+    heading = (right_dist - left_dist)/TRACK_WIDTH;
+    heading = atan2(sin(heading), cos(heading));    
     
     last_left_dist = left_dist;
     last_right_dist = right_dist;
