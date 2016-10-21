@@ -259,8 +259,6 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Results(CAL_STAGE_TYPE stage, void *params)
 {
-    CAL_LIN_PARAMS *p_lin_params = (CAL_LIN_PARAMS *)params;
-
     switch (stage)
     {
         case CAL_VALIDATE_STAGE:

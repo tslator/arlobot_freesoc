@@ -388,8 +388,6 @@ static uint8 GetCommand()
  *-------------------------------------------------------------------------------------------------*/
 static CALIBRATION_TYPE* GetCalibration(uint8 cmd)
 {
-    CAL_PID_PARAMS *p_pid_params;
-    
     switch (cmd)
     {
         case MOTOR_CAL_CMD:

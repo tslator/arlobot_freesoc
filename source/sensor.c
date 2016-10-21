@@ -52,11 +52,11 @@ typedef void (*SENSOR_READ_FUNC_TYPE)();
  * Variables
  *-------------------------------------------------------------------------------------------------*/
 /* Note: The main loop timing is very sensitive so it is very important that module "update" functions
-   limit their processing time.  There are a number of sensors that need to be aread and this is the
+   limit their processing time.  There are a number of sensors that need to be read and this is the
    area where extension is most likely.  To minimize processing time, only one "sensor group" is
    read on each update call.  The sensor array is an array of functions that is looped through continuously
-   to ensure that all the sensors are read, but at the same time, each "read" minimizes the amount of time
-   spent in the update call.
+   to ensure that all the sensors are read, but each "read" minimizes the amount of time spent in the 
+   update call.
  */
 static SENSOR_READ_FUNC_TYPE sensor_array[NUM_SENSOR_ENTRIES];
 

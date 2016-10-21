@@ -245,11 +245,8 @@ uint16 I2c_ReadDeviceControl()
 {
     uint16 value;
 
-    //I2C_WAIT_FOR_ACCESS();
-    //EZI2C_Slave_DisableInt();
-    value = i2c_buf.read_write.device_control;
-    i2c_buf.read_write.device_control = 0;
-    //EZI2C_Slave_EnableInt();
+    value = CY_GET_REG16(&i2c_buf.read_write.device_control);
+    CY_SET_REG16(&i2c_buf.read_write.device_control, 0);
     
     return value;
 }
@@ -263,17 +260,10 @@ uint16 I2c_ReadDeviceControl()
  *-------------------------------------------------------------------------------------------------*/
 void I2c_ReadDebugControl()
 {
-    //I2C_WAIT_FOR_ACCESS();
-    //EZI2C_Slave_DisableInt();
-    i2c_debug = i2c_buf.read_write.debug_control;
-    //EZI2C_Slave_EnableInt();
+    i2c_debug = CY_GET_REG16(&i2c_buf.read_write.debug_control);
     
-    /* Internally, there is control over debug for each encoder, pid and motor; however, that is not exposed via i2c.
-       Via the i2c interface, turning on debug for encoder, pid, and motor, turns on debug for both wheels.
-     */
-
 #ifdef COMMS_DEBUG_ENABLED
-    // When debug is enabled, the bitmap can be used to turn on/off specific debug, e.g., encoder, pid, odom, etc.
+    // When debug is enabled, the bitmap can be used to turn on/off specific debug, e.g., encoder, pid, odom, and motor.
 
     debug_control_enabled = 0;
     
@@ -332,13 +322,6 @@ void I2c_ReadCmdVelocity(float *left, float *right, uint32 *timeout)
     if (i2c_write_occurred & EZI2C_Slave_STATUS_WRITE1)
     {
         cmd_velocity_timeout = 0;
-        //char lcv_str[10];
-        //char rcv_str[10];
-        //char out_buf[64];
-        //ftoa(i2c_buf.read_write.left_cmd_velocity, lcv_str, 3);
-        //ftoa(i2c_buf.read_write.right_cmd_velocity, rcv_str, 3);
-        //sprintf(out_buf, "%s - %s\r\n", lcv_str, rcv_str);
-        //Ser_PutString(out_buf);
     }
     else
     {
@@ -346,14 +329,21 @@ void I2c_ReadCmdVelocity(float *left, float *right, uint32 *timeout)
         last_cmd_velocity_time = millis();
     }
 
-    //I2C_WAIT_FOR_ACCESS();
-    //EZI2C_Slave_DisableInt();
+    /* Note: For all of the i2c accesses that are integers, I'm using the CY_GET/SET macros.  Its not clear how the
+       cast to reg32 would affect/change a floating point value.  That needs to be tested.
+    
+       Also, while I'm thinking of it.  It may not be necessary to use these macros.  As I understand them are they are
+       intended to maintain endianess over the communication channel, but both the Beaglebone Black and the Psoc5LP are
+       little endian, so it doesn't make much difference unless some is going to interface with a different endianess
+       processor.
+    
+       Another alternative would be to take the "network" approach and convert all data to network (or big endian) order.
+       That's the industry standard.  Something to think about.
+     */
     *left = i2c_buf.read_write.left_cmd_velocity;
     *right = i2c_buf.read_write.right_cmd_velocity;
-    //EZI2C_Slave_EnableInt();
     
-    *timeout = cmd_velocity_timeout;
-    
+    *timeout = cmd_velocity_timeout;    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -365,11 +355,8 @@ void I2c_ReadCmdVelocity(float *left, float *right, uint32 *timeout)
  *-------------------------------------------------------------------------------------------------*/
 void I2c_SetDeviceStatusBit(uint16 bit)
 {
-    //I2C_WAIT_FOR_ACCESS();
-    //EZI2C_Slave_DisableInt();
     device_status |= bit;
     CY_SET_REG16(&i2c_buf.read_only.device_status, device_status);
-    //EZI2C_Slave_EnableInt();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -381,11 +368,8 @@ void I2c_SetDeviceStatusBit(uint16 bit)
  *-------------------------------------------------------------------------------------------------*/
 void I2c_ClearDeviceStatusBit(uint16 bit)
 {
-    //I2C_WAIT_FOR_ACCESS();
-    //EZI2C_Slave_DisableInt();
     device_status &= ~bit;
     CY_SET_REG16(&i2c_buf.read_only.device_status, device_status);
-    //EZI2C_Slave_EnableInt();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -397,11 +381,8 @@ void I2c_ClearDeviceStatusBit(uint16 bit)
  *-------------------------------------------------------------------------------------------------*/
 void I2c_SetCalibrationStatusBit(uint16 bit)
 {
-    //I2C_WAIT_FOR_ACCESS();
-    //EZI2C_Slave_DisableInt();
     calibration_status |= bit;
     CY_SET_REG16(&i2c_buf.read_only.calibration_status, calibration_status);
-    //EZI2C_Slave_EnableInt();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -413,11 +394,8 @@ void I2c_SetCalibrationStatusBit(uint16 bit)
  *-------------------------------------------------------------------------------------------------*/
 void I2c_ClearCalibrationStatusBit(uint16 bit)
 {
-    //I2C_WAIT_FOR_ACCESS();
-    //EZI2C_Slave_DisableInt();
     calibration_status &= ~bit;
     CY_SET_REG16(&i2c_buf.read_only.calibration_status, calibration_status);
-    //EZI2C_Slave_EnableInt();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -430,11 +408,8 @@ void I2c_ClearCalibrationStatusBit(uint16 bit)
  *-------------------------------------------------------------------------------------------------*/
 void I2c_SetCalibrationStatus(uint16 status)
 {
-    //I2C_WAIT_FOR_ACCESS();
-    //EZI2C_Slave_DisableInt();
     calibration_status = status;
     CY_SET_REG16(&i2c_buf.read_only.calibration_status, calibration_status);
-    //EZI2C_Slave_EnableInt();    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -446,26 +421,11 @@ void I2c_SetCalibrationStatus(uint16 status)
  *-------------------------------------------------------------------------------------------------*/
 void I2c_WriteOdom(float left_speed, float right_speed, float left_delta_dist, float right_delta_dist, float heading)
 {
-    //I2C_WAIT_FOR_ACCESS();
-    //EZI2C_Slave_DisableInt();
     i2c_buf.read_only.odom.left_speed = left_speed;
-    //EZI2C_Slave_EnableInt();
-    //I2C_WAIT_FOR_ACCESS();
-    //EZI2C_Slave_DisableInt();
     i2c_buf.read_only.odom.right_speed = right_speed;
-    //EZI2C_Slave_EnableInt();
-    //I2C_WAIT_FOR_ACCESS();
-    //EZI2C_Slave_DisableInt();
     i2c_buf.read_only.odom.left_delta_dist = left_delta_dist;
-    //EZI2C_Slave_EnableInt();
-    //I2C_WAIT_FOR_ACCESS();
-    //EZI2C_Slave_DisableInt();
     i2c_buf.read_only.odom.right_delta_dist = right_delta_dist;
-    //EZI2C_Slave_EnableInt();
-    //I2C_WAIT_FOR_ACCESS();
-    //EZI2C_Slave_DisableInt();
     i2c_buf.read_only.odom.heading = heading;
-    //EZI2C_Slave_EnableInt();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -479,13 +439,9 @@ void I2c_WriteUltrasonicFrontDistances(float* distances)
 {
     uint8 ii;
     
-    //memcpy(&i2c_buf.read_only.ir.front, distances, NUM_FRONT_ULTRASONIC_SENSORS*sizeof(float));
     for (ii = 0; ii < NUM_FRONT_ULTRASONIC_SENSORS; ++ii)
     {
-        //I2C_WAIT_FOR_ACCESS();
-        //EZI2C_Slave_DisableInt();    
         i2c_buf.read_only.us.front[ii] = distances[ii];
-        //EZI2C_Slave_EnableInt();
     }
 }
 
@@ -493,13 +449,9 @@ void I2c_WriteUltrasonicRearDistances(float* distances)
 {
     uint8 ii;
     
-    //memcpy(&i2c_buf.read_only.ir.front, distances, NUM_REAR_ULTRASONIC_SENSORS*sizeof(float));
     for (ii = 0; ii < NUM_REAR_ULTRASONIC_SENSORS; ++ii)
     {
-        //I2C_WAIT_FOR_ACCESS();
-        //EZI2C_Slave_DisableInt();
         i2c_buf.read_only.us.rear[ii] = distances[ii];
-        //EZI2C_Slave_EnableInt();
     }
 }
 
@@ -514,13 +466,9 @@ void I2c_WriteInfraredFrontDistances(float* distances)
 {
     uint8 ii;
     
-    //memcpy(&i2c_buf.read_only.us.front, distances, NUM_FRONT_INFRARED_SENSORS*sizeof(float));
     for (ii = 0; ii < NUM_FRONT_INFRARED_SENSORS; ++ii)
     {
-        //I2C_WAIT_FOR_ACCESS();
-        //EZI2C_Slave_DisableInt();
         i2c_buf.read_only.ir.front[ii] = distances[ii];
-        //EZI2C_Slave_EnableInt();
     }
 }
 
@@ -528,13 +476,9 @@ void I2c_WriteInfraredRearDistances(float* distances)
 {
     uint8 ii;
     
-    //memcpy(&i2c_buf.read_only.us.rear, distances, NUM_REAR_INFRARED_SENSORS*sizeof(float));
     for (ii = 0; ii < NUM_REAR_INFRARED_SENSORS; ++ii)
     {
-        //I2C_WAIT_FOR_ACCESS();
-        //EZI2C_Slave_DisableInt();
         i2c_buf.read_only.ir.rear[ii] = distances[ii];
-        //EZI2C_Slave_EnableInt();
     }
 }
 
@@ -547,13 +491,7 @@ void I2c_WriteInfraredRearDistances(float* distances)
  *-------------------------------------------------------------------------------------------------*/
 void I2c_UpdateHeartbeat()
 {
-    //static uint8 count = 0;
-    //I2C_WAIT_FOR_ACCESS();
-    //EZI2C_Slave_DisableInt();
     i2c_buf.read_only.heartbeat++;
-    //i2c_test.read_value++;
-    //EZI2C_Slave_EnableInt();
-    //i2c_buf.read_write.device_control = count++;
 }
 
 #ifdef TEST_I2C
