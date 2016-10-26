@@ -140,7 +140,13 @@ void Control_Update()
        }
 
        Safety should also be proactive and stop the robot when an unsafe condition occurs.  The motors will stop after
-       2 seconds but it might be better to immediate zero out the robot velocity (in the i2c module)
+       2 seconds but it might be better to immediately zero out the robot velocity (in the i2c module)
+    
+       Along these lines, hardware may be good way to handle safety concerns.  Hardware can be used to monitor actual
+       inputs and generate an interrupt that can then make software calls, e.g., stop the motor and update i2c interface.
+    
+       It was suggested that a voltage comparator could be used to monitor voltage on a cliff sensor and directly 
+       disable the PWM if the distance (voltage) exceeds a threshold - no software required.
     
     */    
 }

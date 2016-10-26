@@ -25,25 +25,9 @@
 #include "cal.h"
 
 
-/*
-    References:
-
-    http://rossum.sourceforge.net/papers/DiffSteer/
-    http://www-personal.umich.edu/~johannb/Papers/pos96rep.pdf
-    Add a reference to Control of Mobile Robots
-
- */
-
-
 /*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
-#ifdef ODOM_UPDATE_DELTA_ENABLED
-#define ODOM_DEBUG_DELTA(delta) DEBUG_DELTA_TIME("odom", delta)
-#else
-#define ODOM_DEBUG_DELTA(delta)
-#endif    
-
 #ifdef ODOM_DUMP_ENABLED
 #define DUMP_ODOM()  DumpOdom()
 #else
@@ -66,30 +50,38 @@ static float heading;
  *-------------------------------------------------------------------------------------------------*/    
 
 #ifdef ODOM_DUMP_ENABLED
+static char left_speed_str[10];
+static char right_speed_str[10];
+static char left_dist_str[10];
+static char right_dist_str[10];
+static char heading_str[10];
+static uint32 last_odom_report = 0;
+        
 /*---------------------------------------------------------------------------------------------------
- * Name: Nvstore_Start
- * Description: Starts the EEPROM component used for storing calibration information.
+ * Name: DumpOdom
+ * Description: Prints the current odmetry.
  * Parameters: None
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
 static void DumpOdom()
 {
-    char left_speed_str[10];
-    char right_speed_str[10];
-    char left_dist_str[10];
-    char right_dist_str[10];
-    char heading_str[10];
-    
-    ftoa(left_speed, left_speed_str, 3);
-    ftoa(right_speed, right_speed_str, 3);
-    ftoa(left_dist, left_dist_str, 3);
-    ftoa(right_dist, right_dist_str, 3);
-    ftoa(heading, heading_str, 3);
-    
     if (ODOM_DEBUG_CONTROL_ENABLED)
     {
-        DEBUG_PRINT_ARG("ls: %s rs: %s ld: %s rd: %s hd: %s\r\n", left_speed_str, right_speed_str, left_dist_str, right_dist_str, heading_str);
+        uint32 delta_time;
+        delta_time = millis() - last_odom_report;
+        if (delta_time > ODOM_SAMPLE_TIME_MS)
+        {
+            ftoa(left_speed, left_speed_str, 3);
+            ftoa(right_speed, right_speed_str, 3);
+            ftoa(left_dist, left_dist_str, 3);
+            ftoa(right_dist, right_dist_str, 3);
+            ftoa(heading, heading_str, 3);
+            
+            DEBUG_PRINT_ARG("ls: %s rs: %s ld: %s rd: %s hd: %s\r\n", left_speed_str, right_speed_str, left_dist_str, right_dist_str, heading_str);
+            
+            last_odom_report = millis();
+        }
     }
 }
 #endif
@@ -122,14 +114,20 @@ void Odom_Start()
 }
 
 /*---------------------------------------------------------------------------------------------------
- * Name: CalculateOdometry
- * Description: Calculates the odometry fields on each sample period.
- * Parameters: delta_time - the number of milliseconds between each call.
+ * Name: Odom_Update
+ * Description: Calculates the heading and transfers the odometry fields to the I2C interface.
+ * Parameters: None
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void CalculateOdometry(uint32 delta_time)
+void Odom_Update()
 {
+    /* Note: All of the calculations (except for heading) are performed in the encoder module where
+       there is time information.  This routine will be called on every cycle of the main loop which
+       is estimated to be about 40-50 ms.  I don't think this frequency will affect i2c performance.
+       The goal is to relay as fast as possible the latest odometry information.
+     */
+    
     left_speed = Encoder_LeftGetMeterPerSec();
     right_speed = Encoder_RightGetMeterPerSec();
     
@@ -137,35 +135,11 @@ static void CalculateOdometry(uint32 delta_time)
     right_dist = Encoder_RightGetDist();
 
     heading = (right_dist - left_dist)/TRACK_WIDTH;
-    heading = atan2(sin(heading), cos(heading));    
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: Odom_Update
- * Description: Updates the odometry fields.  This function is called from the main loop and enforces
- *              the sampling period for reporting odometry.
- * Parameters: None
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-void Odom_Update()
-{
-    static uint32 last_odom_time = 0;
-    static uint8 odom_sched_offset_applied = 0;
-    uint32 delta_time;
-        
-    delta_time = millis() - last_odom_time;
-    ODOM_DEBUG_DELTA(delta_time);
-    if (delta_time > ODOM_SAMPLE_TIME_MS)
-    {
-        last_odom_time = millis();
-        
-        APPLY_SCHED_OFFSET(ODOM_SCHED_OFFSET, odom_sched_offset_applied);
-        
-        CalculateOdometry(delta_time);
-        I2c_WriteOdom(left_speed, right_speed, left_dist, right_dist, heading);
-        DUMP_ODOM();
-    }
+    heading = atan2(sin(heading), cos(heading));
+    
+    I2c_WriteOdom(left_speed, right_speed, left_dist, right_dist, heading);
+    
+    DUMP_ODOM();
 }
 
 /*---------------------------------------------------------------------------------------------------
