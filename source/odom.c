@@ -57,8 +57,8 @@
  *-------------------------------------------------------------------------------------------------*/    
 static float left_speed;
 static float right_speed;
-static float left_delta_dist;
-static float right_delta_dist;
+static float left_dist;
+static float right_dist;
 static float heading;
 
 /*---------------------------------------------------------------------------------------------------
@@ -77,19 +77,19 @@ static void DumpOdom()
 {
     char left_speed_str[10];
     char right_speed_str[10];
-    char left_delta_dist_str[10];
-    char right_delta_dist_str[10];
+    char left_dist_str[10];
+    char right_dist_str[10];
     char heading_str[10];
     
     ftoa(left_speed, left_speed_str, 3);
     ftoa(right_speed, right_speed_str, 3);
-    ftoa(left_delta_dist, left_delta_dist_str, 3);
-    ftoa(right_delta_dist, right_delta_dist_str, 3);
+    ftoa(left_dist, left_dist_str, 3);
+    ftoa(right_dist, right_dist_str, 3);
     ftoa(heading, heading_str, 3);
     
     if (ODOM_DEBUG_CONTROL_ENABLED)
     {
-        DEBUG_PRINT_ARG("ls: %s rs: %s ld: %s rd: %s hd: %s\r\n", left_speed_str, right_speed_str, left_delta_dist_str, right_delta_dist_str, heading_str);
+        DEBUG_PRINT_ARG("ls: %s rs: %s ld: %s rd: %s hd: %s\r\n", left_speed_str, right_speed_str, left_dist_str, right_dist_str, heading_str);
     }
 }
 #endif
@@ -105,8 +105,8 @@ void Odom_Init()
 {
     left_speed = 0.0;
     right_speed = 0.0;
-    left_delta_dist = 0.0;
-    right_delta_dist = 0.0;
+    left_dist = 0.0;
+    right_dist = 0.0;
     heading = 0.0;
 }
 
@@ -130,24 +130,14 @@ void Odom_Start()
  *-------------------------------------------------------------------------------------------------*/
 static void CalculateOdometry(uint32 delta_time)
 {
-    static float last_left_dist;
-    static float last_right_dist;
-    float left_dist;
-    float right_dist;
-    
     left_speed = Encoder_LeftGetMeterPerSec();
     right_speed = Encoder_RightGetMeterPerSec();
+    
     left_dist = Encoder_LeftGetDist();
     right_dist = Encoder_RightGetDist();
 
-    left_delta_dist = left_dist - last_left_dist;
-    right_delta_dist = right_dist - last_right_dist;
-
     heading = (right_dist - left_dist)/TRACK_WIDTH;
     heading = atan2(sin(heading), cos(heading));    
-    
-    last_left_dist = left_dist;
-    last_right_dist = right_dist;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -173,7 +163,7 @@ void Odom_Update()
         APPLY_SCHED_OFFSET(ODOM_SCHED_OFFSET, odom_sched_offset_applied);
         
         CalculateOdometry(delta_time);
-        I2c_WriteOdom(left_speed, right_speed, left_delta_dist, right_delta_dist, heading);
+        I2c_WriteOdom(left_speed, right_speed, left_dist, right_dist, heading);
         DUMP_ODOM();
     }
 }
@@ -189,10 +179,10 @@ void Odom_Reset()
 {
     left_speed = 0;
     right_speed = 0;
-    left_delta_dist = 0;
-    right_delta_dist = 0;
+    left_dist = 0;
+    right_dist = 0;
     heading = 0;
-    I2c_WriteOdom(left_speed, right_speed, left_delta_dist, right_delta_dist, heading);
+    I2c_WriteOdom(left_speed, right_speed, left_dist, right_dist, heading);
 }
 
 /* [] END OF FILE */
