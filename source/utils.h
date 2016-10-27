@@ -13,9 +13,15 @@
 #ifndef UTILS_H
 #define UTILS_H
     
+/*---------------------------------------------------------------------------------------------------
+ * Includes
+ *-------------------------------------------------------------------------------------------------*/    
 #include <project.h>
 #include "config.h"
     
+/*---------------------------------------------------------------------------------------------------
+ * Macros
+ *-------------------------------------------------------------------------------------------------*/        
 #define TRUE (1 == 1)
 #define FALSE (!TRUE)
 
@@ -64,7 +70,15 @@
                                                 }                       \
                                             } while (0);
     
+
+#define DEGREES_TO_RADIANS(d)   (d * PI / 180)
+#define RADIANS_TO_DEGREES(r)   (r * 180 / PI)
+
     
+/*---------------------------------------------------------------------------------------------------
+ * Types
+ *-------------------------------------------------------------------------------------------------*/    
+
 typedef struct _moving_average_tag
 {
     int32 n;
@@ -77,6 +91,9 @@ typedef struct _moving_average_float_tag
     float last;
 } MOVING_AVERAGE_FLOAT_TYPE;
     
+/*---------------------------------------------------------------------------------------------------
+ * Functions
+ *-------------------------------------------------------------------------------------------------*/    
 
 int32 MovingAverage(MOVING_AVERAGE_TYPE* ma, int32 value);
 float MovingAverageFloat(MOVING_AVERAGE_FLOAT_TYPE* ma, float value);
@@ -95,13 +112,11 @@ void ftoa(float n, char *str, int precision);
 #endif
 
 void BinaryRangeSearch(int32 search, int32 *data_points, uint8 num_points, uint8 *lower_index, uint8 *upper_index);
+int16 Interpolate(int16 x, int16 x1, int16 x2, uint16 y1, uint16 y2);
 
 void UniToDiff(float linear, float angular, float *left, float *right);
 void DiffToUni(float left, float right, float *linear, float *angular);
-
-int16 Interpolate(int16 x, int16 x1, int16 x2, uint16 y1, uint16 y2);
-
-#define DEGREES_TO_RADIANS(d)   (d * PI / 180)
-#define RADIANS_TO_DEGREES(r)   (r * 180 / PI)
+float CalcHeading(float left_dist, float right_dist, float width);
+uint16 CpsToPwm(int32 cps, int32 *cps_data, uint16 *pwm_data, uint8 data_size);
 
 #endif
