@@ -472,14 +472,15 @@ int16 Interpolate(int16 x, int16 x1, int16 x2, uint16 y1, uint16 y2)
  * Parameters: left_dist  - the distance traveled by the left wheel
  *             right_dist - the distance traveled by the right wheel
  *             width      - the distance between left and right wheels
+ *             bias       - the bias adjustment
  * Return: heading
  * 
  *-------------------------------------------------------------------------------------------------*/
-float CalcHeading(float left_dist, float right_dist, float width)
+float CalcHeading(float left_dist, float right_dist, float width, float bias)
 {
     float heading;
     
-    heading = (right_dist - left_dist)/width;
+    heading = bias * (right_dist - left_dist)/width;
     return atan2(sin(heading), cos(heading));
 }
 

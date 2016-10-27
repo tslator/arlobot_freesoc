@@ -11,16 +11,25 @@
 #include "debug.h"
 #include "pwm.h"
 
-#define ANGULAR_BIAS_VELOCITY (0.7)
-#define ANGULAR_BIAS_ANGLE (2*PI)
-#define ANGULAR_ACCELERATION (0.3)
-#define RAMP_UP_ANGLE        (ANGULAR_BIAS_ANGLE / 3.0)
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/
+#define ANGULAR_BIAS_ANGLE (2*PI)   // rad
+#define ANGULAR_BIAS_VELOCITY (0.3) // rad/s
+#define ANGULAR_MAX_TIME (10000)
 
-/* Note: The Encoder and PID sample rates are 20 Hz.  The sample rate for updating the linear velocity must be less 
-         than those sample rates, i.e., 10 Hz.
-*/
-#define CALANG_SAMPLE_RATE (PID_SAMPLE_RATE / 2)        
-#define CALANG_SAMPLE_TIME_MS  SAMPLE_TIME_MS(CALANG_SAMPLE_RATE)
+/*---------------------------------------------------------------------------------------------------
+ * Variables
+ *-------------------------------------------------------------------------------------------------*/
+static uint32 start_time;
+static uint32 end_time;
+static uint16 old_debug_control_enabled;
+
+static CAL_ANG_PARAMS angular_params = {DIR_CW, 
+                                        ANGULAR_MAX_TIME, 
+                                        ANGULAR_BIAS_ANGLE,
+                                        0.0,    // There is no linear velocity because we are rotating in place
+                                        ANGULAR_BIAS_VELOCITY};
 
 static uint8 Init(CAL_STAGE_TYPE stage, void *params);
 static uint8 Start(CAL_STAGE_TYPE stage, void *params);
@@ -30,202 +39,271 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params);
 
 static CALIBRATION_TYPE angular_calibration = {CAL_INIT_STATE,
                                                CAL_CALIBRATE_STAGE,
-                                               0,
+                                               &angular_params,
                                                Init,
                                                Start,
                                                Update,
                                                Stop,
                                                Results};
 
-static float left_cmd_velocity;
-static float right_cmd_velocity;
-static float angular_velocity;
-static uint32 last_time;
+/*---------------------------------------------------------------------------------------------------
+ * Functions
+ *-------------------------------------------------------------------------------------------------*/
 
-/* The purpose of angular calibration will be to set the gains for the angular velocity PID.  The angular velocity PID
-   operates from within control and ensures that the commanded angular velocity is followed.  The calibration the angular
-   velocity PID, the following is done:
- 
-   The calibration the angular velocity PID, the following is done:
- 
-   Angular Velocity PID
-   1. Set the angular gains (try 0, 0, 0 to start)
-   2. Move the robot forward 1 meter
-   3. If the robot veers off left or right then re-align the robot and repeat
-   Note: Each iteration will reverse the direction of the robot, e.g., forward 1 meter, reverse 1 meter, forward 1 meter, etc,
-   so it is necessary to re-align the robot before each run (or not if you have plenty of room).
-
- */
-
+/*---------------------------------------------------------------------------------------------------
+ * Name: Init
+ * Description: Calibration/Validation interface Init function.  Performs initialization for Angular 
+ *              Calibration/Validation.
+ * Parameters: stage - the calibration/validation stage 
+ *             params - angular validation parameters, e.g. direction, run time, etc. 
+ * Return: uint8 - CAL_OK
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 {
+    CAL_ANG_PARAMS *p_ang_params = (CAL_ANG_PARAMS *)params;
+    char banner[64];
+
+    Cal_SetLeftRightVelocity(0, 0);
+    Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
+
+    old_debug_control_enabled = debug_control_enabled;
+
+    debug_control_enabled = DEBUG_ODOM_ENABLE_BIT;
+
+    switch (stage)
+    {
+        case CAL_CALIBRATE_STAGE:
+            /* Note: Do we want to support both clockwise and counter clockwise calibration?  How would the
+               bias be different?  How would it be applied?
+             */
+
+            sprintf(banner, "\r\nAngular Calibration\r\n");
+            Ser_PutString(banner);
+            sprintf(banner, "\r\nPlace a mark on the floor corresponding to the center of one of the wheels\r\n");
+            Ser_PutString(banner);
+
+            Cal_ClearCalibrationStatusBit(CAL_ANGULAR_BIT);
+            break;
+
+        case CAL_VALIDATE_STAGE:
+            /* We should support validating clockwise and counter clockwise */
+
+            sprintf(banner, "\r\n%s Angular validation\r\n", p_ang_params->direction == DIR_CW ? "Clockwise" : "Counter Clockwise");
+            Ser_PutString(banner);
+            break;
+
+        default:
+            break;
+    }
     return CAL_OK;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Start
+ * Description: Calibration/Validation interface Start function.  Start Agnular Calibration/Validation.
+ * Parameters: stage - the calibration/validation stage 
+ *             params - angular validation parameters, e.g. direction, run time, etc. 
+ * Return: uint8 - CAL_OK
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static uint8 Start(CAL_STAGE_TYPE stage, void *params)
 {
+    CAL_ANG_PARAMS *p_ang_params = (CAL_ANG_PARAMS *) params;
+    float left;
+    float right;
+
+    Pid_Enable(TRUE);            
+    Encoder_Reset();
+    Pid_Reset();
+    Odom_Reset();
+    
+    switch (stage)
+    {
+        case CAL_CALIBRATE_STAGE:
+            Ser_PutString("Angular Calibration Start\r\n");
+            
+            Ser_PutString("\r\nCalibrating ");
+            Ser_PutString("\r\n");
+
+            UniToDiff(p_ang_params->mps, p_ang_params->rps, &left, &right);
+            
+            Cal_SetLeftRightVelocity(left, right);
+            start_time = millis();
+            break;
+
+        case CAL_VALIDATE_STAGE:
+            Ser_PutString("Agnular Validation Start\r\n");
+            
+            Ser_PutString("\r\nValidating ");
+            Ser_PutString("\r\n");
+            
+            UniToDiff(p_ang_params->mps, p_ang_params->rps, &left, &right);
+            Cal_SetLeftRightVelocity(left, right);            
+            start_time = millis();
+
+            break;
+
+        default:
+            break;
+    }
     return CAL_OK;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Update
+ * Description: Calibration/Validation interface Update function.  Called periodically to evaluate 
+ *              the termination condition.
+ * Parameters: stage - the calibration/validation stage 
+ *             params - angular validation parameters, e.g. direction, run time, etc. 
+ * Return: uint8 - CAL_OK, CAL_COMPLETE
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static uint8 Update(CAL_STAGE_TYPE stage, void *params)
 {
+    float heading;
+    CAL_ANG_PARAMS * p_ang_params = (CAL_ANG_PARAMS *) params;
+
+    switch (stage)
+    {
+        case CAL_VALIDATE_STAGE:
+        case CAL_CALIBRATE_STAGE:
+            if (millis() - start_time < p_ang_params->run_time)
+            {
+                heading = Odom_GetHeading();
+
+                if ( abs(heading) < abs(p_ang_params->distance) )
+                {
+                    return CAL_OK;
+                }
+                end_time = millis();
+                return CAL_COMPLETE;
+            }
+            end_time = millis();
+            Ser_PutString("\r\nRun time expired\r\n");
+            break;
+
+        default:
+            break;
+        
+    }
+
     return CAL_COMPLETE;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Stop
+ * Description: Calibration/Validation interface Stop function.  Called to stop calibration/validation.
+ * Parameters: stage - the calibration/validation stage 
+ *             params - angular validation parameters, e.g. direction, run time, etc. 
+ * Return: uint8 - CAL_OK
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
 {
+    float left_dist;
+    float right_dist;
+    float heading;
+
+    char left_dist_str[10];
+    char right_dist_str[10];
+    char heading_str[10];
+
+    char output[64];
+
+    CAL_ANG_PARAMS *p_ang_params = (CAL_ANG_PARAMS *)params;
+
+    Cal_SetLeftRightVelocity(0, 0);
+
+    left_dist = Encoder_LeftGetDist();
+    right_dist = Encoder_RightGetDist();
+    heading = Odom_GetHeading();
+
+    ftoa(left_dist, left_dist_str, 3);    
+    ftoa(right_dist, right_dist_str, 3);
+    ftoa(heading, heading_str, 6);
+    
+    switch (stage)
+    {
+        case CAL_VALIDATE_STAGE:
+            sprintf(output, "\r\n%s Angular Validation complete\r\n", p_ang_params->direction == DIR_CW ? "clockwise" : "counter clockwise");
+            Ser_PutString(output);
+            break;
+            
+        case CAL_CALIBRATE_STAGE:
+            sprintf(output, "\r\nAngular Calibration complete\r\n");
+            Ser_PutString(output);
+            break;
+            
+        default:
+            break;
+    }
+
+    sprintf(output, "Left Wheel Distance: %s\r\nRight Wheel Distance: %s\r\n", left_dist_str, right_dist_str);
+    Ser_PutString(output);
+    sprintf(output, "Heading: %s\r\n", heading_str);
+    Ser_PutString(output);
+    sprintf(output, "Elapsed Time: %ld\r\n", end_time - start_time);
+    Ser_PutString(output);
+    
+    debug_control_enabled = old_debug_control_enabled;    
+
     return CAL_OK;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Results
+ * Description: Calibration/Validation interface Results function.  Called to display calibration/validation 
+ *              results. 
+ * Parameters: stage - the calibration/validation stage (validation only) 
+ *             params - angular validation parameters, e.g. direction, run time, etc. 
+ * Return: uint8 - CAL_OK
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static uint8 Results(CAL_STAGE_TYPE stage, void *params)
 {
+    switch (stage)
+    {
+        case CAL_VALIDATE_STAGE:
+            Ser_PutString("\r\nPrinting Angular validation results\r\n");
+            /* Get the left, right and average distance traveled
+                Need to capture the left, right delta distance at the start (probably 0 because odometry is reset)
+                We want to see how far each wheel went and compute the error
+               */
+            break;
+
+        case CAL_CALIBRATE_STAGE:
+            Ser_PutString("\r\nMeasure the rotate traveled by the robot.");
+            Ser_PutString("\r\nEnter the rotation (in degrees): ");
+            float rot_in_degrees = Cal_ReadResponse();
+            
+            /* If the actual rotation is less than 360.0 then each delta is too small, i.e., lengthen delta by 360/rotation
+               If the actual rotation is greater than 360.0 then each delta is too small, i.e., shorten delta by rotation/360
+             */
+            float bias = rot_in_degrees >= 360.0 ? bias = 360.0 / rot_in_degrees : rot_in_degrees / 360.0;
+
+            Nvstore_WriteFloat(bias, (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias));
+            Cal_SetCalibrationStatusBit(CAL_ANGULAR_BIT);
+            
+        default:
+            break;    
+    }
+
     return CAL_OK;
 }
 
-static float CalAngularLeftTarget()
-{
-    return left_cmd_velocity;
-}
-
-static float CalAngularRightTarget()
-{
-    return right_cmd_velocity;
-}
-
+/*---------------------------------------------------------------------------------------------------
+ * Name: CalLin_Init
+ * Description: Initializes the Angular calibration module 
+ * Parameters: None 
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void CalAng_Init()
 {
     CalAng_Calibration = &angular_calibration;
+    CalAng_Validation = &angular_calibration;
 }
 
-static void UpdateVelocity(float heading)
-{
-    uint32 delta_time;
-    #define MAX_VELOCITY (0.14105)
-    
-    delta_time = millis() - last_time;
-    if (delta_time >= CALANG_SAMPLE_TIME_MS)
-    {
-        last_time = millis();
-    
-        /* Ramp up for the first 1/3 of the motion:
-         */
-        
-        if (abs(heading) <= RAMP_UP_ANGLE)
-        {
-            angular_velocity += ANGULAR_ACCELERATION * delta_time / 1000.0;
-            angular_velocity = min(angular_velocity, ANGULAR_BIAS_VELOCITY);
-            
-            UniToDiff(0, angular_velocity, &left_cmd_velocity, &right_cmd_velocity);            
-        }
-        else
-        {
-            UniToDiff(0, ANGULAR_BIAS_VELOCITY, &left_cmd_velocity, &right_cmd_velocity);            
-        }
-    }
-        
-}
-
-void DoAngularBiasMotion()
-/*
-    Set angular bias to 1.0
-    Rotate 360 degrees
-        Get the current heading
-        Stop motors
-        Start turn angle = 0
-        Test angle = 360
-        while turn angle < test angle
-
-            Set angular velocity
-            Get heading
-            Calculate delta angle
-            Update turn and last angles
-
-        Stop motors
-
- */
-{
-    float heading;
-    float turn_heading;
-    float delta_heading;
-    float last_heading;
-    
-    uint16 old_debug_control_enabled = debug_control_enabled;    
-    debug_control_enabled = DEBUG_ODOM_ENABLE_BIT;
-    
-    last_time = millis();
-
-    left_cmd_velocity = 0;
-    right_cmd_velocity = 0;
-    angular_velocity = 0;
-    Motor_SetPwm(PWM_STOP, PWM_STOP);
-    
-    Pid_SetLeftRightTarget(CalAngularLeftTarget, CalAngularRightTarget);
-    
-    Encoder_Reset();
-    Pid_Reset();
-    Odom_Reset();    
-    
-    turn_heading = 0;
-    //last_heading = Odom_GetHeading();
-
-    do
-    {
-        Encoder_Update();
-        Pid_Update();
-        Odom_Update();
-        
-        //heading = Odom_GetHeading();
-        delta_heading = heading - last_heading;
-        if (delta_heading > PI) 
-        { 
-            delta_heading -= 2*PI; 
-        } 
-        else if (delta_heading <= -PI) 
-        { 
-            delta_heading += 2*PI; 
-        }
-
-        turn_heading += delta_heading;
-        last_heading = heading;
-        
-        UpdateVelocity(turn_heading);
-    
-    } while (abs(turn_heading) < ANGULAR_BIAS_ANGLE);
-    
-    left_cmd_velocity = 0;
-    right_cmd_velocity = 0;
-    Motor_SetPwm(PWM_STOP, PWM_STOP);
-    
-    debug_control_enabled = old_debug_control_enabled;    
-}
-
-void CalibrateAngularBias()
-{
-    Ser_PutString("\r\nPerforming angular bias calibration\r\n");
-
-    Nvstore_WriteFloat(1.0, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias));
-    
-    DoAngularBiasMotion();
-                
-    Ser_PutString("Enter the measured rotation in degrees (enter 5 chars), e.g., 345.0 : ");
-    float meas_rotation = Cal_ReadResponse();
-    float angular_bias = 360.0 / meas_rotation;
-    //Cal_DisplayBias("angular", angular_bias);
-    
-    /* Store the angular bias into EEPROM */
-    Nvstore_WriteFloat(angular_bias, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias));
-    Ser_PutString("Angular bias calibration complete\r\n");
-    
-}
-
-void ValidateAngularBias()
-{
-    /* Note: consider whether calibration should be done in both directions: CW and CCW and the average taken as the
-       actual angular bias.  There would need to be some interaction with the user to mark a new starting position
-       after the first motion.
-     */
-    
-    Ser_PutString("\r\nValidating angular bias calibration\r\n");
-    DoAngularBiasMotion();
-    Ser_PutString("Angular bias validation complete\r\n");
-}
+/*-------------------------------------------------------------------------------*/
+/* [] END OF FILE */

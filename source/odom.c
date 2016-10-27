@@ -44,6 +44,7 @@ static float right_speed;
 static float left_dist;
 static float right_dist;
 static float heading;
+static float angular_bias;
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -100,6 +101,12 @@ void Odom_Init()
     left_dist = 0.0;
     right_dist = 0.0;
     heading = 0.0;
+    
+    angular_bias = 1.0;
+    if (p_cal_eeprom->status & CAL_ANGULAR_BIT)
+    {
+        angular_bias = p_cal_eeprom->angular_bias;
+    }
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -134,7 +141,7 @@ void Odom_Update()
     left_dist = Encoder_LeftGetDist();
     right_dist = Encoder_RightGetDist();
 
-    heading = CalcHeading(left_dist, right_dist, TRACK_WIDTH);
+    heading = CalcHeading(left_dist, right_dist, TRACK_WIDTH, angular_bias);
     
     I2c_WriteOdom(left_speed, right_speed, left_dist, right_dist, heading);
     
@@ -156,6 +163,11 @@ void Odom_Reset()
     right_dist = 0;
     heading = 0;
     I2c_WriteOdom(left_speed, right_speed, left_dist, right_dist, heading);
+}
+
+float Odom_GetHeading()
+{
+    return heading;
 }
 
 /* [] END OF FILE */

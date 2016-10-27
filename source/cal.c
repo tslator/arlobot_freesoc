@@ -56,11 +56,14 @@
 #define PID_RIGHT_BWD_VAL_CMD   '6'
 #define LINEAR_FWD_VAL_CMD      '7'
 #define LINEAR_BWD_VAL_CMD      '8'
+#define ANGULAR_CW_VAL_CMD      '9'
+#define ANGULAR_CCW_VAL_CMD     '0'
 
 #define MOTOR_LEFT_DISP_CMD  '1'
 #define MOTOR_RIGHT_DISP_CMD '2'
 #define PID_DISP_CMD         '3'
-#define ALL_DISP_CMD         '4'
+#define BIAS_DISP_CMD        '4'
+#define ALL_DISP_CMD         '5'
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -231,10 +234,12 @@ static void DisplayValMenu()
     Ser_PutString("    6. Right PID (backward) Validation - operates the right motor in the backward direction at various velocities.\r\n");
     Ser_PutString("    7. Straight Line (forward) Validation - operates the robot in the forward direction at a constant (slow) velocity.\r\n");
     Ser_PutString("    8. Straight Line (backward) Validation - operates the robot in the backward direction at a constant (slow) velocity.\r\n");
+    Ser_PutString("    9. Rotation (cw) Validation - rotates the robot in place in the clockwise direction at a constant (slow) velocity.\r\n");
+    Ser_PutString("    0. Rotation (ccw) Validation - rotates the robot in place in the counter clockwise direction at a constant (slow) velocity.\r\n");
     Ser_PutString("\r\n");
     Ser_PutString("\r\nEnter X to exit validation\r\n");
     Ser_PutString("\r\n");
-    Ser_PutString("Make an entry [1-8,X]: ");
+    Ser_PutString("Make an entry [1-0,X]: ");
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -251,11 +256,12 @@ static void DisplaySettingsMenu()
     Ser_PutString("    1. Left Motor Calibration\r\n");
     Ser_PutString("    2. Right Motor Calibration\r\n");
     Ser_PutString("    3. PID Gains: left pid and right pid\r\n");
-    Ser_PutString("    4. Display All\r\n");
+    Ser_PutString("    4. Linear/Angular Bias: linear and angular biases\r\n");
+    Ser_PutString("    5. Display All\r\n");
     Ser_PutString("\r\n");
     Ser_PutString("\r\nEnter X to exit validation\r\n");
     Ser_PutString("\r\n");
-    Ser_PutString("Make an entry [1-4,X]: ");
+    Ser_PutString("Make an entry [1-5,X]: ");
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -418,6 +424,9 @@ static CALIBRATION_TYPE* GetCalibration(uint8 cmd)
             break;
             
         case ANGULAR_CAL_CMD:
+            Ser_WriteByte(cmd);
+            CalAng_Calibration->state = CAL_INIT_STATE;
+            return CalAng_Calibration;
             break;
             
         default:
@@ -507,6 +516,14 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
             ((CAL_LIN_PARAMS *)(CalLin_Validation->params))->direction = DIR_BACKWARD;
             return (CALIBRATION_TYPE *) CalLin_Validation;
             break;
+            
+        case ANGULAR_CW_VAL_CMD:
+            Ser_WriteByte(cmd);
+            Ser_PutString("\r\nPerforming rotation validation in the clockwise direction.\r\n");
+            CalAng_Validation->stage = CAL_VALIDATE_STAGE;
+            CalAng_Validation->state = CAL_INIT_STATE;
+            ((CAL_ANG_PARAMS *)(CalAng_Validation->params))->direction = DIR_CW;
+            return (CALIBRATION_TYPE *) CalAng_Validation;
 
         default:            
             break;

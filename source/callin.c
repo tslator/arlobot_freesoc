@@ -59,7 +59,7 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params);
 static uint8 Results(CAL_STAGE_TYPE stage, void *params);
 
 static CALIBRATION_TYPE linear_calibration = {CAL_INIT_STATE,
-                                              CAL_VALIDATE_STAGE,
+                                              CAL_CALIBRATE_STAGE,
                                               &linear_params,
                                               Init,
                                               Start,
@@ -74,8 +74,8 @@ static CALIBRATION_TYPE linear_calibration = {CAL_INIT_STATE,
 /*---------------------------------------------------------------------------------------------------
  * Name: Init
  * Description: Calibration/Validation interface Init function.  Performs initialization for Linear 
- *              Validation.
- * Parameters: stage - the calibration/validation stage (validation only) 
+ *              Calibration/Validation.
+ * Parameters: stage - the calibration/validation stage 
  *             params - linear validation parameters, e.g. direction, run time, etc. 
  * Return: uint8 - CAL_OK
  * 
@@ -107,6 +107,9 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
                Also, we need to add a linear scaler to nvram storage, initialize the scaler on startup and apply the
                scalar in the encoder.
              */
+            /* Note: Do we want to support both forward and backward calibration?  How would the
+               bias be different?  How would it be applied?
+             */
             sprintf(banner, "\r\nLinear Calibration\r\n");
             Ser_PutString(banner);
             sprintf(banner, "\r\nPlace a meter stick along side the robot starting centered\r\non the wheel and extending toward the front of the robot\r\n");
@@ -125,8 +128,8 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Start
- * Description: Calibration/Validation interface Start function.  Start Linear Validation.
- * Parameters: stage - the calibration/validation stage (validation only) 
+ * Description: Calibration/Validation interface Start function.  Start Linear Calibration/Validation.
+ * Parameters: stage - the calibration/validation stage 
  *             params - linear validation parameters, e.g. direction, run time, etc. 
  * Return: uint8 - CAL_OK
  * 
@@ -181,7 +184,7 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
  * Name: Update
  * Description: Calibration/Validation interface Update function.  Called periodically to evaluate 
  *              the termination condition.
- * Parameters: stage - the calibration/validation stage (validation only) 
+ * Parameters: stage - the calibration/validation stage 
  *             params - linear validation parameters, e.g. direction, run time, etc. 
  * Return: uint8 - CAL_OK, CAL_COMPLETE
  * 
@@ -222,8 +225,8 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Stop
- * Description: Calibration/Validation interface Stop function.  Called to stop validation.
- * Parameters: stage - the calibration/validation stage (validation only) 
+ * Description: Calibration/Validation interface Stop function.  Called to stop calibration/validation.
+ * Parameters: stage - the calibration/validation stage 
  *             params - linear validation parameters, e.g. direction, run time, etc. 
  * Return: uint8 - CAL_OK
  * 
@@ -246,7 +249,7 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
 
     left_dist = Encoder_LeftGetDist();
     right_dist = Encoder_RightGetDist();
-    heading = CalcHeading(left_dist, right_dist, TRACK_WIDTH);
+    heading = Odom_GetHeading();
 
     ftoa(left_dist, left_dist_str, 3);    
     ftoa(right_dist, right_dist_str, 3);
@@ -255,7 +258,7 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
     switch (stage)
     {
         case CAL_VALIDATE_STAGE:
-            sprintf(output, "\r\n%s Linear validation complete\r\n", p_lin_params->direction == DIR_FORWARD ? "Forward" : "Backward");
+            sprintf(output, "\r\n%s Linear Validation complete\r\n", p_lin_params->direction == DIR_FORWARD ? "Forward" : "Backward");
             Ser_PutString(output);
             break;
             
