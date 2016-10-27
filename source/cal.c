@@ -45,6 +45,8 @@
 #define MOTOR_CAL_CMD       '1'
 #define PID_LEFT_CAL_CMD    '2'
 #define PID_RIGHT_CAL_CMD   '3'
+#define LINEAR_CAL_CMD      '4'
+#define ANGULAR_CAL_CMD     '5'
 
 #define MOTOR_VAL_CMD           '1'
 #define PID_VAL_CMD             '2'
@@ -112,14 +114,14 @@ static float RightTarget()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void ClearCalibrationStatusBit(uint16 bit)
+void Cal_ClearCalibrationStatusBit(uint16 bit)
 {
     uint16 status = p_cal_eeprom->status &= ~bit;
     Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
     I2c_ClearCalibrationStatusBit(bit);
 }
 
-void SetCalibrationStatusBit(uint16 bit)
+void Cal_SetCalibrationStatusBit(uint16 bit)
 {
     uint16 status = p_cal_eeprom->status | bit;
     Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
@@ -202,10 +204,12 @@ static void DisplayCalMenu()
     Ser_PutString("    1. Motor Calibration - creates mapping between count/sec and PWM.\r\n");
     Ser_PutString("    2. PID Left Calibration - enter gains, execute step input, print velocity response.\r\n");
     Ser_PutString("    3. PID Right Calibration - enter gains, execute step input, print velocity response.\r\n");
+    Ser_PutString("    4. Linear Calibration - move 1 meter forward, measure and enter actual distance.\r\n");
+    Ser_PutString("    5. Angular Calibration - rotate 360 degrees clockwise, measure and enter actual rotation.\r\n");
     Ser_PutString("\r\n");
     Ser_PutString("\r\nEnter X to exit calibration\r\n");
     Ser_PutString("\r\n");
-    Ser_PutString("Make an entry [1-3,X]: ");
+    Ser_PutString("Make an entry [1-5,X]: ");
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -407,6 +411,15 @@ static CALIBRATION_TYPE* GetCalibration(uint8 cmd)
             return CalPid_RightCalibration;
             break;
 
+        case LINEAR_CAL_CMD:
+            Ser_WriteByte(cmd);
+            CalLin_Calibration->state = CAL_INIT_STATE;
+            return CalLin_Calibration;
+            break;
+            
+        case ANGULAR_CAL_CMD:
+            break;
+            
         default:
             break;
     }
@@ -607,37 +620,6 @@ static void Process(CALIBRATION_TYPE *calval)
     }
 }
 
-/*---------------------------------------------------------------------------------------------------
- * Name: CpsToPwm
- * Description: Converts count/sec to PWM 
- *              This routine searches the count/sec array (cps_data) to find values immediately less 
- *              than and greater than the specified count/sec value (cps) to obtain the corresponding
- *              indicies - upper/lower.  The indicies are then used to interpolate a PWM value.
- *  
- * Parameters: cps       - the specified count/sec
- *             cps_data  - an array of count/sec values to be searched
- *             pwm_data  - an array of pwm values for selection
- *             data_size - the number of values in each array
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-static uint16 CpsToPwm(int32 cps, int32 *cps_data, uint16 *pwm_data, uint8 data_size)
-{   
-    PWM_TYPE pwm = PWM_STOP;
-    uint8 lower = 0;
-    uint8 upper = 0;
-
-    if (cps > 0 || cps < 0)
-    {
-        BinaryRangeSearch(cps, cps_data, data_size, &lower, &upper);
-        
-        pwm = Interpolate(cps, cps_data[lower], cps_data[upper], pwm_data[lower], pwm_data[upper]);
-
-        return constrain(pwm, MIN_PWM_VALUE, MAX_PWM_VALUE);
-    }
-
-    return pwm;
-}
 
 /*----------------------------------------------------------------------------------------------------------------------
  * Module Interface Routines
@@ -908,8 +890,8 @@ PWM_TYPE Cal_CpsToPwm(WHEEL_TYPE wheel, float cps)
  *-------------------------------------------------------------------------------------------------*/
 void Cal_Clear()
 {
-    ClearCalibrationStatusBit(CAL_MOTOR_BIT);
-    ClearCalibrationStatusBit(CAL_PID_BIT);
+    Cal_ClearCalibrationStatusBit(CAL_MOTOR_BIT);
+    Cal_ClearCalibrationStatusBit(CAL_PID_BIT);
 }
 
 /*---------------------------------------------------------------------------------------------------

@@ -166,7 +166,7 @@ void DoAngularBiasMotion()
     Odom_Reset();    
     
     turn_heading = 0;
-    last_heading = Odom_GetHeading();
+    //last_heading = Odom_GetHeading();
 
     do
     {
@@ -174,7 +174,7 @@ void DoAngularBiasMotion()
         Pid_Update();
         Odom_Update();
         
-        heading = Odom_GetHeading();
+        //heading = Odom_GetHeading();
         delta_heading = heading - last_heading;
         if (delta_heading > PI) 
         { 
@@ -210,7 +210,7 @@ void CalibrateAngularBias()
     Ser_PutString("Enter the measured rotation in degrees (enter 5 chars), e.g., 345.0 : ");
     float meas_rotation = Cal_ReadResponse();
     float angular_bias = 360.0 / meas_rotation;
-    Cal_DisplayBias("angular", angular_bias);
+    //Cal_DisplayBias("angular", angular_bias);
     
     /* Store the angular bias into EEPROM */
     Nvstore_WriteFloat(angular_bias, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias));

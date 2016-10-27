@@ -60,7 +60,9 @@ typedef struct _eeprom_tag
     uint8 reserved_4[4];
     CAL_PID_TYPE left_gains;
     CAL_PID_TYPE right_gains;
-    uint8 reversed_32[32];
+    float linear_bias;
+    float angular_bias;
+    uint8 reversed_24[24];
     CAL_DATA_TYPE left_motor_fwd;
     CAL_DATA_TYPE left_motor_bwd;
     CAL_DATA_TYPE right_motor_fwd;

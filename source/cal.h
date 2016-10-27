@@ -56,6 +56,8 @@
 /* Calibration control/status bits */
 #define CAL_MOTOR_BIT           (0x0001)
 #define CAL_PID_BIT             (0x0002)
+#define CAL_LINEAR_BIT          (0x0004)
+#define CAL_ANGULAR_BIT         (0x0008)
 #define CAL_VERBOSE_BIT         (0x0080)
     
 #define CAL_SCALE_FACTOR (100)
@@ -117,8 +119,8 @@ CAL_PID_TYPE* Cal_RightGetPidGains();
 void Cal_SetLeftRightVelocity(float left, float right);
 PWM_TYPE Cal_CpsToPwm(WHEEL_TYPE wheel, float cps);
 void Cal_Clear();
-void ClearCalibrationStatusBit(uint16 bit);
-void SetCalibrationStatusBit(uint16 bit);
+void Cal_ClearCalibrationStatusBit(uint16 bit);
+void Cal_SetCalibrationStatusBit(uint16 bit);
 void Cal_PrintSamples(char *label, int32 *cps_samples, PWM_TYPE *pwm_samples);
 void Cal_PrintGains(char *label, float *gains);
 void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_limit, float *forward_output, float *backward_output);

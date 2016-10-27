@@ -657,7 +657,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
     {
         case CAL_CALIBRATE_STAGE:
             Ser_PutString("\r\nInitialize motor calibration\r\n");            
-            ClearCalibrationStatusBit(CAL_MOTOR_BIT);
+            Cal_ClearCalibrationStatusBit(CAL_MOTOR_BIT);
             break;
             
         case CAL_VALIDATE_STAGE:
@@ -794,7 +794,7 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
     {
         case CAL_CALIBRATE_STAGE:
             Ser_PutString("Motor calibration complete\r\n");
-            SetCalibrationStatusBit(CAL_MOTOR_BIT);
+            Cal_SetCalibrationStatusBit(CAL_MOTOR_BIT);
             break;
         case CAL_VALIDATE_STAGE:
             Ser_PutString("Motor validation complete\r\n");

@@ -134,8 +134,7 @@ void Odom_Update()
     left_dist = Encoder_LeftGetDist();
     right_dist = Encoder_RightGetDist();
 
-    heading = (right_dist - left_dist)/TRACK_WIDTH;
-    heading = atan2(sin(heading), cos(heading));
+    heading = CalcHeading(left_dist, right_dist, TRACK_WIDTH);
     
     I2c_WriteOdom(left_speed, right_speed, left_dist, right_dist, heading);
     

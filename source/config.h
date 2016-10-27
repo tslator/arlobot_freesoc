@@ -79,9 +79,9 @@ typedef enum {DIR_FORWARD, DIR_BACKWARD} DIR_TYPE;
  *-------------------------------------------------------------------------------------------------*/
 
 #define PI (3.1415926535897932384626433832795)
-#define WHEEL_RADIUS   (0.0762)
+#define WHEEL_RADIUS   (0.0785)       // meter
 #define WHEEL_DIAMETER (2 * WHEEL_RADIUS)
-#define TRACK_WIDTH (0.403)             // meter
+#define TRACK_WIDTH (0.392)           // meter
 #define PI_D (PI * WHEEL_DIAMETER)
 #define METER_PER_REVOLUTION (PI_D)   // meter
 #define ENCODER_TICK_PER_REVOLUTION (500)
@@ -92,8 +92,6 @@ typedef enum {DIR_FORWARD, DIR_BACKWARD} DIR_TYPE;
 #define RADIAN_PER_METER (PI * (WHEEL_DIAMETER/(TRACK_WIDTH*METER_PER_REVOLUTION)))
 
 // Note: These are the theoretical values, so it may be prudent to back these down to more conservative values
-#define MAX_METER_PER_SECOND    (0.7579)
-#define MAX_RADIAN_PER_SECOND   ((2 * MAX_METER_PER_SECOND)/TRACK_WIDTH)
 
 #define MIN_LINEAR_VELOCITY     (-MAX_METER_PER_SECOND)
 #define MAX_LINEAR_VELOCITY     (MAX_METER_PER_SECOND)
@@ -107,6 +105,9 @@ typedef enum {DIR_FORWARD, DIR_BACKWARD} DIR_TYPE;
 #define MAX_LEFT_VELOCITY   (MAX_WHEEL_VELOCITY)
 #define MIN_RIGHT_VELOCITY   (-MAX_WHEEL_VELOCITY)
 #define MAX_RIGHT_VELOCITY   (MAX_WHEEL_VELOCITY)
+
+#define MAX_METER_PER_SECOND    ((MAX_WHEEL_RPM / 60) * PI_D)
+#define MAX_RADIAN_PER_SECOND   ((2 * MAX_METER_PER_SECOND)/TRACK_WIDTH)
 
 /*----------------------------------------------------------------------------------------------------------------------
 

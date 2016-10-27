@@ -71,6 +71,8 @@
       14           2         [calibration status]           contains bits that represent the calibration state
                                                                - Bit 0: Count/Sec to PWM
                                                                - Bit 1: PID
+                                                               - Bit 2: Linear
+                                                               - Bit 3: Angular
            <------ Odometry ------>
       16           4         [left speed]                   measured left speed
       20           4         [right speed]                  measured right speed

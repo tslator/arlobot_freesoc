@@ -22,6 +22,7 @@
 #include "i2c.h"
 #include "diag.h"
 #include "debug.h"
+#include "cal.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -97,6 +98,8 @@ static ENCODER_TYPE right_enc = {
     /* set enc count */     Right_QuadDec_SetCounter,
 };
 
+static float linear_bias;
+
 #if defined (LEFT_ENC_DUMP_ENABLED) || defined (RIGHT_ENC_DUMP_ENABLED)
 /*---------------------------------------------------------------------------------------------------
  * Name: DumpEncoder
@@ -147,7 +150,7 @@ static void Encoder_Sample(ENCODER_TYPE *enc, uint32 delta_time)
     
     enc->avg_mps = enc->avg_cps * METER_PER_COUNT;
     
-    enc->dist += PI_D * enc->avg_delta_count/COUNT_PER_REVOLUTION;
+    enc->dist += linear_bias * PI_D * enc->avg_delta_count/COUNT_PER_REVOLUTION;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -183,6 +186,14 @@ void Encoder_Init()
     right_enc.avg_cps = 0;
     right_enc.avg_mps = 0;
     
+    /* If linear calibration has not been done then set the scalar to 1.0; otherwise, there will be no distance
+       calculation.
+     */
+    linear_bias = 1.0;
+    if (CAL_LINEAR_BIT & p_cal_eeprom->status)
+    {
+        linear_bias = p_cal_eeprom->linear_bias;
+    }
 }
 
 /*---------------------------------------------------------------------------------------------------
