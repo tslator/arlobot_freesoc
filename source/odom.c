@@ -56,6 +56,7 @@ static char right_speed_str[10];
 static char left_dist_str[10];
 static char right_dist_str[10];
 static char heading_str[10];
+static char angular_bias_str[10];
 static uint32 last_odom_report = 0;
         
 /*---------------------------------------------------------------------------------------------------
@@ -78,8 +79,15 @@ static void DumpOdom()
             ftoa(left_dist, left_dist_str, 3);
             ftoa(right_dist, right_dist_str, 3);
             ftoa(heading, heading_str, 3);
+            ftoa(angular_bias, angular_bias_str, 3);
             
-            DEBUG_PRINT_ARG("ls: %s rs: %s ld: %s rd: %s hd: %s\r\n", left_speed_str, right_speed_str, left_dist_str, right_dist_str, heading_str);
+            DEBUG_PRINT_ARG("ls: %s rs: %s ld: %s rd: %s hd: %s ab: %s\r\n", 
+                            left_speed_str, 
+                            right_speed_str, 
+                            left_dist_str, 
+                            right_dist_str, 
+                            heading_str,
+                            angular_bias_str);
             
             last_odom_report = millis();
         }
@@ -102,11 +110,7 @@ void Odom_Init()
     right_dist = 0.0;
     heading = 0.0;
     
-    angular_bias = 1.0;
-    if (p_cal_eeprom->status & CAL_ANGULAR_BIT)
-    {
-        angular_bias = p_cal_eeprom->angular_bias;
-    }
+    angular_bias = Cal_GetAngularBias();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -162,7 +166,11 @@ void Odom_Reset()
     left_dist = 0;
     right_dist = 0;
     heading = 0;
+    
+    angular_bias = Cal_GetAngularBias();
+    
     I2c_WriteOdom(left_speed, right_speed, left_dist, right_dist, heading);
+    DUMP_ODOM();       
 }
 
 float Odom_GetHeading()

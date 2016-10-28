@@ -392,10 +392,6 @@ void UniToDiff(float linear, float angular, float *left, float *right)
         R - the radius of the wheel
 */
 {
-    /*
-    *left_cmd_velocity = linear - (angular * TRACK_WIDTH)/2;
-    *right_cmd_velocity = linear + (angular * TRACK_WIDTH)/2;
-    */
     *left = (2*linear - angular*TRACK_WIDTH)/WHEEL_DIAMETER;
     *right = (2*linear + angular*TRACK_WIDTH)/WHEEL_DIAMETER;
 }

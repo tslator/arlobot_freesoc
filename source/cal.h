@@ -65,6 +65,7 @@
 #define CAL_OK          (0)
 #define CAL_COMPLETE    (1)
 #define CAL_ERROR       (255)
+    
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -124,6 +125,9 @@ void Cal_SetCalibrationStatusBit(uint16 bit);
 void Cal_PrintSamples(char *label, int32 *cps_samples, PWM_TYPE *pwm_samples);
 void Cal_PrintGains(char *label, float *gains);
 void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_limit, float *forward_output, float *backward_output);
+
+float Cal_GetLinearBias();
+float Cal_GetAngularBias();
 
 #endif
 

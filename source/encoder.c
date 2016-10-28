@@ -101,6 +101,11 @@ static ENCODER_TYPE right_enc = {
 static float linear_bias;
 
 #if defined (LEFT_ENC_DUMP_ENABLED) || defined (RIGHT_ENC_DUMP_ENABLED)
+static char avg_cps_str[10];
+static char avg_delta_count_str[10];
+static char avg_mps_str[10];
+static char dist_str[10];
+static char linear_bias_str[10];
 /*---------------------------------------------------------------------------------------------------
  * Name: DumpEncoder
  * Description: Dumps the current state of the encoder to the serial port
@@ -110,19 +115,22 @@ static float linear_bias;
  *-------------------------------------------------------------------------------------------------*/
  static void DumpEncoder(ENCODER_TYPE *enc)
 {
-    char avg_cps_str[10];
-    char avg_delta_count_str[10];
-    char avg_mps_str[10];
-    char dist_str[10];
-    
-    ftoa(enc->avg_cps, avg_cps_str, 3);
-    ftoa(enc->avg_delta_count, avg_delta_count_str, 3);
-    ftoa(enc->avg_mps, avg_mps_str, 3);
-    ftoa(enc->dist, dist_str, 3);
-    
     if (ENCODER_DEBUG_CONTROL_ENABLED)
     {
-        DEBUG_PRINT_ARG("%s enc: %s %s %s %ld %s\r\n", enc->name, avg_cps_str, avg_mps_str, avg_delta_count_str, enc->delta_count, dist_str);
+        ftoa(enc->avg_cps, avg_cps_str, 3);
+        ftoa(enc->avg_delta_count, avg_delta_count_str, 3);
+        ftoa(enc->avg_mps, avg_mps_str, 3);
+        ftoa(enc->dist, dist_str, 3);
+        ftoa(linear_bias, linear_bias_str, 3);
+    
+        DEBUG_PRINT_ARG("%s enc: %s %s %s %ld %s %s\r\n", 
+                        enc->name, 
+                        avg_cps_str, 
+                        avg_mps_str, 
+                        avg_delta_count_str, 
+                        enc->delta_count, 
+                        dist_str,
+                        linear_bias_str);
     }
 }
 #endif
@@ -186,14 +194,7 @@ void Encoder_Init()
     right_enc.avg_cps = 0;
     right_enc.avg_mps = 0;
     
-    /* If linear calibration has not been done then set the scalar to 1.0; otherwise, there will be no distance
-       calculation.
-     */
-    linear_bias = 1.0;
-    if (CAL_LINEAR_BIT & p_cal_eeprom->status)
-    {
-        linear_bias = p_cal_eeprom->linear_bias;
-    }
+    linear_bias = Cal_GetLinearBias();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -428,6 +429,11 @@ void Encoder_Reset()
     right_enc.avg_cps_ma.last = 0;
     right_enc.count = 0;
     right_enc.dist = 0;
+    
+    /* If linear calibration has not been done then set the scalar to 1.0; otherwise, there will be no distance
+       calculation.
+     */
+    linear_bias = Cal_GetLinearBias();
     
     LEFT_DUMP_ENC(&left_enc);
     RIGHT_DUMP_ENC(&right_enc);    

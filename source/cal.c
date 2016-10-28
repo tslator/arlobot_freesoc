@@ -168,7 +168,7 @@ void Cal_PrintSamples(char *label, int32 *cps_samples, uint16 *pwm_samples)
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Cal_PrintGains
- * Description: Prints the PID gains.  Called from the CalPid module.
+ * Description: Prints the PID gains.  Called from the CalPid and Cal modules.
  * Parameters: label - string containing the pid identifier, e.g., left pid or right pid. 
  *             gains - an array of float values corresponding to Kp, Ki, and Kd. 
  * Return: None
@@ -186,6 +186,25 @@ void Cal_PrintGains(char *label, float *gains)
     ftoa(gains[2], dgain_str, 3);
     
     sprintf(output, "%s - P: %s, I: %s, D: %s\r\n", label, pgain_str, igain_str, dgain_str);
+    Ser_PutString(output);
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: Cal_PrintBias
+ * Description: Prints the linear/angular bias.
+ * Parameters: None 
+ * Return: None
+ *-------------------------------------------------------------------------------------------------*/
+void Cal_PrintBias()
+{
+    char output[64];
+    char linear_bias_str[10];
+    char angular_bias_str[10];
+    
+    ftoa(Cal_GetLinearBias(), linear_bias_str, 3);
+    ftoa(Cal_GetAngularBias(), angular_bias_str, 3);
+    
+    sprintf(output, "Linear Bias: %s, Angular Bias: %s\r\n", linear_bias_str, angular_bias_str);
     Ser_PutString(output);
 }
 
@@ -342,6 +361,13 @@ static void ProcessSettingsCmd(uint8 cmd)
             DisplaySettingsMenu();
             break;
             
+        case BIAS_DISP_CMD:
+            Ser_WriteByte(cmd);
+            Ser_PutString("\r\nDisplaying linear/angular bias");
+            Ser_PutString("\r\n");
+            Cal_PrintBias();
+            
+            
         case ALL_DISP_CMD:
             Ser_WriteByte(cmd);
             Ser_PutString("\r\nDisplaying all calibration/settings");
@@ -420,13 +446,15 @@ static CALIBRATION_TYPE* GetCalibration(uint8 cmd)
         case LINEAR_CAL_CMD:
             Ser_WriteByte(cmd);
             CalLin_Calibration->state = CAL_INIT_STATE;
-            return CalLin_Calibration;
+            CalLin_Calibration->stage = CAL_CALIBRATE_STAGE;
+            return (CALIBRATION_TYPE *) CalLin_Calibration;
             break;
             
         case ANGULAR_CAL_CMD:
             Ser_WriteByte(cmd);
             CalAng_Calibration->state = CAL_INIT_STATE;
-            return CalAng_Calibration;
+            CalAng_Calibration->stage = CAL_CALIBRATE_STAGE;
+            return (CALIBRATION_TYPE *) CalAng_Calibration;
             break;
             
         default:
@@ -523,6 +551,15 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
             CalAng_Validation->stage = CAL_VALIDATE_STAGE;
             CalAng_Validation->state = CAL_INIT_STATE;
             ((CAL_ANG_PARAMS *)(CalAng_Validation->params))->direction = DIR_CW;
+            return (CALIBRATION_TYPE *) CalAng_Validation;
+            break;
+
+        case ANGULAR_CCW_VAL_CMD:
+            Ser_WriteByte(cmd);
+            Ser_PutString("\r\nPerforming rotation validation in the counter clockwise direction.\r\n");
+            CalAng_Validation->stage = CAL_VALIDATE_STAGE;
+            CalAng_Validation->state = CAL_INIT_STATE;
+            ((CAL_ANG_PARAMS *)(CalAng_Validation->params))->direction = DIR_CCW;
             return (CALIBRATION_TYPE *) CalAng_Validation;
 
         default:            
@@ -658,6 +695,7 @@ void Cal_Init()
     CalMotor_Init();
     CalPid_Init();
     CalLin_Init();
+    CalAng_Init();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -813,6 +851,10 @@ float Cal_ReadResponse()
         Ser_Update();
         
         value = Ser_ReadByte();
+        /* Note: I had to add a delay here to get minicom on the BBB to read in values.  I'm not sure why that is needed
+           it wasn't necessary for windows
+         */
+        CyDelayUs(1000);
         Ser_WriteByte(value);
         if ( (value >= '0' && value <= '9') || value == '.')
         {
@@ -986,6 +1028,32 @@ void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_
             bwd_value -= bwd_cps_delta;
         }
     }
+}
+
+float Cal_GetLinearBias()
+{
+    float linear_bias;
+    
+    linear_bias = CAL_LINEAR_BIAS_DEFAULT;
+    if (CAL_LINEAR_BIT & p_cal_eeprom->status)
+    {        
+        linear_bias = constrain(p_cal_eeprom->linear_bias, CAL_LINEAR_BIAS_MIN, CAL_LINEAR_BIAS_MAX);
+    }
+    
+    return linear_bias;
+}
+
+float Cal_GetAngularBias()
+{
+    float angular_bias;
+    
+    angular_bias = CAL_ANGULAR_BIAS_DEFAULT;
+    if (CAL_ANGULAR_BIT & p_cal_eeprom->status)
+    {
+        angular_bias = constrain(p_cal_eeprom->angular_bias, CAL_ANGULAR_BIAS_MIN, CAL_ANGULAR_BIAS_MAX);
+    }
+    
+    return angular_bias;
 }
 
 /*-------------------------------------------------------------------------------*/

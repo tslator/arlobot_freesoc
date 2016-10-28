@@ -129,11 +129,6 @@ Sample Rates
 #define ODOM_SCHED_OFFSET   (11)  /* ms */
 
 
-#define CAL_LINEAR_SCALE_CORRECTION (1.085)
-#define CAL_ANGULAR_SCALE_CORRECTION (1.13)
-
-
-
 #endif
 
 /* [] END OF FILE */
