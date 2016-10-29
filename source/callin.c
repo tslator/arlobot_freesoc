@@ -83,8 +83,7 @@ static CALIBRATION_TYPE linear_calibration = {CAL_INIT_STATE,
 static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 {
     CAL_LIN_PARAMS *p_lin_params = (CAL_LIN_PARAMS *)params;
-    char banner[64];
-    char linear_bias_str[10];
+    char output[64];
     
     old_debug_control_enabled = debug_control_enabled;
         
@@ -99,12 +98,12 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
             /* Note: Do we want to support both forward and backward calibration?  How would the
                bias be different?  How would it be applied?
              */
-            sprintf(banner, "\r\nLinear Calibration\r\n");
-            Ser_PutString(banner);
-            sprintf(banner, "\r\nPlace a meter stick along side the robot starting centered\r\n");
-            Ser_PutString(banner);
-            sprintf(banner, "on the wheel and extending toward the front of the robot\r\n");
-            Ser_PutString(banner);
+            sprintf(output, "\r\nLinear Calibration\r\n");
+            Ser_PutString(output);
+            sprintf(output, "\r\nPlace a meter stick along side the robot starting centered\r\n");
+            Ser_PutString(output);
+            sprintf(output, "on the wheel and extending toward the front of the robot\r\n");
+            Ser_PutString(output);
             
             Cal_SetLeftRightVelocity(0, 0);
             Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
@@ -114,13 +113,12 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
             break;            
             
         case CAL_VALIDATE_STAGE:
-            sprintf(banner, "\r\n%s Linear validation\r\n", p_lin_params->direction == DIR_FORWARD ? "Forward" : "Backward");
-            Ser_PutString(banner);
+            sprintf(output, "\r\n%s Linear validation\r\n", p_lin_params->direction == DIR_FORWARD ? "Forward" : "Backward");
+            Ser_PutString(output);
 
             Cal_SetLeftRightVelocity(0, 0);
             Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
             
-            //debug_control_enabled = DEBUG_ODOM_ENABLE_BIT | DEBUG_LEFT_PID_ENABLE_BIT | DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_PID_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT;
             debug_control_enabled = DEBUG_ODOM_ENABLE_BIT;
             
             break;

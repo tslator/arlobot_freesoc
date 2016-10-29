@@ -52,6 +52,70 @@ static CALIBRATION_TYPE angular_calibration = {CAL_INIT_STATE,
  *-------------------------------------------------------------------------------------------------*/
 
 /*---------------------------------------------------------------------------------------------------
+ * Name: IsMoveFinished
+ * Description: Determines if the move is finished
+ * Parameters: heading      - the current heading
+ *             p_ang_params - the angular calibration/validation parameters. 
+ * Return: uint8 - TRUE if the move is complete; otherwise, FALSE
+ *-------------------------------------------------------------------------------------------------*/
+static uint8 IsMoveFinished(float heading, CAL_ANG_PARAMS *p_ang_params)
+{
+    /* Because the heading is limited to -PI to PI, to do one full turn 360 degrees/2PI radians it is 
+       necessary to track the turn in two segments: 0 to -PI, and PI to 0
+    
+       In the 'first half' of the move, the heading is 0 - -PI.  Once the first 180 degrees has been turned
+       we need to track the 'second half' of the move from PI to 0.
+     */
+    
+    if (p_ang_params->direction == DIR_CW)
+    {
+        if (p_ang_params->first_half)
+        {
+            if ( heading <= 0.0 && heading >= -PI)
+            {
+                return FALSE;
+            }
+            p_ang_params->first_half = FALSE;
+            return FALSE;
+        }
+        else
+        {
+            if (heading >= 0.0)
+            {
+                return FALSE;
+            }                    
+            p_ang_params->first_half = TRUE;
+        }
+        return TRUE;
+    }    
+    else if (p_ang_params->direction == DIR_CCW)
+    {
+        if (p_ang_params->first_half)
+        {
+            if ( heading <= PI && heading >= 0.0 )
+            {
+                return FALSE;
+            }
+            p_ang_params->first_half = FALSE;
+            return FALSE;
+            
+        }
+        else
+        {
+            if (heading <= 0.0)
+            {
+                return FALSE;
+            }
+            p_ang_params->first_half = TRUE;
+        }
+        return TRUE;
+    }
+    
+    return FALSE;
+}
+
+
+/*---------------------------------------------------------------------------------------------------
  * Name: Init
  * Description: Calibration/Validation interface Init function.  Performs initialization for Angular 
  *              Calibration/Validation.
@@ -181,10 +245,7 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Update(CAL_STAGE_TYPE stage, void *params)
 {
-    float heading;    
-    char heading_str[10];
-    char distance_str[10];
-    char output[64];
+    float heading;
     CAL_ANG_PARAMS * p_ang_params = (CAL_ANG_PARAMS *) params;
 
     switch (stage)
@@ -195,39 +256,14 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
             {
                 heading = Odom_GetHeading();
                 
-                /* Because the heading is limited to -PI to PI, to do one full turn 360 degrees/2PI radians it is 
-                   necessary to track the turn in two segments: 0 to -PI, and PI to 0
-                
-                   In the 'first half' of the move, the heading is 0 - -PI.  Once the first 180 degrees has been turned
-                   we need to track the 'second half' of the move from PI to 0.
-                 */
-                                
-                /************************************************************
-                 NOTE: THE FOLLOWING ONLY WORKS FOR THE CLOCKWISE DIRECTION. 
-                  
-                 need to add a check of direction and change the conditions
-                 ************************************************************/
-                
-                if (p_ang_params->first_half)
+                if (IsMoveFinished(heading, p_ang_params))
                 {
-                    if ( heading <= 0.0 && heading >= -PI)
-                    {
-                        return CAL_OK;
-                    }
-                    p_ang_params->first_half = FALSE;
-                    return CAL_OK;
-                }
-                else
-                {
-                    if (heading >= 0.0)
-                    {
-                        return CAL_OK;
-                    }                    
-                    p_ang_params->first_half = TRUE;
+                    end_time = millis();
+                    return CAL_COMPLETE;
                 }
                 
-                end_time = millis();
-                return CAL_COMPLETE;
+                return CAL_OK;
+                
             }
             end_time = millis();
             Ser_PutString("\r\nRun time expired\r\n");
