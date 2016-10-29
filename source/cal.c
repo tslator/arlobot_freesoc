@@ -11,6 +11,12 @@
 */
 
 /*---------------------------------------------------------------------------------------------------
+ * Description
+ *-------------------------------------------------------------------------------------------------*/
+// Add a description of the module
+
+
+/*---------------------------------------------------------------------------------------------------
  * Includes
  *-------------------------------------------------------------------------------------------------*/
 #include <stdio.h>
@@ -42,28 +48,28 @@
 #define SETTING_REQUEST     's'
 #define EXIT_CMD            'x'
 
-#define MOTOR_CAL_CMD       '1'
-#define PID_LEFT_CAL_CMD    '2'
-#define PID_RIGHT_CAL_CMD   '3'
-#define LINEAR_CAL_CMD      '4'
-#define ANGULAR_CAL_CMD     '5'
+#define CAL_MOTOR_CMD       'a'
+#define CAL_PID_LEFT_CMD    'b'
+#define CAL_PID_RIGHT_CMD   'c'
+#define CAL_LINEAR_CMD      'd'
+#define CAL_ANGULAR_CMD     'e'
 
-#define MOTOR_VAL_CMD           '1'
-#define PID_VAL_CMD             '2'
-#define PID_LEFT_FWD_VAL_CMD    '3'
-#define PID_LEFT_BWD_VAL_CMD    '4'
-#define PID_RIGHT_FWD_VAL_CMD   '5'
-#define PID_RIGHT_BWD_VAL_CMD   '6'
-#define LINEAR_FWD_VAL_CMD      '7'
-#define LINEAR_BWD_VAL_CMD      '8'
-#define ANGULAR_CW_VAL_CMD      '9'
-#define ANGULAR_CCW_VAL_CMD     '0'
+#define VAL_MOTOR_CMD           'a'
+#define VAL_PID_CMD             'b'
+#define VAL_PID_LEFT_FWD_CMD    'c'
+#define VAL_PID_LEFT_BWD_CMD    'd'
+#define VAL_PID_RIGHT_FWD_CMD   'e'
+#define VAL_PID_RIGHT_BWD_CMD   'f'
+#define VAL_LINEAR_FWD_CMD      'g'
+#define VAL_LINEAR_BWD_CMD      'h'
+#define VAL_ANGULAR_CW_CMD      'i'
+#define VAL_ANGULAR_CCW_CMD     'j'
 
-#define MOTOR_LEFT_DISP_CMD  '1'
-#define MOTOR_RIGHT_DISP_CMD '2'
-#define PID_DISP_CMD         '3'
-#define BIAS_DISP_CMD        '4'
-#define ALL_DISP_CMD         '5'
+#define DISP_MOTOR_LEFT_CMD  'a'
+#define DISP_MOTOR_RIGHT_CMD 'b'
+#define DISP_PID_CMD         'c'
+#define DISP_BIAS_CMD        'd'
+#define DISP_ALL_CMD         'e'
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -131,7 +137,6 @@ void Cal_SetCalibrationStatusBit(uint16 bit)
     I2c_SetCalibrationStatusBit(bit);   
 }
 
-
 /*---------------------------------------------------------------------------------------------------
  * Calibration Print Routines 
  *  
@@ -151,19 +156,14 @@ void Cal_SetCalibrationStatusBit(uint16 bit)
 void Cal_PrintSamples(char *label, int32 *cps_samples, uint16 *pwm_samples)
 {
     uint8 ii;
-    char  buffer[100];
-    char label_str[20];
     
-    sprintf(label_str, "%s\r\n", label);
-    Ser_PutString(label_str);
+    Ser_PutStringFormat("%s\r\n", label);
     
     for (ii = 0; ii < CAL_NUM_SAMPLES - 1; ++ii)
     {
-        sprintf(buffer, "%ld:%d ", cps_samples[ii], pwm_samples[ii]);
-        Ser_PutString(buffer);
+        Ser_PutStringFormat("%ld:%d ", cps_samples[ii], pwm_samples[ii]);
     }
-    sprintf(buffer, "%ld:%d\r\n\r\n", cps_samples[ii], pwm_samples[ii]);
-    Ser_PutString(buffer);
+    Ser_PutStringFormat("%ld:%d\r\n\r\n", cps_samples[ii], pwm_samples[ii]);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -176,7 +176,6 @@ void Cal_PrintSamples(char *label, int32 *cps_samples, uint16 *pwm_samples)
  *-------------------------------------------------------------------------------------------------*/
 void Cal_PrintGains(char *label, float *gains)
 {
-    char output[64];
     char pgain_str[10];
     char igain_str[10];
     char dgain_str[10];
@@ -185,8 +184,7 @@ void Cal_PrintGains(char *label, float *gains)
     ftoa(gains[1], igain_str, 3);
     ftoa(gains[2], dgain_str, 3);
     
-    sprintf(output, "%s - P: %s, I: %s, D: %s\r\n", label, pgain_str, igain_str, dgain_str);
-    Ser_PutString(output);
+    Ser_PutStringFormat("%s - P: %s, I: %s, D: %s\r\n", label, pgain_str, igain_str, dgain_str);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -197,15 +195,13 @@ void Cal_PrintGains(char *label, float *gains)
  *-------------------------------------------------------------------------------------------------*/
 void Cal_PrintBias()
 {
-    char output[64];
     char linear_bias_str[10];
     char angular_bias_str[10];
     
     ftoa(Cal_GetLinearBias(), linear_bias_str, 3);
     ftoa(Cal_GetAngularBias(), angular_bias_str, 3);
     
-    sprintf(output, "Linear Bias: %s, Angular Bias: %s\r\n", linear_bias_str, angular_bias_str);
-    Ser_PutString(output);
+    Ser_PutStringFormat("Linear Bias: %s, Angular Bias: %s\r\n", linear_bias_str, angular_bias_str);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -223,15 +219,15 @@ static void DisplayCalMenu()
 {
     Ser_PutString("\r\nWelcome to the Arlobot calibration interface.\r\n");
     Ser_PutString("The following calibration operations are allowed:\r\n");
-    Ser_PutString("    1. Motor Calibration - creates mapping between count/sec and PWM.\r\n");
-    Ser_PutString("    2. PID Left Calibration - enter gains, execute step input, print velocity response.\r\n");
-    Ser_PutString("    3. PID Right Calibration - enter gains, execute step input, print velocity response.\r\n");
-    Ser_PutString("    4. Linear Calibration - move 1 meter forward, measure and enter actual distance.\r\n");
-    Ser_PutString("    5. Angular Calibration - rotate 360 degrees clockwise, measure and enter actual rotation.\r\n");
+    Ser_PutStringFormat("    %c. Motor Calibration - creates mapping between count/sec and PWM.\r\n",  CAL_MOTOR_CMD);
+    Ser_PutStringFormat("    %c. PID Left Calibration - enter gains, execute step input, print velocity response.\r\n", CAL_PID_LEFT_CMD);
+    Ser_PutStringFormat("    %c. PID Right Calibration - enter gains, execute step input, print velocity response.\r\n", CAL_PID_RIGHT_CMD);
+    Ser_PutStringFormat("    %c. Linear Calibration - move 1 meter forward, measure and enter actual distance.\r\n", CAL_LINEAR_CMD);
+    Ser_PutStringFormat("    %c. Angular Calibration - rotate 360 degrees clockwise, measure and enter actual rotation.\r\n", CAL_ANGULAR_CMD);
     Ser_PutString("\r\n");
-    Ser_PutString("\r\nEnter X to exit calibration\r\n");
+    Ser_PutStringFormat("\r\nEnter %c/%c to exit calibration\r\n", EXIT_CMD, toupper(EXIT_CMD));
     Ser_PutString("\r\n");
-    Ser_PutString("Make an entry [1-5,X]: ");
+    Ser_PutStringFormat("Make an entry [%c-%c,%c/%c]: ", CAL_MOTOR_CMD, CAL_ANGULAR_CMD, EXIT_CMD, toupper(EXIT_CMD));
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -245,20 +241,18 @@ static void DisplayValMenu()
 {
     Ser_PutString("\r\nWelcome to the Arlobot validation interface.\r\n");
     Ser_PutString("The following validation operations are allowed:\r\n");
-    Ser_PutString("    1. Motor Validation - operates the motors at varying velocities.\r\n");
-    Ser_PutString("    2. PID Validation - operates the motors at varying velocities, moves in a straight line and rotates in place.\r\n");
-    Ser_PutString("    3. Left PID (forward) Validation - operates the left motor in the forward direction at various velocities.\r\n");
-    Ser_PutString("    4. Left PID (backward) Validation - operates the left motor in the backward direction at various velocities.\r\n");
-    Ser_PutString("    5. Right PID (forward) Validation - operates the right motor in the forward direction at various velocities.\r\n");
-    Ser_PutString("    6. Right PID (backward) Validation - operates the right motor in the backward direction at various velocities.\r\n");
-    Ser_PutString("    7. Straight Line (forward) Validation - operates the robot in the forward direction at a constant (slow) velocity.\r\n");
-    Ser_PutString("    8. Straight Line (backward) Validation - operates the robot in the backward direction at a constant (slow) velocity.\r\n");
-    Ser_PutString("    9. Rotation (cw) Validation - rotates the robot in place in the clockwise direction at a constant (slow) velocity.\r\n");
-    Ser_PutString("    0. Rotation (ccw) Validation - rotates the robot in place in the counter clockwise direction at a constant (slow) velocity.\r\n");
-    Ser_PutString("\r\n");
-    Ser_PutString("\r\nEnter X to exit validation\r\n");
-    Ser_PutString("\r\n");
-    Ser_PutString("Make an entry [1-0,X]: ");
+    Ser_PutStringFormat("    %c. Motor Validation - operates the motors at varying velocities.\r\n", VAL_MOTOR_CMD);
+    Ser_PutStringFormat("    %c. PID Validation - operates the motors at varying velocities, moves in a straight line and rotates in place.\r\n",VAL_PID_CMD);
+    Ser_PutStringFormat("    %c. Left PID (forward) Validation - operates the left motor in the forward direction at various velocities.\r\n", VAL_PID_LEFT_BWD_CMD);
+    Ser_PutStringFormat("    %c. Left PID (backward) Validation - operates the left motor in the backward direction at various velocities.\r\n", VAL_PID_LEFT_BWD_CMD);
+    Ser_PutStringFormat("    %c. Right PID (forward) Validation - operates the right motor in the forward direction at various velocities.\r\n", VAL_PID_RIGHT_FWD_CMD);
+    Ser_PutStringFormat("    %c. Right PID (backward) Validation - operates the right motor in the backward direction at various velocities.\r\n", VAL_PID_RIGHT_BWD_CMD);
+    Ser_PutStringFormat("    %c. Straight Line (forward) Validation - operates the robot in the forward direction at a constant (slow) velocity.\r\n", VAL_LINEAR_FWD_CMD);
+    Ser_PutStringFormat("    %c. Straight Line (backward) Validation - operates the robot in the backward direction at a constant (slow) velocity.\r\n", VAL_LINEAR_BWD_CMD);
+    Ser_PutStringFormat("    %c. Rotation (cw) Validation - rotates the robot in place in the clockwise direction at a constant (slow) velocity.\r\n", VAL_ANGULAR_CW_CMD);
+    Ser_PutStringFormat("    %c. Rotation (ccw) Validation - rotates the robot in place in the counter clockwise direction at a constant (slow) velocity.\r\n", VAL_ANGULAR_CCW_CMD);
+    Ser_PutStringFormat("\r\n\r\nEnter %c/%c to exit validation\r\n", EXIT_CMD, toupper(EXIT_CMD));
+    Ser_PutStringFormat("\r\nMake an entry [%c-%c,%c/%c]: ", VAL_MOTOR_CMD, VAL_ANGULAR_CCW_CMD, EXIT_CMD, toupper(EXIT_CMD));
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -272,15 +266,13 @@ static void DisplaySettingsMenu()
 {
     Ser_PutString("\r\nWelcome to the Arlobot settings display\r\n");
     Ser_PutString("The following settings can be displayed\r\n");
-    Ser_PutString("    1. Left Motor Calibration\r\n");
-    Ser_PutString("    2. Right Motor Calibration\r\n");
-    Ser_PutString("    3. PID Gains: left pid and right pid\r\n");
-    Ser_PutString("    4. Linear/Angular Bias: linear and angular biases\r\n");
-    Ser_PutString("    5. Display All\r\n");
-    Ser_PutString("\r\n");
-    Ser_PutString("\r\nEnter X to exit validation\r\n");
-    Ser_PutString("\r\n");
-    Ser_PutString("Make an entry [1-5,X]: ");
+    Ser_PutStringFormat("    %c. Left Motor Calibration\r\n", DISP_MOTOR_LEFT_CMD);
+    Ser_PutStringFormat("    %c. Right Motor Calibration\r\n", DISP_MOTOR_RIGHT_CMD);
+    Ser_PutStringFormat("    %c. PID Gains: left pid and right pid\r\n", DISP_PID_CMD);
+    Ser_PutStringFormat("    %c. Linear/Angular Bias: linear and angular biases\r\n", DISP_BIAS_CMD);
+    Ser_PutStringFormat("    %c. Display All\r\n", DISP_ALL_CMD);
+    Ser_PutStringFormat("\r\n\r\nEnter %c/%c to exit validation\r\n", EXIT_CMD, toupper(EXIT_CMD));
+    Ser_PutStringFormat("\r\nMake an entry [%c-%c,%c/%c]: ", DISP_MOTOR_LEFT_CMD, DISP_ALL_CMD, EXIT_CMD, toupper(EXIT_CMD));
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -315,7 +307,6 @@ static void DisplayMenu(CAL_STAGE_TYPE stage)
     {
         DisplayValMenu();
     }
-
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -329,10 +320,9 @@ static void ProcessSettingsCmd(uint8 cmd)
 {
     switch (cmd)
     {
-        case MOTOR_LEFT_DISP_CMD:
+        case DISP_MOTOR_LEFT_CMD:
             Ser_WriteByte(cmd);
-            Ser_PutString("\r\nDisplaying left motor calibration: count/sec, pwm mapping");
-            Ser_PutString("\r\n");
+            Ser_PutString("\r\nDisplaying left motor calibration: count/sec, pwm mapping\r\n");
             Cal_PrintSamples("Left-Backward", (int32 *) p_cal_eeprom->left_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_bwd.pwm_data);
             Cal_PrintSamples("Left-Forward", (int32 *) p_cal_eeprom->left_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_fwd.pwm_data);
             Ser_PutString("\r\n");
@@ -340,10 +330,9 @@ static void ProcessSettingsCmd(uint8 cmd)
             DisplaySettingsMenu();
             break;
             
-        case MOTOR_RIGHT_DISP_CMD:
+        case DISP_MOTOR_RIGHT_CMD:
             Ser_WriteByte(cmd);
-            Ser_PutString("\r\nDisplaying right motor calibration: count/sec, pwm mapping");
-            Ser_PutString("\r\n");
+            Ser_PutString("\r\nDisplaying right motor calibration: count/sec, pwm mapping\r\n");
             Cal_PrintSamples("Right-Backward", (int32 *) p_cal_eeprom->right_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_bwd.pwm_data);
             Cal_PrintSamples("Right-Forward", (int32 *) p_cal_eeprom->right_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_fwd.pwm_data);
             Ser_PutString("\r\n");
@@ -351,30 +340,32 @@ static void ProcessSettingsCmd(uint8 cmd)
             DisplaySettingsMenu();
             break;
             
-        case PID_DISP_CMD:
+        case DISP_PID_CMD:
             Ser_WriteByte(cmd);
-            Ser_PutString("\r\nDisplaying all PID gains: left, right");
-            Ser_PutString("\r\n");
+            Ser_PutString("\r\nDisplaying all PID gains: left, right\r\n");
             Cal_PrintGains("Left PID", (float *) &p_cal_eeprom->left_gains);
             Cal_PrintGains("Right PID", (float *) &p_cal_eeprom->right_gains);
+            Ser_PutString("\r\n");
 
             DisplaySettingsMenu();
             break;
             
-        case BIAS_DISP_CMD:
+        case DISP_BIAS_CMD:
             Ser_WriteByte(cmd);
-            Ser_PutString("\r\nDisplaying linear/angular bias");
-            Ser_PutString("\r\n");
+            Ser_PutString("\r\nDisplaying linear/angular bias\r\n");
             Cal_PrintBias();
             
             
-        case ALL_DISP_CMD:
+        case DISP_ALL_CMD:
             Ser_WriteByte(cmd);
-            Ser_PutString("\r\nDisplaying all calibration/settings");
-            Ser_PutString("\r\n");
+            Ser_PutString("\r\nDisplaying all calibration/settings\r\n");
 
             DisplaySettingsMenu();
-            break;        
+            break;
+            
+        default:
+            Ser_PutStringFormat("\r\nUnknown command: %c\r\n", cmd);
+            break;
     }
 }
 
@@ -426,31 +417,31 @@ static CALIBRATION_TYPE* GetCalibration(uint8 cmd)
 {
     switch (cmd)
     {
-        case MOTOR_CAL_CMD:
+        case CAL_MOTOR_CMD:
             Ser_WriteByte(cmd);
             CalMotor_Calibration->state = CAL_INIT_STATE;
             return CalMotor_Calibration;
             
-        case PID_LEFT_CAL_CMD:
+        case CAL_PID_LEFT_CMD:
             Ser_WriteByte(cmd);
             CalPid_LeftCalibration->state = CAL_INIT_STATE;
             return CalPid_LeftCalibration;
             break;
 
-        case PID_RIGHT_CAL_CMD:
+        case CAL_PID_RIGHT_CMD:
             Ser_WriteByte(cmd);
             CalPid_RightCalibration->state = CAL_INIT_STATE;
             return CalPid_RightCalibration;
             break;
 
-        case LINEAR_CAL_CMD:
+        case CAL_LINEAR_CMD:
             Ser_WriteByte(cmd);
             CalLin_Calibration->state = CAL_INIT_STATE;
             CalLin_Calibration->stage = CAL_CALIBRATE_STAGE;
             return (CALIBRATION_TYPE *) CalLin_Calibration;
             break;
             
-        case ANGULAR_CAL_CMD:
+        case CAL_ANGULAR_CMD:
             Ser_WriteByte(cmd);
             CalAng_Calibration->state = CAL_INIT_STATE;
             CalAng_Calibration->stage = CAL_CALIBRATE_STAGE;
@@ -458,6 +449,7 @@ static CALIBRATION_TYPE* GetCalibration(uint8 cmd)
             break;
             
         default:
+            Ser_PutStringFormat("\r\nUnknown command: %c\r\n", cmd);
             break;
     }
     
@@ -475,7 +467,7 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
 {
     switch (cmd)
     {
-        case MOTOR_VAL_CMD:
+        case VAL_MOTOR_CMD:
             Ser_WriteByte(cmd);
             Ser_PutString("\r\nPerforming Motor Validation by operating the motors at varying velocities.\r\n");
             CalMotor_Validation->stage = CAL_VALIDATE_STAGE;
@@ -483,7 +475,7 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
             return (CALIBRATION_TYPE *) CalMotor_Validation;
             break;
             
-        case PID_VAL_CMD:
+        case VAL_PID_CMD:
             Ser_WriteByte(cmd);
             Ser_PutString("\r\nPerforming Left/Right PID Validation by operating the motors at varying velocities.\r\n");
             CalPid_LeftValidation->stage = CAL_VALIDATE_STAGE;
@@ -491,7 +483,7 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
             return (CALIBRATION_TYPE *) CalPid_LeftValidation;
             break;
                     
-        case PID_LEFT_FWD_VAL_CMD:
+        case VAL_PID_LEFT_FWD_CMD:
             Ser_WriteByte(cmd);
             Ser_PutString("\r\nPerforming Left PID validation in the forward direction.\r\n");
             CalPid_LeftValidation->stage = CAL_VALIDATE_STAGE;
@@ -500,7 +492,7 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
             return (CALIBRATION_TYPE *) CalPid_LeftValidation;
             break;
 
-        case PID_LEFT_BWD_VAL_CMD:
+        case VAL_PID_LEFT_BWD_CMD:
             Ser_WriteByte(cmd);
             Ser_PutString("\r\nPerforming Left PID validation in the backward direction.\r\n");
             CalPid_LeftValidation->stage = CAL_VALIDATE_STAGE;
@@ -509,7 +501,7 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
             return (CALIBRATION_TYPE *) CalPid_LeftValidation;
             break;
 
-        case PID_RIGHT_FWD_VAL_CMD:
+        case VAL_PID_RIGHT_FWD_CMD:
             Ser_WriteByte(cmd);
             Ser_PutString("\r\nPerforming Right PID validation in the forward direction.\r\n");
             CalPid_RightValidation->stage = CAL_VALIDATE_STAGE;
@@ -518,7 +510,7 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
             return (CALIBRATION_TYPE *) CalPid_RightValidation;
             break;
 
-        case PID_RIGHT_BWD_VAL_CMD:
+        case VAL_PID_RIGHT_BWD_CMD:
             Ser_WriteByte(cmd);
             Ser_PutString("\r\nPerforming Right PID validation in the backward direction.\r\n");
             CalPid_RightValidation->stage = CAL_VALIDATE_STAGE;
@@ -527,7 +519,7 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
             return (CALIBRATION_TYPE *) CalPid_RightValidation;
             break;
                        
-        case LINEAR_FWD_VAL_CMD:
+        case VAL_LINEAR_FWD_CMD:
             Ser_WriteByte(cmd);
             Ser_PutString("\r\nPerforming straight line validation in the forward direction.\r\n");
             CalLin_Validation->stage = CAL_VALIDATE_STAGE;
@@ -536,7 +528,7 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
             return (CALIBRATION_TYPE *) CalLin_Validation;
             break;
                 
-        case LINEAR_BWD_VAL_CMD:
+        case VAL_LINEAR_BWD_CMD:
             Ser_WriteByte(cmd);
             Ser_PutString("\r\nPerforming straight line validation in the backward direction.\r\n");
             CalLin_Validation->stage = CAL_VALIDATE_STAGE;
@@ -545,7 +537,7 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
             return (CALIBRATION_TYPE *) CalLin_Validation;
             break;
             
-        case ANGULAR_CW_VAL_CMD:
+        case VAL_ANGULAR_CW_CMD:
             Ser_WriteByte(cmd);
             Ser_PutString("\r\nPerforming rotation validation in the clockwise direction.\r\n");
             CalAng_Validation->stage = CAL_VALIDATE_STAGE;
@@ -554,7 +546,7 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
             return (CALIBRATION_TYPE *) CalAng_Validation;
             break;
 
-        case ANGULAR_CCW_VAL_CMD:
+        case VAL_ANGULAR_CCW_CMD:
             Ser_WriteByte(cmd);
             Ser_PutString("\r\nPerforming rotation validation in the counter clockwise direction.\r\n");
             CalAng_Validation->stage = CAL_VALIDATE_STAGE;
@@ -562,7 +554,8 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
             ((CAL_ANG_PARAMS *)(CalAng_Validation->params))->direction = DIR_CCW;
             return (CALIBRATION_TYPE *) CalAng_Validation;
 
-        default:            
+        default:
+            Ser_PutStringFormat("\r\nUnknown command: %c\r\n", cmd);
             break;
 
     }
@@ -579,12 +572,9 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
  *-------------------------------------------------------------------------------------------------*/
 static void HandleError(CALIBRATION_TYPE *calval)
 {
-    char outbuf[64];
-    
     /* Maybe more can go here, but for now, just print an error */
     
-    sprintf(outbuf, "Error processing stage %s, state %s\r\n", CAL_STAGE_TO_STRING(calval->stage), CAL_STATE_TO_STRING(calval->state));
-    Ser_PutString(outbuf);
+    Ser_PutStringFormat("Error processing stage %s, state %s\r\n", CAL_STAGE_TO_STRING(calval->stage), CAL_STATE_TO_STRING(calval->state));
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -851,8 +841,8 @@ float Cal_ReadResponse()
         Ser_Update();
         
         value = Ser_ReadByte();
-        /* Note: I had to add a delay here to get minicom on the BBB to read in values.  I'm not sure why that is needed
-           it wasn't necessary for windows
+        /* Note: A delay was necessary here to get minicom on the BBB to read in values.  
+           Its not clear why that is needed for Linux and not for windows
          */
         CyDelayUs(1000);
         Ser_WriteByte(value);
@@ -967,7 +957,7 @@ void Cal_Clear()
  *-------------------------------------------------------------------------------------------------*/
 void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_limit, float *forward_profile, float *backward_profile)
 /* This routine calculates a series of count/second values in a triangle profile (slow, fast, slow).  It uses the motor
-   calibration data to determine a range  of forward and reverse values for each wheel.  The routine is called from
+   calibration data to determine a range of forward and reverse values for each wheel.  The routine is called from
    motor validation to confirm that motor calibration conversion from count/second to pwm is reasonably accurate.
  */
 {
@@ -976,36 +966,47 @@ void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_
     memset(forward_profile, 0, num_points * sizeof(float));
     memset(backward_profile, 0, num_points * sizeof(float));
 
+    /* There must be an odd number of points */
     if( num_points % 2 == 0 )
     {
         return;
     }
     
+    /* Only calculate the profile if the motors are calibrated */
+    
     if (p_cal_eeprom->status & CAL_MOTOR_BIT)
     {    
+        /* Get the min/max forward/reverse values for each motor */
         float left_forward_cps_max = p_cal_eeprom->left_motor_fwd.cps_max / p_cal_eeprom->left_motor_fwd.cps_scale;
         float right_forward_cps_max = p_cal_eeprom->right_motor_fwd.cps_max / p_cal_eeprom->right_motor_fwd.cps_scale;
         float left_backward_cps_min = p_cal_eeprom->left_motor_bwd.cps_min / p_cal_eeprom->left_motor_bwd.cps_scale;
         float right_backward_cps_min = p_cal_eeprom->right_motor_bwd.cps_min / p_cal_eeprom->right_motor_bwd.cps_scale;
 
+        /* Select the max of the max */
         float forward_cps_max = min(left_forward_cps_max, right_forward_cps_max);
-        /* Note: Backward values are negative */
+        /* Select the min of the min 
+           Note: Backward values are negative 
+         */
         float backward_cps_max = max(left_backward_cps_min, right_backward_cps_min);
         
+        /* Select the start/end values for forward/reverse */
         float fwd_cps_start = lower_limit * forward_cps_max;
         float fwd_cps_end = upper_limit * forward_cps_max;
         float bwd_cps_start = lower_limit * backward_cps_max;
         float bwd_cps_end = upper_limit * backward_cps_max;
 
+        /* Calculate the mid point */
         uint8 mid_sample_offset = num_points / 2;
         
+        /* Calculate the delta step */
         float fwd_cps_delta = (fwd_cps_end - fwd_cps_start)/mid_sample_offset;
         float bwd_cps_delta = (bwd_cps_end - bwd_cps_start)/mid_sample_offset;
-
         
+        /* Set the mid point */
         forward_profile[mid_sample_offset] = fwd_cps_end;
         backward_profile[mid_sample_offset] = bwd_cps_end;
         
+        /* Set the 'up' slope values */
         float fwd_value = fwd_cps_start;
         float bwd_value = bwd_cps_start;
         for (ii = 0; ii < mid_sample_offset; ++ii)
@@ -1017,6 +1018,7 @@ void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_
             bwd_value += bwd_cps_delta;
         }
         
+        /* Set the 'down' slope values */ 
         fwd_value = fwd_cps_end;
         bwd_value = bwd_cps_end;
         for (ii = mid_sample_offset; ii < num_points; ++ii)
@@ -1030,6 +1032,14 @@ void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_
     }
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Cal_GetLinearBias
+ * Description: Returns the linear bias value either default or calibrated.  Includes constaint
+ *              checking to ensure the value is in the expected range.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 float Cal_GetLinearBias()
 {
     float linear_bias;
@@ -1043,6 +1053,14 @@ float Cal_GetLinearBias()
     return linear_bias;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Cal_GetAngularBias
+ * Description: Returns the angular bias value either default or calibrated.  Includes constaint
+ *              checking to ensure the value is in the expected range.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 float Cal_GetAngularBias()
 {
     float angular_bias;

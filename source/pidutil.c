@@ -1,11 +1,37 @@
+/* ========================================
+ *
+ * Copyright YOUR COMPANY, THE YEAR
+ * All Rights Reserved
+ * UNPUBLISHED, LICENSED SOFTWARE.
+ *
+ * CONFIDENTIAL AND PROPRIETARY INFORMATION
+ * WHICH IS THE PROPERTY OF your company.
+ *
+ * ========================================
+*/
 
+/*---------------------------------------------------------------------------------------------------
+ * Description
+ *-------------------------------------------------------------------------------------------------*/
+// Add a description of the module
+
+/*---------------------------------------------------------------------------------------------------
+ * Includes
+ *-------------------------------------------------------------------------------------------------*/
 #include <math.h>
 #include "pidutil.h"
 #include "config.h"
 #include "debug.h"
 #include "utils.h"
 
+/*---------------------------------------------------------------------------------------------------
+ * Macros
+ *-------------------------------------------------------------------------------------------------*/
 #define IS_NAN_DEFAULT(x,d)   isnan(x) ? d : x
+
+/*---------------------------------------------------------------------------------------------------
+ * Functions
+ *-------------------------------------------------------------------------------------------------*/
 
 #if defined (LEFT_PID_DUMP_ENABLED) || defined(RIGHT_PID_DUMP_ENABLED) || defined(CTRL_LINEAR_PID_DUMP_ENABLED) || defined(CTRL_ANGULAR_PID_DUMP_ENABLED)
 void DumpPid(char *name, PIDControl *pid, uint16 pwm)
@@ -37,3 +63,5 @@ void DumpPid(char *name, PIDControl *pid, uint16 pwm)
     }
 }
 #endif
+
+/* [] END OF FILE */

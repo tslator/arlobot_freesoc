@@ -90,14 +90,12 @@ char formatted_string[256];
                                                 INSIDE_DEBUG_DETAIL(WHERESTR _fmt, WHEREARG,__VA_ARGS__)
 
     
-#define DEBUG_DELTA_TIME(name, delta) do                                                \
-                                      {                                                 \
-                                        if (SAMPLE_DEBUG_CONTROL_ENABLED)               \
-                                        {                                               \
-                                          char buf[100];                                \
-                                          sprintf(buf, "%s: %ld \r\n", name, delta);    \
-                                          Ser_PutString(buf);                           \
-                                        }                                               \
+#define DEBUG_DELTA_TIME(name, delta) do                                                    \
+                                      {                                                     \
+                                        if (SAMPLE_DEBUG_CONTROL_ENABLED)                   \
+                                        {                                                   \
+                                          Ser_PutStringFormat("%s: %ld \r\n", name, delta); \
+                                        }                                                   \
                                       } while (0);
 
     

@@ -10,6 +10,12 @@
  * ========================================
 */
 
+/*---------------------------------------------------------------------------------------------------
+ * Description
+ *-------------------------------------------------------------------------------------------------*/
+// Add a description of the module
+
+
 /* The sensor module support a variety of sensors including infrared and ultrasonic distance sensors and an IMU.
 
    The sensor module abstracts the details of how these sensors are connected to the Psoc, e.g., SPI, IC, Digital or 

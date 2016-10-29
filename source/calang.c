@@ -1,3 +1,20 @@
+/* ========================================
+ *
+ * Copyright YOUR COMPANY, THE YEAR
+ * All Rights Reserved
+ * UNPUBLISHED, LICENSED SOFTWARE.
+ *
+ * CONFIDENTIAL AND PROPRIETARY INFORMATION
+ * WHICH IS THE PROPERTY OF your company.
+ *
+ * ========================================
+*/
+
+/*---------------------------------------------------------------------------------------------------
+ * Description
+ *-------------------------------------------------------------------------------------------------*/
+// Add a description of the module
+
 #include <math.h>
 #include "calang.h"
 #include "odom.h"
@@ -127,13 +144,11 @@ static uint8 IsMoveFinished(float heading, CAL_ANG_PARAMS *p_ang_params)
 static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 {
     CAL_ANG_PARAMS *p_ang_params = (CAL_ANG_PARAMS *)params;
-    char banner[64];
 
     Cal_SetLeftRightVelocity(0, 0);
     Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
 
     old_debug_control_enabled = debug_control_enabled;
-
     debug_control_enabled = DEBUG_ODOM_ENABLE_BIT;
 
     switch (stage)
@@ -143,20 +158,16 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
                bias be different?  How would it be applied?
              */
 
-            sprintf(banner, "\r\nAngular Calibration\r\n");
-            Ser_PutString(banner);
-            sprintf(banner, "\r\nPlace a mark on the floor corresponding\r\n");
-            Ser_PutString(banner);
-            sprintf(banner, "to the center of one of the wheels\r\n");
-            Ser_PutString(banner);
+            Ser_PutString("\r\nAngular Calibration\r\n");
+            Ser_PutString("\r\nPlace a mark on the floor corresponding to the center of one of the wheels\r\n");
 
             break;
 
         case CAL_VALIDATE_STAGE:
             /* We should support validating clockwise and counter clockwise */
 
-            sprintf(banner, "\r\n%s Angular validation\r\n", p_ang_params->direction == DIR_CW ? "Clockwise" : "Counter Clockwise");
-            Ser_PutString(banner);
+            Ser_PutStringFormat("\r\n%s Angular validation\r\n", 
+                                p_ang_params->direction == DIR_CW ? "Clockwise" : "Counter Clockwise");
             break;
 
         default:
@@ -188,10 +199,8 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
     switch (stage)
     {
         case CAL_CALIBRATE_STAGE:
-            Ser_PutString("Angular Calibration Start\r\n");
-            
-            Ser_PutString("\r\nCalibrating ");
-            Ser_PutString("\r\n");
+            Ser_PutString("Angular Calibration Start\r\n");            
+            Ser_PutString("\r\nCalibrating\r\n");
 
             velocity = p_ang_params->rps;
             if (p_ang_params->direction == DIR_CW)
@@ -211,10 +220,8 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
             break;
 
         case CAL_VALIDATE_STAGE:
-            Ser_PutString("Angular Validation Start\r\n");
-            
-            Ser_PutString("\r\nValidating ");
-            Ser_PutString("\r\n");
+            Ser_PutString("Angular Validation Start\r\n");            
+            Ser_PutString("\r\nValidating\r\n");
             
             velocity = p_ang_params->rps;
             if (p_ang_params->direction == DIR_CW)
@@ -287,8 +294,6 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
 {
-    char output[64];
-
     CAL_ANG_PARAMS *p_ang_params = (CAL_ANG_PARAMS *)params;
 
     Cal_SetLeftRightVelocity(0, 0);
@@ -297,13 +302,12 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
     switch (stage)
     {
         case CAL_CALIBRATE_STAGE:
-            sprintf(output, "\r\nAngular Calibration complete\r\n");
-            Ser_PutString(output);
+            Ser_PutString("\r\nAngular Calibration complete\r\n");
             break;
             
         case CAL_VALIDATE_STAGE:
-            sprintf(output, "\r\n%s Angular Validation complete\r\n", p_ang_params->direction == DIR_CW ? "clockwise" : "counter clockwise");
-            Ser_PutString(output);
+            Ser_PutStringFormat("\r\n%s Angular Validation complete\r\n", 
+                                p_ang_params->direction == DIR_CW ? "clockwise" : "counter clockwise");
             break;
             
         default:
@@ -335,8 +339,6 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
     char heading_str[10];
     char angular_bias_str[10];
 
-    char output[64];
-    
     left_dist = Encoder_LeftGetDist();
     right_dist = Encoder_RightGetDist();
     heading = Odom_GetHeading();
@@ -346,14 +348,10 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
     ftoa(heading, heading_str, 6);
     ftoa(Cal_GetAngularBias(), angular_bias_str, 3);
     
-    sprintf(output, "Left Wheel Distance: %s\r\nRight Wheel Distance: %s\r\n", left_dist_str, right_dist_str);
-    Ser_PutString(output);
-    sprintf(output, "Heading: %s\r\n", heading_str);
-    Ser_PutString(output);
-    sprintf(output, "Elapsed Time: %ld\r\n", end_time - start_time);
-    Ser_PutString(output);
-    sprintf(output, "Angular Bias: %s\r\n", angular_bias_str);
-    Ser_PutString(output);
+    Ser_PutStringFormat("Left Wheel Distance: %s\r\nRight Wheel Distance: %s\r\n", left_dist_str, right_dist_str);
+    Ser_PutStringFormat("Heading: %s\r\n", heading_str);
+    Ser_PutStringFormat("Elapsed Time: %ld\r\n", end_time - start_time);
+    Ser_PutStringFormat("Angular Bias: %s\r\n", angular_bias_str);
         
     switch (stage)
     {
@@ -377,8 +375,7 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
             float bias = rot_in_degrees >= 360.0 ? bias = 360.0 / rot_in_degrees : rot_in_degrees / 360.0;
     
             ftoa(bias, angular_bias_str, 3);
-            sprintf(output, "New Angular Bias: %s\r\n", angular_bias_str);
-            Ser_PutString(output);
+            Ser_PutStringFormat("New Angular Bias: %s\r\n", angular_bias_str);
             
             Nvstore_WriteFloat(bias, (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias));
             Cal_SetCalibrationStatusBit(CAL_ANGULAR_BIT);

@@ -11,6 +11,11 @@
 */
 
 /*---------------------------------------------------------------------------------------------------
+ * Description
+ *-------------------------------------------------------------------------------------------------*/
+// Add a description of the module
+
+/*---------------------------------------------------------------------------------------------------
  * The purpose of linear validation will be move the robot in the forward/backward direction,
  * capture the odometry, and compare the results with the expected distance traveled.  The
  * goal is to see the robot moving in a straight line.
@@ -83,7 +88,6 @@ static CALIBRATION_TYPE linear_calibration = {CAL_INIT_STATE,
 static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 {
     CAL_LIN_PARAMS *p_lin_params = (CAL_LIN_PARAMS *)params;
-    char output[64];
     
     old_debug_control_enabled = debug_control_enabled;
         
@@ -98,12 +102,9 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
             /* Note: Do we want to support both forward and backward calibration?  How would the
                bias be different?  How would it be applied?
              */
-            sprintf(output, "\r\nLinear Calibration\r\n");
-            Ser_PutString(output);
-            sprintf(output, "\r\nPlace a meter stick along side the robot starting centered\r\n");
-            Ser_PutString(output);
-            sprintf(output, "on the wheel and extending toward the front of the robot\r\n");
-            Ser_PutString(output);
+            Ser_PutString("\r\nLinear Calibration\r\n");
+            Ser_PutString("\r\nPlace a meter stick along side the robot starting centered");
+            Ser_PutString("\r\non the wheel and extending toward the front of the robot\r\n");
             
             Cal_SetLeftRightVelocity(0, 0);
             Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
@@ -113,8 +114,8 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
             break;            
             
         case CAL_VALIDATE_STAGE:
-            sprintf(output, "\r\n%s Linear validation\r\n", p_lin_params->direction == DIR_FORWARD ? "Forward" : "Backward");
-            Ser_PutString(output);
+            Ser_PutStringFormat("\r\n%s Linear validation\r\n", 
+                                p_lin_params->direction == DIR_FORWARD ? "Forward" : "Backward");
 
             Cal_SetLeftRightVelocity(0, 0);
             Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
@@ -145,10 +146,8 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
     switch (stage)
     {
         case CAL_CALIBRATE_STAGE:
-            Ser_PutString("Linear Calibration Start\r\n");
-            
-            Ser_PutString("\r\nCalibrating ");
-            Ser_PutString("\r\n");
+            Ser_PutString("Linear Calibration Start\r\n");            
+            Ser_PutString("\r\nCalibrating\r\n");
             
             Pid_Enable(TRUE);            
             Encoder_Reset();
@@ -168,9 +167,7 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
             
         case CAL_VALIDATE_STAGE:
             Ser_PutString("Linear Validation Start\r\n");
-
-            Ser_PutString("\r\nValidating ");
-            Ser_PutString("\r\n");
+            Ser_PutString("\r\nValidating\r\n");
             
             float velocity = p_lin_params->mps;
             if( p_lin_params->direction == DIR_BACKWARD )
@@ -267,7 +264,6 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
 {
-    char output[64];
     CAL_LIN_PARAMS *p_lin_params = (CAL_LIN_PARAMS *)params;
 
     Cal_SetLeftRightVelocity(0, 0);
@@ -282,13 +278,11 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
     switch (stage)
     {
         case CAL_VALIDATE_STAGE:
-            sprintf(output, "\r\n%s Linear Validation complete\r\n", p_lin_params->direction == DIR_FORWARD ? "Forward" : "Backward");
-            Ser_PutString(output);
+            Ser_PutStringFormat("\r\n%s Linear Validation complete\r\n", p_lin_params->direction == DIR_FORWARD ? "Forward" : "Backward");
             break;
             
         case CAL_CALIBRATE_STAGE:
-            sprintf(output, "\r\nLinear Calibration complete\r\n");
-            Ser_PutString(output);
+            Ser_PutString("\r\nLinear Calibration complete\r\n");
             break;
             
         default:
@@ -319,8 +313,6 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
     char heading_str[10];
     char linear_bias_str[10];
 
-    char output[64];
-    
     left_dist = Encoder_LeftGetDist();
     right_dist = Encoder_RightGetDist();
     heading = Odom_GetHeading();
@@ -330,14 +322,10 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
     ftoa(heading, heading_str, 6);
     ftoa(Cal_GetLinearBias(), linear_bias_str, 3);
     
-    sprintf(output, "Left Wheel Distance: %s\r\nRight Wheel Distance: %s\r\n", left_dist_str, right_dist_str);
-    Ser_PutString(output);
-    sprintf(output, "Heading: %s\r\n", heading_str);
-    Ser_PutString(output);
-    sprintf(output, "Elapsed Time: %ld\r\n", end_time - start_time);
-    Ser_PutString(output);
-    sprintf(output, "Linear Bias: %s\r\n", linear_bias_str);
-    Ser_PutString(output);
+    Ser_PutStringFormat("Left Wheel Distance: %s\r\nRight Wheel Distance: %s\r\n", left_dist_str, right_dist_str);
+    Ser_PutStringFormat("Heading: %s\r\n", heading_str);
+    Ser_PutStringFormat("Elapsed Time: %ld\r\n", end_time - start_time);
+    Ser_PutStringFormat("Linear Bias: %s\r\n", linear_bias_str);
     
     switch (stage)
     {
@@ -351,8 +339,7 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
             {
                 char distance_str[10];
                 ftoa(distance, distance_str, 6);
-                sprintf(output, "The distance entered %s is out of the allowed range.  No change will be made.\r\n", distance_str);
-                Ser_PutString(output);
+                Ser_PutStringFormat("The distance entered %s is out of the allowed range.  No change will be made.\r\n", distance_str);
                 distance = p_cal_eeprom->linear_bias;
             }
             distance = constrain(distance, CAL_LINEAR_BIAS_MIN, CAL_LINEAR_BIAS_MAX);

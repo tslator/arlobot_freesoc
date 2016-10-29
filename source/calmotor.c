@@ -10,6 +10,11 @@
  * ========================================
 */
 
+/*---------------------------------------------------------------------------------------------------
+ * Description
+ *-------------------------------------------------------------------------------------------------*/
+// Add a description of the module
+
 /* 
     Explanation of Motor Calibration using Count/Sec to PWM mapping:
 
@@ -250,7 +255,6 @@ static void PrintWheelVelocity(char *label, float cps, float mps, uint16 pwm)
     char mps_str[10];
     char calc_mps_str[10];
     char delta_mps_str[10];
-    char output[64];
 
     float calc_mps = cps * METER_PER_COUNT;
     float delta_mps = calc_mps - mps;
@@ -261,8 +265,13 @@ static void PrintWheelVelocity(char *label, float cps, float mps, uint16 pwm)
     ftoa(delta_mps, delta_mps_str, 6);
     
     
-    sprintf(output, "%s - cps: %s cmpd: %s mps: %s dmps: %s, pwm: %d\r\n", label, cps_str, calc_mps_str, mps_str, delta_mps_str, pwm);
-    Ser_PutString(output);
+    Ser_PutStringFormat("%s - cps: %s cmpd: %s mps: %s dmps: %s, pwm: %d\r\n", 
+                        label, 
+                        cps_str, 
+                        calc_mps_str, 
+                        mps_str, 
+                        delta_mps_str, 
+                        pwm);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -846,3 +855,4 @@ void CalMotor_Init()
     CalMotor_Validation = &motor_calibration;    
 }
 
+/* [] END OF FILE */
