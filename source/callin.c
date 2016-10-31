@@ -54,7 +54,8 @@ static uint16 old_debug_control_enabled;
 
 static CAL_LIN_PARAMS linear_params = {DIR_FORWARD, 
                                        LINEAR_MAX_TIME, 
-                                       LINEAR_DISTANCE, 
+                                       LINEAR_DISTANCE,
+                                       0.0,
                                        LINEAR_VELOCITY};
 
 static uint8 Init(CAL_STAGE_TYPE stage, void *params);
@@ -75,6 +76,37 @@ static CALIBRATION_TYPE linear_calibration = {CAL_INIT_STATE,
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
+
+static uint8 IsMoveFinished(float target, DIR_TYPE direction)
+{
+    float left_dist;
+    float right_dist;
+    float delta_left_dist;
+    float delta_right_dist;
+
+    left_dist = Encoder_LeftGetDist();
+    right_dist = Encoder_RightGetDist();
+
+    delta_left_dist = target - left_dist;
+    delta_right_dist = target - right_dist;
+
+    if( direction == DIR_FORWARD )
+    {
+        if ( delta_left_dist <= 0.0 && delta_right_dist <= 0.0 )
+        {
+            return TRUE;
+        }
+    }
+    else
+    {
+        if( delta_left_dist >= 0.0 && delta_right_dist >= 0.0 )
+        {
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Init
@@ -143,51 +175,40 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
 {
     CAL_LIN_PARAMS *p_lin_params = (CAL_LIN_PARAMS *) params;
 
+    Pid_Enable(TRUE);            
+    Encoder_Reset();
+    Pid_Reset();
+    Odom_Reset();
+
     switch (stage)
     {
         case CAL_CALIBRATE_STAGE:
             Ser_PutString("Linear Calibration Start\r\n");            
             Ser_PutString("\r\nCalibrating\r\n");
             
-            Pid_Enable(TRUE);            
-            Encoder_Reset();
-            Pid_Reset();
-            Odom_Reset();
-
             /* Note: The linear bit is used to by the Encoder module to select the default linear bias or the value
                stored in EEPROM.  Therefore, because linear calibration can be an iterative process, we need to clear 
                the bit after we've reset the Encoder; otherwise, we'll pick up the default and never see the results.
              */
             Cal_ClearCalibrationStatusBit(CAL_LINEAR_BIT);
             
-            Cal_SetLeftRightVelocity(p_lin_params->mps, p_lin_params->mps);            
-            start_time = millis();
-            
             break;
             
         case CAL_VALIDATE_STAGE:
             Ser_PutString("Linear Validation Start\r\n");
             Ser_PutString("\r\nValidating\r\n");
-            
-            float velocity = p_lin_params->mps;
-            if( p_lin_params->direction == DIR_BACKWARD )
-            {
-                velocity = -velocity;
-            }
-
-            Pid_Enable(TRUE);            
-            Encoder_Reset();
-            Pid_Reset();
-            Odom_Reset();
-            
-            Cal_SetLeftRightVelocity(velocity, velocity);
-            start_time = millis();
 
             break;
 
         default:
             break;
     }
+
+
+    /* Because the encoder is reset above, the left/right distances will be 0.0 and the target is just the distance */
+    p_lin_params->target = p_lin_params->distance;
+    Cal_SetLeftRightVelocity(p_lin_params->mps, p_lin_params->mps);
+    start_time = millis();
 
     return CAL_OK;
 }
@@ -203,46 +224,20 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Update(CAL_STAGE_TYPE stage, void *params)
 {
-    float left_dist;
-    float right_dist;
-
     CAL_LIN_PARAMS * p_lin_params = (CAL_LIN_PARAMS *) params;
 
     switch (stage)
     {
         case CAL_CALIBRATE_STAGE:
-            if (millis() - start_time < p_lin_params->run_time)
-            {
-                left_dist = abs(Encoder_LeftGetDist());
-                right_dist = abs(Encoder_RightGetDist());
-                if ( left_dist < p_lin_params->distance && right_dist < p_lin_params->distance )
-                {
-                    return CAL_OK;
-                }
-                Cal_SetLeftRightVelocity(0, 0);
-                end_time = millis();
-                return CAL_COMPLETE;
-            }
-            end_time = millis();
-            Cal_SetLeftRightVelocity(0, 0);
-            Ser_PutString("\r\nRun time expired\r\n");
-            break;
-            
         case CAL_VALIDATE_STAGE:
             if (millis() - start_time < p_lin_params->run_time)
             {
-                left_dist = abs(Encoder_LeftGetDist());
-                right_dist = abs(Encoder_RightGetDist());
-
-                if ( left_dist < p_lin_params->distance && right_dist < p_lin_params->distance )
+                if( IsMoveFinished(p_lin_params->target, p_lin_params->direction) )
                 {
-                    return CAL_OK;
+                    end_time = millis();
+                    return CAL_COMPLETE;
                 }
-                Cal_SetLeftRightVelocity(0, 0);
-                end_time = millis();
-                return CAL_COMPLETE;
             }
-            Cal_SetLeftRightVelocity(0, 0);
             end_time = millis();
             Ser_PutString("\r\nRun time expired\r\n");
             break;

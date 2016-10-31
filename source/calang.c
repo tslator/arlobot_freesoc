@@ -32,8 +32,10 @@
  * Constants
  *-------------------------------------------------------------------------------------------------*/
 #define ANGULAR_BIAS_ANGLE (2*PI)   // rad
-#define ANGULAR_BIAS_VELOCITY (0.05) // rad/s
 #define ANGULAR_MAX_TIME (15000)
+#define ANGULAR_BIAS_DIR (DIR_CW)
+#define ANGULAR_BIAS_VELOCITY (ANGULAR_BIAS_DIR == DIR_CW ? -0.05 : 0.05) // rad/s
+
 
 /*---------------------------------------------------------------------------------------------------
  * Variables
@@ -42,12 +44,12 @@ static uint32 start_time;
 static uint32 end_time;
 static uint16 old_debug_control_enabled;
 
-static CAL_ANG_PARAMS angular_params = {DIR_CW, 
+static CAL_ANG_PARAMS angular_params = {ANGULAR_BIAS_DIR,
                                         ANGULAR_MAX_TIME, 
                                         ANGULAR_BIAS_ANGLE,
-                                        0.0,    // There is no linear velocity because we are rotating in place
-                                        ANGULAR_BIAS_VELOCITY,
-                                        TRUE};
+                                        // There is no linear velocity because we are rotating in place
+                                        0.0,                
+                                        ANGULAR_BIAS_VELOCITY};
 
 static uint8 Init(CAL_STAGE_TYPE stage, void *params);
 static uint8 Start(CAL_STAGE_TYPE stage, void *params);
@@ -71,63 +73,30 @@ static CALIBRATION_TYPE angular_calibration = {CAL_INIT_STATE,
 /*---------------------------------------------------------------------------------------------------
  * Name: IsMoveFinished
  * Description: Determines if the move is finished
- * Parameters: heading      - the current heading
- *             p_ang_params - the angular calibration/validation parameters. 
+ * Parameters: distance - the target distance for the move. 
+ *             direction - the direction of the move, i.e., CW or CCW 
  * Return: uint8 - TRUE if the move is complete; otherwise, FALSE
  *-------------------------------------------------------------------------------------------------*/
-static uint8 IsMoveFinished(float heading, CAL_ANG_PARAMS *p_ang_params)
+static uint8 IsMoveFinished(float distance, DIR_TYPE direction)
 {
-    /* Because the heading is limited to -PI to PI, to do one full turn 360 degrees/2PI radians it is 
-       necessary to track the turn in two segments: 0 to -PI, and PI to 0
-    
-       In the 'first half' of the move, the heading is 0 - -PI.  Once the first 180 degrees has been turned
-       we need to track the 'second half' of the move from PI to 0.
+    float heading;
+    float delta_dist;
+    char delta_dist_str[10];
+
+    /* Heading ranges from -PI to PI
+       In order to more easily track position we heading to 0 to 2*PI
      */
-    
-    if (p_ang_params->direction == DIR_CW)
+    heading = NormalizeHeading(Odom_GetHeading(), direction);
+
+    delta_dist = distance - heading;
+    ftoa(delta_dist, delta_dist_str, 6);
+    Ser_PutStringFormat("delta distance: %s", delta_dist_str);
+
+    if( delta_dist <= 0.0 )
     {
-        if (p_ang_params->first_half)
-        {
-            if ( heading <= 0.0 && heading >= -PI)
-            {
-                return FALSE;
-            }
-            p_ang_params->first_half = FALSE;
-            return FALSE;
-        }
-        else
-        {
-            if (heading >= 0.0)
-            {
-                return FALSE;
-            }                    
-            p_ang_params->first_half = TRUE;
-        }
-        return TRUE;
-    }    
-    else if (p_ang_params->direction == DIR_CCW)
-    {
-        if (p_ang_params->first_half)
-        {
-            if ( heading <= PI && heading >= 0.0 )
-            {
-                return FALSE;
-            }
-            p_ang_params->first_half = FALSE;
-            return FALSE;
-            
-        }
-        else
-        {
-            if (heading <= 0.0)
-            {
-                return FALSE;
-            }
-            p_ang_params->first_half = TRUE;
-        }
         return TRUE;
     }
-    
+
     return FALSE;
 }
 
@@ -156,6 +125,8 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
         case CAL_CALIBRATE_STAGE:
             /* Note: Do we want to support both clockwise and counter clockwise calibration?  How would the
                bias be different?  How would it be applied?
+             
+               What if we averaged the cw and ccw biases?
              */
 
             Ser_PutString("\r\nAngular Calibration\r\n");
@@ -178,7 +149,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Start
- * Description: Calibration/Validation interface Start function.  Start Agnular Calibration/Validation.
+ * Description: Calibration/Validation interface Start function.  Start Angular Calibration/Validation.
  * Parameters: stage - the calibration/validation stage 
  *             params - angular validation parameters, e.g. direction, run time, etc. 
  * Return: uint8 - CAL_OK
@@ -189,12 +160,13 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
     CAL_ANG_PARAMS *p_ang_params = (CAL_ANG_PARAMS *) params;
     float left;
     float right;
-    float velocity;
 
     Pid_Enable(TRUE);            
     Encoder_Reset();
     Pid_Reset();
     Odom_Reset();
+
+    UniToDiff(p_ang_params->mps, p_ang_params->rps, &left, &right);
 
     switch (stage)
     {
@@ -202,42 +174,27 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
             Ser_PutString("Angular Calibration Start\r\n");            
             Ser_PutString("\r\nCalibrating\r\n");
 
-            velocity = p_ang_params->rps;
-            if (p_ang_params->direction == DIR_CW)
-            {
-                velocity = -velocity;
-            }
-            UniToDiff(p_ang_params->mps, velocity, &left, &right);
-            
             /* Note: The angular bit is used to by the Encoder module to select the default angular bias or the value
                stored in EEPROM.  Therefore, because angular calibration can be an iterative process, we need to clear 
                the bit after we've reset the Encoder; otherwise, we'll pick up the default and never see the results.
              */
             Cal_ClearCalibrationStatusBit(CAL_ANGULAR_BIT);
             
-            Cal_SetLeftRightVelocity(left, right);
-            start_time = millis();
             break;
 
         case CAL_VALIDATE_STAGE:
             Ser_PutString("Angular Validation Start\r\n");            
             Ser_PutString("\r\nValidating\r\n");
             
-            velocity = p_ang_params->rps;
-            if (p_ang_params->direction == DIR_CW)
-            {
-                velocity = -velocity;
-            }
-            UniToDiff(p_ang_params->mps, velocity, &left, &right);
-            
-            Cal_SetLeftRightVelocity(left, right);            
-            start_time = millis();
-
             break;
 
         default:
             break;
     }
+
+    Cal_SetLeftRightVelocity(left, right);            
+    start_time = millis();
+
     return CAL_OK;
 }
 
@@ -252,7 +209,6 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Update(CAL_STAGE_TYPE stage, void *params)
 {
-    float heading;
     CAL_ANG_PARAMS * p_ang_params = (CAL_ANG_PARAMS *) params;
 
     switch (stage)
@@ -261,9 +217,7 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
         case CAL_VALIDATE_STAGE:
             if (millis() - start_time < p_ang_params->run_time)
             {
-                heading = Odom_GetHeading();
-                
-                if (IsMoveFinished(heading, p_ang_params))
+                if (IsMoveFinished(p_ang_params->distance, p_ang_params->direction))
                 {
                     end_time = millis();
                     return CAL_COMPLETE;

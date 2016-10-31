@@ -1,3 +1,15 @@
+/* ========================================
+ *
+ * Copyright YOUR COMPANY, THE YEAR
+ * All Rights Reserved
+ * UNPUBLISHED, LICENSED SOFTWARE.
+ *
+ * CONFIDENTIAL AND PROPRIETARY INFORMATION
+ * WHICH IS THE PROPERTY OF your company.
+ *
+ * ========================================
+*/
+
 #ifndef CALANG_H
 #define CALANG_H
     
@@ -24,7 +36,6 @@ typedef struct _angular_params
     float    distance;
     float    mps;
     float    rps;
-    uint8    first_half;
 } CAL_ANG_PARAMS;
     
 /*---------------------------------------------------------------------------------------------------

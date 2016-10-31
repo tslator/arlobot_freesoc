@@ -31,6 +31,8 @@
 #define MPS_TO_CPS(mps) (mps / METER_PER_COUNT)
 #define CPS_TO_MPS(cps) (cps * METER_PER_COUNT)
 
+#define DEG_TO_RAD(deg) ((deg / 360.0) * 2*PI)
+#define RAD_TO_DEG(rad) ((rad / 2*PI) * 360.0)
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/    
@@ -468,7 +470,7 @@ int16 Interpolate(int16 x, int16 x1, int16 x2, uint16 y1, uint16 y2)
 /*---------------------------------------------------------------------------------------------------
  * Name: CalcHeading
  * Description: Calculates the heading given left/right distance and width (distance between left/right
- *              wheels).  The heading is constrained between 0 .. +/- Pi
+ *              wheels).  The heading is constrained between -PI .. +Pi
  *  
  * Parameters: left_dist  - the distance traveled by the left wheel
  *             right_dist - the distance traveled by the right wheel
@@ -515,6 +517,46 @@ uint16 CpsToPwm(int32 cps, int32 *cps_data, uint16 *pwm_data, uint8 data_size)
     }
 
     return pwm;
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: NormalizeHeading
+ * Description: Returns a heading ranging from 0 to 2*Pi relative to the direction 
+ *  
+ * Parameters: heading - raw non-normalized heading as calculated in CalcHeading 
+ *             direction - the direction of the rotation, i.e., CW or CCW 
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+float NormalizeHeading(float heading, DIR_TYPE direction)
+{
+    float result;
+
+    if( direction != DIR_CW || direction != DIR_CCW )
+    {
+        return 0.0;
+    }
+
+    if( heading >= -PI && heading <= 0.0 )
+    {
+        /* If the direction is CW then the heading will range from 0 to -Pi
+                adjust heading by taking absolute value
+           If the direction is CCW then the heading will range from -Pi to 0
+                adjust heading to be Pi to 2*Pi
+         */
+        result = direction == DIR_CW ? abs(heading) : 2*PI - abs(heading);
+    }
+    else
+    {
+        /* If the direction is CW then the heading will range from Pi to 0
+                adjust heading to be Pi to 2*Pi
+           If the direction is CCW then the heading will range from 0 to Pi
+                use the heading
+         */
+        result = direction == DIR_CW ? 2*PI - heading : heading;
+    }
+
+    return result;
 }
 
 /* [] END OF FILE */

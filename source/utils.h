@@ -119,4 +119,5 @@ void DiffToUni(float left, float right, float *linear, float *angular);
 float CalcHeading(float left_dist, float right_dist, float width, float bias);
 uint16 CpsToPwm(int32 cps, int32 *cps_data, uint16 *pwm_data, uint8 data_size);
 
+float NormalizeHeading(float heading, DIR_TYPE direction);
 #endif

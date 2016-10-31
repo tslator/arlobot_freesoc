@@ -53,6 +53,8 @@
 #define CAL_PID_RIGHT_CMD   'c'
 #define CAL_LINEAR_CMD      'd'
 #define CAL_ANGULAR_CMD     'e'
+#define CAL_FIRST_CMD       CAL_MOTOR_CMD
+#define CAL_LAST_CMD        CAL_ANGULAR_CMD
 
 #define VAL_MOTOR_CMD           'a'
 #define VAL_PID_CMD             'b'
@@ -64,12 +66,16 @@
 #define VAL_LINEAR_BWD_CMD      'h'
 #define VAL_ANGULAR_CW_CMD      'i'
 #define VAL_ANGULAR_CCW_CMD     'j'
+#define VAL_FIRST_CMD           VAL_MOTOR_CMD
+#define VAL_LAST_CMD            VAL_ANGULAR_CCW_CMD
 
 #define DISP_MOTOR_LEFT_CMD  'a'
 #define DISP_MOTOR_RIGHT_CMD 'b'
 #define DISP_PID_CMD         'c'
 #define DISP_BIAS_CMD        'd'
 #define DISP_ALL_CMD         'e'
+#define DISP_FIRST_CMD       DISP_MOTOR_LEFT_CMD
+#define DISP_LAST_CMD        DISP_ALL_CMD
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -227,7 +233,7 @@ static void DisplayCalMenu()
     Ser_PutString("\r\n");
     Ser_PutStringFormat("\r\nEnter %c/%c to exit calibration\r\n", EXIT_CMD, toupper(EXIT_CMD));
     Ser_PutString("\r\n");
-    Ser_PutStringFormat("Make an entry [%c-%c,%c/%c]: ", CAL_MOTOR_CMD, CAL_ANGULAR_CMD, EXIT_CMD, toupper(EXIT_CMD));
+    Ser_PutStringFormat("Make an entry [%c-%c,%c/%c]: ", CAL_FIRST_CMD, CAL_LAST_CMD, EXIT_CMD, toupper(EXIT_CMD));
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -252,7 +258,7 @@ static void DisplayValMenu()
     Ser_PutStringFormat("    %c. Rotation (cw) Validation - rotates the robot in place in the clockwise direction at a constant (slow) velocity.\r\n", VAL_ANGULAR_CW_CMD);
     Ser_PutStringFormat("    %c. Rotation (ccw) Validation - rotates the robot in place in the counter clockwise direction at a constant (slow) velocity.\r\n", VAL_ANGULAR_CCW_CMD);
     Ser_PutStringFormat("\r\n\r\nEnter %c/%c to exit validation\r\n", EXIT_CMD, toupper(EXIT_CMD));
-    Ser_PutStringFormat("\r\nMake an entry [%c-%c,%c/%c]: ", VAL_MOTOR_CMD, VAL_ANGULAR_CCW_CMD, EXIT_CMD, toupper(EXIT_CMD));
+    Ser_PutStringFormat("\r\nMake an entry [%c-%c,%c/%c]: ", VAL_FIRST_CMD, VAL_LAST_CMD, EXIT_CMD, toupper(EXIT_CMD));
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -272,7 +278,7 @@ static void DisplaySettingsMenu()
     Ser_PutStringFormat("    %c. Linear/Angular Bias: linear and angular biases\r\n", DISP_BIAS_CMD);
     Ser_PutStringFormat("    %c. Display All\r\n", DISP_ALL_CMD);
     Ser_PutStringFormat("\r\n\r\nEnter %c/%c to exit validation\r\n", EXIT_CMD, toupper(EXIT_CMD));
-    Ser_PutStringFormat("\r\nMake an entry [%c-%c,%c/%c]: ", DISP_MOTOR_LEFT_CMD, DISP_ALL_CMD, EXIT_CMD, toupper(EXIT_CMD));
+    Ser_PutStringFormat("\r\nMake an entry [%c-%c,%c/%c]: ", DISP_FIRST_CMD, DISP_LAST_CMD, EXIT_CMD, toupper(EXIT_CMD));
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -354,7 +360,10 @@ static void ProcessSettingsCmd(uint8 cmd)
             Ser_WriteByte(cmd);
             Ser_PutString("\r\nDisplaying linear/angular bias\r\n");
             Cal_PrintBias();
-            
+            Ser_PutString("\r\n");
+
+            DisplaySettingsMenu();
+            break;
             
         case DISP_ALL_CMD:
             Ser_WriteByte(cmd);
@@ -553,6 +562,7 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
             CalAng_Validation->state = CAL_INIT_STATE;
             ((CAL_ANG_PARAMS *)(CalAng_Validation->params))->direction = DIR_CCW;
             return (CALIBRATION_TYPE *) CalAng_Validation;
+            break;
 
         default:
             Ser_PutStringFormat("\r\nUnknown command: %c\r\n", cmd);
