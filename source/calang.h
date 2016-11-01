@@ -22,7 +22,7 @@
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/
-#define CAL_ANGULAR_BIAS_MIN (1.0)
+#define CAL_ANGULAR_BIAS_MIN (0.5)
 #define CAL_ANGULAR_BIAS_MAX (1.5)
 #define CAL_ANGULAR_BIAS_DEFAULT (1.0)
 
@@ -33,6 +33,7 @@ typedef struct _angular_params
 {
     DIR_TYPE direction;
     uint32   run_time;
+    float    heading;
     float    distance;
     float    mps;
     float    rps;

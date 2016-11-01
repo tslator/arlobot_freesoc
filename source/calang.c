@@ -32,9 +32,9 @@
  * Constants
  *-------------------------------------------------------------------------------------------------*/
 #define ANGULAR_BIAS_ANGLE (2*PI)   // rad
-#define ANGULAR_MAX_TIME (15000)
+#define ANGULAR_MAX_TIME (10000)
 #define ANGULAR_BIAS_DIR (DIR_CW)
-#define ANGULAR_BIAS_VELOCITY (ANGULAR_BIAS_DIR == DIR_CW ? -0.05 : 0.05) // rad/s
+#define ANGULAR_BIAS_VELOCITY (0.05) // rad/s
 
 
 /*---------------------------------------------------------------------------------------------------
@@ -46,10 +46,11 @@ static uint16 old_debug_control_enabled;
 
 static CAL_ANG_PARAMS angular_params = {ANGULAR_BIAS_DIR,
                                         ANGULAR_MAX_TIME, 
+                                        0.0,
                                         ANGULAR_BIAS_ANGLE,
                                         // There is no linear velocity because we are rotating in place
                                         0.0,                
-                                        ANGULAR_BIAS_VELOCITY};
+                                        ANGULAR_BIAS_DIR == DIR_CW ? -ANGULAR_BIAS_VELOCITY : ANGULAR_BIAS_VELOCITY};
 
 static uint8 Init(CAL_STAGE_TYPE stage, void *params);
 static uint8 Start(CAL_STAGE_TYPE stage, void *params);
@@ -77,22 +78,31 @@ static CALIBRATION_TYPE angular_calibration = {CAL_INIT_STATE,
  *             direction - the direction of the move, i.e., CW or CCW 
  * Return: uint8 - TRUE if the move is complete; otherwise, FALSE
  *-------------------------------------------------------------------------------------------------*/
-static uint8 IsMoveFinished(float distance, DIR_TYPE direction)
+static uint8 IsMoveFinished(DIR_TYPE direction, float *heading, float *distance)
 {
-    float heading;
-    float delta_dist;
-    char delta_dist_str[10];
+    float new_heading;
+    char heading_str[10];
+    char distance_str[10];
+    char new_heading_str[10];
+    
+    ftoa(*heading, heading_str, 3);
+    ftoa(*distance, distance_str, 3);
 
-    /* Heading ranges from -PI to PI
-       In order to more easily track position we heading to 0 to 2*PI
-     */
-    heading = NormalizeHeading(Odom_GetHeading(), direction);
-
-    delta_dist = distance - heading;
-    ftoa(delta_dist, delta_dist_str, 6);
-    Ser_PutStringFormat("delta distance: %s", delta_dist_str);
-
-    if( delta_dist <= 0.0 )
+    new_heading = NormalizeHeading(Odom_GetHeading(), direction);
+    
+    ftoa(new_heading, new_heading_str, 3);
+    
+    //Ser_PutStringFormat("heading: %s, distance: %s, new_heading: %s\r\n", heading_str, distance_str, new_heading_str);
+    if (new_heading >= *heading)
+    {
+        *distance -= new_heading - *heading;
+        if( *distance <= 0.0 )
+        {
+            return TRUE;
+        }
+        *heading = new_heading;
+    }
+    else
     {
         return TRUE;
     }
@@ -132,6 +142,9 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
             Ser_PutString("\r\nAngular Calibration\r\n");
             Ser_PutString("\r\nPlace a mark on the floor corresponding to the center of one of the wheels\r\n");
 
+            p_ang_params->distance = ANGULAR_BIAS_ANGLE;
+            p_ang_params->rps = p_ang_params->direction == DIR_CW ? -ANGULAR_BIAS_VELOCITY : ANGULAR_BIAS_VELOCITY;
+            
             break;
 
         case CAL_VALIDATE_STAGE:
@@ -139,6 +152,9 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 
             Ser_PutStringFormat("\r\n%s Angular validation\r\n", 
                                 p_ang_params->direction == DIR_CW ? "Clockwise" : "Counter Clockwise");
+            
+            p_ang_params->distance = ANGULAR_BIAS_ANGLE;
+            p_ang_params->rps = p_ang_params->direction == DIR_CW ? -ANGULAR_BIAS_VELOCITY : ANGULAR_BIAS_VELOCITY;
             break;
 
         default:
@@ -166,7 +182,8 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
     Pid_Reset();
     Odom_Reset();
 
-    UniToDiff(p_ang_params->mps, p_ang_params->rps, &left, &right);
+    UniToDiff(p_ang_params->mps, p_ang_params->rps, &left, &right);    
+    p_ang_params->heading = NormalizeHeading(Odom_GetHeading(), p_ang_params->direction);
 
     switch (stage)
     {
@@ -215,9 +232,10 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
     {
         case CAL_CALIBRATE_STAGE:
         case CAL_VALIDATE_STAGE:
+        
             if (millis() - start_time < p_ang_params->run_time)
             {
-                if (IsMoveFinished(p_ang_params->distance, p_ang_params->direction))
+                if (IsMoveFinished(p_ang_params->direction, &p_ang_params->heading, &p_ang_params->distance))
                 {
                     end_time = millis();
                     return CAL_COMPLETE;
@@ -292,6 +310,8 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
     char right_dist_str[10];
     char heading_str[10];
     char angular_bias_str[10];
+    
+    params = params;
 
     left_dist = Encoder_LeftGetDist();
     right_dist = Encoder_RightGetDist();
@@ -309,14 +329,6 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
         
     switch (stage)
     {
-        case CAL_VALIDATE_STAGE:
-            Ser_PutString("\r\nPrinting Angular validation results\r\n");
-            /* Get the left, right and average distance traveled
-                Need to capture the left, right delta distance at the start (probably 0 because odometry is reset)
-                We want to see how far each wheel went and compute the error
-               */
-            break;
-
         case CAL_CALIBRATE_STAGE:
             Ser_PutString("\r\nMeasure the rotate traveled by the robot.");
             Ser_PutString("\r\nEnter the rotation (in degrees): ");
@@ -326,7 +338,7 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
             /* If the actual rotation is less than 360.0 then each delta is too small, i.e., lengthen delta by 360/rotation
                If the actual rotation is greater than 360.0 then each delta is too small, i.e., shorten delta by rotation/360
              */
-            float bias = rot_in_degrees >= 360.0 ? bias = 360.0 / rot_in_degrees : rot_in_degrees / 360.0;
+            float bias = rot_in_degrees >= 360.0 ? 360.0 / rot_in_degrees : rot_in_degrees / 360.0;
     
             ftoa(bias, angular_bias_str, 3);
             Ser_PutStringFormat("New Angular Bias: %s\r\n", angular_bias_str);
@@ -334,6 +346,16 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
             Nvstore_WriteFloat(bias, (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias));
             Cal_SetCalibrationStatusBit(CAL_ANGULAR_BIT);
             
+            break;
+            
+        case CAL_VALIDATE_STAGE:
+            Ser_PutString("\r\nPrinting Angular validation results\r\n");
+            /* Get the left, right and average distance traveled
+                Need to capture the left, right delta distance at the start (probably 0 because odometry is reset)
+                We want to see how far each wheel went and compute the error
+               */
+            break;
+
         default:
             break;    
     }

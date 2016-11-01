@@ -51,29 +51,29 @@
 #define CAL_MOTOR_CMD       'a'
 #define CAL_PID_LEFT_CMD    'b'
 #define CAL_PID_RIGHT_CMD   'c'
-#define CAL_LINEAR_CMD      'd'
-#define CAL_ANGULAR_CMD     'e'
+#define CAL_LINEAR_CMD      'e'
+#define CAL_ANGULAR_CMD     'f'
 #define CAL_FIRST_CMD       CAL_MOTOR_CMD
 #define CAL_LAST_CMD        CAL_ANGULAR_CMD
 
 #define VAL_MOTOR_CMD           'a'
 #define VAL_PID_CMD             'b'
 #define VAL_PID_LEFT_FWD_CMD    'c'
-#define VAL_PID_LEFT_BWD_CMD    'd'
-#define VAL_PID_RIGHT_FWD_CMD   'e'
-#define VAL_PID_RIGHT_BWD_CMD   'f'
-#define VAL_LINEAR_FWD_CMD      'g'
-#define VAL_LINEAR_BWD_CMD      'h'
-#define VAL_ANGULAR_CW_CMD      'i'
-#define VAL_ANGULAR_CCW_CMD     'j'
+#define VAL_PID_LEFT_BWD_CMD    'e'
+#define VAL_PID_RIGHT_FWD_CMD   'f'
+#define VAL_PID_RIGHT_BWD_CMD   'g'
+#define VAL_LINEAR_FWD_CMD      'h'
+#define VAL_LINEAR_BWD_CMD      'i'
+#define VAL_ANGULAR_CW_CMD      'j'
+#define VAL_ANGULAR_CCW_CMD     'k'
 #define VAL_FIRST_CMD           VAL_MOTOR_CMD
 #define VAL_LAST_CMD            VAL_ANGULAR_CCW_CMD
 
 #define DISP_MOTOR_LEFT_CMD  'a'
 #define DISP_MOTOR_RIGHT_CMD 'b'
 #define DISP_PID_CMD         'c'
-#define DISP_BIAS_CMD        'd'
-#define DISP_ALL_CMD         'e'
+#define DISP_BIAS_CMD        'e'
+#define DISP_ALL_CMD         'f'
 #define DISP_FIRST_CMD       DISP_MOTOR_LEFT_CMD
 #define DISP_LAST_CMD        DISP_ALL_CMD
 
@@ -249,7 +249,7 @@ static void DisplayValMenu()
     Ser_PutString("The following validation operations are allowed:\r\n");
     Ser_PutStringFormat("    %c. Motor Validation - operates the motors at varying velocities.\r\n", VAL_MOTOR_CMD);
     Ser_PutStringFormat("    %c. PID Validation - operates the motors at varying velocities, moves in a straight line and rotates in place.\r\n",VAL_PID_CMD);
-    Ser_PutStringFormat("    %c. Left PID (forward) Validation - operates the left motor in the forward direction at various velocities.\r\n", VAL_PID_LEFT_BWD_CMD);
+    Ser_PutStringFormat("    %c. Left PID (forward) Validation - operates the left motor in the forward direction at various velocities.\r\n", VAL_PID_LEFT_FWD_CMD);
     Ser_PutStringFormat("    %c. Left PID (backward) Validation - operates the left motor in the backward direction at various velocities.\r\n", VAL_PID_LEFT_BWD_CMD);
     Ser_PutStringFormat("    %c. Right PID (forward) Validation - operates the right motor in the forward direction at various velocities.\r\n", VAL_PID_RIGHT_FWD_CMD);
     Ser_PutStringFormat("    %c. Right PID (backward) Validation - operates the right motor in the backward direction at various velocities.\r\n", VAL_PID_RIGHT_BWD_CMD);
@@ -368,12 +368,19 @@ static void ProcessSettingsCmd(uint8 cmd)
         case DISP_ALL_CMD:
             Ser_WriteByte(cmd);
             Ser_PutString("\r\nDisplaying all calibration/settings\r\n");
+            Cal_PrintSamples("Left-Backward", (int32 *) p_cal_eeprom->left_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_bwd.pwm_data);
+            Cal_PrintSamples("Left-Forward", (int32 *) p_cal_eeprom->left_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_fwd.pwm_data);
+            Cal_PrintSamples("Right-Backward", (int32 *) p_cal_eeprom->right_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_bwd.pwm_data);
+            Cal_PrintSamples("Right-Forward", (int32 *) p_cal_eeprom->right_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_fwd.pwm_data);
+            Cal_PrintGains("Left PID", (float *) &p_cal_eeprom->left_gains);
+            Cal_PrintGains("Right PID", (float *) &p_cal_eeprom->right_gains);
+            Cal_PrintBias();
 
             DisplaySettingsMenu();
             break;
             
         default:
-            Ser_PutStringFormat("\r\nUnknown command: %c\r\n", cmd);
+            // Do nothing
             break;
     }
 }
@@ -458,7 +465,7 @@ static CALIBRATION_TYPE* GetCalibration(uint8 cmd)
             break;
             
         default:
-            Ser_PutStringFormat("\r\nUnknown command: %c\r\n", cmd);
+            // Do nothing
             break;
     }
     
@@ -565,7 +572,8 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
             break;
 
         default:
-            Ser_PutStringFormat("\r\nUnknown command: %c\r\n", cmd);
+            //Ser_PutStringFormat("\r\nUnknown command: %c\r\n", cmd);
+            // Do nothing
             break;
 
     }

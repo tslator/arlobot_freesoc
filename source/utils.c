@@ -530,30 +530,47 @@ uint16 CpsToPwm(int32 cps, int32 *cps_data, uint16 *pwm_data, uint8 data_size)
  *-------------------------------------------------------------------------------------------------*/
 float NormalizeHeading(float heading, DIR_TYPE direction)
 {
-    float result;
+    float result = 0.0;
 
-    if( direction != DIR_CW || direction != DIR_CCW )
+    if( direction != DIR_CW && direction != DIR_CCW )
     {
-        return 0.0;
+        return result;
     }
 
-    if( heading >= -PI && heading <= 0.0 )
+    if (direction == DIR_CW)
     {
-        /* If the direction is CW then the heading will range from 0 to -Pi
-                adjust heading by taking absolute value
-           If the direction is CCW then the heading will range from -Pi to 0
-                adjust heading to be Pi to 2*Pi
-         */
-        result = direction == DIR_CW ? abs(heading) : 2*PI - abs(heading);
+        if( heading >= -PI && heading <= 0.0 )
+        {
+            /* If the direction is CW and the heading ranges from 0 to -Pi
+                    adjust heading by taking absolute value
+             */
+            result = abs(heading);
+        }
+        else
+        {
+            /*   If the direction is CW and the heading ranges from Pi to 0
+                    adjust heading to be Pi to 2*Pi
+             */
+            result = 2*PI - heading;
+        }
     }
-    else
+    else if (direction == DIR_CCW)
     {
-        /* If the direction is CW then the heading will range from Pi to 0
-                adjust heading to be Pi to 2*Pi
-           If the direction is CCW then the heading will range from 0 to Pi
-                use the heading
-         */
-        result = direction == DIR_CW ? 2*PI - heading : heading;
+        if( heading >= 0.0 && heading <= PI )
+        {
+            /*
+               If the direction is CCW and the heading ranges from 0 to Pi
+                    use the heading
+             */
+            result = heading;
+        }
+        else
+        {
+            /* If the direction is CCW and the heading ranges from -Pi to 0
+                    adjust heading to be Pi to 2*Pi
+             */
+            result = 2*PI - abs(heading);
+        }
     }
 
     return result;

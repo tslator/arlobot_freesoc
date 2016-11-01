@@ -37,6 +37,8 @@
 #define USBUART_BUFFER_SIZE (64u)
 #define LINE_STR_LENGTH     (20u)
 
+#define MAX_STRING_LENGTH (255)
+
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
@@ -127,14 +129,14 @@ void Ser_PutString(char *str)
     }
 }
 
-void Ser_PutStringFormat(char *fmt, ...)
+void Ser_PutStringFormat(const char *fmt, ...)
 {
-    char str[255];
-    va_list args;
+    char str[MAX_STRING_LENGTH];
+    va_list ap;
 
-    va_start(args, fmt);
-    vprintf(str, args);
-    va_end(args);
+    va_start(ap, fmt);
+    vsnprintf(str, MAX_STRING_LENGTH, fmt, ap);
+    va_end(ap);       
     
     Ser_PutString(str);
     
