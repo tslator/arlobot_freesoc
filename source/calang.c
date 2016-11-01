@@ -81,18 +81,9 @@ static CALIBRATION_TYPE angular_calibration = {CAL_INIT_STATE,
 static uint8 IsMoveFinished(DIR_TYPE direction, float *heading, float *distance)
 {
     float new_heading;
-    char heading_str[10];
-    char distance_str[10];
-    char new_heading_str[10];
-    
-    ftoa(*heading, heading_str, 3);
-    ftoa(*distance, distance_str, 3);
 
     new_heading = NormalizeHeading(Odom_GetHeading(), direction);
     
-    ftoa(new_heading, new_heading_str, 3);
-    
-    //Ser_PutStringFormat("heading: %s, distance: %s, new_heading: %s\r\n", heading_str, distance_str, new_heading_str);
     if (new_heading >= *heading)
     {
         *distance -= new_heading - *heading;

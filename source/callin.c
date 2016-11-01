@@ -77,32 +77,32 @@ static CALIBRATION_TYPE linear_calibration = {CAL_INIT_STATE,
  * Functions
  *-------------------------------------------------------------------------------------------------*/
 
-static uint8 IsMoveFinished(float target, DIR_TYPE direction)
+static uint8 IsMoveFinished(float *distance)
 {
+    static float last_left_dist = 0.0;
+    static float last_right_dist = 0.0;
     float left_dist;
     float right_dist;
+    
     float delta_left_dist;
     float delta_right_dist;
 
     left_dist = Encoder_LeftGetDist();
     right_dist = Encoder_RightGetDist();
 
-    delta_left_dist = target - left_dist;
-    delta_right_dist = target - right_dist;
-
-    if( direction == DIR_FORWARD )
+    delta_left_dist = left_dist - last_left_dist;
+    delta_right_dist = right_dist - last_right_dist;
+    last_left_dist = left_dist;
+    last_right_dist = right_dist;
+    
+    *distance -= min(abs(delta_left_dist), abs(delta_right_dist));
+    
+    if ( *distance <= 0.0 )
     {
-        if ( delta_left_dist <= 0.0 && delta_right_dist <= 0.0 )
-        {
-            return TRUE;
-        }
-    }
-    else
-    {
-        if( delta_left_dist >= 0.0 && delta_right_dist >= 0.0 )
-        {
-            return TRUE;
-        }
+        /* Reinitialize the last_left/right for the next execution */
+        last_left_dist = 0.0;
+        last_right_dist = 0.0;
+        return TRUE;
     }
 
     return FALSE;
@@ -123,6 +123,11 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
     
     old_debug_control_enabled = debug_control_enabled;
         
+    p_lin_params->distance = p_lin_params->direction == DIR_FORWARD ? LINEAR_DISTANCE : -LINEAR_DISTANCE;
+    p_lin_params->mps = p_lin_params->direction == DIR_FORWARD ? LINEAR_VELOCITY : -LINEAR_VELOCITY;
+    Cal_SetLeftRightVelocity(0, 0);
+    Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
+    
     switch (stage)
     {
         case CAL_CALIBRATE_STAGE:
@@ -137,10 +142,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
             Ser_PutString("\r\nLinear Calibration\r\n");
             Ser_PutString("\r\nPlace a meter stick along side the robot starting centered");
             Ser_PutString("\r\non the wheel and extending toward the front of the robot\r\n");
-            
-            Cal_SetLeftRightVelocity(0, 0);
-            Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
-            
+                        
             debug_control_enabled = DEBUG_ODOM_ENABLE_BIT | DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT;
             
             break;            
@@ -149,9 +151,6 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
             Ser_PutStringFormat("\r\n%s Linear validation\r\n", 
                                 p_lin_params->direction == DIR_FORWARD ? "Forward" : "Backward");
 
-            Cal_SetLeftRightVelocity(0, 0);
-            Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
-            
             debug_control_enabled = DEBUG_ODOM_ENABLE_BIT;
             
             break;
@@ -206,7 +205,6 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
 
 
     /* Because the encoder is reset above, the left/right distances will be 0.0 and the target is just the distance */
-    p_lin_params->target = p_lin_params->distance;
     Cal_SetLeftRightVelocity(p_lin_params->mps, p_lin_params->mps);
     start_time = millis();
 
@@ -229,14 +227,15 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
     switch (stage)
     {
         case CAL_CALIBRATE_STAGE:
-        case CAL_VALIDATE_STAGE:
+        case CAL_VALIDATE_STAGE:        
             if (millis() - start_time < p_lin_params->run_time)
             {
-                if( IsMoveFinished(p_lin_params->target, p_lin_params->direction) )
+                if( IsMoveFinished(&p_lin_params->distance) )
                 {
                     end_time = millis();
                     return CAL_COMPLETE;
                 }
+                return CAL_OK;
             }
             end_time = millis();
             Ser_PutString("\r\nRun time expired\r\n");
@@ -263,7 +262,7 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
 
     Cal_SetLeftRightVelocity(0, 0);
     /* I found that setting the velocities to 0 didn't immediately stop the motors before the calibration prompt for
-       the actual distance traveled.  Maybe that has to do with the PIDs, but calling SetPwm on the motor guarantees
+       the distance traveled.  Maybe that has to do with the PIDs, but calling SetPwm on the motor guarantees
        the motors will be stopped which is what we want.  It just seems heavy handed :-)
      */
     Motor_SetPwm(PWM_STOP, PWM_STOP);
@@ -307,6 +306,8 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
     char right_dist_str[10];
     char heading_str[10];
     char linear_bias_str[10];
+    
+    params = params;
 
     left_dist = Encoder_LeftGetDist();
     right_dist = Encoder_RightGetDist();
