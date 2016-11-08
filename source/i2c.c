@@ -81,8 +81,8 @@
            <------ Odometry ------>
       16           4         [left speed]                   measured left speed
       20           4         [right speed]                  measured right speed
-      24           4         [left delta distance]          measured delta left distance 
-      28           4         [right delta distance]         measured delta right distance
+      24           4         [left distance]                measured left distance 
+      28           4         [right distance]               measured right distance
       32           4         [heading]                      measured heading
           <------ Ultrasonic ------>
       36          64         [ultrasonic distance]          ultrasonic distance is an array of 
