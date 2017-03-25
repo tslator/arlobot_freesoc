@@ -47,9 +47,9 @@ The read/write section defines control bits (device and debug) and left/right ve
 The read-only section defines status (device and calibration), odometry (left/right speed, left/right distance, and heading), front and read sensor readings (ultrasonic and infrared).
 
 ### RS-232
+The Freesoc has two USB ports: one attached to the programmer and one attached to the Psoc5LP.  Both can be used, but presently, only the
+5LP USB port is being used.  The USB port serves dual purpose for debugging messages and also as a calibration terminal interface.  The
+terminal interface is available when calibration mode is entered.  A menu system is used to select and perform various calibration
+operations.  The results of calibration are stored in NVRAM.
 
-#### UART
-
-#### USB
-
-Freesoc2 Implementation for the Arlobot Robot
+![alt text](https://github.com/tslator/arlobot_freesoc/raw/master/images/comms.png "Figure 3")
