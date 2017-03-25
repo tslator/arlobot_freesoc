@@ -132,14 +132,14 @@ static float RightTarget()
 void Cal_ClearCalibrationStatusBit(uint16 bit)
 {
     uint16 status = p_cal_eeprom->status &= ~bit;
-    Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
+    //Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
     I2c_ClearCalibrationStatusBit(bit);
 }
 
 void Cal_SetCalibrationStatusBit(uint16 bit)
 {
     uint16 status = p_cal_eeprom->status | bit;
-    Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
+    //Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
     I2c_SetCalibrationStatusBit(bit);   
 }
 

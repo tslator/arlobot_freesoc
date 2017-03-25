@@ -87,7 +87,7 @@ void Nvstore_WriteBytes(uint8 *bytes, uint16 num_bytes, uint16 offset)
         uint16 start = (row_offset * CYDEV_EEPROM_ROW_SIZE) + first_partial_row_start;
         for (ii = 0; ii < partial_row_num_bytes; ++ii)
         {
-            EEPROM_WriteByte(bytes[index], start + ii);
+            //EEPROM_WriteByte(bytes[index], start + ii);
             index++;
             num_bytes--;
         }
@@ -101,7 +101,7 @@ void Nvstore_WriteBytes(uint8 *bytes, uint16 num_bytes, uint16 offset)
         // Write out all of the full rows
         for (ii = 0; ii < num_full_rows; ++ii)
         {
-            EEPROM_Write(&bytes[index], row_offset);
+            //EEPROM_Write(&bytes[index], row_offset);
             index += CYDEV_EEPROM_ROW_SIZE;
             num_bytes -= CYDEV_EEPROM_ROW_SIZE;
             row_offset++;
@@ -117,7 +117,7 @@ void Nvstore_WriteBytes(uint8 *bytes, uint16 num_bytes, uint16 offset)
         uint16 start = row_offset * CYDEV_EEPROM_ROW_SIZE;
         for (ii = 0; ii < num_remaining; ++ii)
         {
-            EEPROM_WriteByte(bytes[index], start + ii);
+            //EEPROM_WriteByte(bytes[index], start + ii);
             index++;
             num_bytes--;
         }
@@ -142,7 +142,7 @@ void Nvstore_WriteUint16(uint16 value, uint16 offset)
     Uint16ToTwoBytes(value, bytes);
     for (ii = 0; ii < sizeof(uint16); ++ii)
     {
-        EEPROM_WriteByte(bytes[ii], offset + ii);
+        //EEPROM_WriteByte(bytes[ii], offset + ii);
     }
 }
 
@@ -162,6 +162,6 @@ void Nvstore_WriteFloat(float value, uint16 offset)
     FloatToFourBytes(value, bytes);
     for (ii = 0; ii < sizeof(float); ++ii)
     {
-        EEPROM_WriteByte(bytes[ii], offset + ii); 
+        //EEPROM_WriteByte(bytes[ii], offset + ii); 
     }
 }
