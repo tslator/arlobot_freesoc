@@ -22,13 +22,11 @@ Parallax.  It was part of the first Arlobot but it has been replaced with a diff
 #### Initialization
 The HB25 has a specific startup sequence.  Those who have read through the forums on the Parallax site will know about the power on 
 sequence between the Propeller board and the HB25 motor drivers.  Using the Psoc and some digital logic, I was able to implement the 
-startup sequence in hardware and eliminate the need for any manual sequencing (figure 1).
+startup sequence in hardware and eliminate the need for any manual sequencing [Figure 1](https://github.com/tslator/arlobot_freesoc/images/hb25.png).
 
 #### PWM
 The HB25 presents a servo control interface.  It accepts signal and Vcc inputs.  The Psoc5 provides drag-and-drop PWM component implemented
 in hardware via UDBs.  Each PWM is 16-bit and driven at 1MHz providing microsecond resolution.
-
-[HB25]: https://github.com/tslator/arlobot_freesoc/images/hb25.png "Figure 1"
 
 ### Encoders
 
