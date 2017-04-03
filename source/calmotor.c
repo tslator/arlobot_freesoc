@@ -726,11 +726,9 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Update(CAL_STAGE_TYPE stage, void *params)
 {
-    uint16 last_debug_control_enabled;
-
     params = params;
     
-    last_debug_control_enabled = debug_control_enabled;
+    DEBUG_SAVE();
     
     switch (stage)
     {
@@ -743,7 +741,7 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
         
             Motor_SetPwm(PWM_STOP, PWM_STOP);
 
-            debug_control_enabled = DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_LEFT_MOTOR_ENABLE_BIT;
+            DEBUG_SET(DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_LEFT_MOTOR_ENABLE_BIT);
 
             Ser_PutString("Left-Forward Calibration\r\n");
             CalibrateWheelSpeed(WHEEL_LEFT, DIR_FORWARD);
@@ -751,7 +749,7 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
             Ser_PutString("Left-Backward Calibration\r\n");
             CalibrateWheelSpeed(WHEEL_LEFT, DIR_BACKWARD);
             
-            debug_control_enabled = DEBUG_RIGHT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_MOTOR_ENABLE_BIT;
+            DEBUG_SET(DEBUG_RIGHT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_MOTOR_ENABLE_BIT);
 
             Ser_PutString("Right-Forward Calibration\r\n");
             CalibrateWheelSpeed(WHEEL_RIGHT, DIR_FORWARD);
@@ -759,7 +757,7 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
             Ser_PutString("Right-Backward Calibration\r\n");
             CalibrateWheelSpeed(WHEEL_RIGHT, DIR_BACKWARD);
 
-            debug_control_enabled = last_debug_control_enabled;
+            DEBUG_RESTORE();
 
             return CAL_COMPLETE;
             break;

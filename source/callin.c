@@ -50,7 +50,6 @@
  *-------------------------------------------------------------------------------------------------*/
 static uint32 start_time;
 static uint32 end_time;
-static uint16 old_debug_control_enabled;
 
 static CAL_LIN_PARAMS linear_params = {DIR_FORWARD, 
                                        LINEAR_MAX_TIME, 
@@ -121,7 +120,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 {
     CAL_LIN_PARAMS *p_lin_params = (CAL_LIN_PARAMS *)params;
     
-    old_debug_control_enabled = debug_control_enabled;
+    DEBUG_SAVE();
         
     p_lin_params->distance = p_lin_params->direction == DIR_FORWARD ? LINEAR_DISTANCE : -LINEAR_DISTANCE;
     p_lin_params->mps = p_lin_params->direction == DIR_FORWARD ? LINEAR_VELOCITY : -LINEAR_VELOCITY;
@@ -143,7 +142,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
             Ser_PutString("\r\nPlace a meter stick along side the robot starting centered");
             Ser_PutString("\r\non the wheel and extending toward the front of the robot\r\n");
                         
-            debug_control_enabled = DEBUG_ODOM_ENABLE_BIT | DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT;
+            DEBUG_SET(DEBUG_ODOM_ENABLE_BIT | DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT);
             
             break;            
             
@@ -151,7 +150,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
             Ser_PutStringFormat("\r\n%s Linear validation\r\n", 
                                 p_lin_params->direction == DIR_FORWARD ? "Forward" : "Backward");
 
-            debug_control_enabled = DEBUG_ODOM_ENABLE_BIT;
+            DEBUG_SET(DEBUG_ODOM_ENABLE_BIT);
             
             break;
 
@@ -267,7 +266,7 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
      */
     Motor_SetPwm(PWM_STOP, PWM_STOP);
     Pid_RestoreLeftRightTarget();    
-    debug_control_enabled = old_debug_control_enabled;    
+    DEBUG_RESTORE();    
     
     switch (stage)
     {

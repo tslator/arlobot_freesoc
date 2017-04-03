@@ -43,7 +43,6 @@
  * Variables
  *-------------------------------------------------------------------------------------------------*/
 static uint32 start_time;
-static uint16 old_debug_control_enabled;
 
 static CAL_PID_PARAMS left_pid_params = {"left", PID_TYPE_LEFT, DIR_FORWARD, 5000};
 static CAL_PID_PARAMS right_pid_params = {"right", PID_TYPE_RIGHT, DIR_FORWARD, 5000};
@@ -241,16 +240,16 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
             Cal_SetLeftRightVelocity(0, 0);
             Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
 
-            old_debug_control_enabled = debug_control_enabled;
+            DEBUG_SAVE();
 
             switch (p_pid_params->pid_type)
             {
                 case PID_TYPE_LEFT:
-                    debug_control_enabled = DEBUG_LEFT_PID_ENABLE_BIT;
+                    DEBUG_SET(DEBUG_LEFT_PID_ENABLE_BIT);
                     break;
                     
                 case PID_TYPE_RIGHT:
-                    debug_control_enabled = DEBUG_RIGHT_PID_ENABLE_BIT;
+                    DEBUG_SET(DEBUG_RIGHT_PID_ENABLE_BIT);
                     break;
             }        
             break;
@@ -258,7 +257,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
         case CAL_VALIDATE_STAGE:
             Ser_PutStringFormat("\r\n%s PID validation\r\n", p_pid_params->name);
             
-            old_debug_control_enabled = debug_control_enabled;
+            DEBUG_SAVE();
 
             Cal_CalcTriangularProfile(MAX_NUM_VELOCITIES, 0.2, 0.8, val_fwd_cps, val_bwd_cps);
             
@@ -269,11 +268,11 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
             switch (p_pid_params->pid_type)
             {
                 case PID_TYPE_LEFT:
-                    debug_control_enabled = DEBUG_LEFT_PID_ENABLE_BIT | DEBUG_LEFT_ENCODER_ENABLE_BIT;
+                    DEBUG_SET(DEBUG_LEFT_PID_ENABLE_BIT | DEBUG_LEFT_ENCODER_ENABLE_BIT);
                     break;
                 
                 case PID_TYPE_RIGHT:
-                    debug_control_enabled = DEBUG_RIGHT_PID_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT;
+                    DEBUG_SET(DEBUG_RIGHT_PID_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT);
                     break;
             }
             break;
@@ -436,7 +435,7 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
             break;
     }
             
-    debug_control_enabled = old_debug_control_enabled;    
+    DEBUG_RESTORE();    
 
     return CAL_OK;
 }

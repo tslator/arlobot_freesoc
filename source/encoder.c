@@ -33,13 +33,13 @@
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
 #ifdef  LEFT_ENC_DUMP_ENABLED     
-#define LEFT_DUMP_ENC(enc)  if (debug_control_enabled & DEBUG_LEFT_ENCODER_ENABLE_BIT) DumpEncoder(enc)
+#define LEFT_DUMP_ENC(enc)  if (DEBUG_LEFT_ENCODER_ENABLED) DumpEncoder(enc)
 #else
 #define LEFT_DUMP_ENC(enc)
 #endif    
 
 #ifdef RIGHT_ENC_DUMP_ENABLED
-#define RIGHT_DUMP_ENC(enc)  if (debug_control_enabled & DEBUG_RIGHT_ENCODER_ENABLE_BIT) DumpEncoder(enc)
+#define RIGHT_DUMP_ENC(enc)  if (DEBUG_RIGHT_ENCODER_ENABLED) DumpEncoder(enc)
 #else
 #define RIGHT_DUMP_ENC(enc)
 #endif
@@ -120,23 +120,20 @@ static char linear_bias_str[10];
  *-------------------------------------------------------------------------------------------------*/
  static void DumpEncoder(ENCODER_TYPE *enc)
 {
-    if (ENCODER_DEBUG_CONTROL_ENABLED)
-    {
-        ftoa(enc->avg_cps, avg_cps_str, 3);
-        ftoa(enc->avg_delta_count, avg_delta_count_str, 3);
-        ftoa(enc->avg_mps, avg_mps_str, 3);
-        ftoa(enc->dist, dist_str, 3);
-        ftoa(linear_bias, linear_bias_str, 3);
-    
-        DEBUG_PRINT_ARG("%s enc: %s %s %s %ld %s %s\r\n", 
-                        enc->name, 
-                        avg_cps_str, 
-                        avg_mps_str, 
-                        avg_delta_count_str, 
-                        enc->delta_count, 
-                        dist_str,
-                        linear_bias_str);
-    }
+    ftoa(enc->avg_cps, avg_cps_str, 3);
+    ftoa(enc->avg_delta_count, avg_delta_count_str, 3);
+    ftoa(enc->avg_mps, avg_mps_str, 3);
+    ftoa(enc->dist, dist_str, 3);
+    ftoa(linear_bias, linear_bias_str, 3);
+
+    DEBUG_PRINT_ARG("%s enc: %s %s %s %ld %s %s\r\n", 
+                    enc->name, 
+                    avg_cps_str, 
+                    avg_mps_str, 
+                    avg_delta_count_str, 
+                    enc->delta_count, 
+                    dist_str,
+                    linear_bias_str);
 }
 #endif
 

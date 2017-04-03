@@ -31,18 +31,19 @@
 #include "odom.h"
 #include "control.h"
 #include "pidutil.h"
+#include "debug.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
 #ifdef LEFT_PID_DUMP_ENABLED
-#define LEFT_DUMP_PID()  if (debug_control_enabled & DEBUG_LEFT_PID_ENABLE_BIT) DumpPid(left_pid.name, &left_pid.pid, left_pid.get_pwm())
+#define LEFT_DUMP_PID()  if (DEBUG_LEFT_PID_ENABLED) DumpPid(left_pid.name, &left_pid.pid, left_pid.get_pwm())
 #else
 #define  LEFT_DUMP_PID()
 #endif
 
 #ifdef RIGHT_PID_DUMP_ENABLED
-#define RIGHT_DUMP_PID()  if (debug_control_enabled & DEBUG_RIGHT_PID_ENABLE_BIT) DumpPid(right_pid.name, &right_pid.pid, right_pid.get_pwm())
+#define RIGHT_DUMP_PID()  if (DEBUG_RIGHT_PID_ENABLED) DumpPid(right_pid.name, &right_pid.pid, right_pid.get_pwm())
 #else
 #define RIGHT_DUMP_PID()
 #endif

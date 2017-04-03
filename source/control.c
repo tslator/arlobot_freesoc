@@ -85,20 +85,24 @@ void Control_Start()
 void Control_Update()
 {
     uint32 timeout;
-    uint16 control;
+    uint16 device_control;
+    uint16 debug_control;
     
-    control = I2c_ReadDeviceControl();
-    if (control & CONTROL_DISABLE_MOTOR_BIT)
+    device_control = I2c_ReadDeviceControl();
+    if (device_control & CONTROL_DISABLE_MOTOR_BIT)
     {
         Motor_Stop();
     }
     
-    if (control & CONTROL_CLEAR_ODOMETRY_BIT)
+    debug_control = I2c_ReadDebugControl();
+    Debug_Update(debug_control);
+    
+    if (device_control & CONTROL_CLEAR_ODOMETRY_BIT)
     {
         Odom_Reset();
     }
     
-    if (control & CONTROL_CLEAR_CALIBRATION)
+    if (device_control & CONTROL_CLEAR_CALIBRATION)
     {
         Cal_Clear();
     }

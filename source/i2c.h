@@ -23,6 +23,12 @@
  *-------------------------------------------------------------------------------------------------*/    
 #define STATUS_HB25_CNTRL_INIT_BIT (0x0001)
 
+#define ENCODER_DEBUG_BIT   (0x0001)
+#define PID_DEBUG_BIT       (0x0002)
+#define MOTOR_DEBUG_BIT     (0x0004)
+#define ODOM_DEBUG_BIT      (0x0008)
+#define SAMPLE_DEBUG_BIT    (0x0010)
+
 /*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
@@ -39,7 +45,7 @@ void I2c_Init();
 void I2c_Start();
 
 uint16 I2c_ReadDeviceControl();
-void I2c_ReadDebugControl();
+uint16 I2c_ReadDebugControl();
 void I2c_ReadCmdVelocity(float *left, float *right, uint32 *timeout);
 
 void I2c_SetDeviceStatusBit(uint16 bit);

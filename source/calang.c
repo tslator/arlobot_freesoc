@@ -42,7 +42,6 @@
  *-------------------------------------------------------------------------------------------------*/
 static uint32 start_time;
 static uint32 end_time;
-static uint16 old_debug_control_enabled;
 
 static CAL_ANG_PARAMS angular_params = {ANGULAR_BIAS_DIR,
                                         ANGULAR_MAX_TIME, 
@@ -118,8 +117,8 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
     Cal_SetLeftRightVelocity(0, 0);
     Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
 
-    old_debug_control_enabled = debug_control_enabled;
-    debug_control_enabled = DEBUG_ODOM_ENABLE_BIT;
+    DEBUG_SAVE();
+    DEBUG_SET(DEBUG_ODOM_ENABLE_BIT);
 
     switch (stage)
     {
@@ -277,7 +276,7 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
             break;
     }
 
-    debug_control_enabled = old_debug_control_enabled;    
+    DEBUG_RESTORE();    
 
     return CAL_OK;
 }

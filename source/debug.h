@@ -75,9 +75,12 @@ char formatted_string[256];
                                     Ser_PutString(formatted_string);                                    \
                                     } while (0)
                                 
-#define ENCODER_DEBUG_CONTROL_ENABLED   (debug_control_enabled & DEBUG_LEFT_ENCODER_ENABLE_BIT || debug_control_enabled & DEBUG_RIGHT_ENCODER_ENABLE_BIT)
-#define PID_DEBUG_CONTROL_ENABLED       (debug_control_enabled & DEBUG_LEFT_PID_ENABLE_BIT ||        \
-                                         debug_control_enabled & DEBUG_RIGHT_PID_ENABLE_BIT )
+#define DEBUG_LEFT_ENCODER_ENABLED      (debug_control_enabled & DEBUG_LEFT_ENCODER_ENABLE_BIT)
+#define DEBUG_RIGHT_ENCODER_ENABLED     (debug_control_enabled & DEBUG_RIGHT_ENCODER_ENABLE_BIT)
+#define ENCODER_DEBUG_CONTROL_ENABLED   (DEBUG_LEFT_ENCODER_ENABLED || DEBUG_RIGHT_ENCODER_ENABLED)
+#define DEBUG_LEFT_PID_ENABLED          (debug_control_enabled & DEBUG_LEFT_PID_ENABLE_BIT)
+#define DEBUG_RIGHT_PID_ENABLED         (debug_control_enabled & DEBUG_RIGHT_PID_ENABLE_BIT)
+#define PID_DEBUG_CONTROL_ENABLED       (DEBUG_LEFT_PID_ENABLED || DEBUG_RIGHT_PID_ENABLED)
 #define MOTOR_DEBUG_CONTROL_ENABLED     (debug_control_enabled & DEBUG_LEFT_MOTOR_ENABLE_BIT || debug_control_enabled & DEBUG_RIGHT_MOTOR_ENABLE_BIT)
 #define ODOM_DEBUG_CONTROL_ENABLED      (debug_control_enabled & DEBUG_ODOM_ENABLE_BIT)
 #define SAMPLE_DEBUG_CONTROL_ENABLED    (debug_control_enabled & DEBUG_SAMPLE_ENABLE_BIT)
@@ -128,10 +131,17 @@ char formatted_string[256];
 
 #endif
 
+
+#define DEBUG_DISABLE()         (debug_control_enabled = 0)
+#define DEBUG_SAVE()            (saved_debug_control_enabled = debug_control_enabled)
+#define DEBUG_RESTORE()         (debug_control_enabled = saved_debug_control_enabled)
+#define DEBUG_SET(debug_bits)   (debug_control_enabled = debug_bits)
+
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/    
 uint16 debug_control_enabled;
+uint16 saved_debug_control_enabled;
     
 
 /*---------------------------------------------------------------------------------------------------
@@ -139,6 +149,7 @@ uint16 debug_control_enabled;
  *-------------------------------------------------------------------------------------------------*/    
 void Debug_Init();
 void Debug_Start();
+void Debug_Update(uint16 control);
 
 #endif
 

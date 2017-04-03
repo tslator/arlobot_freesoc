@@ -303,7 +303,7 @@ static void DisplayExit()
  *-------------------------------------------------------------------------------------------------*/
 static void DisplayMenu(CAL_STAGE_TYPE stage)
 {
-    debug_control_enabled = 0;
+    DEBUG_DISABLE();
     
     if (stage == CAL_CALIBRATE_STAGE)
     {

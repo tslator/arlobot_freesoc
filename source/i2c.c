@@ -29,11 +29,6 @@
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/    
-#define ENCODER_DEBUG_BIT   (0x0001)
-#define PID_DEBUG_BIT       (0x0002)
-#define MOTOR_DEBUG_BIT     (0x0004)
-#define ODOM_DEBUG_BIT      (0x0008)
-#define SAMPLE_DEBUG_BIT    (0x0010)
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -262,44 +257,12 @@ uint16 I2c_ReadDeviceControl()
  * Name: I2c_ReadDebugControl
  * Description: Accessor function used to read the debug control status.
  * Parameters: None
- * Return: None
+ * Return: Control value
  * 
  *-------------------------------------------------------------------------------------------------*/
-void I2c_ReadDebugControl()
+uint16 I2c_ReadDebugControl()
 {
-    i2c_debug = CY_GET_REG16(&i2c_buf.read_write.debug_control);
-    
-#ifdef COMMS_DEBUG_ENABLED
-    // When debug is enabled, the bitmap can be used to turn on/off specific debug, e.g., encoder, pid, odom, and motor.
-
-    debug_control_enabled = 0;
-    
-    if (i2c_debug & ENCODER_DEBUG_BIT)
-    {
-        debug_control_enabled |= DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT;
-    }
-    
-    if (i2c_debug & PID_DEBUG_BIT)
-    {
-        debug_control_enabled |= DEBUG_LEFT_PID_ENABLE_BIT | DEBUG_RIGHT_PID_ENABLE_BIT;
-    }
-    
-    if (i2c_debug & MOTOR_DEBUG_BIT)
-    {
-        debug_control_enabled |= DEBUG_LEFT_MOTOR_ENABLE_BIT | DEBUG_RIGHT_MOTOR_ENABLE_BIT;
-    }
-
-    if (i2c_debug & ODOM_DEBUG_BIT)
-    {
-        debug_control_enabled |= DEBUG_ODOM_ENABLE_BIT;
-    }
-    
-    if (i2c_debug & SAMPLE_DEBUG_BIT)
-    {
-        debug_control_enabled |= DEBUG_SAMPLE_ENABLE_BIT;
-    }
-    
-#endif
+    return i2c_buf.read_write.debug_control;
 }
 
 /*---------------------------------------------------------------------------------------------------
