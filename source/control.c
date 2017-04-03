@@ -24,13 +24,25 @@
  * Includes
  *-------------------------------------------------------------------------------------------------*/
 #include "control.h"
-#include "i2c.h"
 #include "motor.h"
 #include "cal.h"
 #include "time.h"
 #include "utils.h"
 #include "odom.h"
 #include "debug.h"
+#include "config.h"
+
+//#define ENABLE_I2CIF
+#define ENABLE_CANIF
+
+
+#ifdef ENABLE_I2CIF
+#include "i2cif.h"
+#endif
+
+#ifdef ENABLE_CANIF
+#include "canif.h"    
+#endif    
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -50,6 +62,41 @@ static float left_cmd_velocity;
 static float right_cmd_velocity;
 static uint8 debug_override;
 
+#ifdef ENABLE_I2CIF
+    
+#define READ_CMD_VELOCITY               I2CIF_ReadCmdVelocity
+#define READ_DEVICE_CONTROL             I2CIF_ReadDeviceControl
+#define READ_DEBUG_CONTROL              I2CIF_ReadDebugControl
+#define SET_DEVICE_STATUS_BIT           I2CIF_SetDeviceStatusBit
+#define CLEAR_DEVICE_STATUS_BIT         I2CIF_ClearDeviceStatusBit
+#define SET_CALIBRATION_STATUS          I2CIF_SetCalibrationStatus    
+#define SET_CALIBRATION_STATUS_BIT      I2CIF_SetCalibrationStatusBit
+#define CLEAR_CALIBRATION_STATUS_BIT    I2CIF_ClearCalibrationStatusBit
+#define WRITE_SPEED                     I2CIF_WriteSpeed
+#define WRITE_DISTANCE                  I2CIF_WriteDistance
+#define WRITE_HEADING                   I2CIF_WriteHeading
+#define UPDATE_HEATBEAT                 I2CIF_UpdateHeartbeat
+
+#endif
+
+#ifdef ENABLE_CANIF
+    
+#define READ_CMD_VELOCITY               CANIF_ReadCmdVelocity
+#define READ_DEVICE_CONTROL             CANIF_ReadDeviceControl
+#define READ_DEBUG_CONTROL              CANIF_ReadDebugControl
+#define SET_DEVICE_STATUS_BIT           CANIF_SetDeviceStatusBit
+#define CLEAR_DEVICE_STATUS_BIT         CANIF_ClearDeviceStatusBit
+#define SET_CALIBRATION_STATUS          CANIF_SetCalibrationStatus    
+#define SET_CALIBRATION_STATUS_BIT      CANIF_SetCalibrationStatusBit
+#define CLEAR_CALIBRATION_STATUS_BIT    CANIF_ClearCalibrationStatusBit
+#define WRITE_SPEED                     CANIF_WriteSpeed
+#define WRITE_DISTANCE                  CANIF_WriteDistance
+#define WRITE_HEADING                   CANIF_WriteHeading
+#define UPDATE_HEATBEAT                 CANIF_UpdateHeartbeat
+    
+#endif    
+    
+
 /*---------------------------------------------------------------------------------------------------
  * Name: Control_Init
  * Description: Performs initialization of module variables.
@@ -59,7 +106,7 @@ static uint8 debug_override;
  *-------------------------------------------------------------------------------------------------*/ 
 void Control_Init()
 {
-    control_cmd_velocity = I2c_ReadCmdVelocity;
+    control_cmd_velocity = READ_CMD_VELOCITY;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -88,13 +135,13 @@ void Control_Update()
     uint16 device_control;
     uint16 debug_control;
     
-    device_control = I2c_ReadDeviceControl();
+    device_control = READ_DEVICE_CONTROL();
     if (device_control & CONTROL_DISABLE_MOTOR_BIT)
     {
         Motor_Stop();
     }
     
-    debug_control = I2c_ReadDebugControl();
+    debug_control = READ_DEBUG_CONTROL();
     Debug_Update(debug_control);
     
     if (device_control & CONTROL_CLEAR_ODOMETRY_BIT)
@@ -107,9 +154,10 @@ void Control_Update()
         Cal_Clear();
     }
 
+    /* What is the purpose of this? */
     if (!debug_override)
     {
-        I2c_ReadDebugControl();
+        READ_DEBUG_CONTROL();
     }
     
     control_cmd_velocity(&left_cmd_velocity, &right_cmd_velocity, &timeout);
@@ -184,7 +232,7 @@ void Control_SetCommandVelocityFunc(COMMAND_FUNC_TYPE cmd)
  *-------------------------------------------------------------------------------------------------*/ 
 void Control_RestoreCommandVelocityFunc()
 {
-    control_cmd_velocity = I2c_ReadCmdVelocity;
+    control_cmd_velocity = READ_CMD_VELOCITY;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -221,6 +269,47 @@ float Control_RightGetCmdVelocity()
 void Control_OverrideDebug(uint8 override)
 {
     debug_override = override;
+}
+
+void Control_SetDeviceStatusBit(uint16 bit)
+{
+    SET_DEVICE_STATUS_BIT(bit);
+}
+
+void Control_ClearDeviceStatusBit(uint16 bit)
+{
+    CLEAR_DEVICE_STATUS_BIT(bit);
+}
+
+void Control_SetCalibrationStatus(uint16 status)
+{
+    SET_CALIBRATION_STATUS(status);
+}
+
+void Control_SetCalibrationStatusBit(uint16 bit)
+{
+    SET_CALIBRATION_STATUS_BIT(bit);
+}
+
+void Control_ClearCalibrationStatusBit(uint16 bit)
+{
+    CLEAR_CALIBRATION_STATUS_BIT(bit);
+}
+
+void Control_WriteOdom(float left_speed, 
+                       float right_speed, 
+                       float left_dist, 
+                       float right_dist, 
+                       float heading)
+{
+    WRITE_SPEED(left_speed, right_speed);
+    WRITE_DISTANCE(left_dist, right_dist);
+    WRITE_HEADING(heading);
+}
+
+void Control_UpdateHeartbeat(uint32 heartbeat)
+{
+    UPDATE_HEATBEAT(heartbeat);
 }
 
 /* [] END OF FILE */

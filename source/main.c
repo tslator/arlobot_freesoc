@@ -16,7 +16,7 @@
 #include "diag.h"
 #include "control.h"
 #include "time.h"
-#include "i2c.h"
+#include "i2cif.h"
 #include "encoder.h"
 #include "motor.h"
 #include "pid.h"
@@ -61,7 +61,7 @@ int main()
     Diag_Init();
     Diag_Start();
         
-    I2c_Init();
+    I2CIF_Init();
     Control_Init();
     Cal_Init();
     Time_Init();
@@ -69,11 +69,10 @@ int main()
     Motor_Init();
     Pid_Init();
     Odom_Init();
-    Sensor_Init();
 
     Nvstore_Start();
     Ser_Start();
-    I2c_Start();
+    I2CIF_Start();
     Control_Start();
     Cal_Start();
     Time_Start();
@@ -81,7 +80,6 @@ int main()
     Motor_Start();
     Pid_Start();
     Odom_Start();
-    Sensor_Start();
 
     DEBUG_PRINT_STR("Hello, my name is ArloSoc!\r\n");
     DEBUG_PRINT_STR("I am the microcontroller for Arlobot.\r\n");
@@ -102,9 +100,6 @@ int main()
         /* Update the odometry calculation */
         Odom_Update();
         
-        /* Read the sensors devices */
-        Sensor_Update();
-        
         /* Diagnostic update */
         Diag_Update();        
         /* Handle calibration request */
@@ -113,7 +108,7 @@ int main()
         /* Keep the serial connection active */
         Ser_Update();
 
-        I2C_TEST();
+        I2CIF_TEST();
         
         LOOP_END();
     }

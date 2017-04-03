@@ -23,11 +23,11 @@
 #include "encoder.h"
 #include "math.h"
 #include "time.h"
-#include "i2c.h"
 #include "utils.h"
 #include "diag.h"
 #include "debug.h"
 #include "cal.h"
+#include "control.h"
 
 
 /*---------------------------------------------------------------------------------------------------
@@ -152,7 +152,7 @@ void Odom_Update()
 
     heading = CalcHeading(left_dist, right_dist, TRACK_WIDTH, angular_bias);
     
-    I2c_WriteOdom(left_speed, right_speed, left_dist, right_dist, heading);
+    Control_WriteOdom(left_speed, right_speed, left_dist, right_dist, heading);
     
     DUMP_ODOM();
 }
@@ -174,7 +174,7 @@ void Odom_Reset()
     
     angular_bias = Cal_GetAngularBias();
     
-    I2c_WriteOdom(left_speed, right_speed, left_dist, right_dist, heading);
+    Control_WriteOdom(left_speed, right_speed, left_dist, right_dist, heading);
     DUMP_ODOM();       
 }
 

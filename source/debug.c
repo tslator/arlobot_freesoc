@@ -19,8 +19,12 @@
  * Includes
  *-------------------------------------------------------------------------------------------------*/    
 #include "debug.h"
-#include "i2c.h"
 
+#define ENCODER_DEBUG_BIT   (0x0001)
+#define PID_DEBUG_BIT       (0x0002)
+#define MOTOR_DEBUG_BIT     (0x0004)
+#define ODOM_DEBUG_BIT      (0x0008)
+#define SAMPLE_DEBUG_BIT    (0x0010)
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Debug_Init

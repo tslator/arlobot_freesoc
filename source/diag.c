@@ -20,7 +20,7 @@
  *-------------------------------------------------------------------------------------------------*/    
 #include "diag.h"
 #include "time.h"
-#include "i2c.h"
+#include "control.h"
 #include "utils.h"
 #include "config.h"
 
@@ -33,6 +33,7 @@
  * Variables
  *-------------------------------------------------------------------------------------------------*/    
 static uint32 last_heartbeat_time;
+static uint32 heartbeat;
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Diag_Init
@@ -45,6 +46,7 @@ void Diag_Init()
 {
     Mainloop_Pin_Write(0);
     last_heartbeat_time = millis();
+    heartbeat = 0;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -75,7 +77,9 @@ void Diag_Start()
     if (delta_time > DIAG_HEARTBEAT_MS)
     {
         last_heartbeat_time = millis();
-        I2c_UpdateHeartbeat();
+        
+        heartbeat++;
+        Control_UpdateHeartbeat(heartbeat);
     }
 }
 
