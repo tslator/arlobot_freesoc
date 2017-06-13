@@ -1,6 +1,6 @@
 #ifndef INCLUDED_CYDISABLEDSHEETS_H
 #define INCLUDED_CYDISABLEDSHEETS_H
 
-#define Sensors__DISABLED 1u /* Sensors */
+#define Robot_Arm__6DOF___DISABLED 1u /* Robot Arm (6DOF) */
 
 #endif /* INCLUDED_CYDISABLEDSHEETS_H */

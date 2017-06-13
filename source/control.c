@@ -31,18 +31,8 @@
 #include "odom.h"
 #include "debug.h"
 #include "config.h"
+#include "ccif.h"
 
-//#define ENABLE_I2CIF
-#define ENABLE_CANIF
-
-
-#ifdef ENABLE_I2CIF
-#include "i2cif.h"
-#endif
-
-#ifdef ENABLE_CANIF
-#include "canif.h"    
-#endif    
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -62,41 +52,7 @@ static float left_cmd_velocity;
 static float right_cmd_velocity;
 static uint8 debug_override;
 
-#ifdef ENABLE_I2CIF
     
-#define READ_CMD_VELOCITY               I2CIF_ReadCmdVelocity
-#define READ_DEVICE_CONTROL             I2CIF_ReadDeviceControl
-#define READ_DEBUG_CONTROL              I2CIF_ReadDebugControl
-#define SET_DEVICE_STATUS_BIT           I2CIF_SetDeviceStatusBit
-#define CLEAR_DEVICE_STATUS_BIT         I2CIF_ClearDeviceStatusBit
-#define SET_CALIBRATION_STATUS          I2CIF_SetCalibrationStatus    
-#define SET_CALIBRATION_STATUS_BIT      I2CIF_SetCalibrationStatusBit
-#define CLEAR_CALIBRATION_STATUS_BIT    I2CIF_ClearCalibrationStatusBit
-#define WRITE_SPEED                     I2CIF_WriteSpeed
-#define WRITE_DISTANCE                  I2CIF_WriteDistance
-#define WRITE_HEADING                   I2CIF_WriteHeading
-#define UPDATE_HEATBEAT                 I2CIF_UpdateHeartbeat
-
-#endif
-
-#ifdef ENABLE_CANIF
-    
-#define READ_CMD_VELOCITY               CANIF_ReadCmdVelocity
-#define READ_DEVICE_CONTROL             CANIF_ReadDeviceControl
-#define READ_DEBUG_CONTROL              CANIF_ReadDebugControl
-#define SET_DEVICE_STATUS_BIT           CANIF_SetDeviceStatusBit
-#define CLEAR_DEVICE_STATUS_BIT         CANIF_ClearDeviceStatusBit
-#define SET_CALIBRATION_STATUS          CANIF_SetCalibrationStatus    
-#define SET_CALIBRATION_STATUS_BIT      CANIF_SetCalibrationStatusBit
-#define CLEAR_CALIBRATION_STATUS_BIT    CANIF_ClearCalibrationStatusBit
-#define WRITE_SPEED                     CANIF_WriteSpeed
-#define WRITE_DISTANCE                  CANIF_WriteDistance
-#define WRITE_HEADING                   CANIF_WriteHeading
-#define UPDATE_HEATBEAT                 CANIF_UpdateHeartbeat
-    
-#endif    
-    
-
 /*---------------------------------------------------------------------------------------------------
  * Name: Control_Init
  * Description: Performs initialization of module variables.
@@ -106,7 +62,7 @@ static uint8 debug_override;
  *-------------------------------------------------------------------------------------------------*/ 
 void Control_Init()
 {
-    control_cmd_velocity = READ_CMD_VELOCITY;
+    control_cmd_velocity = ReadCmdVelocity;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -135,13 +91,13 @@ void Control_Update()
     uint16 device_control;
     uint16 debug_control;
     
-    device_control = READ_DEVICE_CONTROL();
+    device_control = ReadDeviceControl();
     if (device_control & CONTROL_DISABLE_MOTOR_BIT)
     {
         Motor_Stop();
     }
     
-    debug_control = READ_DEBUG_CONTROL();
+    debug_control = ReadDebugControl();
     Debug_Update(debug_control);
     
     if (device_control & CONTROL_CLEAR_ODOMETRY_BIT)
@@ -157,7 +113,7 @@ void Control_Update()
     /* What is the purpose of this? */
     if (!debug_override)
     {
-        READ_DEBUG_CONTROL();
+        ReadDebugControl();
     }
     
     control_cmd_velocity(&left_cmd_velocity, &right_cmd_velocity, &timeout);
@@ -232,7 +188,7 @@ void Control_SetCommandVelocityFunc(COMMAND_FUNC_TYPE cmd)
  *-------------------------------------------------------------------------------------------------*/ 
 void Control_RestoreCommandVelocityFunc()
 {
-    control_cmd_velocity = READ_CMD_VELOCITY;
+    control_cmd_velocity = ReadCmdVelocity;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -273,27 +229,27 @@ void Control_OverrideDebug(uint8 override)
 
 void Control_SetDeviceStatusBit(uint16 bit)
 {
-    SET_DEVICE_STATUS_BIT(bit);
+    SetDeviceStatusBit(bit);
 }
 
 void Control_ClearDeviceStatusBit(uint16 bit)
 {
-    CLEAR_DEVICE_STATUS_BIT(bit);
+    ClearDeviceStatusBit(bit);
 }
 
 void Control_SetCalibrationStatus(uint16 status)
 {
-    SET_CALIBRATION_STATUS(status);
+    SetCalibrationStatus(status);
 }
 
 void Control_SetCalibrationStatusBit(uint16 bit)
 {
-    SET_CALIBRATION_STATUS_BIT(bit);
+    SetCalibrationStatusBit(bit);
 }
 
 void Control_ClearCalibrationStatusBit(uint16 bit)
 {
-    CLEAR_CALIBRATION_STATUS_BIT(bit);
+    ClearCalibrationStatusBit(bit);
 }
 
 void Control_WriteOdom(float left_speed, 
@@ -302,14 +258,14 @@ void Control_WriteOdom(float left_speed,
                        float right_dist, 
                        float heading)
 {
-    WRITE_SPEED(left_speed, right_speed);
-    WRITE_DISTANCE(left_dist, right_dist);
-    WRITE_HEADING(heading);
+    WriteSpeed(left_speed, right_speed);
+    WriteDistance(left_dist, right_dist);
+    WriteHeading(heading);
 }
 
 void Control_UpdateHeartbeat(uint32 heartbeat)
 {
-    UPDATE_HEATBEAT(heartbeat);
+    UpdateHeartbeat(heartbeat);
 }
 
 /* [] END OF FILE */

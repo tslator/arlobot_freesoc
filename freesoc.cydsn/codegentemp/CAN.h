@@ -72,7 +72,7 @@ extern uint8 CAN_initVar;
     #define CAN_SST_FAILURE_USE_HELPER     (1u)
 #endif /* (!(CY_PSOC3 || CY_PSOC5)) */
 
-#define CAN_ADVANCED_INTERRUPT_CFG         (0u)
+#define CAN_ADVANCED_INTERRUPT_CFG         (1u)
 
 /* TX/RX Function Enable */
 #define CAN_TX0_FUNC_ENABLE            (1u)

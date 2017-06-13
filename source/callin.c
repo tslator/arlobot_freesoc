@@ -54,8 +54,7 @@ static uint32 end_time;
 static CAL_LIN_PARAMS linear_params = {DIR_FORWARD, 
                                        LINEAR_MAX_TIME, 
                                        LINEAR_DISTANCE,
-                                       0.0,
-                                       LINEAR_VELOCITY};
+                                       0.0};
 
 static uint8 Init(CAL_STAGE_TYPE stage, void *params);
 static uint8 Start(CAL_STAGE_TYPE stage, void *params);
