@@ -66,6 +66,8 @@
 #include "CAN_TX_aliases.h"
 #include "CAN_TX.h"
 #include "CAN.h"
+#include "LED_aliases.h"
+#include "LED.h"
 #include "Left_QuadDec_isr.h"
 #include "Left_QuadDec_Cnt16.h"
 #include "Right_QuadDec_isr.h"

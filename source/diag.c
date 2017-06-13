@@ -28,12 +28,14 @@
  * Constants
  *-------------------------------------------------------------------------------------------------*/    
 #define DIAG_HEARTBEAT_MS SAMPLE_TIME_MS(HEARTBEAT_RATE)
+#define DIAG_STATUS_LED_MS SAMPLE_TIME_MS(STATUS_LED_RATE)
 
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/    
 static uint32 last_heartbeat_time;
 static uint32 heartbeat;
+static uint32 last_led_time;
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Diag_Init
@@ -47,6 +49,7 @@ void Diag_Init()
     Mainloop_Pin_Write(0);
     last_heartbeat_time = millis();
     heartbeat = 0;
+    last_led_time = millis();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -71,8 +74,10 @@ void Diag_Start()
  void Diag_Update()
 {
     static uint32 delta_time = 0;
+    uint32 now;
     
-    delta_time = millis() - last_heartbeat_time;
+    now = millis();
+    delta_time = now - last_heartbeat_time;    
     // Increment a counter that can be read over I2C
     if (delta_time > DIAG_HEARTBEAT_MS)
     {
@@ -80,6 +85,14 @@ void Diag_Start()
         
         heartbeat++;
         Control_UpdateHeartbeat(heartbeat);
+    }
+    
+    delta_time = now - last_led_time;
+    if (delta_time > DIAG_STATUS_LED_MS)
+    {
+        last_led_time = millis();
+        
+        LED_Write(~LED_Read());
     }
 }
 

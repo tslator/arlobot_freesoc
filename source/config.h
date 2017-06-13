@@ -120,6 +120,7 @@ Sample Rates
 #define HEARTBEAT_RATE       (2) /* Hz */
 #define CTRL_VELOCITY_RATE  (15) /* Hz */
 #define SENSOR_SAMPLE_RATE  (20) /* Hz */
+#define STATUS_LED_RATE     (2)
 
 /* The following defines and macro provide a mechanism to distribute the sampling across the main loop, i.e., keep the
    sampling from happening all of the same time, by introducing a one-time initial delay or sampling offset.
