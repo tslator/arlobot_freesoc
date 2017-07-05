@@ -33,13 +33,13 @@
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
 #ifdef  LEFT_ENC_DUMP_ENABLED     
-#define LEFT_DUMP_ENC(enc)  if (DEBUG_LEFT_ENCODER_ENABLED) DumpEncoder(enc)
+#define LEFT_DUMP_ENC(enc)  if (Debug_IsEnabled(DEBUG_LEFT_ENCODER_ENABLE_BIT)) DumpEncoder(enc)
 #else
 #define LEFT_DUMP_ENC(enc)
 #endif    
 
 #ifdef RIGHT_ENC_DUMP_ENABLED
-#define RIGHT_DUMP_ENC(enc)  if (DEBUG_RIGHT_ENCODER_ENABLED) DumpEncoder(enc)
+#define RIGHT_DUMP_ENC(enc)  if (Debug_IsEnabled(DEBUG_RIGHT_ENCODER_ENABLE_BIT)) DumpEncoder(enc)
 #else
 #define RIGHT_DUMP_ENC(enc)
 #endif
@@ -432,9 +432,6 @@ void Encoder_Reset()
     right_enc.count = 0;
     right_enc.dist = 0;
     
-    /* If linear calibration has not been done then set the scalar to 1.0; otherwise, there will be no distance
-       calculation.
-     */
     linear_bias = Cal_GetLinearBias();
     
     LEFT_DUMP_ENC(&left_enc);

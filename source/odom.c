@@ -73,7 +73,7 @@ static uint32 last_odom_report = 0;
  *-------------------------------------------------------------------------------------------------*/
 static void DumpOdom()
 {
-    if (ODOM_DEBUG_CONTROL_ENABLED)
+    if (Debug_IsEnabled(DEBUG_ODOM_ENABLE_BIT))
     {
         uint32 delta_time;
         delta_time = millis() - last_odom_report;

@@ -119,7 +119,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 {
     CAL_LIN_PARAMS *p_lin_params = (CAL_LIN_PARAMS *)params;
     
-    DEBUG_SAVE();
+    Debug_Store();
         
     p_lin_params->distance = p_lin_params->direction == DIR_FORWARD ? LINEAR_DISTANCE : -LINEAR_DISTANCE;
     p_lin_params->mps = p_lin_params->direction == DIR_FORWARD ? LINEAR_VELOCITY : -LINEAR_VELOCITY;
@@ -141,7 +141,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
             Ser_PutString("\r\nPlace a meter stick along side the robot starting centered");
             Ser_PutString("\r\non the wheel and extending toward the front of the robot\r\n");
                         
-            DEBUG_SET(DEBUG_ODOM_ENABLE_BIT | DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT);
+            Debug_Enable(DEBUG_ODOM_ENABLE_BIT | DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT);
             
             break;            
             
@@ -149,7 +149,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
             Ser_PutStringFormat("\r\n%s Linear validation\r\n", 
                                 p_lin_params->direction == DIR_FORWARD ? "Forward" : "Backward");
 
-            DEBUG_SET(DEBUG_ODOM_ENABLE_BIT);
+            Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
             
             break;
 
@@ -265,7 +265,7 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
      */
     Motor_SetPwm(PWM_STOP, PWM_STOP);
     Pid_RestoreLeftRightTarget();    
-    DEBUG_RESTORE();    
+    Debug_Restore();    
     
     switch (stage)
     {

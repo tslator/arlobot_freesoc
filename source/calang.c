@@ -117,8 +117,8 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
     Cal_SetLeftRightVelocity(0, 0);
     Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
 
-    DEBUG_SAVE();
-    DEBUG_SET(DEBUG_ODOM_ENABLE_BIT);
+    Debug_Store();
+    Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
 
     switch (stage)
     {
@@ -276,7 +276,7 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
             break;
     }
 
-    DEBUG_RESTORE();    
+    Debug_Restore();    
 
     return CAL_OK;
 }

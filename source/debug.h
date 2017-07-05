@@ -73,18 +73,7 @@ char formatted_string[256];
 #define INSIDE_DEBUG(...)           do {                                                                     \
                                     snprintf(formatted_string, sizeof(formatted_string), __VA_ARGS__);  \
                                     Ser_PutString(formatted_string);                                    \
-                                    } while (0)
-                                
-#define DEBUG_LEFT_ENCODER_ENABLED      (debug_control_enabled & DEBUG_LEFT_ENCODER_ENABLE_BIT)
-#define DEBUG_RIGHT_ENCODER_ENABLED     (debug_control_enabled & DEBUG_RIGHT_ENCODER_ENABLE_BIT)
-#define ENCODER_DEBUG_CONTROL_ENABLED   (DEBUG_LEFT_ENCODER_ENABLED || DEBUG_RIGHT_ENCODER_ENABLED)
-#define DEBUG_LEFT_PID_ENABLED          (debug_control_enabled & DEBUG_LEFT_PID_ENABLE_BIT)
-#define DEBUG_RIGHT_PID_ENABLED         (debug_control_enabled & DEBUG_RIGHT_PID_ENABLE_BIT)
-#define PID_DEBUG_CONTROL_ENABLED       (DEBUG_LEFT_PID_ENABLED || DEBUG_RIGHT_PID_ENABLED)
-#define MOTOR_DEBUG_CONTROL_ENABLED     (debug_control_enabled & DEBUG_LEFT_MOTOR_ENABLE_BIT || debug_control_enabled & DEBUG_RIGHT_MOTOR_ENABLE_BIT)
-#define ODOM_DEBUG_CONTROL_ENABLED      (debug_control_enabled & DEBUG_ODOM_ENABLE_BIT)
-#define SAMPLE_DEBUG_CONTROL_ENABLED    (debug_control_enabled & DEBUG_SAMPLE_ENABLE_BIT)
-
+                                    } while (0)                                
     
 #define DEBUG_PRINT_STR(_fmt)               INSIDE_DEBUG(_fmt)
 #define DEBUG_PRINT_ARG(_fmt, ...)          INSIDE_DEBUG(_fmt, __VA_ARGS__)
@@ -92,7 +81,7 @@ char formatted_string[256];
 #define DEBUG_PRINT_LEVEL(X, _fmt, ...)     if((DEBUG_LEVEL & X) == X) \
                                                 INSIDE_DEBUG_DETAIL(WHERESTR _fmt, WHEREARG,__VA_ARGS__)
 
-    
+/*    
 #define DEBUG_DELTA_TIME(name, delta) do                                                    \
                                       {                                                     \
                                         if (SAMPLE_DEBUG_CONTROL_ENABLED)                   \
@@ -100,7 +89,7 @@ char formatted_string[256];
                                           Ser_PutStringFormat("%s: %ld \r\n", name, delta); \
                                         }                                                   \
                                       } while (0);
-
+*/
     
 #else
     
@@ -132,16 +121,10 @@ char formatted_string[256];
 #endif
 
 
-#define DEBUG_DISABLE()         (debug_control_enabled = 0)
-#define DEBUG_SAVE()            (saved_debug_control_enabled = debug_control_enabled)
-#define DEBUG_RESTORE()         (debug_control_enabled = saved_debug_control_enabled)
-#define DEBUG_SET(debug_bits)   (debug_control_enabled = debug_bits)
 
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/    
-uint16 debug_control_enabled;
-uint16 saved_debug_control_enabled;
     
 
 /*---------------------------------------------------------------------------------------------------
@@ -149,7 +132,13 @@ uint16 saved_debug_control_enabled;
  *-------------------------------------------------------------------------------------------------*/    
 void Debug_Init();
 void Debug_Start();
-void Debug_Update(uint16 control);
+void Debug_Enable(uint16 flag);
+void Debug_Disable(uint16 flag);
+uint8 Debug_IsEnabled(uint16 flag);
+void Debug_EnableAll();
+void Debug_DisableAll();
+void Debug_Store();
+void Debug_Restore();
 
 #endif
 

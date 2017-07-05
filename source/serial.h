@@ -21,6 +21,7 @@ void Ser_Update();
 
 void Ser_PutString(char *str);
 void Ser_PutStringFormat(const char *fmt, ...);
+uint8 Ser_ReadData(uint8 *data);
 uint8 Ser_ReadByte();
 void Ser_WriteByte(uint8 value);
 

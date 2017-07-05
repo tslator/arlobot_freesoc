@@ -52,6 +52,60 @@ static float left_cmd_velocity;
 static float right_cmd_velocity;
 static uint8 debug_override;
 
+
+void Update_Debug(uint16 bits)
+{
+    if (bits & ENCODER_DEBUG_BIT)
+    {
+        Debug_Enable(DEBUG_LEFT_ENCODER_ENABLE_BIT);
+        Debug_Enable(DEBUG_RIGHT_ENCODER_ENABLE_BIT);
+    }
+    else
+    {
+        Debug_Disable(DEBUG_LEFT_ENCODER_ENABLE_BIT);
+        Debug_Disable(DEBUG_RIGHT_ENCODER_ENABLE_BIT);
+    }
+    
+    if (bits & PID_DEBUG_BIT)
+    {
+        Debug_Enable(DEBUG_LEFT_PID_ENABLE_BIT);
+        Debug_Enable(DEBUG_RIGHT_PID_ENABLE_BIT);
+    }
+    else
+    {
+        Debug_Disable(DEBUG_LEFT_PID_ENABLE_BIT);
+        Debug_Disable(DEBUG_RIGHT_PID_ENABLE_BIT);
+    }
+    
+    if (bits & MOTOR_DEBUG_BIT)
+    {
+        Debug_Enable(DEBUG_LEFT_MOTOR_ENABLE_BIT);
+        Debug_Enable(DEBUG_RIGHT_MOTOR_ENABLE_BIT);
+    }
+    else
+    {
+        Debug_Disable(DEBUG_LEFT_MOTOR_ENABLE_BIT);
+        Debug_Disable(DEBUG_RIGHT_MOTOR_ENABLE_BIT);
+    }
+
+    if (bits & ODOM_DEBUG_BIT)
+    {
+        Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
+    }
+    else
+    {
+        Debug_Disable(DEBUG_ODOM_ENABLE_BIT);
+    }
+    
+    if (bits & SAMPLE_DEBUG_BIT)
+    {
+        Debug_Enable(DEBUG_SAMPLE_ENABLE_BIT);
+    }
+    else
+    {
+        Debug_Disable(DEBUG_SAMPLE_ENABLE_BIT);
+    }
+}
     
 /*---------------------------------------------------------------------------------------------------
  * Name: Control_Init
@@ -96,9 +150,25 @@ void Control_Update()
     {
         Motor_Stop();
     }
+
+    /* Default debug settings are enabled/defined in config.h where the settings determine if a particular debug
+       is enabled at compile time.  At runtime there are two control points for debug:
     
-    debug_control = ReadDebugControl();
-    Debug_Update(debug_control);
+        1. The control module (this module) where the control interface has a facility to dynamically turning on/off
+           debug.
+        2. The calibration module where each calibration type controls what debug is enabled.
+    
+      The debug_override flag defaults to False which allows the control interface to determine what debug is enabled.
+      By default the control interface disables all debug.
+    
+      When calibration is performed it calls Control_OverrideDebug to disable control interface control of debug.
+      Control is restored when calibration terminates.
+    */
+    if (!debug_override)
+    {
+        debug_control = ReadDebugControl();
+        Update_Debug(debug_control);
+    }
     
     if (device_control & CONTROL_CLEAR_ODOMETRY_BIT)
     {
@@ -110,11 +180,6 @@ void Control_Update()
         Cal_Clear();
     }
 
-    /* What is the purpose of this? */
-    if (!debug_override)
-    {
-        ReadDebugControl();
-    }
     
     control_cmd_velocity(&left_cmd_velocity, &right_cmd_velocity, &timeout);
     

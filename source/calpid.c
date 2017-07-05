@@ -71,6 +71,23 @@ static CALIBRATION_TYPE right_pid_calibration = {CAL_INIT_STATE,
                                                  Stop,
                                                  Results};
 
+static CALIBRATION_TYPE left_pid_validation = {CAL_INIT_STATE,
+                                               CAL_VALIDATE_STAGE,
+                                                &left_pid_params,
+                                                Init,
+                                                Start,
+                                                Update,
+                                                Stop,
+                                                Results};
+
+static CALIBRATION_TYPE right_pid_validation = {CAL_INIT_STATE,
+                                                 CAL_VALIDATE_STAGE,
+                                                 &right_pid_params,
+                                                 Init,
+                                                 Start,
+                                                 Update,
+                                                 Stop,
+                                                 Results};
 
 static float val_fwd_cps[MAX_NUM_VELOCITIES] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 static float val_bwd_cps[MAX_NUM_VELOCITIES] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -240,16 +257,16 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
             Cal_SetLeftRightVelocity(0, 0);
             Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
 
-            DEBUG_SAVE();
+            Debug_Store();
 
             switch (p_pid_params->pid_type)
             {
                 case PID_TYPE_LEFT:
-                    DEBUG_SET(DEBUG_LEFT_PID_ENABLE_BIT);
+                    Debug_Enable(DEBUG_LEFT_PID_ENABLE_BIT);
                     break;
                     
                 case PID_TYPE_RIGHT:
-                    DEBUG_SET(DEBUG_RIGHT_PID_ENABLE_BIT);
+                    Debug_Enable(DEBUG_RIGHT_PID_ENABLE_BIT);
                     break;
             }        
             break;
@@ -257,7 +274,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
         case CAL_VALIDATE_STAGE:
             Ser_PutStringFormat("\r\n%s PID validation\r\n", p_pid_params->name);
             
-            DEBUG_SAVE();
+            Debug_Store();
 
             Cal_CalcTriangularProfile(MAX_NUM_VELOCITIES, 0.2, 0.8, val_fwd_cps, val_bwd_cps);
             
@@ -268,15 +285,16 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
             switch (p_pid_params->pid_type)
             {
                 case PID_TYPE_LEFT:
-                    DEBUG_SET(DEBUG_LEFT_PID_ENABLE_BIT | DEBUG_LEFT_ENCODER_ENABLE_BIT);
+                    Debug_Enable(DEBUG_LEFT_PID_ENABLE_BIT);
                     break;
                 
                 case PID_TYPE_RIGHT:
-                    DEBUG_SET(DEBUG_RIGHT_PID_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT);
+                    Debug_Enable(DEBUG_RIGHT_PID_ENABLE_BIT);
                     break;
             }
             break;
     }
+
     return CAL_OK;
 }
 
@@ -342,7 +360,6 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
             SetNextValidationVelocity(p_pid_params);
 
             break;
-
     }
 
     return CAL_OK;
@@ -364,7 +381,6 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
     switch (stage)
     {
         case CAL_CALIBRATE_STAGE:
-
             if (millis() - start_time < p_pid_params->run_time)
             {
                 return CAL_OK;
@@ -428,15 +444,15 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
 
             Pid_RestoreLeftRightTarget();
             Ser_PutStringFormat("\r\n%s PID calibration complete\r\n", p_pid_params->name);
+            Debug_Restore();    
             break;
             
         case CAL_VALIDATE_STAGE:
             Ser_PutStringFormat("\r\n%s PID validation complete\r\n", p_pid_params->name);
+            Debug_Restore();    
             break;
     }
             
-    DEBUG_RESTORE();    
-
     return CAL_OK;
 }
 
@@ -501,8 +517,8 @@ void CalPid_Init()
 {
     CalPid_LeftCalibration = &left_pid_calibration;
     CalPid_RightCalibration = &right_pid_calibration;
-    CalPid_LeftValidation = &left_pid_calibration;
-    CalPid_RightValidation = &right_pid_calibration;
+    CalPid_LeftValidation = &left_pid_validation;
+    CalPid_RightValidation = &right_pid_validation;
 }
 
 /*-------------------------------------------------------------------------------*/

@@ -23,8 +23,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include "serial.h"
-#include "utils.h"
-#include "time.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -140,6 +138,37 @@ void Ser_PutStringFormat(const char *fmt, ...)
     
     Ser_PutString(str);
     
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: Ser_ReadData
+ * Description: Reads one or more bytes (max 64) of data from the USB serial port.
+ * Parameters: None
+ * Return: Number of bytes read.
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+uint8 Ser_ReadData(uint8_t *data)
+{
+    uint8 count = 0;
+    uint8 buffer[64];
+    
+    if (0u != USBUART_GetConfiguration())
+    {
+        /* Check for input data from host. */
+        if (0u != USBUART_DataIsReady())
+        {
+            /* Read received data and re-enable OUT endpoint. */
+            count = USBUART_GetAll(buffer);
+
+            if (0u != count)
+            {
+                memset(data, 0, 64);
+                memcpy(data, buffer, count);
+            }
+        }
+    }
+    
+    return count;
 }
 
 /*---------------------------------------------------------------------------------------------------

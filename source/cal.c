@@ -46,6 +46,7 @@
 #define VAL_REQUEST         'v'
 #define SETTING_REQUEST     's'
 #define EXIT_CMD            'x'
+#define NULL_CMD            0
 
 #define CAL_MOTOR_CMD       'a'
 #define CAL_PID_LEFT_CMD    'b'
@@ -302,7 +303,7 @@ static void DisplayExit()
  *-------------------------------------------------------------------------------------------------*/
 static void DisplayMenu(CAL_STAGE_TYPE stage)
 {
-    DEBUG_DISABLE();
+    Debug_DisableAll();
     
     if (stage == CAL_CALIBRATE_STAGE)
     {
@@ -393,8 +394,10 @@ static void ProcessSettingsCmd(uint8 cmd)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 GetCommand()
 {
-    char value = Ser_ReadByte();
-        
+    char value = NULL_CMD;
+
+    value = Ser_ReadByte();
+
     switch (value)
     {
         case 'c':
@@ -413,10 +416,14 @@ static uint8 GetCommand()
             break;
 
         case 'x':
-        case 'X':            
+        case 'X':
             value = EXIT_CMD;
             break;
     }
+    
+    /* The value returned from the function drives the calibration state machine.  The only values allowed are legitimate
+       commands or NULL_CMD (where NULL_CMD is ignored).
+     */
     
     return value;
 }
@@ -756,7 +763,9 @@ void Cal_Update()
         STATE_EXIT - display exit menu and transitions to STATE_INIT
  */
 {
-    uint8 cmd = GetCommand();
+    uint8 cmd;
+    
+    cmd = GetCommand();
     
     switch (ui_state)
     {
@@ -1060,6 +1069,9 @@ void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_
 float Cal_GetLinearBias()
 {
     float linear_bias;
+    
+    /* Set the default to 1.0, in case, linear bias has not been calibrated
+     */
     
     linear_bias = CAL_LINEAR_BIAS_DEFAULT;
     if (CAL_LINEAR_BIT & p_cal_eeprom->status)

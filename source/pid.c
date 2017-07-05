@@ -37,13 +37,15 @@
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
 #ifdef LEFT_PID_DUMP_ENABLED
-#define LEFT_DUMP_PID()  if (DEBUG_LEFT_PID_ENABLED) DumpPid(left_pid.name, &left_pid.pid, left_pid.get_pwm())
+#define LEFT_DUMP_PID()  if (Debug_IsEnabled(DEBUG_LEFT_PID_ENABLE_BIT)) \
+    DumpPid(left_pid.name, &left_pid.pid, left_pid.get_pwm())
 #else
 #define  LEFT_DUMP_PID()
 #endif
 
 #ifdef RIGHT_PID_DUMP_ENABLED
-#define RIGHT_DUMP_PID()  if (DEBUG_RIGHT_PID_ENABLED) DumpPid(right_pid.name, &right_pid.pid, right_pid.get_pwm())
+#define RIGHT_DUMP_PID()  if (Debug_IsEnabled(DEBUG_RIGHT_PID_ENABLE_BIT)) \
+    DumpPid(right_pid.name, &right_pid.pid, right_pid.get_pwm())
 #else
 #define RIGHT_DUMP_PID()
 #endif
@@ -63,13 +65,18 @@
 #define PID_MIN (0)     // count/sec
 #define PID_MAX (5000)  // count/sec
 
-#define left_kp (3.55)
-#define left_ki (1.955)
-#define left_kd (0.57)
 
-#define right_kp (6.0)
-#define right_ki (1.95)
-#define right_kd (0.65)
+/* The following PID values were determined experimentally and show good tracking behavior.
+    Left PID - P: 3.400, I: 1.450, D: 0.899
+    Right PID - P: 3.500, I: 1.450, D: 1.100
+*/
+#define left_kp (3.400)
+#define left_ki (1.450)
+#define left_kd (0.899)
+
+#define right_kp (3.500)
+#define right_ki (1.450)
+#define right_kd (1.100)
 
 /*---------------------------------------------------------------------------------------------------
  * Types

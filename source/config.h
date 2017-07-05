@@ -136,8 +136,8 @@ Command and Control Interface
 
 ----------------------------------------------------------------------------------------------------------------------*/
 /* Define one of the following */
-//#define ENABLE_I2CIF
-#define ENABLE_CANIF
+#define ENABLE_I2CIF
+//#define ENABLE_CANIF
 
 
 #endif

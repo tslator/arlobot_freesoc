@@ -102,7 +102,7 @@ static MOTOR_TYPE right_motor = {
  *-------------------------------------------------------------------------------------------------*/
 static void DumpMotor(MOTOR_TYPE *motor)
 {
-    if (MOTOR_DEBUG_CONTROL_ENABLED)
+    if (Debug_IsEnabled(DEBUG_LEFT_MOTOR_ENABLE_BIT | DEBUG_RIGHT_MOTOR_ENABLE_BIT))
     {
         DEBUG_PRINT_ARG("%s: %d \r\n", motor->name, motor->get_pwm());
     }

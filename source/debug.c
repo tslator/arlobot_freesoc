@@ -20,11 +20,9 @@
  *-------------------------------------------------------------------------------------------------*/    
 #include "debug.h"
 
-#define ENCODER_DEBUG_BIT   (0x0001)
-#define PID_DEBUG_BIT       (0x0002)
-#define MOTOR_DEBUG_BIT     (0x0004)
-#define ODOM_DEBUG_BIT      (0x0008)
-#define SAMPLE_DEBUG_BIT    (0x0010)
+static uint16 debug_control_enabled;
+static uint16 saved_debug_control_enabled;
+
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Debug_Init
@@ -35,14 +33,20 @@
  *-------------------------------------------------------------------------------------------------*/ 
 void Debug_Init()
 {
-#ifdef COMMS_DEBUG_ENABLED    
+#ifdef COMMS_DEBUG_ENABLED  
     memset(formatted_string, 0, sizeof(formatted_string));
 
-#if defined LEFT_ENC_DUMP_ENABLED || defined RIGHT_ENC_DUMP_ENABLED
-    debug_control_enabled |= DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT;
+#if defined LEFT_ENC_DUMP_ENABLED
+    debug_control_enabled |= DEBUG_LEFT_ENCODER_ENABLE_BIT;
 #endif
-#if defined LEFT_PID_DUMP_ENABLED || defined RIGHT_PID_DUMP_ENABLED
-    debug_control_enabled |= DEBUG_LEFT_PID_ENABLE_BIT | DEBUG_RIGHT_PID_ENABLE_BIT;
+#if defined RIGHT_ENC_DUMP_ENABLED
+    debug_control_enabled |= DEBUG_RIGHT_ENCODER_ENABLE_BIT;
+#endif
+#if defined LEFT_PID_DUMP_ENABLED
+    debug_control_enabled |= DEBUG_LEFT_PID_ENABLE_BIT;
+#endif
+#if  defined RIGHT_PID_DUMP_ENABLED
+    debug_control_enabled |= DEBUG_RIGHT_PID_ENABLE_BIT;
 #endif
 #if defined MOTOR_DUMP_ENABLED
     debug_control_enabled |= DEBUG_LEFT_MOTOR_ENABLE_BIT | DEBUG_RIGHT_MOTOR_ENABLE_BIT;
@@ -75,39 +79,47 @@ void Debug_Start()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/ 
-void Debug_Update(uint16 control)
+void Debug_Enable(uint16 flag)
 {
 #ifdef COMMS_DEBUG_ENABLED
-    // When debug is enabled, the bitmap can be used to turn on/off specific debug, e.g., encoder, pid, odom, and motor.
-
-    debug_control_enabled = 0;
-    
-    if (control & ENCODER_DEBUG_BIT)
-    {
-        debug_control_enabled |= DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT;
-    }
-    
-    if (control & PID_DEBUG_BIT)
-    {
-        debug_control_enabled |= DEBUG_LEFT_PID_ENABLE_BIT | DEBUG_RIGHT_PID_ENABLE_BIT;
-    }
-    
-    if (control & MOTOR_DEBUG_BIT)
-    {
-        debug_control_enabled |= DEBUG_LEFT_MOTOR_ENABLE_BIT | DEBUG_RIGHT_MOTOR_ENABLE_BIT;
-    }
-
-    if (control & ODOM_DEBUG_BIT)
-    {
-        debug_control_enabled |= DEBUG_ODOM_ENABLE_BIT;
-    }
-    
-    if (control & SAMPLE_DEBUG_BIT)
-    {
-        debug_control_enabled |= DEBUG_SAMPLE_ENABLE_BIT;
-    }
-    
+    debug_control_enabled |= flag;
 #endif
+}
+
+void Debug_Disable(uint16 flag)
+{
+#ifdef COMMS_DEBUG_ENABLED
+    debug_control_enabled &= ~flag;
+#endif
+}
+
+uint8 Debug_IsEnabled(uint16 flag)
+{
+    return debug_control_enabled & flag;
+}
+
+void Debug_EnableAll()
+{
+#ifdef COMMS_DEBUG_ENABLED
+    debug_control_enabled = 0xFFFF;
+#endif
+}
+
+void Debug_DisableAll()
+{
+#ifdef COMMS_DEBUG_ENABLED
+    debug_control_enabled = 0;
+#endif
+}
+
+void Debug_Store()
+{
+    saved_debug_control_enabled = debug_control_enabled;
+}
+
+void Debug_Restore()
+{
+    debug_control_enabled = saved_debug_control_enabled;
 }
 
 /* [] END OF FILE */
