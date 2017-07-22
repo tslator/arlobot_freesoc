@@ -469,22 +469,21 @@ int16 Interpolate(int16 x, int16 x1, int16 x2, uint16 y1, uint16 y2)
 
 /*---------------------------------------------------------------------------------------------------
  * Name: CalcHeading
- * Description: Calculates the heading given left/right distance and width (distance between left/right
- *              wheels).  The heading is constrained between -PI .. +Pi
+ * Description: Calculates the heading given left/right count, radius, width (distance between left/right
+ *              wheels) and count/revolution.
  *  
- * Parameters: left_dist  - the distance traveled by the left wheel
- *             right_dist - the distance traveled by the right wheel
- *             width      - the distance between left and right wheels
- *             bias       - the bias adjustment
+ * Parameters: left_count    - the encoder count from the left wheel
+ *             right_count   - the encoder count from the right wheel
+ *             radius        - the radius of the wheel
+ *             width         - the distance between left and right wheels
+ *             count_per_rev - the encoder count per wheel revolution
+ *             bias          - the bias adjustment
  * Return: heading
  * 
  *-------------------------------------------------------------------------------------------------*/
-float CalcHeading(float left_dist, float right_dist, float width, float bias)
+float CalcHeading(float left_count, float right_count, float radius, float width, float count_per_rev, float bias)
 {
-    float heading;
-    
-    heading = bias * (right_dist - left_dist)/width;
-    return atan2(sin(heading), cos(heading));
+    return (bias * (right_count - left_count) * PI * radius)/(count_per_rev * width);
 }
 
 /*---------------------------------------------------------------------------------------------------

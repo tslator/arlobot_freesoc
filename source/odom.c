@@ -143,14 +143,19 @@ void Odom_Update()
        is estimated to be about 40-50 ms.  I don't think this frequency will affect i2c performance.
        The goal is to relay as fast as possible the latest odometry information.
      */
+    int32 left_count;
+    int32 right_count;
     
     left_speed = Encoder_LeftGetMeterPerSec();
     right_speed = Encoder_RightGetMeterPerSec();
     
     left_dist = Encoder_LeftGetDist();
     right_dist = Encoder_RightGetDist();
-
-    heading = CalcHeading(left_dist, right_dist, TRACK_WIDTH, angular_bias);
+    
+    left_count = Encoder_LeftGetCount();
+    right_count = Encoder_RightGetCount();
+    
+    heading += CalcHeading(left_count, right_count, WHEEL_RADIUS, TRACK_WIDTH, COUNT_PER_REVOLUTION, angular_bias);
     
     Control_WriteOdom(left_speed, right_speed, left_dist, right_dist, heading);
     
