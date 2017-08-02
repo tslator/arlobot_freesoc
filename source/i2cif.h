@@ -51,7 +51,7 @@ void I2CIF_ClearCalibrationStatusBit(uint16 bit);
 
 
 void I2CIF_WriteSpeed(float left_speed, float right_speed);
-void I2CIF_WriteDistance(float left_delta_dist, float right_delta_dist);
+void I2CIF_WritePosition(float x_position, float y_position);
 void I2CIF_WriteHeading(float heading);
 void I2CIF_UpdateHeartbeat(uint32 heartbeat);
 

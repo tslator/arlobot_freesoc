@@ -319,12 +319,12 @@ void Control_ClearCalibrationStatusBit(uint16 bit)
 
 void Control_WriteOdom(float left_speed, 
                        float right_speed, 
-                       float left_dist, 
-                       float right_dist, 
+                       float x_position, 
+                       float y_position, 
                        float heading)
 {
     WriteSpeed(left_speed, right_speed);
-    WriteDistance(left_dist, right_dist);
+    WritePosition(x_position, y_position);
     WriteHeading(heading);
 }
 

@@ -27,7 +27,7 @@
 #define SetCalibrationStatusBit         I2CIF_SetCalibrationStatusBit
 #define ClearCalibrationStatusBit       I2CIF_ClearCalibrationStatusBit
 #define WriteSpeed                      I2CIF_WriteSpeed
-#define WriteDistance                   I2CIF_WriteDistance
+#define WritePosition                   I2CIF_WritePosition
 #define WriteHeading                    I2CIF_WriteHeading
 #define UpdateHeartbeat                 I2CIF_UpdateHeartbeat
 
@@ -43,7 +43,7 @@
 #define SetCalibrationStatusBit         CANIF_SetCalibrationStatusBit
 #define ClearCalibrationStatusBit       CANIF_ClearCalibrationStatusBit
 #define WriteSpeed                      CANIF_WriteSpeed
-#define WriteDistance                   CANIF_WriteDistance
+#define WritePosition                   CANIF_WritePosition
 #define WriteHeading                    CANIF_WriteHeading
 #define UpdateHeartbeat                 CANIF_UpdateHeartbeat
 

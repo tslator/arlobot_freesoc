@@ -205,7 +205,7 @@ static void WriteSpeedMsg(float left, float right)
     CAN_TX_DATA_BYTE4(CAN_TX_MAILBOX_LeftRightSpeed) = p_bytes[3];
 }
 
-static void WriteDistanceMsg(float left, float right)
+static void WritePositionMsg(float left, float right)
 {
     uint8 *p_bytes;
     
@@ -284,9 +284,9 @@ void CANIF_WriteSpeed(float left_speed, float right_speed)
     WriteSpeedMsg(left_speed, right_speed);
 }
 
-void CANIF_WriteDistance(float left_dist, float right_dist)
+void CANIF_WritePosition(float x_position, float y_position)
 {
-    WriteDistanceMsg(left_dist, right_dist);
+    WritePositionMsg(x_position, y_position);
 }
 
 void CANIF_WriteHeading(float heading)

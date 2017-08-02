@@ -42,8 +42,10 @@ int32 Encoder_RightGetCount();
 float Encoder_LeftGetDeltaCount();
 float Encoder_RightGetDeltaCount();
 
-float Encoder_LeftGetDist();
-float Encoder_RightGetDist();
+float Encoder_LeftGetDeltaDist();
+float Encoder_RightGetDeltaDist();
+
+float Encoder_GetCenterDist();
 
 void Encoder_Reset();
 

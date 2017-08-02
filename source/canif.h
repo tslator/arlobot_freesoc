@@ -44,7 +44,7 @@ void CANIF_SetCalibrationStatusBit(uint16 bit);
 void CANIF_ClearCalibrationStatusBit(uint16 bit);
 
 void CANIF_WriteSpeed(float left_speed, float right_speed);
-void CANIF_WriteDistance(float left_dist, float right_dist);
+void CANIF_WritePosition(float x_position, float y_position);
 void CANIF_WriteHeading(float heading);
 void CANIF_UpdateHeartbeat(uint32 heartbeat);
 

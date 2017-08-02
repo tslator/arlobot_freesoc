@@ -46,9 +46,10 @@
  *-------------------------------------------------------------------------------------------------*/    
 static float left_speed;
 static float right_speed;
-static float left_dist;
-static float right_dist;
-static float heading;
+static float x_position;
+static float y_position;
+static float theta;
+static float linear_bias;
 static float angular_bias;
 
 /*---------------------------------------------------------------------------------------------------
@@ -58,9 +59,10 @@ static float angular_bias;
 #ifdef ODOM_DUMP_ENABLED
 static char left_speed_str[10];
 static char right_speed_str[10];
-static char left_dist_str[10];
-static char right_dist_str[10];
-static char heading_str[10];
+static char x_position_str[10];
+static char y_position_str[10];
+static char theta_str[10];
+static char linear_bias_str[10];
 static char angular_bias_str[10];
 static uint32 last_odom_report = 0;
         
@@ -81,17 +83,19 @@ static void DumpOdom()
         {
             ftoa(left_speed, left_speed_str, 3);
             ftoa(right_speed, right_speed_str, 3);
-            ftoa(left_dist, left_dist_str, 3);
-            ftoa(right_dist, right_dist_str, 3);
-            ftoa(heading, heading_str, 3);
+            ftoa(x_position, x_position_str, 3);
+            ftoa(y_position, y_position_str, 3);
+            ftoa(theta, theta_str, 3);
+            ftoa(linear_bias, linear_bias_str, 3);
             ftoa(angular_bias, angular_bias_str, 3);
             
-            DEBUG_PRINT_ARG("ls: %s rs: %s ld: %s rd: %s hd: %s ab: %s\r\n", 
+            DEBUG_PRINT_ARG("ls: %s rs: %s ld: %s rd: %s hd: %s ab: %s lb: %s\r\n", 
                             left_speed_str, 
                             right_speed_str, 
-                            left_dist_str, 
-                            right_dist_str, 
-                            heading_str,
+                            x_position_str, 
+                            y_position_str, 
+                            theta_str,
+                            linear_bias_str,
                             angular_bias_str);
             
             last_odom_report = millis();
@@ -111,11 +115,12 @@ void Odom_Init()
 {
     left_speed = 0.0;
     right_speed = 0.0;
-    left_dist = 0.0;
-    right_dist = 0.0;
-    heading = 0.0;
+    x_position = 0.0;
+    y_position = 0.0;
+    theta = 0.0;
     
     angular_bias = Cal_GetAngularBias();
+    linear_bias = Cal_GetLinearBias();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -147,12 +152,15 @@ void Odom_Update()
     left_speed = Encoder_LeftGetMeterPerSec();
     right_speed = Encoder_RightGetMeterPerSec();
     
-    left_dist = Encoder_LeftGetDist();
-    right_dist = Encoder_RightGetDist();
-
-    heading = CalcHeading(left_dist, right_dist, TRACK_WIDTH, angular_bias);
+    float left_delta_dist = Encoder_LeftGetDeltaDist();
+    float right_delta_dist = Encoder_RightGetDeltaDist();
+    float center_delta_dist = Encoder_GetCenterDist();
     
-    Control_WriteOdom(left_speed, right_speed, left_dist, right_dist, heading);
+    x_position += center_delta_dist * cos(theta);
+    y_position += center_delta_dist * sin(theta);
+    theta += (right_delta_dist - left_delta_dist) / TRACK_WIDTH;
+    
+    Control_WriteOdom(left_speed, right_speed, x_position, y_position, theta);
     
     DUMP_ODOM();
 }
@@ -168,19 +176,20 @@ void Odom_Reset()
 {
     left_speed = 0;
     right_speed = 0;
-    left_dist = 0;
-    right_dist = 0;
-    heading = 0;
+    x_position = 0;
+    y_position = 0;
+    theta = 0;
     
+    linear_bias = Cal_GetLinearBias();
     angular_bias = Cal_GetAngularBias();
     
-    Control_WriteOdom(left_speed, right_speed, left_dist, right_dist, heading);
+    Control_WriteOdom(left_speed, right_speed, x_position, y_position, theta);
     DUMP_ODOM();       
 }
 
 float Odom_GetHeading()
 {
-    return heading;
+    return theta;
 }
 
 /* [] END OF FILE */

@@ -76,8 +76,8 @@
            <------ Odometry ------>
       16           4         [left speed]                   measured left speed
       20           4         [right speed]                  measured right speed
-      24           4         [left distance]                measured left distance 
-      28           4         [right distance]               measured right distance
+      24           4         [x position]                   measured x position 
+      28           4         [y position]                   measured y position
       32           4         [heading]                      measured heading
       36           4         [heartbeat]                    used for testing the i2c communication
  */
@@ -92,14 +92,13 @@ typedef struct
 } __attribute__ ((packed)) READWRITE_TYPE;
 
 /* Define the odometry structure for communicating the position, heading and velocity of the wheel 
-   Note: Each Psoc board controls a single wheel, but calculates and reports odometry for the robot
  */
 typedef struct
 {
     float left_speed;
     float right_speed;
-    float left_delta_dist;
-    float right_delta_dist;
+    float x_position;
+    float y_position;
     float heading;
 } __attribute__ ((packed)) ODOMETRY;
 
@@ -346,10 +345,10 @@ void I2CIF_WriteSpeed(float left_speed, float right_speed)
     i2c_buf.read_only.odom.right_speed = right_speed;
 }
 
-void I2CIF_WriteDistance(float left_dist, float right_dist)
+void I2CIF_WritePosition(float x_position, float y_position)
 {
-    i2c_buf.read_only.odom.left_delta_dist = left_dist;
-    i2c_buf.read_only.odom.right_delta_dist = right_dist;
+    i2c_buf.read_only.odom.x_position = x_position;
+    i2c_buf.read_only.odom.y_position = y_position;
 }
 
 void I2CIF_WriteHeading(float heading)

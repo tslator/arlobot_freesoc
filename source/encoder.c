@@ -73,7 +73,7 @@ typedef struct _encoder_tag
     float avg_delta_count;
     float avg_cps;
     float avg_mps;
-    float dist;
+    float delta_dist;
     MOVING_AVERAGE_FLOAT_TYPE delta_count_ma;
     MOVING_AVERAGE_FLOAT_TYPE avg_cps_ma;
     READ_ENCODER_COUNTER_TYPE read_counter;
@@ -86,7 +86,7 @@ typedef struct _encoder_tag
 static ENCODER_TYPE left_enc = {
     /* name */              "left",
     /* count/speed */       0, 0, 0, 0, 0, 0,
-    /* dist */              0.0,
+    /* delta_dist */        0.0,
     /* count ma */          {0, 0},
     /* cps ma */            {0, 0},
     /* get enc count */     Left_QuadDec_GetCounter,
@@ -96,21 +96,18 @@ static ENCODER_TYPE left_enc = {
 static ENCODER_TYPE right_enc = {
     /* name */              "right",
     /* count/speed */       0, 0, 0, 0, 0, 0,
-    /* dist */              0.0,
+    /* delta dist */        0.0,
     /* count ma */          {0, 0},
     /* cps ma */            {0, 0},
     /* get enc count */     Right_QuadDec_GetCounter,
     /* set enc count */     Right_QuadDec_SetCounter,
 };
 
-static float linear_bias;
-
 #if defined (LEFT_ENC_DUMP_ENABLED) || defined (RIGHT_ENC_DUMP_ENABLED)
 static char avg_cps_str[10];
 static char avg_delta_count_str[10];
 static char avg_mps_str[10];
-static char dist_str[10];
-static char linear_bias_str[10];
+static char delta_dist_str[10];
 /*---------------------------------------------------------------------------------------------------
  * Name: DumpEncoder
  * Description: Dumps the current state of the encoder to the serial port
@@ -123,17 +120,15 @@ static char linear_bias_str[10];
     ftoa(enc->avg_cps, avg_cps_str, 3);
     ftoa(enc->avg_delta_count, avg_delta_count_str, 3);
     ftoa(enc->avg_mps, avg_mps_str, 3);
-    ftoa(enc->dist, dist_str, 3);
-    ftoa(linear_bias, linear_bias_str, 3);
+    ftoa(enc->delta_dist, delta_dist_str, 3);
 
-    DEBUG_PRINT_ARG("%s enc: %s %s %s %ld %s %s\r\n", 
+    DEBUG_PRINT_ARG("%s enc: %s %s %s %ld %s\r\n", 
                     enc->name, 
                     avg_cps_str, 
                     avg_mps_str, 
                     avg_delta_count_str, 
                     enc->delta_count, 
-                    dist_str,
-                    linear_bias_str);
+                    delta_dist_str);
 }
 #endif
 
@@ -160,7 +155,7 @@ static void Encoder_Sample(ENCODER_TYPE *enc, uint32 delta_time)
     
     enc->avg_mps = enc->avg_cps * METER_PER_COUNT;
     
-    enc->dist += linear_bias * PI_D * enc->avg_delta_count/COUNT_PER_REVOLUTION;
+    enc->delta_dist = PI_D * enc->avg_delta_count/COUNT_PER_REVOLUTION;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -176,7 +171,7 @@ void Encoder_Init()
     left_enc.last_count = 0;
     left_enc.delta_count = 0;
     left_enc.avg_delta_count = 0;
-    left_enc.dist = 0.0;
+    left_enc.delta_dist = 0.0;
     left_enc.delta_count_ma.last = 0;
     left_enc.delta_count_ma.n = 20;
     left_enc.avg_cps_ma.last = 0;
@@ -188,15 +183,13 @@ void Encoder_Init()
     right_enc.last_count = 0;
     right_enc.delta_count = 0;
     right_enc.avg_delta_count = 0;
-    right_enc.dist = 0.0;
+    right_enc.delta_dist = 0.0;
     right_enc.delta_count_ma.last = 0;
     right_enc.delta_count_ma.n = 20;
     right_enc.avg_cps_ma.last = 0;
     right_enc.avg_cps_ma.n = 10;
     right_enc.avg_cps = 0;
     right_enc.avg_mps = 0;
-    
-    linear_bias = Cal_GetLinearBias();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -366,39 +359,39 @@ float Encoder_RightGetDeltaCount()
 }
 
 /*---------------------------------------------------------------------------------------------------
- * Name: Encoder_LeftGetDist
+ * Name: Encoder_LeftGetDeltaDist
  * Description: Returns the left wheel distance (in meters).
  * Parameters: None
  * Return: float
  * 
  *-------------------------------------------------------------------------------------------------*/
-float Encoder_LeftGetDist()
+float Encoder_LeftGetDeltaDist()
 {
-    return left_enc.dist;
+    return left_enc.delta_dist;
 }
 
 /*---------------------------------------------------------------------------------------------------
- * Name: Encoder_RightGetDist
+ * Name: Encoder_RightGetDeltaDist
  * Description: Returns the right wheel distance (in meters).
  * Parameters: None
  * Return: float
  * 
  *-------------------------------------------------------------------------------------------------*/
-float Encoder_RightGetDist()
+float Encoder_RightGetDeltaDist()
 {
-    return right_enc.dist;
+    return right_enc.delta_dist;
 }
 
 /*---------------------------------------------------------------------------------------------------
- * Name: Encoder_GetDist
+ * Name: Encoder_GetCenterDist
  * Description: Returns the distance (in meters) traveled by the center of the robot.
  * Parameters: None
  * Return: float
  * 
  *-------------------------------------------------------------------------------------------------*/
-float Encoder_GetDist()
+float Encoder_GetCenterDist()
 {
-    return (left_enc.dist + right_enc.dist) / 2;
+    return (left_enc.delta_dist + right_enc.delta_dist) / 2;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -419,7 +412,7 @@ void Encoder_Reset()
     left_enc.avg_mps = 0;
     left_enc.avg_cps_ma.last = 0;
     left_enc.count = 0;
-    left_enc.dist = 0;
+    left_enc.delta_dist = 0;
     
     right_enc.write_counter(0);
     right_enc.last_count = 0;
@@ -430,9 +423,7 @@ void Encoder_Reset()
     right_enc.avg_mps = 0;
     right_enc.avg_cps_ma.last = 0;
     right_enc.count = 0;
-    right_enc.dist = 0;
-    
-    linear_bias = Cal_GetLinearBias();
+    right_enc.delta_dist = 0;
     
     LEFT_DUMP_ENC(&left_enc);
     RIGHT_DUMP_ENC(&right_enc);    
