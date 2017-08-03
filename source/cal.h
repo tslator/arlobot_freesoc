@@ -21,6 +21,7 @@
 #include "config.h"
 #include "calstore.h"
 #include "pwm.h"
+#include "pid.h"
     
 /* The calibration module supports the following calibrations:
     

@@ -21,11 +21,12 @@
 #include <stdio.h>
 #include "config.h"
 #include "pid.h"
+#include "leftpid.h"
+#include "rightpid.h"
 #include "time.h"
 #include "utils.h"
 #include "encoder.h"
 #include "motor.h"
-#include "pid_controller.h"
 #include "diag.h"
 #include "debug.h"
 #include "odom.h"
@@ -36,86 +37,26 @@
 /*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
-#ifdef LEFT_PID_DUMP_ENABLED
-#define LEFT_DUMP_PID()  if (Debug_IsEnabled(DEBUG_LEFT_PID_ENABLE_BIT)) \
-    DumpPid(left_pid.name, &left_pid.pid, left_pid.get_pwm())
-#else
-#define  LEFT_DUMP_PID()
-#endif
-
-#ifdef RIGHT_PID_DUMP_ENABLED
-#define RIGHT_DUMP_PID()  if (Debug_IsEnabled(DEBUG_RIGHT_PID_ENABLE_BIT)) \
-    DumpPid(right_pid.name, &right_pid.pid, right_pid.get_pwm())
-#else
-#define RIGHT_DUMP_PID()
-#endif
-
 #ifdef PID_UPDATE_DELTA_ENABLED
 #define PID_DEBUG_DELTA(delta)  DEBUG_DELTA_TIME("pid", delta)
 #else
 #define PID_DEBUG_DELTA(delta)
 #endif
 
-#define PID_SAMPLE_TIME_MS  SAMPLE_TIME_MS(PID_SAMPLE_RATE)
-#define PID_SAMPLE_TIME_SEC SAMPLE_TIME_SEC(PID_SAMPLE_RATE)
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/    
-#define PID_MIN (0)     // count/sec
-#define PID_MAX (5000)  // count/sec
 
 
-/* The following PID values were determined experimentally and show good tracking behavior.
-    Left PID - P: 3.400, I: 1.450, D: 0.899
-    Right PID - P: 3.500, I: 1.450, D: 1.100
-*/
-#define left_kp (3.400)
-#define left_ki (1.450)
-#define left_kd (0.899)
-
-#define right_kp (3.500)
-#define right_ki (1.450)
-#define right_kd (1.100)
 
 /*---------------------------------------------------------------------------------------------------
  * Types
- *-------------------------------------------------------------------------------------------------*/    
-typedef struct _pid_tag
-{
-    char name[6];
-    WHEEL_TYPE wheel;
-    PIDControl pid;
-    GET_TARGET_FUNC_TYPE get_target;
-    GET_ENCODER_FUNC_TYPE get_encoder;
-    SET_MOTOR_PWM_FUNC_TYPE set_motor;
-    GET_MOTOR_PWM_FUNC_TYPE get_pwm;
-} PID_TYPE;
-
+ *-------------------------------------------------------------------------------------------------*/
 
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/    
-
-static PID_TYPE left_pid = { 
-    /* name */          "left",
-    /* wheel */         WHEEL_LEFT,
-    /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC},
-    /* get_target */    0,
-    /* get_encoder */   Encoder_LeftGetCntsPerSec,
-    /* set_motor */     Motor_LeftSetPwm,
-    /* get_pwm */       Motor_LeftGetPwm
-};
-
-static PID_TYPE right_pid = { 
-    /* name */          "right",
-    /* wheel */         WHEEL_RIGHT,
-    /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC},
-    /* get_target */    0,    
-    /* get_encoder */   Encoder_RightGetCntsPerSec,
-    /* set_motor */     Motor_RightSetPwm,
-    /* get_pwm */       Motor_RightGetPwm
-};
 
 static uint8 pid_enabled;
 
@@ -123,6 +64,7 @@ static uint8 pid_enabled;
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/    
+
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Pid_Init
@@ -134,11 +76,11 @@ static uint8 pid_enabled;
 void Pid_Init()
 {
     pid_enabled = 0;
-    left_pid.get_target = Control_LeftGetCmdVelocity;
-    right_pid.get_target = Control_RightGetCmdVelocity;
     
-    PIDInit(&left_pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, PID_MIN, PID_MAX, AUTOMATIC, DIRECT); 
-    PIDInit(&right_pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, PID_MIN, PID_MAX, AUTOMATIC, DIRECT); 
+    LeftPid_Init();    
+    RightPid_Init();
+    //LinearPid_Init();
+    //AngularPid_Init();
 }
     
 /*---------------------------------------------------------------------------------------------------
@@ -150,46 +92,10 @@ void Pid_Init()
  *-------------------------------------------------------------------------------------------------*/
 void Pid_Start()
 {
-    CAL_PID_TYPE *p_gains;
-    
-    // Note: the PID gains are stored in EEPROM.  The EEPROM cannot be accessed until the EEPROM
-    // component is started which is handled in the Nvstore module.  
-    // Pid_Start is called after Nvstore_Start.
-    
-    p_gains = Cal_LeftGetPidGains();    
-    PIDTuningsSet(&left_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
-    
-    p_gains = Cal_RightGetPidGains();
-    PIDTuningsSet(&right_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: ProcessPid
- * Description: Prepares the values to be passed to the PID controller (which handles the actual
- *              PID calculations) and applies the results to the relevant motor.  This function is
- *              called at the PID sampling rate
- * Parameters: pid - the relevant PID, left or right.
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-static void ProcessPid(PID_TYPE *pid)
-{
-    float tgt_speed;
-    int8 dir;
-    float enc_speed;
-    
-    tgt_speed = pid->get_target();
-    dir = tgt_speed > 0 ? 1 : -1;
-    
-    enc_speed = pid->get_encoder();
-    
-    PIDSetpointSet(&pid->pid, abs(tgt_speed / METER_PER_COUNT));
-    PIDInputSet(&pid->pid, abs(enc_speed));
-    
-    if (PIDCompute(&pid->pid))
-    {
-        pid->set_motor(Cal_CpsToPwm(pid->wheel, pid->pid.output * dir));
-    }
+    LeftPid_Start();    
+    RightPid_Start();
+    //LinearPid_Start();
+    //AngularPid_Start();    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -214,10 +120,10 @@ void Pid_Update()
         
         APPLY_SCHED_OFFSET(PID_SCHED_OFFSET, pid_sched_offset_applied);
         
-        ProcessPid(&left_pid);
-        ProcessPid(&right_pid);
-        LEFT_DUMP_PID();
-        RIGHT_DUMP_PID();
+        LeftPid_Process();
+        RightPid_Process();
+        //LinearPid_Process();
+        //AngularPid_Process();
     }
 }
 
@@ -233,8 +139,8 @@ void Pid_Update()
  *-------------------------------------------------------------------------------------------------*/
 void Pid_SetLeftRightTarget(GET_TARGET_FUNC_TYPE left_target, GET_TARGET_FUNC_TYPE right_target)
 {
-    left_pid.get_target = left_target;
-    right_pid.get_target = right_target;
+    LeftPid_SetTarget(left_target);
+    RightPid_SetTarget(right_target);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -246,8 +152,8 @@ void Pid_SetLeftRightTarget(GET_TARGET_FUNC_TYPE left_target, GET_TARGET_FUNC_TY
  *-------------------------------------------------------------------------------------------------*/
 void Pid_RestoreLeftRightTarget()
 {
-    left_pid.get_target = Control_LeftGetCmdVelocity;
-    right_pid.get_target = Control_RightGetCmdVelocity;
+    LeftPid_RestoreTarget();
+    RightPid_RestoreTarget();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -259,17 +165,8 @@ void Pid_RestoreLeftRightTarget()
  *-------------------------------------------------------------------------------------------------*/
 void Pid_Reset()
 {
-    left_pid.pid.input = 0;
-    left_pid.pid.iTerm = 0;
-    left_pid.pid.lastInput = 0;
-    left_pid.pid.setpoint = 0;
-    left_pid.pid.output = 0;
-
-    right_pid.pid.input = 0;
-    right_pid.pid.iTerm = 0;
-    right_pid.pid.lastInput = 0;
-    right_pid.pid.setpoint = 0;
-    right_pid.pid.output = 0;
+    LeftPid_Reset();
+    RightPid_Reset();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -281,76 +178,8 @@ void Pid_Reset()
  *-------------------------------------------------------------------------------------------------*/
 void Pid_Enable(uint8 enable)
 {
-    PIDMode mode = MANUAL;
-    
-    if (enable)
-    {
-        mode = AUTOMATIC;
-    }
-    
-    PIDModeSet(&left_pid.pid, mode);
-    PIDModeSet(&right_pid.pid, mode);
+    LeftPid_Enable(enable);
+    RightPid_Enable(enable);
 }
-
-/*---------------------------------------------------------------------------------------------------
- * Name: Pid_LeftSetGains
- * Description: Sets the right PID gains.
- * Parameters: kp - the proportional gain
- *             ki - the integral gain
- *             kd - the derivative gain
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-void Pid_LeftSetGains(float kp, float ki, float kd)
-{
-    PIDTuningsSet(&left_pid.pid, kp, ki, kd);
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: Pid_RightSetGains
- * Description: Sets the right PID gains.
- * Parameters: kp - the proportional gain
- *             ki - the integral gain
- *             kd - the derivative gain
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-void Pid_RightSetGains(float kp, float ki, float kd)
-{
-    PIDTuningsSet(&right_pid.pid, kp, ki, kd);
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: Pid_LeftGetGains
- * Description: Returns the right PID gains
- * Parameters: kp - the proportional gain
- *             ki - the integral gain
- *             kd - the derivative gain
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-void Pid_LeftGetGains(float *kp, float *ki, float *kd)
-{
-    *kp = left_pid.pid.dispKp;
-    *ki = left_pid.pid.dispKi;
-    *kd = left_pid.pid.dispKd;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: Pid_RightGetGains
- * Description: Returns the right PID gains
- * Parameters: kp - the proportional gain
- *             ki - the integral gain
- *             kd - the derivative gain
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-void Pid_RightGetGains(float *kp, float *ki, float *kd)
-{
-    *kp = right_pid.pid.dispKp;
-    *ki = right_pid.pid.dispKi;
-    *kd = right_pid.pid.dispKd;
-}
-
 
 /* [] END OF FILE */

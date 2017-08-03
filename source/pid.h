@@ -18,10 +18,15 @@
  *-------------------------------------------------------------------------------------------------*/    
 #include <project.h>
 #include "config.h"
+#include "pid_controller.h"
     
 /*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
+#define DUMP_PID(enable, pid, pwm)  do { \
+                                        if (Debug_IsEnabled(enable)) DumpPid(pid.name, &pid.pid, pwm); \
+                                    } while (0)
+    
     
 #ifdef ALTERNATE_PID_FORMULAE
 
@@ -81,27 +86,37 @@
     
 #endif
 
+#define PID_SAMPLE_TIME_MS  SAMPLE_TIME_MS(PID_SAMPLE_RATE)
+#define PID_SAMPLE_TIME_SEC SAMPLE_TIME_SEC(PID_SAMPLE_RATE)
+
+/*---------------------------------------------------------------------------------------------------
+ * Types
+ *-------------------------------------------------------------------------------------------------*/
+typedef float (*GET_TARGET_FUNC_TYPE)();
+typedef float (*GET_INPUT_FUNC_TYPE)();
+typedef void (*PID_UPDATE_TYPE)(float target, float input);
+
+typedef struct _pid_tag
+{
+    char name[6];
+    PIDControl pid;
+    int sign;
+    GET_TARGET_FUNC_TYPE get_target;
+    GET_INPUT_FUNC_TYPE get_input;
+    PID_UPDATE_TYPE update;
+} PID_TYPE;
+
+
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/    
 void Pid_Init();
-
 void Pid_Start();
-
 void Pid_Update();
-
 void Pid_SetLeftRightTarget(GET_TARGET_FUNC_TYPE left_target, GET_TARGET_FUNC_TYPE right_target);
 void Pid_RestoreLeftRightTarget();
-
 void Pid_Reset();
-
 void Pid_Enable(uint8 enable);
-
-void Pid_LeftSetGains(float kp, float ki, float kd);
-void Pid_RightSetGains(float kp, float ki, float kd);
-
-void Pid_LeftGetGains(float *kp, float *ki, float *kd);
-void Pid_RightGetGains(float *kp, float *ki, float *kd);
 
 #endif
 

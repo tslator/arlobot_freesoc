@@ -38,8 +38,6 @@
 /*---------------------------------------------------------------------------------------------------
  * Types
  *-------------------------------------------------------------------------------------------------*/
-typedef float (*GET_TARGET_FUNC_TYPE)();
-
 typedef enum {WHEEL_LEFT, WHEEL_RIGHT, WHEEL_BOTH} WHEEL_TYPE;
 typedef enum {DIR_FORWARD, DIR_BACKWARD, DIR_CW, DIR_CCW} DIR_TYPE;
     
@@ -128,7 +126,6 @@ Sample Rates
 #define ENC_SCHED_OFFSET    (7)  /* ms */
 #define PID_SCHED_OFFSET    (19)  /* ms */
 #define ODOM_SCHED_OFFSET   (11)  /* ms */
-
 
 /*----------------------------------------------------------------------------------------------------------------------
 

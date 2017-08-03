@@ -50,6 +50,8 @@
 static COMMAND_FUNC_TYPE control_cmd_velocity;
 static float left_cmd_velocity;
 static float right_cmd_velocity;
+static float linear_cmd_velocity;
+static float angular_cmd_velocity;
 static uint8 debug_override;
 
 
@@ -186,7 +188,7 @@ void Control_Update()
     // Used to override I2C commands (debug)
     //left_cmd_velocity = 0;
     //right_cmd_velocity = 0;
-    //UniToDiff(0.150, 0, &left_cmd_velocity, &right_cmd_velocity);
+    //UniToDiff(0.065, 0, &left_cmd_velocity, &right_cmd_velocity);
         
     if (timeout > MAX_CMD_VELOCITY_TIMEOUT)
     {
@@ -201,8 +203,9 @@ void Control_Update()
     left_cmd_velocity = max(MIN_LEFT_VELOCITY, min(left_cmd_velocity, MAX_LEFT_VELOCITY));
     right_cmd_velocity = max(MIN_RIGHT_VELOCITY, min(right_cmd_velocity, MAX_RIGHT_VELOCITY));
     
-    
-    
+    /* Calculate Linear/Angular velocities for linear/angular PID control */
+    DiffToUni(left_cmd_velocity, right_cmd_velocity, &linear_cmd_velocity, &angular_cmd_velocity);
+        
     /* Here seems like a reasonable place to evaluate safety, e.g., can we execute the requested speed change safely
        without running into something or falling into a hole (or down stairs).
     
@@ -278,6 +281,16 @@ float Control_LeftGetCmdVelocity()
 float Control_RightGetCmdVelocity()
 {
     return right_cmd_velocity;
+}
+
+float Control_LinearGetCmdVelocity()
+{
+    return linear_cmd_velocity;
+}
+
+float Control_AngularGetCmdVelocity()
+{
+    return angular_cmd_velocity;
 }
 
 /*---------------------------------------------------------------------------------------------------

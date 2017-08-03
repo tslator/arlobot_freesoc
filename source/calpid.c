@@ -25,6 +25,8 @@
 #include "serial.h"
 #include "nvstore.h"
 #include "pid.h"
+#include "leftpid.h"
+#include "rightpid.h"
 #include "utils.h"
 #include "encoder.h"
 #include "time.h"
@@ -332,12 +334,12 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
             switch (p_pid_params->pid_type)
             {
                 case PID_TYPE_LEFT:
-                    Pid_LeftSetGains(gains[0], gains[1], gains[2]);
+                    LeftPid_SetGains(gains[0], gains[1], gains[2]);
                     Cal_SetLeftRightVelocity(step_velocity, 0);
                     break;
                     
                 case PID_TYPE_RIGHT:
-                    Pid_RightSetGains(gains[0], gains[1], gains[2]);
+                    RightPid_SetGains(gains[0], gains[1], gains[2]);
                     Cal_SetLeftRightVelocity(0, step_velocity);
                     break;                    
             }
@@ -431,12 +433,12 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
             switch (p_pid_params->pid_type)
             {
                 case PID_TYPE_LEFT:
-                    Pid_LeftGetGains(&gains[0], &gains[1], &gains[2]);
+                    LeftPid_GetGains(&gains[0], &gains[1], &gains[2]);
                     StoreLeftGains(gains);
                     break;
                     
                 case PID_TYPE_RIGHT:
-                    Pid_RightGetGains(&gains[0], &gains[1], &gains[2]);
+                    RightPid_GetGains(&gains[0], &gains[1], &gains[2]);
                     StoreRightGains(gains);
                     break;
             }
@@ -479,12 +481,12 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
             switch (p_pid_params->pid_type)
             {
                 case PID_TYPE_LEFT:
-                    Pid_LeftGetGains(&gains[0], &gains[1], &gains[2]);
+                    LeftPid_GetGains(&gains[0], &gains[1], &gains[2]);
                     Cal_PrintGains("Left PID", gains);
                     break;
                 
                 case PID_TYPE_RIGHT:
-                    Pid_RightGetGains(&gains[0], &gains[1], &gains[2]);
+                    RightPid_GetGains(&gains[0], &gains[1], &gains[2]);
                     Cal_PrintGains("Right PID", gains);
                     break;
             }

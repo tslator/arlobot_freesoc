@@ -77,29 +77,16 @@ static CALIBRATION_TYPE linear_calibration = {CAL_INIT_STATE,
 
 static uint8 IsMoveFinished(float *distance)
 {
-    static float last_left_dist = 0.0;
-    static float last_right_dist = 0.0;
-    float left_dist;
-    float right_dist;
-    
     float delta_left_dist;
     float delta_right_dist;
 
-    left_dist = Encoder_LeftGetDist();
-    right_dist = Encoder_RightGetDist();
-
-    delta_left_dist = left_dist - last_left_dist;
-    delta_right_dist = right_dist - last_right_dist;
-    last_left_dist = left_dist;
-    last_right_dist = right_dist;
+    delta_left_dist = Encoder_LeftGetDeltaDist();
+    delta_right_dist = Encoder_RightGetDeltaDist();
     
     *distance -= min(abs(delta_left_dist), abs(delta_right_dist));
     
     if ( *distance <= 0.0 )
     {
-        /* Reinitialize the last_left/right for the next execution */
-        last_left_dist = 0.0;
-        last_right_dist = 0.0;
         return TRUE;
     }
 
@@ -296,27 +283,27 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
 static uint8 Results(CAL_STAGE_TYPE stage, void *params)
 {
     float distance;
-    float left_dist;
-    float right_dist;
+    float delta_left_dist;
+    float delta_right_dist;
     float heading;
 
-    char left_dist_str[10];
-    char right_dist_str[10];
+    char delta_left_dist_str[10];
+    char delta_right_dist_str[10];
     char heading_str[10];
     char linear_bias_str[10];
     
     params = params;
 
-    left_dist = Encoder_LeftGetDist();
-    right_dist = Encoder_RightGetDist();
+    delta_left_dist = Encoder_LeftGetDeltaDist();
+    delta_right_dist = Encoder_RightGetDeltaDist();
     heading = Odom_GetHeading();
 
-    ftoa(left_dist, left_dist_str, 3);    
-    ftoa(right_dist, right_dist_str, 3);
+    ftoa(delta_left_dist, delta_left_dist_str, 3);    
+    ftoa(delta_right_dist, delta_right_dist_str, 3);
     ftoa(heading, heading_str, 6);
     ftoa(Cal_GetLinearBias(), linear_bias_str, 3);
     
-    Ser_PutStringFormat("Left Wheel Distance: %s\r\nRight Wheel Distance: %s\r\n", left_dist_str, right_dist_str);
+    Ser_PutStringFormat("Left Delta Wheel Distance: %s\r\nRight Delta Wheel Distance: %s\r\n", delta_left_dist_str, delta_right_dist_str);
     Ser_PutStringFormat("Heading: %s\r\n", heading_str);
     Ser_PutStringFormat("Elapsed Time: %ld\r\n", end_time - start_time);
     Ser_PutStringFormat("Linear Bias: %s\r\n", linear_bias_str);

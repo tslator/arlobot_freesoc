@@ -23,12 +23,12 @@
 /*---------------------------------------------------------------------------------------------------
  * Types
  *-------------------------------------------------------------------------------------------------*/
-typedef enum {PID_TYPE_LEFT, PID_TYPE_RIGHT} PID_TYPE;
+typedef enum {PID_TYPE_LEFT, PID_TYPE_RIGHT} PID_ENUM_TYPE;
 
 typedef struct cal_pid_params_tag
 {
     char name[6];
-    PID_TYPE pid_type;
+    PID_ENUM_TYPE pid_type;
     DIR_TYPE direction;
     uint32 run_time;
 } CAL_PID_PARAMS;
