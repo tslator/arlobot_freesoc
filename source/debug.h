@@ -81,7 +81,8 @@ char formatted_string[256];
 #define DEBUG_PRINT_LEVEL(X, _fmt, ...)     if((DEBUG_LEVEL & X) == X) \
                                                 INSIDE_DEBUG_DETAIL(WHERESTR _fmt, WHEREARG,__VA_ARGS__)
 
-/*    
+
+/*
 #define DEBUG_DELTA_TIME(name, delta) do                                                    \
                                       {                                                     \
                                         if (SAMPLE_DEBUG_CONTROL_ENABLED)                   \

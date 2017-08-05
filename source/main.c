@@ -40,7 +40,7 @@ static uint32 last_main_loop;
                                     main_loop_delta = millis() - last_main_loop; \
                                     MAIN_LOOP_DEBUG_DELTA(main_loop_delta) \
                                     last_main_loop = millis(); \
-                                while (0);
+                                } while (0);
 #else
 #define MAIN_LOOP_DELTA()
 #endif        
@@ -87,19 +87,21 @@ int main()
 
     for(;;)
     {
-        MAIN_LOOP_DELTA();
         LOOP_START();
+        MAIN_LOOP_DELTA();
         
         /* Update any control changes */
         Control_Update();
         
         /* Update encoder-related values */
         Encoder_Update();
+
         /* Apply the velocity command to PID */
         Pid_Update();
+
         /* Update the odometry calculation */
         Odom_Update();
-        
+
         /* Diagnostic update */
         Diag_Update();        
         /* Handle calibration request */

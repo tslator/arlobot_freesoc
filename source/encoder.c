@@ -24,7 +24,6 @@
 #include "encoder.h"
 #include "utils.h"
 #include "time.h"
-//#include "i2c.h"
 #include "diag.h"
 #include "debug.h"
 #include "cal.h"
@@ -217,17 +216,14 @@ void Encoder_Start()
  *-------------------------------------------------------------------------------------------------*/
 void Encoder_Update()
 {
-    static uint32 last_update_time = 0;
+    static uint32 last_update_time = ENC_SCHED_OFFSET;
     static uint32 delta_time;
-    static uint8 enc_sched_offset_applied = 0;
     
     delta_time = millis() - last_update_time;
     ENC_DEBUG_DELTA(delta_time);
     if (delta_time >= ENC_SAMPLE_TIME_MS)
     {
         last_update_time = millis();
-        
-        APPLY_SCHED_OFFSET(ENC_SCHED_OFFSET, enc_sched_offset_applied);
         
         Encoder_Sample(&left_enc, delta_time);
         Encoder_Sample(&right_enc, delta_time);

@@ -52,26 +52,6 @@ typedef enum {DIR_FORWARD, DIR_BACKWARD, DIR_CW, DIR_CCW} DIR_TYPE;
 
 #define COMMS_DEBUG_ENABLED
 
-
-/*---------------------------------------------------------------------------------------------------------------------- 
-    Sensors
-----------------------------------------------------------------------------------------------------------------------*/
-#define NUM_FRONT_ULTRASONIC_SENSORS (8)
-#define NUM_REAR_ULTRASONIC_SENSORS (8)
-#define NUM_ULTRASONIC_SENSORS (NUM_FRONT_ULTRASONIC_SENSORS + NUM_REAR_ULTRASONIC_SENSORS)
-#define FIRST_FRONT_ULTRASONIC_SENSOR (0)
-#define LAST_FRONT_ULTRASONIC_SENSOR (NUM_FRONT_ULTRASONIC_SENSORS - 1)
-#define FIRST_REAR_ULTRASONIC_SENSOR (0)
-#define LAST_REAR_ULTRASONIC_SENSOR (NUM_REAR_ULTRASONIC_SENSORS - 1)
-   
-#define NUM_FRONT_INFRARED_SENSORS (8)
-#define NUM_REAR_INFRARED_SENSORS (8)
-#define NUM_INFRARED_SENSORS (NUM_FRONT_INFRARED_SENSORS + NUM_REAR_INFRARED_SENSORS)
-#define FIRST_FRONT_INFRARED_SENSOR (0)    
-#define LAST_FRONT_INFRARED_SENSOR (NUM_FRONT_INFRARED_SENSORS - 1)    
-#define FIRST_REAR_INFRARED_SENSOR (0)    
-#define LAST_REAR_INFRARED_SENSOR (NUM_REAR_INFRARED_SENSORS - 1)    
-
 /*---------------------------------------------------------------------------------------------------
  * Motors
  *-------------------------------------------------------------------------------------------------*/
@@ -113,17 +93,15 @@ Sample Rates
 
 ----------------------------------------------------------------------------------------------------------------------*/
 #define ENC_SAMPLE_RATE     (20) /* Hz */
-#define PID_SAMPLE_RATE     (15) /* Hz */
-#define ODOM_SAMPLE_RATE    (20) /* Hz */
-#define HEARTBEAT_RATE       (2) /* Hz */
-#define CTRL_VELOCITY_RATE  (15) /* Hz */
-#define SENSOR_SAMPLE_RATE  (20) /* Hz */
-#define STATUS_LED_RATE     (2)
+#define PID_SAMPLE_RATE     (25) /* Hz */
+#define ODOM_SAMPLE_RATE    (25) /* Hz */
+#define HEARTBEAT_RATE      (2)  /* Hz */
+#define STATUS_LED_RATE     (2)  /* Hz */
 
 /* The following defines and macro provide a mechanism to distribute the sampling across the main loop, i.e., keep the
    sampling from happening all of the same time, by introducing a one-time initial delay or sampling offset.
  */
-#define ENC_SCHED_OFFSET    (7)  /* ms */
+#define ENC_SCHED_OFFSET    (7)   /* ms */
 #define PID_SCHED_OFFSET    (19)  /* ms */
 #define ODOM_SCHED_OFFSET   (11)  /* ms */
 

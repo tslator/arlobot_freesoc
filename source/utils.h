@@ -116,7 +116,6 @@ int16 Interpolate(int16 x, int16 x1, int16 x2, uint16 y1, uint16 y2);
 
 void UniToDiff(float linear, float angular, float *left, float *right);
 void DiffToUni(float left, float right, float *linear, float *angular);
-float CalcHeading(float left_dist, float right_dist, float width, float bias);
 float CalcHeading(float left_count, float right_count, float radius, float width, float count_per_rev, float bias);
 uint16 CpsToPwm(int32 cps, int32 *cps_data, uint16 *pwm_data, uint8 data_size);
 
