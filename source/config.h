@@ -52,26 +52,6 @@ typedef enum {DIR_FORWARD, DIR_BACKWARD, DIR_CW, DIR_CCW} DIR_TYPE;
 
 #define COMMS_DEBUG_ENABLED
 
-
-/*---------------------------------------------------------------------------------------------------------------------- 
-    Sensors
-----------------------------------------------------------------------------------------------------------------------*/
-#define NUM_FRONT_ULTRASONIC_SENSORS (8)
-#define NUM_REAR_ULTRASONIC_SENSORS (8)
-#define NUM_ULTRASONIC_SENSORS (NUM_FRONT_ULTRASONIC_SENSORS + NUM_REAR_ULTRASONIC_SENSORS)
-#define FIRST_FRONT_ULTRASONIC_SENSOR (0)
-#define LAST_FRONT_ULTRASONIC_SENSOR (NUM_FRONT_ULTRASONIC_SENSORS - 1)
-#define FIRST_REAR_ULTRASONIC_SENSOR (0)
-#define LAST_REAR_ULTRASONIC_SENSOR (NUM_REAR_ULTRASONIC_SENSORS - 1)
-   
-#define NUM_FRONT_INFRARED_SENSORS (8)
-#define NUM_REAR_INFRARED_SENSORS (8)
-#define NUM_INFRARED_SENSORS (NUM_FRONT_INFRARED_SENSORS + NUM_REAR_INFRARED_SENSORS)
-#define FIRST_FRONT_INFRARED_SENSOR (0)    
-#define LAST_FRONT_INFRARED_SENSOR (NUM_FRONT_INFRARED_SENSORS - 1)    
-#define FIRST_REAR_INFRARED_SENSOR (0)    
-#define LAST_REAR_INFRARED_SENSOR (NUM_REAR_INFRARED_SENSORS - 1)    
-
 /*---------------------------------------------------------------------------------------------------
  * Motors
  *-------------------------------------------------------------------------------------------------*/
