@@ -93,17 +93,15 @@ Sample Rates
 
 ----------------------------------------------------------------------------------------------------------------------*/
 #define ENC_SAMPLE_RATE     (20) /* Hz */
-#define PID_SAMPLE_RATE     (15) /* Hz */
-#define ODOM_SAMPLE_RATE    (20) /* Hz */
-#define HEARTBEAT_RATE       (2) /* Hz */
-#define CTRL_VELOCITY_RATE  (15) /* Hz */
-#define SENSOR_SAMPLE_RATE  (20) /* Hz */
-#define STATUS_LED_RATE     (2)
+#define PID_SAMPLE_RATE     (25) /* Hz */
+#define ODOM_SAMPLE_RATE    (25) /* Hz */
+#define HEARTBEAT_RATE      (2)  /* Hz */
+#define STATUS_LED_RATE     (2)  /* Hz */
 
 /* The following defines and macro provide a mechanism to distribute the sampling across the main loop, i.e., keep the
    sampling from happening all of the same time, by introducing a one-time initial delay or sampling offset.
  */
-#define ENC_SCHED_OFFSET    (7)  /* ms */
+#define ENC_SCHED_OFFSET    (7)   /* ms */
 #define PID_SCHED_OFFSET    (19)  /* ms */
 #define ODOM_SCHED_OFFSET   (11)  /* ms */
 
