@@ -108,8 +108,7 @@ void Pid_Start()
  *-------------------------------------------------------------------------------------------------*/
 void Pid_Update()
 {
-    static uint32 last_update_time = 0;
-    static uint8 pid_sched_offset_applied = 0;
+    static uint32 last_update_time = PID_SCHED_OFFSET;
     uint32 delta_time;
     
     delta_time = millis() - last_update_time;
@@ -117,8 +116,6 @@ void Pid_Update()
     if (delta_time >= PID_SAMPLE_TIME_MS)
     {    
         last_update_time = millis();
-        
-        APPLY_SCHED_OFFSET(PID_SCHED_OFFSET, pid_sched_offset_applied);
         
         LeftPid_Process();
         RightPid_Process();

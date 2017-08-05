@@ -41,6 +41,13 @@
 
 #define ODOM_SAMPLE_TIME_MS  SAMPLE_TIME_MS(ODOM_SAMPLE_RATE)
 
+
+#ifdef ODOM_DEBUG_DELTA_ENABLED
+#define ODOM_DEBUG_DELTA(delta) DEBUG_DELTA_TIME("odom", delta)
+#else
+#define ODOM_DEBUG_DELTA(delta)
+#endif    
+
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/    
@@ -141,28 +148,33 @@ void Odom_Start()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
+
 void Odom_Update()
 {
-    /* Note: All of the calculations (except for heading) are performed in the encoder module where
-       there is time information.  This routine will be called on every cycle of the main loop which
-       is estimated to be about 40-50 ms.  I don't think this frequency will affect i2c performance.
-       The goal is to relay as fast as possible the latest odometry information.
-     */
+    static uint32 last_update_time = ODOM_SCHED_OFFSET;
+    static uint32 delta_time;
     
-    left_speed = Encoder_LeftGetMeterPerSec();
-    right_speed = Encoder_RightGetMeterPerSec();
-    
-    float left_delta_dist = Encoder_LeftGetDeltaDist();
-    float right_delta_dist = Encoder_RightGetDeltaDist();
-    float center_delta_dist = Encoder_GetCenterDist();
-    
-    x_position += center_delta_dist * cos(theta);
-    y_position += center_delta_dist * sin(theta);
-    theta += (right_delta_dist - left_delta_dist) / TRACK_WIDTH;
-    
-    Control_WriteOdom(left_speed, right_speed, x_position, y_position, theta);
-    
-    DUMP_ODOM();
+    delta_time = millis() - last_update_time;
+    ODOM_DEBUG_DELTA(delta_time);
+    if (delta_time >= ODOM_SAMPLE_TIME_MS)
+    {
+        last_update_time = millis();
+        
+        left_speed = Encoder_LeftGetMeterPerSec();
+        right_speed = Encoder_RightGetMeterPerSec();
+        
+        float left_delta_dist = Encoder_LeftGetDeltaDist();
+        float right_delta_dist = Encoder_RightGetDeltaDist();
+        float center_delta_dist = Encoder_GetCenterDist();
+        
+        x_position += center_delta_dist * cos(theta);
+        y_position += center_delta_dist * sin(theta);
+        theta += (right_delta_dist - left_delta_dist) / TRACK_WIDTH;
+        
+        Control_WriteOdom(left_speed, right_speed, x_position, y_position, theta);
+        
+        DUMP_ODOM();
+    }
 }
 
 /*---------------------------------------------------------------------------------------------------
