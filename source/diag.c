@@ -46,7 +46,7 @@ static uint32 last_led_time;
  *-------------------------------------------------------------------------------------------------*/ 
 void Diag_Init()
 {
-    Mainloop_Pin_Write(0);
+    Diag_Pin_Write(0);
     last_heartbeat_time = millis();
     heartbeat = 0;
     last_led_time = millis();

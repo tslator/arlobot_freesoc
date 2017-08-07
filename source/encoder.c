@@ -219,6 +219,8 @@ void Encoder_Update()
     static uint32 last_update_time = ENC_SCHED_OFFSET;
     static uint32 delta_time;
     
+    ENCODER_UPDATE_START();
+    
     delta_time = millis() - last_update_time;
     ENC_DEBUG_DELTA(delta_time);
     if (delta_time >= ENC_SAMPLE_TIME_MS)
@@ -230,6 +232,8 @@ void Encoder_Update()
         LEFT_DUMP_ENC(&left_enc);
         RIGHT_DUMP_ENC(&right_enc);
     }                    
+    
+    ENCODER_UPDATE_END();
 }
 
 /*---------------------------------------------------------------------------------------------------

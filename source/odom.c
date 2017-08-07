@@ -154,6 +154,8 @@ void Odom_Update()
     static uint32 last_update_time = ODOM_SCHED_OFFSET;
     static uint32 delta_time;
     
+    ODOM_UPDATE_START();
+    
     delta_time = millis() - last_update_time;
     ODOM_DEBUG_DELTA(delta_time);
     if (delta_time >= ODOM_SAMPLE_TIME_MS)
@@ -175,6 +177,8 @@ void Odom_Update()
         
         DUMP_ODOM();
     }
+
+    ODOM_UPDATE_END();    
 }
 
 /*---------------------------------------------------------------------------------------------------

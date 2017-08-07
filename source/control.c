@@ -32,6 +32,7 @@
 #include "debug.h"
 #include "config.h"
 #include "ccif.h"
+#include "diag.h"
 
 
 /*---------------------------------------------------------------------------------------------------
@@ -147,6 +148,8 @@ void Control_Update()
     uint16 device_control;
     uint16 debug_control;
     
+    CONTROL_UPDATE_START();
+    
     device_control = ReadDeviceControl();
     if (device_control & CONTROL_DISABLE_MOTOR_BIT)
     {
@@ -226,6 +229,8 @@ void Control_Update()
        disable the PWM if the distance (voltage) exceeds a threshold - no software required.
     
     */    
+    
+    CONTROL_UPDATE_END();
 }
 
 /*---------------------------------------------------------------------------------------------------
