@@ -37,11 +37,8 @@ SOFTWARE.
 #include "motor.h"
 #include "pid.h"
 #include "odom.h"
-#include "ultrasonic.h"
-#include "infrared.h"
 #include "cal.h"
 #include "nvstore.h"
-#include "sensor.h"
 
 
 /*---------------------------------------------------------------------------------------------------
