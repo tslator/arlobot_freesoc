@@ -27,23 +27,6 @@
 #include "nvstore.h"
 #include "sensor.h"
 
-#ifdef MAIN_LOOP_DELTA_ENABLED
-static uint32 main_loop_delta;
-static uint32 last_main_loop;
-#define MAIN_LOOP_DEBUG_DELTA(delta) DEBUG_DELTA_TIME("main", delta)
-#else
-#define MAIN_LOOP_DEBUG_DELTA(delta)
-#endif    
-
-#ifdef MAIN_LOOP_DELTA_ENABLED
-#define MAIN_LOOP_DELTA()       do { \
-                                    main_loop_delta = millis() - last_main_loop; \
-                                    MAIN_LOOP_DEBUG_DELTA(main_loop_delta) \
-                                    last_main_loop = millis(); \
-                                } while (0);
-#else
-#define MAIN_LOOP_DELTA()
-#endif        
 
 int main()
 {       
@@ -87,8 +70,7 @@ int main()
 
     for(;;)
     {
-        LOOP_START();
-        MAIN_LOOP_DELTA();
+        MAIN_LOOP_START();
         
         /* Update any control changes */
         Control_Update();
@@ -112,7 +94,7 @@ int main()
 
         I2CIF_TEST();
         
-        LOOP_END();
+        MAIN_LOOP_END();
     }
 }
 

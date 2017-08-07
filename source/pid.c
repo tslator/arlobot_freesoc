@@ -111,6 +111,8 @@ void Pid_Update()
     static uint32 last_update_time = PID_SCHED_OFFSET;
     uint32 delta_time;
     
+    PID_UPDATE_START();
+
     delta_time = millis() - last_update_time;
     PID_DEBUG_DELTA(delta_time);
     if (delta_time >= PID_SAMPLE_TIME_MS)
@@ -122,6 +124,8 @@ void Pid_Update()
         //LinearPid_Process();
         //AngularPid_Process();
     }
+    
+    PID_UPDATE_END();    
 }
 
 /*---------------------------------------------------------------------------------------------------
