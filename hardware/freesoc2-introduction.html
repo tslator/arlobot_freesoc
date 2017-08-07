@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1"> <!-- mobile mode if small screen device -->
+    
+    <title>FreeSoC2 Introduction - learn.sparkfun.com</title>
+
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <link href="/css/bootstrap.min.css?rev=1501788987" rel="stylesheet">
+    <link rel="stylesheet" href="/css/theme.github.css?rev=1501788987" type="text/css" media="screen" />    <link rel="alternate" type="application/atom+xml" title="Education Blog" href="https://learn.sparkfun.com/feeds/blog" />
+    <link rel="alternate" type="application/atom+xml" title="Tutorials" href="https://learn.sparkfun.com/feeds/tutorials" />
+    <link rel="alternate" type="application/atom+xml" title="Education Blog Comments" href="https://learn.sparkfun.com/feeds/blog_comments" />
+    <link rel="alternate" type="application/atom+xml" title="Tutorial Comments" href="https://learn.sparkfun.com/feeds/tutorial_comments" />
+
+    <script type="text/javascript">
+      var SFECONFIG = {
+        dnt: false,
+        http_server: 'http://learn.sparkfun.com',
+        https_server: 'https://learn.sparkfun.com',
+        http_static: 'https://cdn.sparkfun.com',
+        learn_server: 'https://learn.sparkfun.com',
+        commerce_server: 'https://www.sparkfun.com',
+        base_url: '/',
+        url: '/',
+        controller: 'tutorials',
+        action: 'view',
+        entity_id: '',
+        auth: false,
+        sparkrev: '1501788987',
+        track_arduino_products: true,
+        search_key: 'xY6qr5Ui3V2UMA762D9Z'      };
+      var require = {
+        paths: {
+          'jqueryui': 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min'
+        },
+        baseUrl: '/js/',
+        urlArgs: "sparkrev=" + SFECONFIG.sparkrev,
+        deps: ['jqueryui'],
+        callback: function() {
+          $('#learn').learn();
+          $('#learn').sfeutil();
+          $.shared('domready');
+        }
+      };
+    </script>
+    <script src="/js/learn-built.js?sparkrev=1501788987"></script>
+          <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-3404365-1', 'auto', {'allowLinker': true});
+      ga('require', 'linker');
+      ga('linker:autoLink', ['www.sparkfun.com', 'avc.sparkfun.com'] );
+      ga('require', 'displayfeatures');
+            ga('set', 'dimension1', 'Guest');
+      ga('send', 'pageview');
+
+      </script>
+        <script type="text/javascript">
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window,document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js'); 
+    fbq('init', '988931021243392');
+    fbq('track', 'PageView');
+  </script>
+  <noscript>
+    <img height="1" width="1"src="https://www.facebook.com/tr?id=988931021243392&ev=PageView&noscript=1"/>
+  </noscript>
+      </head>
+
+  <body id=learn class="layout-default no-type tutorials-view" ontouchstart="">
+            <!--
+    Start of DoubleClick Floodlight Tag: Please do not remove
+    Activity name of this tag: Universal
+    URL of the webpage where the tag is expected to be placed: http://sparkfun.com
+    This tag must be placed between the <body> and </body> tags, as close as possible to the opening tag.
+    Creation Date: 07/18/2016
+  -->
+  <script type="text/javascript">
+    var axel = Math.random() + "";
+    var a = axel * 10000000000000;
+    document.write('<iframe src="https://5626816.fls.doubleclick.net/activityi;src=5626816;type=count0;cat=unive0;dc_lat=;dc_rdid=;tag_for_child_directed_treatment=;ord=' + a + '?" width="1" height="1" frameborder="0" style="display:none"></iframe>');
+  </script>
+  <noscript>
+    <iframe src="https://5626816.fls.doubleclick.net/activityi;src=5626816;type=count0;cat=unive0;dc_lat=;dc_rdid=;tag_for_child_directed_treatment=;ord=1?" width="1" height="1" frameborder="0" style="display:none"></iframe>
+  </noscript>
+  <!-- End of DoubleClick Floodlight Tag: Please do not remove -->
+    
+    <div class="wrapper" itemscope itemtype="http://schema.org/WebSite">
+      <meta itemprop="url" content="https://learn.sparkfun.com/">
+      <div class=wrapper-inner>
+
+    
+<div class="header">
+  <div class="container">
+
+    <!-- Mobile Nav Button -->
+    <div class="mobile-menu-container left">
+      <a id="nav_toggle" class="mobile-menu-button nav_toggle" href="#"><span class="sfe-icon-hamburger"></span></a>
+              <a id="search_toggle" class="mobile-menu-button" href="#"><span class="glyphicon glyphicon-search"></span></a>
+          </div>
+
+    <nav class="top-links">
+      <ul>
+        <li>
+          <a href="https://www.sparkfun.com/distributors">Find a Retailer</a>        </li>
+                  <li>
+            <div class="dropdown">
+              <a href="#" id="phone_hours" type="button" data-toggle="dropdown" aria-haspopup="true" role="button" aria-expanded="false">
+                Need Help?
+                <span class="caret"></span>
+              </a>
+              <div class="dropdown-menu pull-right need-help" role="menu" aria-labelledby="phone_hours">
+                <h4>Customer Service</h4>
+                <p><a href="https://www.sparkfun.com/orders/"><span class="glyphicon glyphicon-dashboard"></span> Track My Order</a></p>
+                <p><a href="https://www.sparkfun.com/support"><span class="glyphicon glyphicon-question-sign"></span> Frequently Asked Questions</a></p>
+                <p><a href="https://www.sparkfun.com/support#InternationalShipping"><span class="glyphicon glyphicon-globe"></span> International Shipping Info</a></p>
+                <p><a href="mailto:cservice@sparkfun.com"><span class="glyphicon glyphicon-envelope"></span> Send Email</a></p>
+                <p class="small text-muted">
+                  Mon-Fri, 9am to 12pm and<br>
+                  1pm to 5pm U.S. Mountain Time:
+                </p>
+                <p><span class="glyphicon glyphicon-earphone"></span> (303) 284-0979</p>
+                                  <p><a data-toggle="chatpopup" href="https://www.sparkfun.com/chat/popup"><span class="glyphicon glyphicon-comment"></span> Chat With Us</a></p>
+                              </div>
+            </div>
+          </li>
+              </ul>
+    </nav>
+
+    <!-- Logo -->
+    <div class="logo-container">
+      <a class="logo" href="https://www.sparkfun.com/">
+        <span class="sfe-icon-flame"></span>
+        <span class="sfe-icon-sparkfun" data-icon="&#x1f525">
+          <span class="visuallyhidden">sparkfun.com</span>
+        </span>
+      </a>
+    </div>
+
+    <!-- Tabs -->
+    <!-- also edit mobile tabs in .tabs-container-mobile -->
+    <nav class="tabs-container hidden-xs">
+      <ul>
+        <li class="shop "><a href="https://www.sparkfun.com/categories">Shop</a></li>
+        <li class="learn active"><a href="https://learn.sparkfun.com/">Learn</a></li>
+        <li class="blog "><a href="https://www.sparkfun.com/news">Blog</a></li>
+        <li class="support "><a href="https://www.sparkfun.com/support">Support</a></li>
+      </ul>
+    </nav>
+
+    <!-- Cart & User -->
+    <div class="user-container mobile-menu-container right">
+
+      <a id="account_toggle" class="mobile-menu-button" href="#"><span class="glyphicon glyphicon-user"></span></a>
+
+              <div class="cart mobile-menu-button">
+          <a href="https://www.sparkfun.com/cart">
+            <span id="cart_status" class="sfe-icon-carticon cart-empty">
+              <span class="visuallyhidden">Shopping Cart</span>
+            </span>
+            <span class="cart_count">
+              <span id="items_in_cart">0</span>
+              <span id="cart_noun">items</span>
+            </span>
+          </a>
+        </div>
+      
+              <div class="user">
+          <!-- login modal trigger -->
+          <a class="btn btn-default" href="https://www.sparkfun.com/account/login?redirect=%2Flearn%2Ftutorials%2Ffreesoc2-introduction" data-toggle="modal" data-target="#login_modal" data-remote="false">log in</a>
+          <a class="btn btn-default" href="https://www.sparkfun.com/account/make">register</a>        </div>
+      
+    </div>
+
+    <nav class="tabs-container-mobile visible-xs col-xs-12">
+      <ul>
+        <li class="shop "><a href="https://www.sparkfun.com/categories">Shop</a></li>
+        <li class="learn active"><a href="https://learn.sparkfun.com/">Learn</a></li>
+        <li class="blog "><a href="https://www.sparkfun.com/news">Blog</a></li>
+        <li class="support "><a href="https://www.sparkfun.com/support">Support</a></li>
+      </ul>
+    </nav>
+
+  </div>
+
+  <!-- Navigation / Search -->
+  <div class="main-nav-container">
+
+    <div class="container">
+
+      <nav class="product-nav">
+        <button type="button" class="product-menu">
+          <span class="menu-icon sfe-icon-hamburger"></span>
+          <span class="product-menu-name">Product Menu</span>
+        </button>
+
+                  <form id="search_form" class="search" action="https://www.sparkfun.com/search/results" method="get" itemprop="potentialAction" itemscope itemtype="http://schema.org/SearchAction">
+            <meta itemprop="target" content="https://www.sparkfun.com/search/results?term={term}">
+            <div class="ui-widget">
+              <input name="term" id="global-search" class="form-control" type="text" value="" placeholder="find products, tutorials, etc..." itemprop="query-input" autocomplete="off">
+              <button type="submit" class="glyphicon glyphicon-search global-search-icon" aria-label="Search"></button>
+            </div>
+          </form>
+              </nav>
+
+      <nav class="sub-nav">
+        <ul>
+          <li>
+            <a href="http://www.sparkfuneducation.com" target="_blank">Education</a>
+          </li>
+          <li>
+            <a href="https://avc.sparkfun.com/"><span class="sfe-icon-avc"></span></a>          </li>
+          <li>
+            <a href="https://forum.sparkfun.com/" target="_blank">Forum</a>
+          </li>
+          <li>
+            <a href="https://data.sparkfun.com/" target="_blank">Data</a>
+          </li>
+        </ul>
+      </nav>
+
+    </div>
+
+    <div class="product-menu-container">
+      <div class="container">
+
+        <div class="fixed-product-menu-container col-lg-2 col-sm-3 col-xs-12">
+          <div class="desktop-toggle product-menu-group">
+            <a class="product-menu-heading" href="https://www.sparkfun.com/account/mobile_toggle?redirect=%2Flearn%2Ftutorials%2Ffreesoc2-introduction">Desktop Site</a>            <ul class="list-unstyled">
+            </ul>
+          </div>
+          <div class="product-menu-group">
+            <a class="product-menu-heading" href="https://www.sparkfun.com/categories">All Categories</a>            <ul class="list-unstyled">
+            </ul>
+          </div>
+          <div class="product-menu-group">
+            <a class="product-menu-heading" href="https://www.sparkfun.com/categories/featured">Featured <span class="visible-xs pull-right glyphicon glyphicon-plus"></span></a>            <ul class="list-unstyled">
+              <li><a class="product-menu-item" href="https://www.sparkfun.com/categories/new_products">New Products</a></li>
+              <li><a class="product-menu-item" href="https://www.sparkfun.com/categories/top"><span class="sfe-icon-flame"></span> Top Sellers</a></li>
+                              <li>
+                  <a href="https://www.sparkfun.com/spectacle" class="product-menu-item"><span class="sfe-icon-spectacle-glasses" style="color:#000000"></span> Spectacle</a>
+                </li>
+                            <li><a class="product-menu-item" href="https://www.sparkfun.com/categories/283">SparkX</a></li>
+              <li><a class="product-menu-item" href="https://www.sparkfun.com/categories/sale">Sale</a></li>
+              <li><a class="product-menu-item" href="https://www.sparkfun.com/gift_certificates">Gift Certificates</a></li>
+            </ul>
+          </div>
+                      <a href="https://www.sparkfun.com/microbit" class="hidden-xs">
+              <img class="img-responsive img-rounded center-block" src="https://cdn.sparkfun.com//c/180-180/assets/product_menu_items/1/microbit-now-availble.jpg" alt="Micro:bit Ecosystem">
+            </a>
+                  </div>
+
+                              <div class="product-menu-group col-lg-2 col-sm-3 col-xs-12">
+              <a href="https://www.sparkfun.com/categories/287" class="product-menu-heading">
+                 Brands                <span class="visible-xs pull-right glyphicon glyphicon-plus"></span>
+              </a>
+              <ul class="list-unstyled">
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/featured" class="product-menu-item">
+                                              <span class="product-menu-item-icon sfe-icon-flame" style="color:#ee2e22"></span> SparkFun                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/103" class="product-menu-item">
+                                              <span class="product-menu-item-icon sfe-icon-arduino" style="color:#00878f"></span> Arduino                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/233" class="product-menu-item">
+                                              <span class="product-menu-item-icon sfe-icon-rpi-multi-color" style="color:#ffffff"><span class="path1"></span><span class="path2"></span><span class="path3"></span></span> Raspberry Pi                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/284" class="product-menu-item">
+                                               micro:bit                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/279" class="product-menu-item">
+                                               Espressif (ESP)                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/287" class="product-menu-item">
+                                               <small>all brands</small>
+                                          </a>
+                  </li>
+                              </ul>
+            </div>
+                      <div class="product-menu-group col-lg-2 col-sm-3 col-xs-12">
+              <a href="https://www.sparkfun.com/categories/2" class="product-menu-heading">
+                 Development                <span class="visible-xs pull-right glyphicon glyphicon-plus"></span>
+              </a>
+              <ul class="list-unstyled">
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/299" class="product-menu-item">
+                                               Single Board Comp.                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/300" class="product-menu-item">
+                                               Microcontrollers                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/136" class="product-menu-item">
+                                               FPGA                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/149" class="product-menu-item">
+                                               Prototyping Boards                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/1" class="product-menu-item">
+                                               Programmers                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/2" class="product-menu-item">
+                                               <small>all development</small>
+                                          </a>
+                  </li>
+                              </ul>
+            </div>
+                      <div class="product-menu-group col-lg-2 col-sm-3 col-xs-12">
+              <a href="https://www.sparkfun.com/categories/23" class="product-menu-heading">
+                 Sensors                <span class="visible-xs pull-right glyphicon glyphicon-plus"></span>
+              </a>
+              <ul class="list-unstyled">
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/304" class="product-menu-item">
+                                               Movement                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/146" class="product-menu-item">
+                                               Biometrics                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/102" class="product-menu-item">
+                                               Imaging                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/305" class="product-menu-item">
+                                               Environment                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/117" class="product-menu-item">
+                                               Capacitive                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/23" class="product-menu-item">
+                                               <small>all sensors</small>
+                                          </a>
+                  </li>
+                              </ul>
+            </div>
+                      <div class="product-menu-group col-lg-2 col-sm-3 col-xs-12">
+              <a href="https://www.sparkfun.com/categories/46" class="product-menu-heading">
+                 Tools                <span class="visible-xs pull-right glyphicon glyphicon-plus"></span>
+              </a>
+              <ul class="list-unstyled">
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/271" class="product-menu-item">
+                                               3D Printing                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/280" class="product-menu-item">
+                                               CNC                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/49" class="product-menu-item">
+                                               Soldering                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/47" class="product-menu-item">
+                                               Hand Tools                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/177" class="product-menu-item">
+                                               Instruments                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/46" class="product-menu-item">
+                                               <small>all tools</small>
+                                          </a>
+                  </li>
+                              </ul>
+            </div>
+                      <div class="product-menu-group col-lg-2 col-sm-3 col-xs-12">
+              <a href="https://www.sparkfun.com/categories/310" class="product-menu-heading">
+                 Miscellaneous                <span class="visible-xs pull-right glyphicon glyphicon-plus"></span>
+              </a>
+              <ul class="list-unstyled">
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/157" class="product-menu-item">
+                                               All Kits                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/176" class="product-menu-item">
+                                               Books                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/311" class="product-menu-item">
+                                               Arts &amp; Crafts Supplies                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/351" class="product-menu-item">
+                                               SD Cards                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/130" class="product-menu-item">
+                                               Swag                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/310" class="product-menu-item">
+                                               <small>all misc</small>
+                                          </a>
+                  </li>
+                              </ul>
+            </div>
+                      <div class="product-menu-group col-lg-2 col-sm-3 col-xs-12">
+              <a href="https://www.sparkfun.com/categories/51" class="product-menu-heading">
+                 Components                <span class="visible-xs pull-right glyphicon glyphicon-plus"></span>
+              </a>
+              <ul class="list-unstyled">
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/89" class="product-menu-item">
+                                               LED &amp; Illumination                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/145" class="product-menu-item">
+                                               Buttons &amp; Switches                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/28" class="product-menu-item">
+                                               Power                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/76" class="product-menu-item">
+                                               LCDs                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/70" class="product-menu-item">
+                                               Cables                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/51" class="product-menu-item">
+                                               <small>all components</small>
+                                          </a>
+                  </li>
+                              </ul>
+            </div>
+                      <div class="product-menu-group col-lg-2 col-sm-3 col-xs-12">
+              <a href="https://www.sparkfun.com/categories/204" class="product-menu-heading">
+                 E-Textiles                <span class="visible-xs pull-right glyphicon glyphicon-plus"></span>
+              </a>
+              <ul class="list-unstyled">
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/327" class="product-menu-item">
+                                               LilyPad                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/328" class="product-menu-item">
+                                               Sewable Electronics                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/206" class="product-menu-item">
+                                               Materials                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/268" class="product-menu-item">
+                                               E-Textile Power                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/329" class="product-menu-item">
+                                               E-Textile Kits                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/204" class="product-menu-item">
+                                               <small>all e-textiles</small>
+                                          </a>
+                  </li>
+                              </ul>
+            </div>
+                      <div class="product-menu-group col-lg-2 col-sm-3 col-xs-12">
+              <a href="https://www.sparkfun.com/categories/31" class="product-menu-heading">
+                 Robotics                <span class="visible-xs pull-right glyphicon glyphicon-plus"></span>
+              </a>
+              <ul class="list-unstyled">
+                                  <li>
+                    <a href="https://www.sparkfun.com/pages/Actobotics" class="product-menu-item">
+                                               Actobotics                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/178" class="product-menu-item">
+                                               Motors &amp; Drivers                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/330" class="product-menu-item">
+                                               Parts                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/155" class="product-menu-item">
+                                               Hardware                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/181" class="product-menu-item">
+                                               Robotics Kits                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/31" class="product-menu-item">
+                                               <small>all robotics</small>
+                                          </a>
+                  </li>
+                              </ul>
+            </div>
+                      <div class="product-menu-group col-lg-2 col-sm-3 col-xs-12">
+              <a href="https://www.sparkfun.com/categories/16" class="product-menu-heading">
+                 Wireless &amp; IoT                <span class="visible-xs pull-right glyphicon glyphicon-plus"></span>
+              </a>
+              <ul class="list-unstyled">
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/115" class="product-menu-item">
+                                               Bluetooth                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/112" class="product-menu-item">
+                                               WiFi                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/338" class="product-menu-item">
+                                               Satellite                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/4" class="product-menu-item">
+                                               GPS                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/339" class="product-menu-item">
+                                               Wireless Kits                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/16" class="product-menu-item">
+                                               <small>all wireless/IoT</small>
+                                          </a>
+                  </li>
+                              </ul>
+            </div>
+                      <div class="product-menu-group col-lg-2 col-sm-3 col-xs-12">
+              <a href="https://www.sparkfun.com/categories/273" class="product-menu-heading">
+                 Audio                <span class="visible-xs pull-right glyphicon glyphicon-plus"></span>
+              </a>
+              <ul class="list-unstyled">
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/343" class="product-menu-item">
+                                               Audio Boards                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/342" class="product-menu-item">
+                                               Audio Cables                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/344" class="product-menu-item">
+                                               Speakers                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/345" class="product-menu-item">
+                                               Audio Chips                                          </a>
+                  </li>
+                                  <li>
+                    <a href="https://www.sparkfun.com/categories/273" class="product-menu-item">
+                                               <small>all audio</small>
+                                          </a>
+                  </li>
+                              </ul>
+            </div>
+                  
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+    
+    <div class=content>
+      <div class=container id=airlock>
+
+        
+        <div class=main-title>
+  <ul class="breadcrumb">
+    <li><a href="https://learn.sparkfun.com/">Home</a></li>
+    <li><a href="https://learn.sparkfun.com/tutorials">Tutorials</a></li>
+    <li>FreeSoC2 Introduction</li>
+      </ul>
+
+  <h1>
+    FreeSoC2 Introduction  </h1>
+
+</div>
+
+
+<a id=nav_toggle_pages class=nav_toggle href="#"><span>&#8801;</span> Pages</a>
+
+<div id=tutorial class="row">
+
+  <div class="col-sm-8" id="sections">
+
+    <div class="contributors">
+                      Contributors:
+                <a href="https://www.sparkfun.com/users/236377"><img src="https://static.sparkfun.com/avatar/f4e195a7becacb6d86238db8c87e90f0?d=retro&s=20&r=pg" /> SFUptownMaker</a>          </div>
+
+    <span class="fave_widget verbose">
+  <a href="#" class="fave_btn " title="Add to favorites" data-entity="learn_tutorials" data-entity-id="379">
+    <span class="fave_yes">
+      <span class="glyphicon glyphicon-heart"></span>
+      <span class="name">Favorited</span>
+    </span>
+    <span class="fave_no">
+      <span class="glyphicon glyphicon-heart-empty"></span>
+      <span class="name">Favorite</span>
+    </span>
+  </a>
+  <span class="fave_count">3</span>
+</span>    <div class="share-link-inline">
+
+  <a class="share-link-toggle" href="#">
+    <span class="share-title">
+      <span class="sfe-icon-share"></span>
+      Share    </span>
+  </a>
+
+  <div class="share-link-inner dialog">
+    Use this URL to share:<br>
+    <input class="form-control input-sm" type="text" value="http://sfe.io/t379" onclick="$(this).select();">
+
+    <div class="share-social">
+
+      <a rel=nofollow onclick="return $(this).sfeutil('track_link',this,'Share','clicked','googleplus');" href="https://plus.google.com/share?url=http%3A%2F%2Fsfe.io%2Ft379" title="Share on Google+"><span class="sfe-icon-google-plus hidetext"><span>Share on Google+</span></span></a>
+
+      <a rel=nofollow onclick="return $(this).sfeutil('track_link',this,'Share','clicked','tumblr');" href="https://www.tumblr.com/share/link?url=http%3A%2F%2Fsfe.io%2Ft379&name=FreeSoC2+Introduction" title="Share on Tumblr"><span class="sfe-icon-tumblr hidetext"><span>Share on Tumblr</span></span></a>
+
+      <a rel=nofollow onclick="return $(this).sfeutil('track_link',this,'Share','clicked','reddit');" href="https://www.reddit.com/submit?url=http%3A%2F%2Fsfe.io%2Ft379" title="Submit to reddit"><span class="sfe-icon-reddit hidetext"><span>Submit to reddi</span></span></a>
+
+    </div>
+
+    </div>
+  
+  <div class="share-social">
+
+    <a rel=nofollow onclick="return $(this).sfeutil('track_link',this,'Share','clicked','twitter');" href="https://twitter.com/intent/tweet?text=FreeSoC2+Introduction&url=http%3A%2F%2Fsfe.io%2Ft379&via=sparkfun" title="Share on Twitter"><span class="sfe-icon-twitter hidetext"><span>Share on Twitter</span></span></a>
+
+    <a rel=nofollow onclick="return $(this).sfeutil('track_link',this,'Share','clicked','facebook');" href="http://www.facebook.com/sharer.php?u=http%3A%2F%2Fsfe.io%2Ft379&t=FreeSoC2+Introduction" title="Share on Facebook"><span class="sfe-icon-facebook-nobox hidetext"><span>Share on Facebook</span></span></a>
+
+          <a rel=nofollow onclick="return $(this).sfeutil('track_link',this,'Share','clicked','pinterest');" href="https://www.pinterest.com/pin/create/button/?url=http%3A%2F%2Fsfe.io%2Ft379&media=https%3A%2F%2Fcdn.sparkfun.com%2F%2Fr%2F500-1000%2Fassets%2Flearn_tutorials%2F3%2F7%2F9%2FPSoC.jpg&description=FreeSoC2+Introduction" title="Pin It"><span class="sfe-icon-pinterest hidetext"><span>Pin It</span></span></a>
+    
+  </div>
+
+  
+</div>
+
+          <div class="section tutorial-page">
+        <h2 id="introduction">Introduction</h2>
+        <!---
+NOTE: This guide is for a previous version of the FreeSoC2, V11. If You have a newer version of this board (the version number can be found on the back of the PCB), please refer to [this tutorial](https://learn.sparkfun.com/tutorials/freesoc2-hookup-guide-v14).
+--->
+
+
+<p>The <a href="https://www.sparkfun.com/products/13229">FreeSoc2 is SparkFun&rsquo;s PSoC5LP development board</a>. It features a full onboard debugger, support for 5V and 3.3V IO voltages, and a CY8C5888AXI-LP096 processor with 256kB of flash, 64kB of SRAM and 2kB of EEPROM. The onboard oscillator can drive the processor at up to 80MHz, and the Cortex-M3 core provides superior performance.</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/parts/1/0/3/8/5/13229-02.jpg"><img src="https://cdn.sparkfun.com/assets/parts/1/0/3/8/5/13229-02.jpg" alt="FreeSoC2 Hero Shot" /></a></p>
+
+<p>The real power of the PSoC5LP isn&rsquo;t in the processor, however. Wrapped around the processor is a rich analog and digital programmable fabric which can be configured to provide many functions which would otherwise need to be realized in code (lowering system performance) or external circuitry (adding cost and board size). In addition, the highly flexible fabric means that most any function can be routed to most any pin, which makes this a wonderful tool for development and allows board layout errors to be solved, at least temporarily, pretty easily. Conceptually, this fabric is similar to an <a href="http://en.wikipedia.org/wiki/Field-programmable_gate_array">FPGA</a> or <a href="http://en.wikipedia.org/wiki/Complex_programmable_logic_device">CPLD</a>.</p>
+
+<p>We&rsquo;re going to discuss two different ways to tap the power of the PSoC. We&rsquo;ve ported the Arduino core to the PSoC5LP, so you can write code for the board in the standard Arduino IDE. The board duplicates the functionality of an Arduino Uno R3&rsquo;s various hardware peripherals on the pins, so many examples, libraries, and shields will work out of the box.</p>
+
+<p>The drawback of using the Arduino IDE, however, is that it lacks any means of configuring the programmable fabric (at the moment, at least&ndash;we&rsquo;re working on it!). To get the most out of the device, you&rsquo;ll need to use the PSoC Creator IDE, which is free of charge with no code limits from Cypress Semiconductor.  Sadly, the PSoC Creator software is Windows-only at this time. If you want to see that change, consider piping up on the <a href="http://www.cypress.com/?app=forum&amp;id=2492&amp;rID=41953">Cypress forums</a>!</p>
+
+<p>In this tutorial, we&rsquo;re going to go over the detailed specifications and layout of the board, how to add support for the board to the Arduino IDE, and how to get started with a simple blink project on the PSoC Creator IDE.</p>
+
+<h3>Materials Required</h3>
+
+<p>We&rsquo;re going to keep it simple; the FreeSoC2 has an onboard LED and user-accessible pushbutton, and we&rsquo;ll use those for our lessons. That means you&rsquo;ll only need the FreeSoC2 board and a <a href="https://www.sparkfun.com/products/10215">micro-B USB cable</a>.  You may, however, find it useful to have a second USB cable, as that will allow you to connect to both the debugger and the target at the same time.</p>
+
+<h3>Suggested Reading</h3>
+
+<p>If you&rsquo;re unfamiliar with the Arduino IDE, but want to learn, check out our <a href="https://learn.sparkfun.com/tutorials/installing-arduino-ide">tutorial on installing the Arduino IDE</a>.</p>
+
+<p>If you&rsquo;re using Windows 8, you also might want to read up on <a href="https://learn.sparkfun.com/tutorials/disabling-driver-signature-on-windows-8">installing drivers and disabling driver signing in Windows 8</a>.  You&rsquo;ll need to install several drivers to use the FreeSoC2 board.</p>      </div>
+          <div class="section tutorial-page">
+        <h2 id="hardware-overview">Hardware Overview</h2>
+        <p>There&rsquo;s a lot going on on this board: two processors, two USB ports, a ton of headers, and all sorts of configurable options.</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/left_half_hi_contrast.png"><img src="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/left_half_hi_contrast.png" alt="Left half" /></a></p>
+
+<p>We&rsquo;ll take a hardware tour, one element at a time, starting with the debugging and connection elements on the left.</p>
+
+<ol>
+<li>5.5mm x 2.1mm center positive barrel jack&ndash;This fits all of SparkFun&rsquo;s standard &ldquo;wall wart&rdquo; type power supplies. While the regulators on the FreeSoC2 can handle input voltages up to 12V, it&rsquo;s best to keep the input voltage as close to 5V as possible.</li>
+<li>&ldquo;Target&rdquo; USB Port&ndash;Provides USB connectivity to the target processor (the CY8C5888). When uploading code via the Arduino IDE, you&rsquo;ll connect to this port.</li>
+<li>&ldquo;Debugger&rdquo; USB Port&ndash;Connects to the debugger IC. Connecting to this port also creates a USB serial port which can be used to get and send data from and to a UART on the target processor.</li>
+<li>2.5mm JST PH series connector footprint&ndash;Our <a href="https://www.sparkfun.com/products/9749">through hole 2-pin JST PH connector</a> fits here, allowing you to power the board with any of our standard lithium ion polymer batteries.</li>
+<li>Debugger reset button&ndash;Resets the debugger. You will probably never need to use this.</li>
+<li>Debugger user button&ndash;Can be used to provide input to the debugger IC; currently unused.</li>
+<li>IO voltage selection switches&ndash;These switches allow you to select the voltage of the I/O signals, either 3.3V or 5V, on the target processor. The PSoC5LP has four I/O voltage quadrants; the bottom switch allows you to select the voltage of the quadrant providing the Arduino header signals and the top switch, all the others.</li>
+<li>Debugger IC JTAG/SWD header&ndash;This 2x5 0.050" pitch header can be used to program and debug the debugger itself. It&rsquo;s intended to support a connection to the <a href="http://www.cypress.com/?rID=38154">MiniProg3</a> programmer/debugger from Cypress.  You&rsquo;ll probably never need to use it.</li>
+<li>Target IC JTAG/SWD header&ndash;Similar in nature to the header for the debugger; the signals on these pins also come from the debugger IC.</li>
+<li>Debugger IC&ndash;The debug IC is also a PSoC5LP- in this case, CY8C5868LTI-LP039.  The firmware it comes preloaded with (referred to as &ldquo;KitProg&rdquo;) is freely available for download and modification; the part is bootloadable to replace the firmware or update it as new firmware becomes available.</li>
+<li>Debugger IC IO header&ndash;There are a number of signals available on this header; they are not used by default but you may implement additional debugging features on the debugger IC that do use them.</li>
+<li>Debugger IC user LED&ndash;Will be lit if the debugger can&rsquo;t detect a host, and will flash during data transfer (i.e., programming or debugging).</li>
+<li>I<sup>2</sup>C isolation jumpers&ndash;These normally open solder jumpers allow you to connect the I<sup>2</sup>C lines on the target board with the debugger.  Using Cypress&rsquo;s KitProg debugging software, you can snoop the I<sup>2</sup>C data traffic from the target IC. Normally, these are open, disabling this capability. Close them with solder blobs to connect the debugger to the target&rsquo;s I<sup>2</sup>C bus.</li>
+</ol>
+
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/right_half_hi_contrast.png"><img src="https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/9/right_half_hi_contrast.png" alt="Right half of board" /></a></p>
+
+<p>The right half of the board contains the target IC (a CY8C5888AXI-LP096) and the associated headers.</p>
+
+<ol>
+<li>Arduino Uno R3-type headers&ndash;For the most part, these headers are completely compatible with the Uno R3 board. The only exception is the VREF pin, normally located between the I<sup>2</sup>C pins and the ground above D13, is no-connect for this board.</li>
+<li>Target user LED&ndash;Tied to port 6, pin 7, which corresponds to D13 on the Arduino mapped headers.</li>
+<li>ADC reference bypass capacitor jumpers&ndash;These jumpers allow you to add a 100nF capacitor to three of the PSoC part&rsquo;s pins, to provide a bypass for ADC voltage references to increase the reference&rsquo;s accuracy.</li>
+<li>High-frequency crystal footprint&ndash;if you need better accuracy than can be achieved by the onboard oscillator, you may add a <a href="https://www.sparkfun.com/products/534">standard HC/49 crystal</a> here.</li>
+<li>Low-frequency crystal fooprint&ndash;if you want to implement an RTC, you may add a <a href="https://www.sparkfun.com/products/540">32.768kHz clock crystal</a> here.</li>
+<li>Target IC reset button&ndash;This button resets <strong>only</strong> the target IC.</li>
+<li>Target IC user button&ndash;This button can be mapped to any purpose within the application; the button pulls down to ground and is not tied to any other header.</li>
+<li>Additional IO headers&ndash;These 2x6 headers are all additional I/O, and their voltage level (along with the voltage present on the VDDIO pins of those headers) is controlled by the top VDDIO set switch on the left end of the board and can be set to either 3.3V or 5V.</li>
+<li>SIO pins&ndash;These six pins are special, in that they can be connected to a signal voltage which is higher than their nominal I/O voltage. They can, of course, be used normally as well. This allows these pins to be 5V tolerant when the rest of the IO pins are running at 3.3V.</li>
+</ol>
+      </div>
+          <div class="section tutorial-page">
+        <h2 id="using-the-arduino-ide">Using the Arduino IDE</h2>
+        <h2>Adding Support for the FreeSoC2 to the Arduino IDE</h2>
+
+<div class="alert alert-warning"><b>Important: please make sure you have Arduino.cc IDE version 1.6.4 or later before attempting to use the FreeSoC2 within the IDE!</b></div>
+
+
+<p>There are two options for adding support to the IDE: you may either download the files directly and manually install them <strike>or you may use the Board Manager feature</strike>. Either way, the first step is to use the Board Manager to add support for the ARM processor core.</p>
+
+<p><strong>We&rsquo;re working to add the support files to the board manager, but for now, manual installation is the only option.</strong></p>
+
+<h3>Adding ARM processor support</h3>
+
+<p>Unlike &ldquo;true&rdquo; Arduino boards like the Uno or Leonardo, the PSoC5LP uses an ARM Cortex-M3 processor core. Late model boards, such as the Due and the Zero, also use ARM processors, so the Arduino team have added the ARM-GCC toolset to the officially supported toolchain. That&rsquo;s good for us, because it means we don&rsquo;t have to do much work (at least, on the toolchain) to add support for the PSoC.</p>
+
+<p>All you need to do is open the Arduino IDE and launch the board manager (see image below).</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/arduino_board_manager.png"><img src="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/arduino_board_manager.png" alt="Arduino Board Manager" /></a></p>
+
+<p>One of the by-default available options is &ldquo;Arduino SAM Boards&rdquo;; these are boards using the ARM Cortex processor (specifically, the Atmega SAM parts).  Simply click in that box, to highlight it, and click &ldquo;Install&rdquo;.</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/Boards_Manager.png"><img src="https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/9/Boards_Manager.png" alt="Board Manager installer" /></a></p>
+
+<p>Once the install is complete, you&rsquo;ll see a new subgroup in the boards menu for the Arduino ARM boards. Now it&rsquo;s time to add support for the PSoC.</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/boards_w_sam.png"><img src="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/boards_w_sam.png" alt="Boards menu after installing ARM support" /></a></p>
+
+<h2>Adding Support for PSoC Boards</h2>
+
+<h3>Manually adding support</h3>
+
+<p>To add support manually, you&rsquo;ll need to download the files from <a href="https://github.com/sparkfun/PSoC_Arduino_Support">the GitHub repository</a>.</p>
+
+<a href="https://github.com/sparkfun/PSoC_Arduino_Support/archive/master.zip" class="btn btn-default">Download the support files as a zip</a>
+
+
+<p>Once you&rsquo;ve got your copy downloaded, all you need to do is copy the &ldquo;Hardware&rdquo; directory into either your sketchbook (you can find your sketchbook path in the preferences window, in Arduino) or into the main install directory for the Arduino IDE. Either way, if there&rsquo;s an existing &ldquo;Hardware&rdquo; directory, the files should just install alongside the existing files.</p>
+
+<p>The other files in the folder are the PSoC Creator IDE project files for the implementation of the Arduino hardware and core software. Once you&rsquo;re comfortable with using the FreeSoC2 in the Arduino IDE, you may wish to open this up as a first step towards using the full features of the part.</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/Preferences.png"><img src="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/Preferences.png" alt="Preferences window showing the location of the sketchbook" /></a></p>
+
+<p>If there <em>isn&rsquo;t</em> a &ldquo;Hardware&rdquo; directory in the sketchbook, that&rsquo;s fine; just drag the &ldquo;Hardware&rdquo; directory from the zip archive into the sketchbook.</p>
+
+<p>Restart the Arduino IDE, and you should see the boards in the &ldquo;Boards&rdquo; menu.</p>
+
+<h3>Using the Boards Manager</h3>
+
+<p>At this time, we aren&rsquo;t supporting the boards manager for the FreeSoC2. Check back soon; we&rsquo;re actively working on it.</p>
+
+<h2>Programming the FreeSoC2 Board With an Arduino Bootloader</h2>
+
+<p>If you&rsquo;ve purchased an early version of the FreeSoC2 (V11 or earlier; look on the back of the board, under the power connector for the version number), or if you&rsquo;ve previously used the PSoC Creator software to develop on your FreeSoC2 board, you&rsquo;ll find that it will not respond to the bootloading commands of the Arduino IDE.</p>
+
+<p>You&rsquo;ll need a Windows computer (at the moment; we&rsquo;re working on a Mac/Linux solution for the near future) to program the part with the bootloader hex file.</p>
+
+<a href="https://cdn.sparkfun.com/downloads/PSoCProgrammerSetup_3.22.3_3-24-15.exe" class="btn btn-default">Download the PSoC Programmer software</a>
+
+
+<p></p>
+
+<p>Once you&rsquo;ve installed the software, follow these instructions:</p>
+
+<ol>
+<li>Plug the board into your computer, connecting via the &ldquo;Debugger&rdquo; port (item 3 on the left-half hardware tour picture). <strong>Do not connect to the &ldquo;Target&rdquo; port at this time.</strong></li>
+<li>The drivers for the KitBridge programmer/debugger (onboard the FreeSoC2) have already been installed as part of the Programmer installation. If Windows fails to detect them automatically, they can be found in the Programmer installation directory. <a href="https://learn.sparkfun.com/tutorials/disabling-driver-signature-on-windows-8">If you have Windows 8 you may want to check out this tutorial about installing unsigned drivers.</a></li>
+<li>Launch Programmer. You&rsquo;ll see this window:
+<a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/programmer_open.png"><img src="https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/9/programmer_open.png" alt="alt text" /></a></li>
+<li>Load the &ldquo;Bootloader.hex&rdquo; file, located in the support package you downloaded above (&ldquo;Hardware/SparkFun/psoc&rdquo;).<br/>
+<a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/programmer_load.png"><img src="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/programmer_load.png" alt="hex file load" /></a></li>
+<li>Click the &ldquo;KitProg&rdquo; entry to select the board for programming. If there is no &ldquo;KitProg&rdquo; entry in the menu, check to make sure the driver has finished installing. If you aren&rsquo;t able to select the KitProg, check to make sure there isn&rsquo;t another copy of Programmer (or PSoC Creator, perhaps) running in another window.
+<a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/kitprog_select.png"><img src="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/kitprog_select.png" alt="port select section" /></a></li>
+<li>Select &ldquo;On&rdquo; for both &ldquo;Verification&rdquo; and &ldquo;AutoDetection&rdquo;.
+<a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/verification_and_autodetect.png"><img src="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/verification_and_autodetect.png" alt="verify and autodetect" /></a></li>
+<li>Click the &ldquo;Program&rdquo; button to load the bootloader onto the board.
+<a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/program_button.png"><img src="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/program_button.png" alt="Program button" /></a></li>
+<li>Connect the &ldquo;Target&rdquo; USB port on the board. The driver can be found in the support package you downloaded above (&ldquo;Hardware/SparkFun/psoc&rdquo;).</li>
+</ol>
+
+
+<p>If all has gone well, you&rsquo;ll have a new com port (named &ldquo;Cypress USB UART&rdquo;), and if you open the serial monitor in the Arduino IDE and send &ldquo;H&rdquo; and &ldquo;L&rdquo;, you should see the LED on the board toggle.</p>      </div>
+          <div class="section tutorial-page">
+        <h2 id="writing-code-in-arduino">Writing Code in Arduino</h2>
+        <h3>Differences Between FreeSoC2 and Other Arduino Boards</h3>
+
+<p>The core support for the PSoC is made to closely resemble the Arduino Uno R3, and by and large, code which runs on the Uno R3 will work on the FreeSoC2 with little or no change. Here are some of the differences to be aware of:</p>
+
+<ol>
+<li>The hardware serial port on pins 0 and 1 is <code>Serial1</code>, rather than <code>Serial</code>, as on the <a href="https://www.sparkfun.com/products/11286">Arduino Leonardo</a>. Serial prints to the computer, via the USB port.</li>
+<li>The AREF pin is not connected on the FreeSoC2.</li>
+<li>random() returns a 24-bit value instead of a 32-bit value.</li>
+<li>Some of the more advanced string manipulation is, as yet, unimplemented.</li>
+<li>Pin numbers should be defined as <code>long</code> rather than <code>int</code>.</li>
+</ol>
+
+
+<p>We&rsquo;ve ported the most core libraries to the FreeSoC: SPI, Wire (I<sup>2</sup>C), and Servo, and we&rsquo;ve created a driver library for the <a href="https://www.sparkfun.com/products/11820">WS281x programmable RGB LEDs</a>. Other native Arduino libraries may or may not work. Here&rsquo;s a list of libraries we&rsquo;ve verified with the FreeSoC2 in Arduino:</p>
+
+<ul>
+<li><a href="https://www.sparkfun.com/products/12787">Our APDS-9960 Gesture Sensor library</a></li>
+<li><a href="https://www.sparkfun.com/products/13003">Our MicroOLED Breakout library</a></li>
+</ul>
+
+
+<h4>Extra Serial Port</h4>
+
+<p>As mentioned above, all <code>Serial</code> commands go through the USB connection the target maintains with the PC. This is awkward, though, because it means that text sent immediately after reset will often be missed in the time between the code beginning to run and the user opening the terminal window.</p>
+
+<p>There&rsquo;s an option for the FreeSoC2, however: when the Debugger USB port is connected to the PC, it will enumerate as, among other things, another serial port. That port can be used to send and receive data from the Arduino application via the <code>Serial1</code> interface. We&rsquo;ll demonstrate that below.</p>
+
+<h3>Example</h3>
+
+<p>This example will show you how to access pins not in the normal Arduino range, as well as using the serial ports.</p>
+
+<p>Remember to select the &ldquo;PSoC Dev Board&rdquo; in the boards menu!</p>
+
+<pre><code>/******************************************************************************
+Example.ino
+
+Simple example demonstrating the use of Serial ports and extra pins on the
+FreeSoC2 board within the Arduino IDE.
+
+14 May 2015
+
+Developed/Tested with:
+FreeSoC2
+Arduino.cc IDE 1.6.4
+This code is beerware; if you see me (or any other SparkFun employee) at the 
+local, and you've found our code helpful, please buy us a round!
+
+Distributed as-is; no warranty is given. 
+******************************************************************************/
+// Note the use of long here instead of int! This is important.
+const long LEDPin = 13; // As on most Arduino compatible boards, there's an LED
+                       //  tied to pin 13. pinMode() works the same with the
+                       //  FreeSoC2 as it does normally.
+const long buttonPin = P1_D2; // Pins can also be referred to by port number
+                       //  and pin number. These numbers are given on the board
+                       //  as P&lt;port&gt;.&lt;pin&gt;. P1_D2 is connected to the user
+                       //  button on one side ang ground on the other.
+
+void setup() 
+{
+  // pinMode() functions are unchanged.
+  pinMode(LEDPin, OUTPUT); 
+  // The onboard user button needs to be a pullup-enabled input.
+  pinMode(buttonPin, INPUT_PULLUP); 
+  Serial.begin(9600);  // This is the same as it is on the Arduino Leonardo.
+                       //  It represents the logical serial port connection to
+                       //  the PC.
+  Serial1.begin(9600); // Again, same as the Leonardo. This port is the physical
+                       //  IO pins (0 and 1) on the headers. It can be accessed
+                       //  via the KitProg serial port which is available when
+                       //  the Debugger port is connected.
+}
+
+void loop() 
+{
+  // digitalRead() is unchanged.
+  int pinDown = digitalRead(buttonPin);
+
+  // Check for button pressed...
+  if (pinDown == LOW)
+  {
+    Serial1.println("KitProg! Button pressed!");
+    Serial.println("USB! Button pressed!");
+    digitalWrite(LEDPin, HIGH);
+  }
+  else
+  {
+    digitalWrite(LEDPin, LOW);
+  }
+
+  delay(250);
+}
+</code></pre>      </div>
+          <div class="section tutorial-page">
+        <h2 id="getting-started-with-psoc-creator">Getting Started with PSoC Creator</h2>
+        <p>If you want to move beyond the basics, you&rsquo;ll need to install <a href="https://cdn.sparkfun.com/downloads/PSoCCreatorSetup_3.1_sp3_5-1-15.exe">Cypress&rsquo;s PSoC Creator IDE</a>. It&rsquo;s free, with no code size limitations, although Cypress does ask that you register before downloading.</p>
+
+<p>It is, sadly, Windows only.</p>
+
+<p>We&rsquo;ll go through a very simple project here, just a step more involved than a normal &ldquo;blink&rdquo; example.</p>
+
+<h3>Connecting the Board</h3>
+
+<p>For programming and debugging within PSoC Creator, you&rsquo;ll need to connect the board via the &ldquo;Debugger&rdquo; USB port. Driver should have been installed as a part of the Creator install process; if not, you can find them in the Creator installation directory. <a href="https://learn.sparkfun.com/tutorials/disabling-driver-signature-on-windows-8">If you find driver installation problematic under Windows 8, we have a tutorial to help with that</a>.</p>
+
+<p>There&rsquo;s no need to connect the &ldquo;Target&rdquo; port, unless you are actually creating a project that uses USB, and that&rsquo;s beyond the scope of this tutorial.</p>
+
+<h3>Creating a Project</h3>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/creator_start_project_start.png"><img src="https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/9/creator_start_project_start.png" alt="alt text" /></a></p>
+
+<p>This is what you&rsquo;ll see when you launch Creator. To start a new project, you can either click the &ldquo;Create New Project&hellip;&rdquo; link on the Start Page, the &ldquo;New&rdquo; button in the menu bar, or open the &ldquo;File&rdquo; menu and choose &ldquo;Project&hellip;&rdquo; in the &ldquo;New&rdquo; submenu.</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/new_project_window.png"><img src="https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/9/new_project_window.png" alt="New project window" /></a></p>
+
+<p>That will open this window. I&rsquo;ve clicked the &lsquo;+&rsquo; next to &ldquo;Advanced&rdquo; to show more choices.</p>
+
+<p>The first thing to do is to select &ldquo;PSoC 5LP Design&rdquo; from the &ldquo;Default Templates&rdquo; list. This will set up some things for you, including setting compiler options and paths.</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/project_type.png"><img src="https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/9/project_type.png" alt="project type selection" /></a></p>
+
+<p>The &ldquo;Name&rdquo; field is the name of the <strong>project</strong>. PSoC Creator organizes applications into <strong>workspaces</strong> which contain one or more <strong>projects</strong>. For instance, you may wish to have an application and its bootloader as part of one workspace, to keep them related.</p>
+
+<p>Down below that &ldquo;Advanced&rdquo; fold you&rsquo;ll see a couple of more options related to project and workspace management. If you currently have a workspace open, you have the option (via the &ldquo;Workspace&rdquo; drop-down) of electing to add this project to that workspace. Otherwise, it will be greyed out and you&rsquo;ll need to provide a workspace name.</p>
+
+<p>The IDE will create a new directory with the <strong>workspace</strong> name in the directory specified in the &ldquo;Location:&rdquo; field; it will create a subdirectory in <em>that</em> directory with the name of the project (as declared in the &ldquo;Project:&rdquo; field).</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/project_workspace_name.png"><img src="https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/9/project_workspace_name.png" alt="project and workspace naming" /></a></p>
+
+<p>In the &ldquo;Device&rdquo; menu you&rsquo;ll find an option to launch the device selector.</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/device_select_dropdown.png"><img src="https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/9/device_select_dropdown.png" alt="Device selection dropdown" /></a></p>
+
+<p>This pulls up a list of all the various PSoC5LP parts. Find the CY8C5888AXI-LP096, highlight the line, and click okay. You&rsquo;ll probably never need to change this again; Creator remembers the parts you&rsquo;ve used in the past.</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/device_selector.png"><img src="https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/9/device_selector.png" alt="alt text" /></a></p>
+
+<p>&ldquo;Sheet template&rdquo; is the size and format of the schematic capture sheet you&rsquo;ll use to define the hardware components of your design. I&rsquo;ve selected 11"x17" ledger size, and that&rsquo;s a good place to start until you&rsquo;ve gotten accustomed to breaking projects up into smaller chunks and making components in libraries.</p>
+
+<p>Finally, you have the option to select whether your application is a bootloader, is bootloadable, or is a multi-app bootloader (to provide fail-safe operation). We&rsquo;ll leave that at &ldquo;Normal&rdquo; for now.</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/sheet_and_app.png"><img src="https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/9/sheet_and_app.png" alt="sheet size and app type settings" /></a></p>
+
+<p>Click &ldquo;OK&rdquo; to move to the next step.</p>
+
+<h3>Adding Hardware</h3>
+
+<p>Before you can go any further, you&rsquo;ll need to add some sort of hardware to the schematic. As you add hardware elements to the schematic, the IDE will generate API files to support the hardware.</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/new_project_2.png"><img src="https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/9/new_project_2.png" alt="New project window" /></a></p>
+
+<p>On the right side of the screen, you can see a tree-structure frame called the &ldquo;Component Catalog&rdquo;. These are all the various hardware devices you can have the IDE build out of the chip&rsquo;s resources. The &ldquo;Cypress&rdquo; tab contains active devices, which will actually be created, and the &ldquo;Off-Chip&rdquo; tab allows you to add things like swtiches and LEDs. Take a moment to review the available components. There&rsquo;s a lot of really good stuff in there, that would normally either require off-chip resources or a great deal of resource-hogging code to implement.</p>
+
+<p>On the left is the &ldquo;Workspace Explorer&rdquo;, a tree view of the files included in the projects included in this workspace. The active workspace (i.e., the one that builds/programs when you just click the &ldquo;Build&rdquo; button in the shortcut bar) is bolded. Note that, although there are &ldquo;folders&rdquo; in this listing, those folders have nothing to do with the actual location of the files!</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/added_pins.png"><img src="https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/9/added_pins.png" alt="Added some pins" /></a></p>
+
+<p>I&rsquo;ve pulled a couple of components over from the component catalog, here: from &ldquo;Ports and Pins&rdquo;, a &ldquo;Digital Input Pin&rdquo; and a &ldquo;Digital Output Pin&rdquo;, and from the off-chip portion, a switch, resistor, and LED. Again, those off-chip parts are purely aesthetic and have no more effect on the generated output that if you were to draw a picture of a butterfly on the schematic.</p>
+
+<p>To wire them up, either select the &ldquo;Wire&rdquo; tool on the left edge of the schematic window or press the &lsquo;w&rsquo; key.</p>
+
+<p>Double click Pin_1, the input pin. You&rsquo;ll get the component configuration window, where you can set all the various parameters that define the part at build time.</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/input_configure.png"><img src="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/input_configure.png" alt="configure the input pin" /></a></p>
+
+<p>From here, you can do an awful lot. For now, we&rsquo;re going to do three things: rename the pin, change the drive mode to &ldquo;Resistive pull up&rdquo; and clear the &ldquo;HW connection&rdquo; checkbox. &ldquo;HW connection&rdquo; provides a place to attach a component internally; for example, a PWM output or an input to a counter. If you don&rsquo;t want to attach something to it, you have to disable this checkbox or the IDE will complain.</p>
+
+<p>Rename the pin, too; the pin&rsquo;s name is important, as it will dictate the name of functions that the IDE will generate to provide a code interface to this object.</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/output_configure.png"><img src="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/output_configure.png" alt="configure the output pin" /></a></p>
+
+<p>We&rsquo;ll do the same thing for the output pin, except here we can leave the drive mode as-is.</p>
+
+<p>One other thing to notice here is the button in the lower left: &ldquo;Datasheet&rdquo;. Each of these components has a very well written datasheet describing what it does, what <em>every</em> setting in the configuration window if for, how to use the API, and how much of your available digital or analog resources you can expect it to consume.</p>
+
+<p>The last thing to do before we can write some code is to assign these logical pins to a physical pin on the package. To do this, open the <strong>.cydwr</strong> file from the workspace explorer on the left side of the window. You&rsquo;ll get something that looks like this:</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/cydwr_example.png"><img src="https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/9/cydwr_example.png" alt="CYDWR Settings" /></a></p>
+
+<p>Ignore the tabs along the bottom edge for now.</p>
+
+<p>On the right side, there&rsquo;s a list of pin objects, port pins, and physical pin numbers. If you don&rsquo;t assign a pin to a physical port, the IDE will do it for you. On the FreeSoC2, the user button is attached to port 1, pin 2, and the user LED to port 6, pin 7, so let&rsquo;s make those assignments now. Note how the &ldquo;lock&rdquo; box becomes checked when you change the setting; that prevents the IDE from reassigning that pin.</p>
+
+<p>You&rsquo;ll also notice that many pins have some extra text associate with their port/pin information; for example, P1.2 is also labeled as &ldquo;XRES:opt&rdquo;. These are special functions that can be associated with the pin for improved performance, rather than mandates that a given pin be used for a specific function.</p>
+
+<h3>Code!</h3>
+
+<p>Let&rsquo;s write some code!</p>
+
+<p>The first thing to do is to create the necessary API files to support the hardware you placed in the schematic earlier. To do that, choose the &ldquo;Generate Application&rdquo; item in the &ldquo;Build&rdquo; menu.</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/generate_application.png"><img src="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/generate_application.png" alt="Generate Application" /></a></p>
+
+<p>You&rsquo;ll note that a bunch of new files pop up in the workspace explorer. These are the support files for the components. <strong>Don&rsquo;t edit them.</strong> They are, in fact, just standard C files, and you <em>could</em> rework them to fit your needs, but the IDE can, and does, frequently regenerate those files, which would wipe out any changes you&rsquo;ve made.</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/code_editor.png"><img src="https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/9/code_editor.png" alt="Code editing" /></a></p>
+
+<p>Here&rsquo;s our main.c file. This is automatically generated, and you can safely alter it without worrying about the IDE breaking it.</p>
+
+<p>Put this code into the <code>for(;;)</code> loop section:</p>
+
+<pre><code>if (Button_Pin_Read() == 0)
+{
+  LED_Pin_Write(1);
+}
+else
+{
+  LED_Pin_Write(0);
+}
+</code></pre>
+
+<p>It&rsquo;s pretty simple: turn the LED on when the button is pressed and off when it&rsquo;s released.</p>
+
+<p>Now you can upload the code to the processor. The big red arrows in the picture below show three ways of doing it: a menu item in the &ldquo;Build&rdquo; menu, a button on the menu bar, and CTRL-F5 as a hotkey. Make sure that you&rsquo;re connected to the &ldquo;Debug&rdquo; USB port! The &ldquo;Target&rdquo; port can only be used for uploading code via a bootloader.</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/program_1.png"><img src="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/program_1.png" alt="Start programming" /></a></p>
+
+<p>The IDE will automatically save all open, changed files, and initiate a rebuild if necessary. Then, it will find any attached programmers and automatically connect and program.</p>
+
+<h3>Hardware!</h3>
+
+<p>This is the PSoC, though, right? So, we can skip the code part, entirely!</p>
+
+<p>Delete the code you just added to the main.c file, and let&rsquo;s do it in the schematic instead.</p>
+
+<p><strong>Open up those pin configuration windows again, and this time check the &ldquo;HW connection&rdquo; checkboxes.</strong> If you don&rsquo;t do this, you won&rsquo;t be able to connect the pins to one another.</p>
+
+<p>Then, add a piece of wire (the wire tool can be activated by typing &ldquo;w&rdquo; or with the toolbar on the left edge of the schematic) between the little boxes that appeared on those pin symbols, like this:</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/hardware_connection.png"><img src="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/hardware_connection.png" alt="Hardware connection" /></a></p>
+
+<p>Now, click that &ldquo;Program&rdquo; button again and let&rsquo;s see what happens&hellip;</p>
+
+<p>Whoops! The light is off when the button is pressed and on when it&rsquo;s release! The polarity&rsquo;s reversed. We need an inverter. Find the &ldquo;Not&rdquo; component in the Component Catalog, under Digital/Logic. Don&rsquo;t forget to delete the wire between the two pins before connecting the inverter!</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/inverter.png"><img src="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/inverter.png" alt="Inverter" /></a></p>
+
+<p>Ah! There we go. Now it works right, <em>and</em> it required no code at all, nor any changes to the physical hardware outside the device.</p>
+
+<h3>Keep going!</h3>
+
+<p>There are a lot of examples provided with Creator; they can be added to an existing workspace from the &ldquo;Examples&hellip;&rdquo; menu item in the &ldquo;File&rdquo; menu.</p>
+
+<p style="text-align:center;"> <a href="https://cdn.sparkfun.com/assets/learn_tutorials/3/7/9/examples.png"><img src="https://cdn.sparkfun.com/r/600-600/assets/learn_tutorials/3/7/9/examples.png" alt="Examples" /></a></p>
+
+<p>Examples are sorted by keyword; there&rsquo;s an example for almost every problem.</p>      </div>
+          <div class="section tutorial-page">
+        <h2 id="res">Resources and Going Further</h2>
+        <p>The PSoC community is robust and thriving, and Cypress have provided a lot of really good resources for hobbyists and professional engineers alike.</p>
+
+<ul>
+<li><a href="http://www.element14.com/community/thread/23736/l/100-projects-in-100-days?displayFullThread=true#Projects%20Released">100 projects in 100 days</a> - Cypress, in conjunction with Element-14, created 100 projects and released them to the community. These are based on the PSoC4, but adapt well to the PSoC5LP.</li>
+<li><a href="http://www.cypress.com/?app=forum">Forums</a> - Cypress also has a thriving forum community.</li>
+<li><a href="http://www.reddit.com/r/psoc">Reddit</a> - There&rsquo;s a fairly active subreddit for the PSoC, as well.</li>
+<li><a href="http://www.cypress.com/?rID=40547">Video tutorials</a> - official PSoC Creator training videos. These are information dense and super helpful.</li>
+</ul>
+
+
+<p>For more FreeSoC2 fun, check out these other SparkFun tutorials&hellip;</p>
+
+
+<div class="tile-wrap">
+  <div class="tile tutorial-tile has_addl_actions big grid" data-id="413">
+
+  <a href="https://learn.sparkfun.com/tutorials/making-music-with-the-freesoc2">
+          <div class="thumb-wrap">
+        <div class="thumb" style="background-image:url(https://cdn.sparkfun.com/c/500-282/assets/learn_tutorials/4/1/3/FreeSoC.png)"></div>
+      </div>
+    
+    
+    <h3 class="title">Making Music with the FreeSoC2</h3>
+    <h4 class="metaline">August 14, 2015</h4>  </a>
+
+      <div class="description">
+      Create a synth keyboard with the FreeSoC2 from SparkFun.     </div>
+  
+  
+  <div class="addl_actions">
+    <span class="fave_widget simple">
+  <a href="#" class="fave_btn " title="Add to favorites" data-entity="learn_tutorials" data-entity-id="413">
+    <span class="fave_yes">
+      <span class="glyphicon glyphicon-heart"></span>
+      <span class="name">Favorited</span>
+    </span>
+    <span class="fave_no">
+      <span class="glyphicon glyphicon-heart-empty"></span>
+      <span class="name">Favorite</span>
+    </span>
+  </a>
+  <span class="fave_count">1</span>
+</span>  </div>
+
+</div>
+</div>
+
+  <div class="clearfix"></div>
+
+      </div>
+    
+        <div class="share-link-inline">
+
+  <a class="share-link-toggle" href="#">
+    <span class="share-title">
+      <span class="sfe-icon-share"></span>
+      Share    </span>
+  </a>
+
+  <div class="share-link-inner dialog">
+    Use this URL to share:<br>
+    <input class="form-control input-sm" type="text" value="http://sfe.io/t379" onclick="$(this).select();">
+
+    <div class="share-social">
+
+      <a rel=nofollow onclick="return $(this).sfeutil('track_link',this,'Share','clicked','googleplus');" href="https://plus.google.com/share?url=http%3A%2F%2Fsfe.io%2Ft379" title="Share on Google+"><span class="sfe-icon-google-plus hidetext"><span>Share on Google+</span></span></a>
+
+      <a rel=nofollow onclick="return $(this).sfeutil('track_link',this,'Share','clicked','tumblr');" href="https://www.tumblr.com/share/link?url=http%3A%2F%2Fsfe.io%2Ft379&name=FreeSoC2+Introduction" title="Share on Tumblr"><span class="sfe-icon-tumblr hidetext"><span>Share on Tumblr</span></span></a>
+
+      <a rel=nofollow onclick="return $(this).sfeutil('track_link',this,'Share','clicked','reddit');" href="https://www.reddit.com/submit?url=http%3A%2F%2Fsfe.io%2Ft379" title="Submit to reddit"><span class="sfe-icon-reddit hidetext"><span>Submit to reddi</span></span></a>
+
+    </div>
+
+    </div>
+  
+  <div class="share-social">
+
+    <a rel=nofollow onclick="return $(this).sfeutil('track_link',this,'Share','clicked','twitter');" href="https://twitter.com/intent/tweet?text=FreeSoC2+Introduction&url=http%3A%2F%2Fsfe.io%2Ft379&via=sparkfun" title="Share on Twitter"><span class="sfe-icon-twitter hidetext"><span>Share on Twitter</span></span></a>
+
+    <a rel=nofollow onclick="return $(this).sfeutil('track_link',this,'Share','clicked','facebook');" href="http://www.facebook.com/sharer.php?u=http%3A%2F%2Fsfe.io%2Ft379&t=FreeSoC2+Introduction" title="Share on Facebook"><span class="sfe-icon-facebook-nobox hidetext"><span>Share on Facebook</span></span></a>
+
+          <a rel=nofollow onclick="return $(this).sfeutil('track_link',this,'Share','clicked','pinterest');" href="https://www.pinterest.com/pin/create/button/?url=http%3A%2F%2Fsfe.io%2Ft379&media=https%3A%2F%2Fcdn.sparkfun.com%2F%2Fr%2F500-1000%2Fassets%2Flearn_tutorials%2F3%2F7%2F9%2FPSoC.jpg&description=FreeSoC2+Introduction" title="Pin It"><span class="sfe-icon-pinterest hidetext"><span>Pin It</span></span></a>
+    
+  </div>
+
+  
+</div>
+
+  </div>
+
+  <div class="col-sm-4" id="nav-pages">
+    <div id="sidebar_affix">
+
+      <div id="tutorial-pages" class="list-group">
+        <a class="list-group-item"><b>Sections</b></a>
+                          <a data-pagename="introduction" class="list-group-item" href="#introduction">
+            Introduction          </a>
+                  <a data-pagename="hardware-overview" class="list-group-item" href="#hardware-overview">
+            Hardware Overview          </a>
+                  <a data-pagename="using-the-arduino-ide" class="list-group-item" href="#using-the-arduino-ide">
+            Using the Arduino IDE          </a>
+                  <a data-pagename="writing-code-in-arduino" class="list-group-item" href="#writing-code-in-arduino">
+            Writing Code in Arduino          </a>
+                  <a data-pagename="getting-started-with-psoc-creator" class="list-group-item" href="#getting-started-with-psoc-creator">
+            Getting Started with PSoC Creator          </a>
+                  <a data-pagename="res" class="list-group-item" href="#res">
+            Resources and Going Further          </a>
+              </div>
+
+      <div class="list-group">
+        <a class="list-group-item" href="https://learn.sparkfun.com/tutorials/freesoc2-introduction/discuss">
+          Comments
+          <span class="badge">5</span>
+        </a>
+                  <a class="list-group-item" href="https://learn.sparkfun.com/tutorials/freesoc2-introduction/introduction">
+            View Paginated
+          </a>
+                <a class="list-group-item" href="#" onclick="window.print(); return false;">
+          Print
+        </a>
+      </div>
+
+      <ul class="list-group">
+        <li class="list-group-item"><b>Tags</b></li>
+        <li class="list-group-item"><ul class="tags-list">
+</ul>
+</li>
+      </ul>
+
+      <ul class="list-group">
+        <li class="list-group-item"><b>License</b></li>
+        <li class="list-group-item">
+          <span class="sfe-icon-cc">
+            <span class="visuallyhidden">Creative Commons</span>
+          </span>
+          <small>tutorials are <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="new">CC BY-SA 4.0</a></small>
+        </li>
+      </ul>
+
+    </div>
+  </div>
+
+</div>
+
+<script type="text/javascript">
+  require(['tutorial', 'jquery.imagesloaded'], function() {
+    $('#tutorial').tutorial();
+  });
+</script>
+
+      </div> <!-- /container -->
+    </div> <!-- /content -->
+
+    
+<footer>
+
+<div class="social">
+  <div class="container">
+    <div class="row">
+      <div class="col-xs-12 col-sm-12 col-md-12">
+        <div class="sharing-ingenuity">
+          <span class=sfe-icon-flame></span>
+          <span class="text"><span class="text-top">Start<br></span>something.</span>
+        </div>
+        <ul class="spew">
+          <li><a href="https://www.github.com/sparkfun" target="_blank" class=sfe-icon-github><span class=visuallyhidden>GitHub</span></a></li>
+          <li><a href="https://www.youtube.com/sparkfun" target="_blank" class=sfe-icon-youtube><span class=visuallyhidden>YouTube</span></a></li>
+          <li><a href="https://www.vimeo.com/sparkfun" target="_blank" class=sfe-icon-vimeo><span class=visuallyhidden>Vimeo</span></a></li>
+          <li><a href="https://www.facebook.com/SparkFun" target="_blank" class=sfe-icon-facebook><span class=visuallyhidden>Facebook</span></a></li>
+          <li><a href="https://www.instagram.com/sparkfun/" target="_blank" class=sfe-icon-instagram><span class=visuallyhidden>Instagram</span></a></li>
+          <li><a href="https://plus.google.com/106084846822083498483/" target="_blank" class=sfe-icon-google-plus><span class=visuallyhidden>Google Plus</span></a></li>
+          <li><a href="https://www.flickr.com/photos/sparkfun/" target="_blank" class=sfe-icon-flickr><span class=visuallyhidden>Flickr</span></a></li>
+          <li><a href="https://twitter.com/#!/sparkfun" target="_blank" class=sfe-icon-twitter><span class=visuallyhidden>Twitter</span></a></li>
+          <li><a href="https://www.sparkfun.com/feeds" class=sfe-icon-feed><span class=visuallyhidden>RSS</span></a></li>
+        </ul>
+        <div class="newsletter">
+          <!--[if lte IE 8]>
+<script charset="utf-8" type="text/javascript" src="//js.hsforms.net/forms/v2-legacy.js"></script>
+<![endif]-->
+<script charset="utf-8" type="text/javascript" src="//js.hsforms.net/forms/v2.js"></script>
+<script>
+  hbspt.forms.create({
+    css: '',
+    cssClass: 'hubspot-newsletter-subscribe',
+    portalId: '2224003',
+    formId: 'd2b17dd4-e1bb-406a-ba41-44c19dcd0376'
+  });
+</script>
+        </div>
+      </div>
+    </div><!-- end .row -->
+  </div><!-- end .container -->
+</div><!-- end .social -->
+
+<div class="container">
+
+    <div class="row">
+
+    <div class="subfooter subfooter-about">
+      <p>
+        In 2003, CU student Nate Seidle blew a power supply in his dorm room and, in lieu of a way to order easy replacements, decided to start his own company. Since then, SparkFun has been committed to sustainably helping our world achieve electronics literacy from our headquarters in Boulder, Colorado.
+      </p>
+      <p>
+        No matter your vision, SparkFun's products and resources are designed to make the world of electronics more accessible. In addition to over 2,000 open source components and widgets, SparkFun offers curriculum, training and online tutorials designed to help demystify the wonderful world of embedded electronics. We're here to help you start something.
+      </p>
+
+      <div class="row">
+
+        <div class="col-sm-6">
+          <ul>
+            <li><b>About Us</b>
+            <li><a href="https://www.sparkfun.com/about_sparkfun">About SparkFun</a></li>
+	    <li><a href="http://www.sparkfuneducation.com" target="_blank">SparkFun Education <span class="glyphicon glyphicon-new-window"></span></li>
+	    <li><a title="RSS Feeds" href="https://www.sparkfun.com/feeds">Feeds <span class=sfe-icon-feed></span></a></li>
+            <li><a href="https://www.sparkfun.com/jobs">Jobs</a></li>
+            <li><a href="https://www.sparkfun.com/static/contact">Contact</a></li>
+          </ul>
+        </div>
+
+        <div class="col-sm-6">
+          <ul>
+            <li><b>Help</b></li>
+            <li><a href="https://www.sparkfun.com/support">Customer Service</a></li>
+            <li><a href="https://www.sparkfun.com/support#ShippingPolicy">Shipping</a></li>
+            <li><a href="https://www.sparkfun.com/returns">Return Policy</a></li>
+            <li><a href="https://www.sparkfun.com/static/faq">FAQ</a></li>
+                      </ul>
+        </div>
+
+      </div>
+
+      <div class="row">
+
+        <div class="col-sm-6">
+          <ul>
+            <li><b>Programs</b></li>
+	    <li><a href="https://www.sparkfun.com/sponsorships">Become a Community Partner</a>	      <li><ul><li><a href="https://www.sparkfun.com/cpp">Community Stories</a></li></ul></li>
+	    </li>
+            <li><a href="https://www.sparkfun.com/project_calls">Tell Us About Your Project</a></li>
+            <li><a href="https://learn.sparkfun.com/tutorials/how-to-sell-your-widget-on-sparkfun">Sell Your Widget on SparkFun</a></li>
+            <li><a href="https://www.sparkfun.com/distributors/apply">Become a SparkFun Distributor</a></li>
+            <li><a href="https://www.sparkfun.com/volume">Large Volume Sales</a> </li>
+          </ul>
+        </div>
+
+        <div class="col-sm-6">
+          <ul>
+            <li><b>Community</b></li>
+            <li><a href="https://forum.sparkfun.com/">Forum</a></li>
+            <li><a href="https://www.sparkfun.com/news/263">SparkFun IRC Channel</a></li>
+            <li><a href="https://www.sparkfun.com/quiz">Take the SparkFun Quiz</a></li>
+            <li><a href="https://www.kickstarter.com/pages/sparkfun">SparkFun Kickstarter Projects</a></li>
+            <li><a href="https://www.sparkfun.com/distributors">Distributors</a></li>
+          </ul>
+        </div>
+
+      </div><!-- end .row -->
+
+    </div>
+
+    <div id="feedback" class="subfooter subfooter-woym">
+      <form id="woym_form" class="feedback" action="https://learn.sparkfun.com/feedback/mind.json" onsubmit="$(this).sfeutil('mind_feedback'); return false;" method="POST">
+        <div class="error" id="error_feedback" style="display: none"></div>
+        <input type="hidden" name="sparkaptcha" id="sparkaptcha" value="0">
+
+        <div class="form-group">
+          <label for="feedback_textarea" class="control-label">What's on your mind?</label>
+          <div class="controls">
+            <textarea id="feedback_textarea" class="form-control" name="feedback_text" required></textarea>
+            <div class="error" id="error_feedback_text" style="display: none"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="feedback_dest" class="control-label">For which department?</label>
+          <select name="dest" class="form-control" id="feedback_dest">
+            <option value="general">General</option>
+            <option value="cust">Customer Service</option>
+            <option value="tech">Tech Support</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="feedback_email" class="control-label">
+            Please include your email address if you'd like us to respond to a specific question.
+          </label>
+
+          <div class="input-group">
+            <span class="input-group-addon"><span class="glyphicon glyphicon-envelope"></span></span>
+            <input type="text" class="form-control" id="feedback_email" name="email" placeholder="email address" />
+          </div>
+          <div class="error" id="error_feedback_email" style="display: none"></div>
+
+        </div>
+
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+
+  </div><!-- end .row -->
+  
+  <ul class="copyleft">
+    <li>SparkFun Electronics <a href="https://www.sparkfun.com/news/300">&reg;</a></li>
+    <li><a href="http://maps.google.com/maps?f=q&source=s_q&hl=en&geocode=&q=6333+Dry+Creek+Parkway,+Niwot,+CO+80503">Niwot, Colorado</a></li>
+    <li><a href="https://www.sparkfun.com/support">Customer Service</a></li>
+    <li><a href="https://www.sparkfun.com/sitemap">Site Map</a></li>
+    <li><a href="https://www.sparkfun.com/terms">Terms of Service</a></li>
+    <li><a href="https://www.sparkfun.com/privacy">Privacy Policy</a></li>
+    <li class="desktop-toggle">
+              <a href="https://www.sparkfun.com/account/mobile_toggle?redirect=%2Flearn%2Ftutorials%2Ffreesoc2-introduction">Desktop Site</a>          </li>
+  </ul>
+
+</div><!-- end .container -->
+
+</footer>
+
+    <div class="nav-account">
+  <ul class="nav nav-tabs">
+    <li class="visible-xs">
+      <a class="nav-toggle-account back" href="#">Your Account</a>
+    </li>
+          <li class="">
+        <a href="https://www.sparkfun.com/account/login?redirect=%2Flearn%2Ftutorials%2Ffreesoc2-introduction" data-toggle="modal" data-target="#login_modal" data-remote="false">Log In</a>
+      </li>
+          <li class="">
+        <a href="https://www.sparkfun.com/account/make">Register</a>
+      </li>
+      </ul>
+</div>
+
+      </div><!-- end .wrapper-inner -->
+    </div><!-- end .wrapper -->
+
+    <!-- Login Modal -->
+<div class="modal fade" id="login_modal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+        <h4 class="modal-title">Log In</h4>
+        <p class="modal-header-msg"></p>
+      </div>
+      <div class="modal-body">
+        <form role="form" action="https://www.sparkfun.com/account/login" method="post">
+          <input type="hidden" name="redirect" value="/learn/tutorials/freesoc2-introduction">
+          <div class="form-group">
+            <label for="login-username">Email</label>
+            <input type="email" tabindex="1" name=user id="login-username" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input tabindex="2" type="password" name="passwd" id="login-password" class="form-control">
+          </div>
+          <div class="form-group">
+            <input type="submit" value="Log In" tabindex="3" class="btn btn-action">
+          </div>
+        </form>
+        <p>
+          <a href="https://www.sparkfun.com/account/forgot_password">Forgot your password?</a>          <br>
+          No account? <a id="btn_register_account" href="https://www.sparkfun.com/account/make">Register one!</a>        </p>
+      </div>
+    </div>
+  </div>
+</div>
+  
+          
+<!--  begin olark code -->
+  <script type="text/javascript" async> ;(function(o,l,a,r,k,y){if(o.olark)return; r="script";y=l.createElement(r);r=l.getElementsByTagName(r)[0]; y.async=1;y.src="//"+a;r.parentNode.insertBefore(y,r); y=o.olark=function(){k.s.push(arguments);k.t.push(+new Date)}; y.extend=function(i,j){y("extend",i,j)}; y.identify=function(i){y("identify",k.i=i)}; y.configure=function(i,j){y("configure",i,j);k.c[i]=j}; k=y._={s:[],t:[+new Date],c:{},l:a}; })(window,document,"static.olark.com/jsclient/loader.js");
+  /* custom configuration goes here (www.olark.com/documentation) */
+  olark.identify('4728-501-10-9212');</script>
+  <noscript><a href="https://www.olark.com/site/4728-501-10-9212/contact" title="Contact us" target="_blank">Questions? Feedback?</a> powered by <a href="http://www.olark.com?welcome" title="Olark live chat software">Olark live chat software</a></noscript>
+<!-- end olark code -->
+          <script type="text/javascript">
+      (function(d,s,i,r) {
+        if (d.getElementById(i)){return;}
+        var n=d.createElement(s),e=d.getElementsByTagName(s)[0];
+        n.id=i;n.src='//js.hs-analytics.net/analytics/'+(Math.ceil(new Date()/r)*r)+'/2224003.js';
+        e.parentNode.insertBefore(n, e);
+      })(document,"script","hs-analytics",300000);
+    </script>
+        <script type="text/javascript">
+    setTimeout(function(){var a=document.createElement("script");
+    var b=document.getElementsByTagName("script")[0];
+    a.src=document.location.protocol+"//script.crazyegg.com/pages/scripts/0046/4761.js?"+Math.floor(new Date().getTime()/3600000);
+    a.async=true;a.type="text/javascript";b.parentNode.insertBefore(a,b)}, 1);
+  </script>
+      </body>
+</html>
+
