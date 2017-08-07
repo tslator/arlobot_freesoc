@@ -1,33 +1,85 @@
-/* ========================================
- *
- * Copyright YOUR COMPANY, THE YEAR
- * All Rights Reserved
- * UNPUBLISHED, LICENSED SOFTWARE.
- *
- * CONFIDENTIAL AND PROPRIETARY INFORMATION
- * WHICH IS THE PROPERTY OF your company.
- *
- * ========================================
+/* 
+MIT License
+
+Copyright (c) 2017 Tim Slator
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 */
 
+/*---------------------------------------------------------------------------------------------------
+   Description: This module provides macros and functions related to time.
+ *-------------------------------------------------------------------------------------------------*/    
+
+/*---------------------------------------------------------------------------------------------------
+ * Includes
+ *-------------------------------------------------------------------------------------------------*/    
 #include "time.h"
 
+/*---------------------------------------------------------------------------------------------------
+ * Variables
+ *-------------------------------------------------------------------------------------------------*/    
 static uint32 ms_counter;
 
+/*---------------------------------------------------------------------------------------------------
+ * Prototypes
+ *-------------------------------------------------------------------------------------------------*/    
 /* Interrupt prototype */
 static CY_ISR_PROTO(SysTickIsrHandler);
  
+/*---------------------------------------------------------------------------------------------------
+ * Functions
+ *-------------------------------------------------------------------------------------------------*/    
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: SysTickIsrHandler
+ * Description: The system tick interrupt handler for tracking milliseconds.
+ *  
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 static CY_ISR(SysTickIsrHandler)
 {
     ms_counter++;
 }
 
-
+/*---------------------------------------------------------------------------------------------------
+ * Name: Time_Init
+ * Description: Initializes the time module
+ *  
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Time_Init()
 {
     ms_counter = 0;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Time_Start
+ * Description: Starts the system tick and wires up the ISR.
+ *  
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Time_Start()
 {
     uint32 ii;
@@ -49,6 +101,14 @@ void Time_Start()
     }
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: millis
+ * Description: Returns the current millisecond count value.
+ *  
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 uint32 millis()
 {
     return ms_counter;
