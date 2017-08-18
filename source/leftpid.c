@@ -59,11 +59,10 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/
 
 /* The following PID values were determined experimentally and show good tracking behavior.
-    Left PID - P: 2.500, I: 6.000, D: 0.260
 */
-#define LEFT_KP (2.500)
-#define LEFT_KI (6.000)
-#define LEFT_KD (0.260)
+#define LEFT_KP (1.000)
+#define LEFT_KI (4.000)
+#define LEFT_KD (0.000)
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -103,31 +102,37 @@ static float GetCmdVelocity()
 {
     float value = target_source();
     pid.sign = value >= 0.0 ? 1.0 : -1.0;
-    return value;
+    //Ser_PutStringFormat("getcmdvelocity: %f\r\n", value);
+    
+    return abs(value / WHEEL_METER_PER_COUNT);
 }
 
 static float EncoderInput()
 {
-    return Encoder_LeftGetCntsPerSec();
+    return abs(Encoder_LeftGetCntsPerSec());
 }
 
 static float PidUpdate(float target, float input)
 {
     PWM_TYPE pwm;
     
-    PIDSetpointSet(&pid.pid, abs(target / WHEEL_METER_PER_COUNT));
-    PIDInputSet(&pid.pid, abs(input));
+    PIDSetpointSet(&pid.pid, target);
+    PIDInputSet(&pid.pid, input);
     
     /* Note: PIDCompute returns TRUE when in AUTOMATIC mode and FALSE when in MANUAL mode */
     if (PIDCompute(&pid.pid))
     {
+        //Ser_PutStringFormat("pid auto\r\n");
         pwm = Cal_CpsToPwm(WHEEL_LEFT, pid.pid.output * pid.sign);
     }
     else
     {
+        //Ser_PutStringFormat("pid manual\r\n");
         pwm = Cal_CpsToPwm(WHEEL_LEFT, target / WHEEL_METER_PER_COUNT);
     }
 
+    //Ser_PutStringFormat("pidupdate %f %f %f %d\r\n", target, input, pid.pid.output * pid.sign, pwm);
+    
     Motor_LeftSetPwm(pwm);
     
     /* Note: The PID update return value is not used. */ 
@@ -165,7 +170,7 @@ void LeftPid_Start()
     // component is started which is handled in the Nvstore module.  
     // Pid_Start is called after Nvstore_Start.
     
-    if (p_cal_eeprom->status & CAL_PID_BIT)
+    if (Cal_GetCalibrationStatusBit(CAL_PID_BIT))
     {
         p_gains = Cal_LeftGetPidGains();  
         PIDTuningsSet(&pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
@@ -192,7 +197,6 @@ void LeftPid_Process()
     if (pid_enabled)
     {
         target = pid.get_target();
-        //Ser_PutStringFormat("lppt: %.3f\r\n", target);
         input = pid.get_input();
         pid.update(target, input);
         LEFTPID_DUMP();

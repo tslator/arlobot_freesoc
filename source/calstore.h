@@ -44,16 +44,15 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Types
  *-------------------------------------------------------------------------------------------------*/
-typedef struct _CAL_DATA_TYPE
+ 
+
+ typedef struct _CAL_DATA_TYPE
 {
-    int32  cps_min;
-    int32  cps_max;
-    int    cps_scale;
-    int32  cps_data[CAL_DATA_SIZE];
+    int16  cps_min;
+    int16  cps_max;
+    int16  cps_data[CAL_DATA_SIZE];
     uint16 pwm_data[CAL_DATA_SIZE];
-    // Added to force row alignment
-    uint16 reserved; 
-    // Note: Total size is 320 bytes, at 16 bytes per row, 20 rows
+    // Note: Total size is 208 bytes, at 16 bytes per row, 13 rows
 } __attribute__ ((packed)) CAL_DATA_TYPE;
 
 typedef struct _cal_pid_tag
@@ -69,25 +68,26 @@ typedef struct _cal_pid_tag
 typedef struct _eeprom_tag
 {
     // the following fields are padded to 16 bytes (1 row)
-    uint16 status;                  /* bit 0: Left/Right Motor (Count/Sec to PWM) calibrated
-                                       bit 1: Left/Right PID calibrated
-                                       bit 2: Unicycle PIDs calibrated
-                                       bit 3: Linear Bias calibrated
-                                       bit 4: Angular Bias calibrated
-                                     */
-    uint16 checksum;
-    uint8 reserved_4[4];
-    CAL_PID_TYPE left_gains;
-    CAL_PID_TYPE right_gains;
-    float linear_bias;
-    float angular_bias;
-    CAL_PID_TYPE linear_gains;
-    CAL_PID_TYPE angular_gains;
-    //uint8 reversed_24[24];
-    CAL_DATA_TYPE left_motor_fwd;
-    CAL_DATA_TYPE left_motor_bwd;
-    CAL_DATA_TYPE right_motor_fwd;
-    CAL_DATA_TYPE right_motor_bwd;
+    /* bit 0: Left/Right Motor (Count/Sec to PWM) calibrated
+       bit 1: Left/Right PID calibrated
+       bit 2: Unicycle PIDs calibrated
+       bit 3: Linear Bias calibrated
+       bit 4: Angular Bias calibrated
+    */    
+    uint16 status;                  /*    0 */
+    uint16 checksum;                /*    2 */
+    uint8 reserved_4[4];            /*    4 */
+    CAL_PID_TYPE left_gains;        /*    8 */
+    CAL_PID_TYPE right_gains;       /*   24 */
+    float linear_bias;              /*   40 */
+    float angular_bias;             /*   44 */
+    CAL_PID_TYPE linear_gains;      /*   48 */
+    CAL_PID_TYPE angular_gains;     /*   64 */
+    uint8 reversed[1136];           /*   80 */
+    CAL_DATA_TYPE left_motor_fwd;   /* 1216 */
+    CAL_DATA_TYPE left_motor_bwd;   /* 1424 */
+    CAL_DATA_TYPE right_motor_fwd;  /* 1632 */
+    CAL_DATA_TYPE right_motor_bwd;  /* 1840 */
 } __attribute__ ((packed)) CAL_EEPROM_TYPE;
   
     

@@ -121,6 +121,7 @@ volatile CAL_EEPROM_TYPE *p_cal_eeprom;
 GET_TARGET_FUNC_TYPE Cal_LeftTarget;
 GET_TARGET_FUNC_TYPE Cal_RightTarget;
 
+
 /*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/
@@ -156,7 +157,8 @@ void Cal_ClearCalibrationStatusBit(uint16 bit);
 void Cal_SetCalibrationStatusBit(uint16 bit);
 uint16 Cal_GetCalibrationStatusBit(uint16 bit);
 
-void Cal_PrintSamples(char *label, int32 *cps_samples, PWM_TYPE *pwm_samples);
+void Cal_PrintAllMotorParams();
+void Cal_PrintSamples(char *label, CAL_DATA_TYPE *cal_data);
 void Cal_PrintGains(char *label, float *gains);
 void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_limit, float *forward_output, float *backward_output);
 

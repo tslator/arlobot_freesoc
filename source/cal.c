@@ -113,6 +113,22 @@ static float right_cmd_velocity;
  * Functions
  *-------------------------------------------------------------------------------------------------*/
 
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: PrintAllMotorParams
+ * Description: Prints the left/right, forward/backward count/sec and pwm calibration values
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+ void Cal_PrintAllMotorParams()
+{
+    Cal_PrintSamples("Left-Backward", (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd);
+    Cal_PrintSamples("Left-Forward", (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_fwd);
+    Cal_PrintSamples("Right-Backward", (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd);
+    Cal_PrintSamples("Right-Forward", (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd);
+}
+
 /*---------------------------------------------------------------------------------------------------
  * Name: LeftTarget/RightTarget
  * Description: Local functions used to replace the left/right velocity source for calibration/validation.
@@ -145,6 +161,7 @@ void Cal_ClearCalibrationStatusBit(uint16 bit)
 {
     uint16 status = p_cal_eeprom->status &= ~bit;
     Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
+    //Ser_PutStringFormat("Clear Calibration Status: %02x\r\n", p_cal_eeprom->status);
     Control_ClearCalibrationStatusBit(bit);
 }
 
@@ -152,11 +169,13 @@ void Cal_SetCalibrationStatusBit(uint16 bit)
 {
     uint16 status = p_cal_eeprom->status | bit;
     Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
+    //Ser_PutStringFormat("Calibration Status: %02x\r\n", p_cal_eeprom->status);
     Control_SetCalibrationStatusBit(bit);   
 }
 
 uint16 Cal_GetCalibrationStatusBit(uint16 bit)
 {
+    //Ser_PutStringFormat("Get Calibration Status: %02x\r\n", p_cal_eeprom->status);
     return p_cal_eeprom->status & bit;
 }
 
@@ -170,23 +189,21 @@ uint16 Cal_GetCalibrationStatusBit(uint16 bit)
  * Name: Cal_PrintSamples
  * Description: Prints the count/sec and pwm samples.  Called from the CalMotor module.
  * Parameters: label - string containing the motor identifier, e.g., left or right 
- *             cps_samples - an array of count/sec samples
- *             pwm_samples - an array of pwm samples
- *             Note: Array size is given by CAL_NUM_SAMPLES
+ *             cal_data - pointer to structure containing motor calibration data
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Cal_PrintSamples(char *label, int32 *cps_samples, uint16 *pwm_samples)
+void Cal_PrintSamples(char *label, CAL_DATA_TYPE *cal_data)
 {
     uint8 ii;
     
-    Ser_PutStringFormat("%s\r\n", label);
+    Ser_PutStringFormat("%s - min/max: %d/%d\r\n", label, cal_data->cps_min, cal_data->cps_max);
     
     for (ii = 0; ii < CAL_NUM_SAMPLES - 1; ++ii)
     {
-        Ser_PutStringFormat("%ld:%d ", cps_samples[ii], pwm_samples[ii]);
+        Ser_PutStringFormat("%ld:%d ", cal_data->cps_data[ii], cal_data->pwm_data[ii]);
     }
-    Ser_PutStringFormat("%ld:%d\r\n\r\n", cps_samples[ii], pwm_samples[ii]);
+    Ser_PutStringFormat("%ld:%d\r\n\r\n", cal_data->cps_data[ii], cal_data->pwm_data[ii]);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -337,8 +354,8 @@ static void ProcessSettingsCmd(uint8 cmd)
         case DISP_MOTOR_LEFT_CMD:
             Ser_WriteByte(cmd);
             Ser_PutString("\r\nDisplaying left motor calibration: count/sec, pwm mapping\r\n");
-            Cal_PrintSamples("Left-Backward", (int32 *) p_cal_eeprom->left_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_bwd.pwm_data);
-            Cal_PrintSamples("Left-Forward", (int32 *) p_cal_eeprom->left_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_fwd.pwm_data);
+            Cal_PrintSamples("Left-Backward", (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd);
+            Cal_PrintSamples("Left-Forward", (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_fwd);
             Ser_PutString("\r\n");
             
             DisplaySettingsMenu();
@@ -347,8 +364,8 @@ static void ProcessSettingsCmd(uint8 cmd)
         case DISP_MOTOR_RIGHT_CMD:
             Ser_WriteByte(cmd);
             Ser_PutString("\r\nDisplaying right motor calibration: count/sec, pwm mapping\r\n");
-            Cal_PrintSamples("Right-Backward", (int32 *) p_cal_eeprom->right_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_bwd.pwm_data);
-            Cal_PrintSamples("Right-Forward", (int32 *) p_cal_eeprom->right_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_fwd.pwm_data);
+            Cal_PrintSamples("Right-Backward", (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd);
+            Cal_PrintSamples("Right-Forward", (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd);
             Ser_PutString("\r\n");
             
             DisplaySettingsMenu();
@@ -376,14 +393,9 @@ static void ProcessSettingsCmd(uint8 cmd)
         case DISP_ALL_CMD:
             Ser_WriteByte(cmd);
             Ser_PutString("\r\nDisplaying all calibration/settings\r\n");
-            Cal_PrintSamples("Left-Backward", (int32 *) p_cal_eeprom->left_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_bwd.pwm_data);
-            Ser_PutStringFormat("Left-Backward Min/Max: %d/%d\r\n", p_cal_eeprom->left_motor_bwd.cps_min, p_cal_eeprom->left_motor_bwd.cps_max);
-            Cal_PrintSamples("Left-Forward", (int32 *) p_cal_eeprom->left_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_fwd.pwm_data);
-            Ser_PutStringFormat("Left-Forward Min/Max: %d/%d\r\n", p_cal_eeprom->left_motor_fwd.cps_min, p_cal_eeprom->left_motor_fwd.cps_max);
-            Cal_PrintSamples("Right-Backward", (int32 *) p_cal_eeprom->right_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_bwd.pwm_data);
-            Ser_PutStringFormat("Right-Backward Min/Max: %d/%d\r\n", p_cal_eeprom->right_motor_bwd.cps_min, p_cal_eeprom->right_motor_bwd.cps_max);
-            Cal_PrintSamples("Right-Forward", (int32 *) p_cal_eeprom->right_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_fwd.pwm_data);
-            Ser_PutStringFormat("Right-Forward Min/Max: %d/%d\r\n", p_cal_eeprom->right_motor_fwd.cps_min, p_cal_eeprom->right_motor_fwd.cps_max);
+
+            Cal_PrintAllMotorParams();
+
             Cal_PrintGains("Left PID", (float *) &p_cal_eeprom->left_gains);
             Cal_PrintGains("Right PID", (float *) &p_cal_eeprom->right_gains);
             Cal_PrintStatus("Status", p_cal_eeprom->status);
@@ -746,6 +758,7 @@ void Cal_Init()
 void Cal_Start()
 {
     uint16 status = p_cal_eeprom->status;
+    //Cal_Clear();
     Control_SetCalibrationStatus(status);        
 }
 
@@ -976,13 +989,13 @@ PWM_TYPE Cal_CpsToPwm(WHEEL_TYPE wheel, float cps)
     
     /* The conversion from CPS to PWM is valid only when calibration has been performed */
     
-    if (p_cal_eeprom->status & CAL_MOTOR_BIT)
+    if (Cal_GetCalibrationStatusBit(CAL_MOTOR_BIT))
     {
     
         CAL_DATA_TYPE *p_cal_data = WHEEL_DIR_TO_CAL_DATA[wheel][cps >= 0 ? 0 : 1];
         
-        cps = constrain((int32) cps, p_cal_data->cps_min, p_cal_data->cps_max);
-        pwm = CpsToPwm((int32) cps, &p_cal_data->cps_data[0], &p_cal_data->pwm_data[0], CAL_DATA_SIZE);
+        cps = constrain((int16) cps, p_cal_data->cps_min, p_cal_data->cps_max);
+        pwm = CpsToPwm((int16) cps, &p_cal_data->cps_data[0], &p_cal_data->pwm_data[0], CAL_DATA_SIZE);
     }
     else
     {
@@ -1009,36 +1022,50 @@ void Cal_Clear()
     Cal_ClearCalibrationStatusBit(CAL_PID_BIT);
 }
 
-void Cal_CalcOperatingRange(float low_percent, float high_percent, float domain, float *start, float *stop)
-{
-    *start = low_percent * domain;
-    *stop = high_percent * domain;
-}
-
 void Cal_CalcForwardOperatingRange(float low_percent, float high_percent, float *start, float *stop)
 {        
+    float tmp_start;
+    float tmp_stop;
+    
     /* Get the min/max forward values for each motor */
-    float left_forward_cps_max = p_cal_eeprom->left_motor_fwd.cps_max;
-    float right_forward_cps_max = p_cal_eeprom->right_motor_fwd.cps_max;
+    int16 left_forward_cps_max = p_cal_eeprom->left_motor_fwd.cps_max;
+    int16 right_forward_cps_max = p_cal_eeprom->right_motor_fwd.cps_max;
 
     /* Select the max of the max */
-    float forward_cps_max = min(left_forward_cps_max, right_forward_cps_max);
+    int16 forward_cps_max = min(left_forward_cps_max, right_forward_cps_max);
 
-    Cal_CalcOperatingRange(low_percent, high_percent, forward_cps_max, start, stop);    
+    Ser_PutStringFormat("forward operating range: %f %f %d\r\n", low_percent, high_percent, forward_cps_max);
+
+    tmp_start = low_percent * (float) forward_cps_max;
+    tmp_stop = high_percent * (float) forward_cps_max;
+
+    *start = tmp_start;
+    *stop = tmp_stop;
+
+    Ser_PutStringFormat("forward operating range: %f %f %d %f %f %f %f\r\n", low_percent, high_percent, forward_cps_max, tmp_start, tmp_stop, *start, *stop);
 }
 
 void Cal_CalcBackwardOperatingRange(float low_percent, float high_percent, float *start, float *stop)
 {
-    /* Get the min/max reverse values for each motor */
-    float left_backward_cps_min = p_cal_eeprom->left_motor_bwd.cps_min;
-    float right_backward_cps_min = p_cal_eeprom->right_motor_bwd.cps_min;
-    /* Select the min of the min 
-       Note: Backward values are negative 
-     */
-    float backward_cps_max = max(left_backward_cps_min, right_backward_cps_min);
+    float tmp_start;
+    float tmp_stop;
+    
+    /* Get the min/max forward values for each motor */
+    int16 left_backward_cps_max = p_cal_eeprom->left_motor_bwd.cps_max;
+    int16 right_backward_cps_max = p_cal_eeprom->right_motor_bwd.cps_max;
 
-    Cal_CalcOperatingRange(low_percent, high_percent, backward_cps_max, start, stop);
+    /* Select the min of the max */
+    int16 backward_cps_max = max(left_backward_cps_max, right_backward_cps_max);
 
+    Ser_PutStringFormat("forward operating range: %f %f %d\r\n", low_percent, high_percent, backward_cps_max);
+
+    tmp_start = low_percent * (float) backward_cps_max;
+    tmp_stop = high_percent * (float) backward_cps_max;
+
+    *start = tmp_start;
+    *stop = tmp_stop;
+
+    Ser_PutStringFormat("forward operating range: %f %f %d %f %f %f %f\r\n", low_percent, high_percent, backward_cps_max, tmp_start, tmp_stop, *start, *stop);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -1079,7 +1106,7 @@ void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_
         Cal_CalcForwardOperatingRange(lower_limit, upper_limit, &start, &stop);
         CalcTriangularProfile(num_points, start, stop, forward_profile);
 
-        Cal_CalcForwardOperatingRange(lower_limit, upper_limit, &start, &stop);
+        Cal_CalcBackwardOperatingRange(lower_limit, upper_limit, &start, &stop);
         CalcTriangularProfile(num_points, start, stop, backward_profile);
         
     }

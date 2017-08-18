@@ -58,12 +58,11 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/
 
 /* The following PID values were determined experimentally and show good tracking behavior.
-    Right PID - P: 3.500, I: 1.450, D: 1.100
 */
 
-#define RIGHT_KP (3.500)
-#define RIGHT_KI (1.450)
-#define RIGHT_KD (1.100)
+#define RIGHT_KP (1.000)
+#define RIGHT_KI (4.000)
+#define RIGHT_KD (0.000)
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -103,20 +102,20 @@ static float GetCmdVelocity()
 {
     float value = target_source();
     pid.sign = value >= 0.0 ? 1.0 : -1.0;
-    return value;
+    return abs(value / WHEEL_METER_PER_COUNT);
 }
 
 static float EncoderInput()
 {
-    return Encoder_RightGetCntsPerSec();
+    return abs(Encoder_RightGetCntsPerSec());
 }
 
 static float PidUpdate(float target, float input)
 {
     PWM_TYPE pwm;
     
-    PIDSetpointSet(&pid.pid, abs(target / WHEEL_METER_PER_COUNT));
-    PIDInputSet(&pid.pid, abs(input));
+    PIDSetpointSet(&pid.pid, target);
+    PIDInputSet(&pid.pid, input);
     
     /* Note: PIDCompute returns TRUE when in AUTOMATIC mode and FALSE when in MANUAL mode */
     if (PIDCompute(&pid.pid))
@@ -127,6 +126,7 @@ static float PidUpdate(float target, float input)
     {
         pwm = Cal_CpsToPwm(WHEEL_RIGHT, target / WHEEL_METER_PER_COUNT);
     }
+
     Motor_RightSetPwm(pwm);
     
     /* Note: The PID update return value is not used. */ 
@@ -164,7 +164,7 @@ void RightPid_Start()
     // component is started which is handled in the Nvstore module.  
     // Pid_Start is called after Nvstore_Start.
     
-    if (p_cal_eeprom->status & CAL_PID_BIT)
+    if (Cal_GetCalibrationStatusBit(CAL_PID_BIT))
     {
         p_gains = Cal_RightGetPidGains();  
         PIDTuningsSet(&pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);

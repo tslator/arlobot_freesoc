@@ -97,10 +97,6 @@ typedef struct
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/
-//static int32         cal_cps_samples[CAL_NUM_SAMPLES];
-//static uint16        cal_pwm_samples[CAL_NUM_SAMPLES];
-//static int32         cal_cps_avg[CAL_NUM_SAMPLES];
-//static CAL_DATA_TYPE cal_data;
 
 static float val_fwd_cps[VAL_NUM_PROFILE_DATA_POINTS] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 static float val_bwd_cps[VAL_NUM_PROFILE_DATA_POINTS] = {-0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0};

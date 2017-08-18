@@ -80,7 +80,7 @@ SOFTWARE.
  * Types
  *-------------------------------------------------------------------------------------------------*/
 typedef uint16 PWM_TYPE;
-
+ 
 typedef struct _pwm_params
 {
     uint16 start;

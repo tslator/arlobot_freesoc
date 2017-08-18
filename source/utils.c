@@ -257,7 +257,7 @@ float FourBytesToFloat(uint8 *bytes)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void BinaryRangeSearch(int32 search, int32 *data_points, uint8 num_points, uint8 *lower_index, uint8 *upper_index)
+void BinaryRangeSearch(int16 search, int16 *data_points, uint8 num_points, uint8 *lower_index, uint8 *upper_index)
 /*
     This is a binary search modified to return a range, e.g., lower and upper, when searching for an element.
 
@@ -433,7 +433,7 @@ float CalcHeading(float left_count, float right_count, float radius, float width
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-uint16 CpsToPwm(int32 cps, int32 *cps_data, uint16 *pwm_data, uint8 data_size)
+uint16 CpsToPwm(int16 cps, int16 *cps_data, uint16 *pwm_data, uint8 data_size)
 {   
     PWM_TYPE pwm = PWM_STOP;
     uint8 lower = 0;
@@ -447,6 +447,8 @@ uint16 CpsToPwm(int32 cps, int32 *cps_data, uint16 *pwm_data, uint8 data_size)
 
         return constrain(pwm, MIN_PWM_VALUE, MAX_PWM_VALUE);
     }
+
+    //Ser_PutStringFormat("CpsToPwm: %d -> %d\r\n", cps, pwm);
 
     return pwm;
 }

@@ -112,6 +112,37 @@ static uint8 vel_index = 0;
  * Functions
  *-------------------------------------------------------------------------------------------------*/
 
+static void Val_CalcTriangularProfile(CAL_PID_PARAMS *params, float low_percent, float high_percent, float *val_fwd_cps)
+{
+    float start;
+    float stop;
+    int ii;
+    
+    start = 0;
+    stop = 0;
+
+    if (params->direction == DIR_FORWARD)
+    {
+        start = (float) min(p_cal_eeprom->left_motor_fwd.cps_min, p_cal_eeprom->right_motor_fwd.cps_min);
+        stop = (float) min(p_cal_eeprom->left_motor_fwd.cps_max, p_cal_eeprom->right_motor_fwd.cps_max);
+    }
+    else if (params->direction == DIR_BACKWARD)
+    {
+        start = (float) min(p_cal_eeprom->left_motor_bwd.cps_min, p_cal_eeprom->right_motor_bwd.cps_min);
+        stop = (float) min(p_cal_eeprom->left_motor_bwd.cps_max, p_cal_eeprom->right_motor_bwd.cps_max);
+    }
+
+    stop = min(stop, (float) min(LEFTPID_MAX, RIGHTPID_MAX));
+    start = low_percent * stop;
+    stop = high_percent * stop;
+    
+    CalcTriangularProfile(MAX_NUM_VELOCITIES, start, stop, val_fwd_cps);
+    for (ii = 0; ii < MAX_NUM_VELOCITIES; ++ii)
+    {
+        Ser_PutStringFormat("%f, ", val_fwd_cps[ii]);
+    }
+    Ser_PutString("\r\n");
+}
 
 /*---------------------------------------------------------------------------------------------------
  * Name: StoreLeftGains/StoreRightGains
@@ -149,34 +180,30 @@ static float GetStepVelocity()
    The minimum value of the above is the basis for determining the step input velocity.
  */
 {
-    int32 left_fwd_max;
-    int32 left_bwd_max;
-    int32 right_fwd_max;
-    int32 right_bwd_max;
-    int32 left_max;
-    int32 right_max;
-    int32 max_leftright_cps;
-    int32 max_leftright_pid;
-    int32 max_cps;
+    int16 left_fwd_max;
+    int16 left_bwd_max;
+    int16 right_fwd_max;
+    int16 right_bwd_max;
+    int16 left_max;
+    int16 right_max;
+    int16 max_leftright_cps;
+    int16 max_leftright_pid;
+    int16 max_cps;
     float max_mps;
 
     left_fwd_max = abs(p_cal_eeprom->left_motor_fwd.cps_max);
     left_bwd_max = abs(p_cal_eeprom->left_motor_bwd.cps_min);
     right_fwd_max = abs(p_cal_eeprom->right_motor_fwd.cps_max);
     right_bwd_max = abs(p_cal_eeprom->right_motor_bwd.cps_min);
-    Ser_PutStringFormat("l max: %d/%d r max: %d/%d\r\n", left_fwd_max, left_bwd_max, right_fwd_max, right_bwd_max);
     
     left_max = min(left_fwd_max, left_bwd_max);
     right_max = min(right_fwd_max, right_bwd_max);
-    Ser_PutStringFormat("l max: %d r max: %d\r\n", left_max, right_max);
     
     max_leftright_cps = min(left_max, right_max);
     max_leftright_pid = min(LEFTPID_MAX, RIGHTPID_MAX);
-    Ser_PutStringFormat("l/r cps max: %d l/r pid max: %d\r\n", max_leftright_cps, max_leftright_pid);
     
     max_cps = min(max_leftright_cps, max_leftright_pid);
     max_mps = (float) (max_cps * WHEEL_METER_PER_COUNT * STEP_VELOCITY_PERCENT);
-    Ser_PutStringFormat("cps max: %d mps max: %.3f\r\n", max_cps, max_mps);
 
     return max_mps;
     
@@ -268,13 +295,17 @@ static uint8 SetNextValidationVelocity(CAL_PID_PARAMS *p_pid_params)
 static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 {
     CAL_PID_PARAMS *p_pid_params = (CAL_PID_PARAMS *)params;
-    float start;
-    float stop;
-    int ii;
     
     switch (stage)
     {
         case CAL_CALIBRATE_STAGE:
+
+            if (!Cal_GetCalibrationStatusBit(CAL_MOTOR_BIT))
+            {
+                Ser_PutStringFormat("Motor calibration not performed (%02x)\r\n", p_cal_eeprom->status);
+                return CAL_COMPLETE;
+            }
+
             Ser_PutStringFormat("\r\n%s PID calibration\r\n", p_pid_params->name);
 
             Cal_ClearCalibrationStatusBit(CAL_PID_BIT);
@@ -300,29 +331,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
             
             Debug_Store();
 
-            //Cal_CalcTriangularProfile(MAX_NUM_VELOCITIES, 0.2, 0.8, val_fwd_cps, val_bwd_cps);
-            if (p_pid_params->direction == DIR_FORWARD)
-            {
-                Cal_CalcForwardOperatingRange(0.2, 0.8, &start, &stop);
-                stop = min(stop, min(LEFTPID_MAX, RIGHTPID_MAX));
-                CalcTriangularProfile(MAX_NUM_VELOCITIES, start, stop, val_fwd_cps);
-                for (ii = 0; ii < MAX_NUM_VELOCITIES; ++ii)
-                {
-                    Ser_PutStringFormat("%d - %d, ", val_fwd_cps[ii]);
-                }
-                Ser_PutString("\r\n");
-            }
-            else if (p_pid_params->direction == DIR_BACKWARD)
-            {
-                Cal_CalcBackwardOperatingRange(0.2, 0.8, &start, &stop);
-                stop = min(stop, min(LEFTPID_MAX, RIGHTPID_MAX));
-                CalcTriangularProfile(MAX_NUM_VELOCITIES, start, stop, val_bwd_cps);
-                for (ii = 0; ii < MAX_NUM_VELOCITIES; ++ii)
-                {
-                    Ser_PutStringFormat("%d - %d, ", val_bwd_cps[ii]);
-                }
-                Ser_PutString("\r\n");
-            }
+            Val_CalcTriangularProfile(p_pid_params, 0.2, 0.8, &val_fwd_cps[0]);
             
             Cal_SetLeftRightVelocity(0, 0);
             Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
@@ -338,6 +347,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
                     Debug_Enable(DEBUG_RIGHT_PID_ENABLE_BIT);
                     break;
             }
+            
             break;
     }
 
@@ -368,7 +378,6 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
             gains[2] = Cal_ReadResponse();
             Ser_PutString("\r\n");
             
-            //Debug_Enable(DEBUG_LEFT_ENCODER_ENABLE_BIT);
             Pid_Enable(TRUE);
             Encoder_Reset();
             Pid_Reset();
