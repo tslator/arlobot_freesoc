@@ -33,19 +33,19 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/    
 #include <stdio.h>
 #include "config.h"
+#include "time.h"
+#include "control.h"
+#include "encoder.h"
+#include "motor.h"
+#include "odom.h"
 #include "pid.h"
 #include "leftpid.h"
 #include "rightpid.h"
-#include "time.h"
+#include "unipid.h"
 #include "utils.h"
-#include "encoder.h"
-#include "motor.h"
-#include "diag.h"
-#include "debug.h"
-#include "odom.h"
-#include "control.h"
 #include "pidutil.h"
 #include "debug.h"
+#include "diag.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -71,9 +71,6 @@ SOFTWARE.
  * Variables
  *-------------------------------------------------------------------------------------------------*/    
 
-static uint8 pid_enabled;
-
-
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/    
@@ -88,12 +85,9 @@ static uint8 pid_enabled;
  *-------------------------------------------------------------------------------------------------*/
 void Pid_Init()
 {
-    pid_enabled = 0;
-    
     LeftPid_Init();    
     RightPid_Init();
-    //LinearPid_Init();
-    //AngularPid_Init();
+    UniPid_Init();
 }
     
 /*---------------------------------------------------------------------------------------------------
@@ -107,8 +101,7 @@ void Pid_Start()
 {
     LeftPid_Start();    
     RightPid_Start();
-    //LinearPid_Start();
-    //AngularPid_Start();    
+    UniPid_Start();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -134,8 +127,7 @@ void Pid_Update()
         
         LeftPid_Process();
         RightPid_Process();
-        //LinearPid_Process();
-        //AngularPid_Process();
+        //UniPid_Process();
     }
     
     PID_UPDATE_END();    
@@ -155,6 +147,11 @@ void Pid_SetLeftRightTarget(GET_TARGET_FUNC_TYPE left_target, GET_TARGET_FUNC_TY
 {
     LeftPid_SetTarget(left_target);
     RightPid_SetTarget(right_target);
+}
+
+void Pid_SetUniTarget(GET_TARGET_FUNC_TYPE linear_target, GET_TARGET_FUNC_TYPE angular_target)
+{
+    UniPid_SetTarget(linear_target, angular_target);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -194,6 +191,12 @@ void Pid_Enable(uint8 enable)
 {
     LeftPid_Enable(enable);
     RightPid_Enable(enable);
+}
+
+void Pid_Bypass(uint8 bypass)
+{
+    LeftPid_Bypass(bypass);
+    RightPid_Bypass(bypass);
 }
 
 /* [] END OF FILE */

@@ -31,19 +31,18 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/    
 #include <stdio.h>
 #include "config.h"
-#include "pid.h"
-#include "rightpid.h"
 #include "time.h"
-#include "utils.h"
+#include "control.h"
 #include "encoder.h"
 #include "motor.h"
-#include "pid_controller.h"
-#include "diag.h"
-#include "debug.h"
 #include "odom.h"
-#include "control.h"
+#include "pid_controller.h"
+#include "pid.h"
+#include "rightpid.h"
+#include "utils.h"
 #include "pidutil.h"
 #include "debug.h"
+#include "diag.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -56,18 +55,15 @@ SOFTWARE.
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
- *-------------------------------------------------------------------------------------------------*/    
-#define RIGHTPID_MIN (0)     // count/sec
-#define RIGHTPID_MAX (5000)  // count/sec
-
+ *-------------------------------------------------------------------------------------------------*/
 
 /* The following PID values were determined experimentally and show good tracking behavior.
     Right PID - P: 3.500, I: 1.450, D: 1.100
 */
 
-#define right_kp (3.500)
-#define right_ki (1.450)
-#define right_kd (1.100)
+#define RIGHT_KP (3.500)
+#define RIGHT_KI (1.450)
+#define RIGHT_KD (1.100)
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -79,7 +75,7 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/
 static float GetCmdVelocity();
 static float EncoderInput();
-static void PidUpdate(float target, float input);
+static float PidUpdate(float target, float input);
 
 /*---------------------------------------------------------------------------------------------------
  * Variables
@@ -96,6 +92,8 @@ static PID_TYPE pid = {
 
 static uint8 pid_enabled;
 
+static GET_TARGET_FUNC_TYPE old_target_source;
+static GET_TARGET_FUNC_TYPE target_source;
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -103,7 +101,7 @@ static uint8 pid_enabled;
 
 static float GetCmdVelocity()
 {
-    float value = Control_RightGetCmdVelocity();
+    float value = target_source();
     pid.sign = value >= 0.0 ? 1.0 : -1.0;
     return value;
 }
@@ -113,20 +111,31 @@ static float EncoderInput()
     return Encoder_RightGetCntsPerSec();
 }
 
-static void PidUpdate(float target, float input)
+static float PidUpdate(float target, float input)
 {
-    PIDSetpointSet(&pid.pid, abs(target / METER_PER_COUNT));
+    PWM_TYPE pwm;
+    
+    PIDSetpointSet(&pid.pid, abs(target / WHEEL_METER_PER_COUNT));
     PIDInputSet(&pid.pid, abs(input));
     
+    /* Note: PIDCompute returns TRUE when in AUTOMATIC mode and FALSE when in MANUAL mode */
     if (PIDCompute(&pid.pid))
     {
-        Motor_RightSetPwm(Cal_CpsToPwm(WHEEL_RIGHT, pid.pid.output * pid.sign));
+        pwm = Cal_CpsToPwm(WHEEL_RIGHT, pid.pid.output * pid.sign);
     }
+    else
+    {
+        pwm = Cal_CpsToPwm(WHEEL_RIGHT, target / WHEEL_METER_PER_COUNT);
+    }
+    Motor_RightSetPwm(pwm);
+    
+    /* Note: The PID update return value is not used. */ 
+    return 0.0;
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: RightPid_Init
- * Description: Starts the EEPROM component used for storing calibration information.
+ * Description: Initializes module variables to default values.
  * Parameters: None
  * Return: None
  * 
@@ -135,12 +144,14 @@ void RightPid_Init()
 {
     pid_enabled = 0;
     
+    target_source = Control_RightGetCmdVelocity;
+    old_target_source = NULL;
     PIDInit(&pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, RIGHTPID_MIN, RIGHTPID_MAX, AUTOMATIC, DIRECT);        
 }
     
 /*---------------------------------------------------------------------------------------------------
  * Name: RightPid_Start
- * Description: Obtains the left/right PID gains and sets them into the left/right PID controller.
+ * Description: Obtains the right PID gains and sets them into the right PID controller.
  * Parameters: None
  * Return: None
  * 
@@ -153,8 +164,15 @@ void RightPid_Start()
     // component is started which is handled in the Nvstore module.  
     // Pid_Start is called after Nvstore_Start.
     
-    p_gains = Cal_RightGetPidGains();    
-    PIDTuningsSet(&pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);    
+    if (p_cal_eeprom->status & CAL_PID_BIT)
+    {
+        p_gains = Cal_RightGetPidGains();  
+        PIDTuningsSet(&pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
+    }
+    else
+    {
+        Ser_PutString("No valid PID calibration\r\n");
+    }
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -169,38 +187,42 @@ void RightPid_Process()
     float target;
     float input;
     
-    target = pid.get_target();
-    input = pid.get_input();
-    pid.update(target, input);
-    RIGHTPID_DUMP();    
+    /* Note: If PID processing is disabled, then skip all PID-related work */
+    if (pid_enabled)
+    {
+        target = pid.get_target();
+        input = pid.get_input();
+        pid.update(target, input);
+        RIGHTPID_DUMP();
+    }
 }
 
 
 /*---------------------------------------------------------------------------------------------------
  * Name: RightPid_SetTarget
- * Description: Sets the left/right get_target fields to a different function.
- *              Note: This is done during calibration to allow internal control of the left/right
+ * Description: Sets the right target source to the specified function.
+ *              Note: This is done during calibration to allow internal control of the right
  *              wheel speed.
- * Parameters: left_target - the function that will be used to get the left target speed
- *             right_target - the function that will be used to get the right target speed
+ * Parameters: target - the function that will be the source of the right target speed.
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
 void RightPid_SetTarget(GET_TARGET_FUNC_TYPE target)
 {
-    pid.get_target = target;
+    old_target_source = target_source;
+    target_source = target;
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: RightPid_RestoreTarget
- * Description: Restores the left/right get_target fields to the default function.
+ * Description: Restores the right target source to the default function.
  * Parameters: None
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
 void RightPid_RestoreTarget()
 {
-    pid.get_target = Control_RightGetCmdVelocity;
+    target_source = old_target_source;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -221,18 +243,39 @@ void RightPid_Reset()
 
 /*---------------------------------------------------------------------------------------------------
  * Name: RightPid_Enable
- * Description: Enables/Disables the PID.  This is needed for motor and PID calibration.
+ * Description: Enables/Disables PID processing (see RightPid_Process).  There are times when the PID
+ *              needs to be completely disabled but still callable from the main loop.
  * Parameters: None
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void RightPid_Enable(uint8 enable)
+void RightPid_Enable(uint8 value)
 {
-    PIDMode mode = MANUAL;
-    
-    if (enable)
+    pid_enabled = value;
+    if (value)
     {
-        mode = AUTOMATIC;
+        PIDModeSet(&pid.pid, AUTOMATIC);
+    }
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: RightPid_Bypass
+ * Description: Bypassing the PID calculation by setting the PID mode to either MANUAL or AUTOMATIC.
+ *              MANUAL mode bypasses the PID control calculation and uses the unmodified target value.
+ *              AUTOMATIC mode performs the PID control calculation and uses the PID output value.
+ * Parameters: value - TRUE if the PID calculation is to be bypassed; otherwise, FALSE.
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+void RightPid_Bypass(uint8 value)
+{
+    PIDMode mode = AUTOMATIC;
+    
+    /* Note: To bypass the PID calculation, PID processing must be enabled. */
+    if (value)
+    {
+        pid_enabled = TRUE;
+        mode = MANUAL;
     }
     
     PIDModeSet(&pid.pid, mode);

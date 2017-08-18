@@ -71,6 +71,9 @@ typedef struct _eeprom_tag
     // the following fields are padded to 16 bytes (1 row)
     uint16 status;                  /* bit 0: Left/Right Motor (Count/Sec to PWM) calibrated
                                        bit 1: Left/Right PID calibrated
+                                       bit 2: Unicycle PIDs calibrated
+                                       bit 3: Linear Bias calibrated
+                                       bit 4: Angular Bias calibrated
                                      */
     uint16 checksum;
     uint8 reserved_4[4];
@@ -78,7 +81,9 @@ typedef struct _eeprom_tag
     CAL_PID_TYPE right_gains;
     float linear_bias;
     float angular_bias;
-    uint8 reversed_24[24];
+    CAL_PID_TYPE linear_gains;
+    CAL_PID_TYPE angular_gains;
+    //uint8 reversed_24[24];
     CAL_DATA_TYPE left_motor_fwd;
     CAL_DATA_TYPE left_motor_bwd;
     CAL_DATA_TYPE right_motor_fwd;

@@ -68,6 +68,8 @@ SOFTWARE.
 #define ENC_SAMPLE_TIME_MS  SAMPLE_TIME_MS(ENC_SAMPLE_RATE)
 #define ENC_SAMPLE_TIME_SEC SAMPLE_TIME_SEC(ENC_SAMPLE_RATE)
 
+#define NUM_DELTA_COUNT_SAMPLES (10)
+#define NUM_AVG_CPS_SAMPLES (10)
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -115,6 +117,9 @@ static ENCODER_TYPE right_enc = {
     /* set enc count */     Right_QuadDec_SetCounter,
 };
 
+static float linear_velocity;
+static float angular_velocity;
+
 #if defined (LEFT_ENC_DUMP_ENABLED) || defined (RIGHT_ENC_DUMP_ENABLED)
 /*---------------------------------------------------------------------------------------------------
  * Name: DumpEncoder
@@ -156,9 +161,9 @@ static void Encoder_Sample(ENCODER_TYPE *enc, uint32 delta_time)
     
     enc->avg_cps = MovingAverageFloat(&enc->avg_cps_ma, cps);
     
-    enc->avg_mps = enc->avg_cps * METER_PER_COUNT;
+    enc->avg_mps = enc->avg_cps * WHEEL_METER_PER_COUNT;
     
-    enc->delta_dist = PI_D * enc->avg_delta_count/COUNT_PER_REVOLUTION;
+    enc->delta_dist = WHEEL_METER_PER_REV * enc->avg_delta_count/WHEEL_COUNT_PER_REV;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -176,9 +181,9 @@ void Encoder_Init()
     left_enc.avg_delta_count = 0;
     left_enc.delta_dist = 0.0;
     left_enc.delta_count_ma.last = 0;
-    left_enc.delta_count_ma.n = 20;
+    left_enc.delta_count_ma.n = NUM_DELTA_COUNT_SAMPLES;
     left_enc.avg_cps_ma.last = 0;
-    left_enc.avg_cps_ma.n = 10;
+    left_enc.avg_cps_ma.n = NUM_AVG_CPS_SAMPLES;
     left_enc.avg_cps = 0;
     left_enc.avg_mps = 0;
     
@@ -188,11 +193,15 @@ void Encoder_Init()
     right_enc.avg_delta_count = 0;
     right_enc.delta_dist = 0.0;
     right_enc.delta_count_ma.last = 0;
-    right_enc.delta_count_ma.n = 20;
+    right_enc.delta_count_ma.n = NUM_DELTA_COUNT_SAMPLES;
     right_enc.avg_cps_ma.last = 0;
-    right_enc.avg_cps_ma.n = 10;
+    right_enc.avg_cps_ma.n = NUM_AVG_CPS_SAMPLES;
     right_enc.avg_cps = 0;
     right_enc.avg_mps = 0;
+    
+    linear_velocity = 0.0;
+    angular_velocity = 0.0;
+    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -235,9 +244,31 @@ void Encoder_Update()
         Encoder_Sample(&right_enc, delta_time);
         LEFT_DUMP_ENC(&left_enc);
         RIGHT_DUMP_ENC(&right_enc);
+        
+        DiffToUni(left_enc.avg_mps, right_enc.avg_mps, &linear_velocity, &angular_velocity);
     }                    
     
     ENCODER_UPDATE_END();
+}
+
+void Encoder_LeftReset()
+{
+    Left_QuadDec_SetCounter(0);
+}
+
+void Encoder_RightReset()
+{
+    Right_QuadDec_SetCounter(0);
+}
+
+int32 Encoder_LeftGetRawCount()
+{
+    return Left_QuadDec_GetCounter();
+}
+
+int32 Encoder_RightGetRawCount()
+{
+    return Right_QuadDec_GetCounter();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -399,6 +430,23 @@ float Encoder_GetCenterDist()
 }
 
 /*---------------------------------------------------------------------------------------------------
+ * Name: Encoder_LinearGetVelocity/Encoder_AngularGetVelocity
+ * Description: Returns the linear and angular velocity based on the encoder reading.
+ * Parameters: None
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+float Encoder_LinearGetVelocity()
+{    
+    return linear_velocity;
+}
+
+float Encoder_AngularGetVelocity()
+{
+    return angular_velocity;
+}
+
+/*---------------------------------------------------------------------------------------------------
  * Name: Encoder_Reset
  * Description: Resets the left/right encoder fields.
  * Parameters: None
@@ -428,6 +476,9 @@ void Encoder_Reset()
     right_enc.avg_cps_ma.last = 0;
     right_enc.count = 0;
     right_enc.delta_dist = 0;
+
+    linear_velocity = 0.0;
+    angular_velocity = 0.0;
     
     LEFT_DUMP_ENC(&left_enc);
     RIGHT_DUMP_ENC(&right_enc);    

@@ -38,6 +38,9 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
+// Left PID min/max in count/sec
+#define LEFTPID_MIN (0)
+#define LEFTPID_MAX (min(MAX_WHEEL_FORWARD_COUNT_PER_SEC, abs(MAX_WHEEL_BACKWARD_COUNT_PER_SEC)))
     
 
 /*---------------------------------------------------------------------------------------------------
@@ -59,7 +62,8 @@ void LeftPid_SetTarget(GET_TARGET_FUNC_TYPE target);
 void LeftPid_RestoreTarget();
 
 void LeftPid_Reset();
-void LeftPid_Enable(uint8 enable);
+void LeftPid_Enable(uint8 value);
+void LeftPid_Bypass(uint8 value);
 
 
 #endif

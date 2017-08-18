@@ -69,6 +69,8 @@ void Control_SetCommandVelocityFunc(COMMAND_FUNC_TYPE cmd);
 void Control_RestoreCommandVelocityFunction();
 float Control_LeftGetCmdVelocity();
 float Control_RightGetCmdVelocity();
+float Control_LinearGetCmdVelocity();
+float Control_AngularGetCmdVelocity();
 void Control_OverrideDebug(uint8 override);
 
 void Control_SetDeviceStatusBit(uint16 bit);

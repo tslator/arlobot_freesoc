@@ -66,6 +66,9 @@ static float linear_cmd_velocity;
 static float angular_cmd_velocity;
 static uint8 debug_override;
 
+static float max_robot_forward_linear_velocity;
+static float max_robot_backward_linear_velocity;
+
 
 void Update_Debug(uint16 bits)
 {
@@ -142,6 +145,16 @@ void Control_Init()
  *-------------------------------------------------------------------------------------------------*/ 
 void Control_Start()
 {   
+    float max_robot_linear_velocity;
+    float dont_care;
+    
+    /* Calculate the min/max forward/backward differential velocities */
+    
+    UniToDiff(MAX_WHEEL_FORWARD_LINEAR_VELOCITY, 0, &max_robot_linear_velocity, &dont_care);
+    
+    max_robot_forward_linear_velocity = max_robot_linear_velocity;
+    max_robot_backward_linear_velocity = -max_robot_linear_velocity;
+    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -202,19 +215,32 @@ void Control_Update()
     // Used to override I2C commands (debug)
     //left_cmd_velocity = 0;
     //right_cmd_velocity = 0;
-    //UniToDiff(0.065, 0, &left_cmd_velocity, &right_cmd_velocity);
+    //timeout = 0;
+    //UniToDiff(0.5, 0, &left_cmd_velocity, &right_cmd_velocity);
         
     if (timeout > MAX_CMD_VELOCITY_TIMEOUT)
     {
         left_cmd_velocity = 0;
         right_cmd_velocity = 0;
     }
-    
-    left_cmd_velocity = max(MIN_LEFT_VELOCITY, min(left_cmd_velocity, MAX_LEFT_VELOCITY));
-    right_cmd_velocity = max(MIN_RIGHT_VELOCITY, min(right_cmd_velocity, MAX_RIGHT_VELOCITY));
+
+    /* Constrain the left/right velocities to the allowable range */
+    left_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, 
+                                  left_cmd_velocity, 
+                                  MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
+    right_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, 
+                                   right_cmd_velocity, 
+                                   MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
     
     /* Calculate Linear/Angular velocities for linear/angular PID control */
     DiffToUni(left_cmd_velocity, right_cmd_velocity, &linear_cmd_velocity, &angular_cmd_velocity);
+    
+    linear_cmd_velocity = constrain(max_robot_backward_linear_velocity, 
+                                    linear_cmd_velocity, 
+                                    max_robot_forward_linear_velocity);
+    angular_cmd_velocity = constrain(MAX_ROBOT_CCW_RADIAN_PER_SECOND,
+                                     angular_cmd_velocity,
+                                     MAX_ROBOT_CW_RADIAN_PER_SECOND);
         
     /* Here seems like a reasonable place to evaluate safety, e.g., can we execute the requested speed change safely
        without running into something or falling into a hole (or down stairs).
@@ -295,11 +321,25 @@ float Control_RightGetCmdVelocity()
     return right_cmd_velocity;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Control_LinearGetCmdVelocity
+ * Description: Accessor function used to return the linear commanded velocity.  
+ * Parameters: None
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/ 
 float Control_LinearGetCmdVelocity()
 {
     return linear_cmd_velocity;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Control_AngularGetCmdVelocity
+ * Description: Accessor function used to return the angular commanded velocity.  
+ * Parameters: None
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/ 
 float Control_AngularGetCmdVelocity()
 {
     return angular_cmd_velocity;

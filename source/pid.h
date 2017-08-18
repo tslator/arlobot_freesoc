@@ -53,11 +53,11 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/
 typedef float (*GET_TARGET_FUNC_TYPE)();
 typedef float (*GET_INPUT_FUNC_TYPE)();
-typedef void (*PID_UPDATE_TYPE)(float target, float input);
+typedef float (*PID_UPDATE_TYPE)(float target, float input);
 
 typedef struct _pid_tag
 {
-    char name[6];
+    char name[8];
     PIDControl pid;
     int sign;
     GET_TARGET_FUNC_TYPE get_target;
@@ -76,6 +76,7 @@ void Pid_SetLeftRightTarget(GET_TARGET_FUNC_TYPE left_target, GET_TARGET_FUNC_TY
 void Pid_RestoreLeftRightTarget();
 void Pid_Reset();
 void Pid_Enable(uint8 enable);
+void Pid_Bypass(uint8 bypass);
 
 #endif
 

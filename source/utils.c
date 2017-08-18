@@ -39,8 +39,8 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
-#define MPS_TO_CPS(mps) (mps / METER_PER_COUNT)
-#define CPS_TO_MPS(cps) (cps * METER_PER_COUNT)
+#define MPS_TO_CPS(mps) (mps / WHEEL_METER_PER_COUNT)
+#define CPS_TO_MPS(cps) (cps * WHEEL_METER_PER_COUNT)
 
 #define DEG_TO_RAD(deg) ((deg / 360.0) * 2*PI)
 #define RAD_TO_DEG(rad) ((rad / 2*PI) * 360.0)
@@ -507,5 +507,45 @@ float NormalizeHeading(float heading, DIR_TYPE direction)
 
     return result;
 }
+
+void CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_limit, float *profile)
+{
+    uint8 mid_sample_offset;
+    float delta;
+    float value;
+    uint8 ii;
+
+    if (num_points % 2 == 0)
+    {
+        assert("Profile requires odd number of points");
+    }
+
+    /* Calculate the mid point */
+    mid_sample_offset = num_points / 2;
+    
+    /* Calculate the delta step */
+    delta = (upper_limit - lower_limit)/mid_sample_offset;
+    
+    /* Set the mid point */
+    profile[mid_sample_offset] = upper_limit;
+    
+    /* Set the 'up' slope values */
+    value = lower_limit;
+    for (ii = 0; ii < mid_sample_offset; ++ii)
+    {
+        profile[ii] = value;
+        value += delta;
+    }
+    
+    /* Set the 'down' slope values */ 
+    value = upper_limit;
+    for (ii = mid_sample_offset; ii < num_points; ++ii)
+    {
+        profile[ii] = value;
+        value -= delta;
+    }
+    
+}
+
 
 /* [] END OF FILE */

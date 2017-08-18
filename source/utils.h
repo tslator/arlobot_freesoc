@@ -132,6 +132,10 @@ float CalcHeading(float left_count, float right_count, float radius, float width
 uint16 CpsToPwm(int32 cps, int32 *cps_data, uint16 *pwm_data, uint8 data_size);
 
 float NormalizeHeading(float heading, DIR_TYPE direction);
+
+void CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_limit, float *profile);
+
+
 #endif
 
 /* [] END OF FILE */

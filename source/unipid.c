@@ -197,13 +197,13 @@ void UniPid_Start()
     // component is started which is handled in the Nvstore module.  
     // UniPid_Start is called after Nvstore_Start.
     
-    p_gains = Cal_LinearGetPidGains();  
+    p_gains = Cal_LinearGetPidGains();
     //PIDTuningsSet(&linear_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);    
-    PIDTuningsSet(&linear_pid.pid, LINEAR_KP, 0.0, 0.0);    
+    PIDTuningsSet(&linear_pid.pid, LINEAR_KP, 0.0, 0.0);
 
-    p_gains = Cal_AngularGetPidGains();  
+    p_gains = Cal_AngularGetPidGains();
     //PIDTuningsSet(&angular_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);    
-    PIDTuningsSet(&angular_pid.pid, ANGULAR_KP, 0.0, 0.0);    
+    PIDTuningsSet(&angular_pid.pid, ANGULAR_KP, 0.0, 0.0);
 }
 
 /*---------------------------------------------------------------------------------------------------

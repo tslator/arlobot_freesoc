@@ -95,6 +95,8 @@ typedef uint8 (*START_FUNC_TYPE)(CAL_STAGE_TYPE stage, void *params);
 typedef uint8 (*UPDATE_FUNC_TYPE)(CAL_STAGE_TYPE stage, void *params);
 typedef uint8 (*STOP_FUNC_TYPE)(CAL_STAGE_TYPE stage, void *params);
 typedef uint8 (*RESULTS_FUNC_TYPE)(CAL_STAGE_TYPE stage, void *params);
+typedef void (*SET_LEFT_RIGHT_VELOCITY_TYPE)(float left, float right);
+
 
 typedef struct calibration_type_tag
 {
@@ -125,6 +127,17 @@ GET_TARGET_FUNC_TYPE Cal_RightTarget;
 #define CAL_STAGE_TO_STRING(stage) cal_stage_to_string[stage]
 #define CAL_STATE_TO_STRING(state) cal_state_to_string[state]
 
+/* The CPS values must be stored from lowest (most negative) to higest (most positive) which means the index used
+   for storage must be adjusted based on direction
+ */     
+ #define PWM_CALC_OFFSET(direction, index)  (direction == DIR_BACKWARD ? CAL_NUM_SAMPLES - 1 - index : index)
+ 
+/*---------------------------------------------------------------------------------------------------
+ * Variables
+ *-------------------------------------------------------------------------------------------------*/
+ CAL_DATA_TYPE * WHEEL_DIR_TO_CAL_DATA[2][2];
+ 
+
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
@@ -134,17 +147,25 @@ void Cal_Update();
 float Cal_ReadResponse();
 CAL_PID_TYPE* Cal_LeftGetPidGains();
 CAL_PID_TYPE* Cal_RightGetPidGains();
+CAL_PID_TYPE* Cal_LinearGetPidGains();
+CAL_PID_TYPE* Cal_AngularGetPidGains();
 void Cal_SetLeftRightVelocity(float left, float right);
 PWM_TYPE Cal_CpsToPwm(WHEEL_TYPE wheel, float cps);
 void Cal_Clear();
 void Cal_ClearCalibrationStatusBit(uint16 bit);
 void Cal_SetCalibrationStatusBit(uint16 bit);
+uint16 Cal_GetCalibrationStatusBit(uint16 bit);
+
 void Cal_PrintSamples(char *label, int32 *cps_samples, PWM_TYPE *pwm_samples);
 void Cal_PrintGains(char *label, float *gains);
 void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_limit, float *forward_output, float *backward_output);
 
 float Cal_GetLinearBias();
 float Cal_GetAngularBias();
+
+void Cal_CalcOperatingRange(float low_percent, float high_percent, float domain, float *start, float *stop);
+void Cal_CalcForwardOperatingRange(float low_percent, float high_percent, float *start, float *stop);
+void Cal_CalcBackwardOperatingRange(float low_percent, float high_percent, float *start, float *stop);
 
 #endif
 
