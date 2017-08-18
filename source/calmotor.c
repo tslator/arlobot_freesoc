@@ -101,6 +101,11 @@ typedef struct _cal_motor_params
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/
+/* Note: Calibration performs several iterations over the full range of the motor speed in order gather 
+   enough data to determine an average count/sec.  While the final count/sec value stored is int16
+   (in order to save space) the arrays that sum and average the count/sec values must be int32 to 
+   avoid overflow.
+*/
 static int32         cal_cps_samples[CAL_NUM_SAMPLES];
 static uint16        cal_pwm_samples[CAL_NUM_SAMPLES];
 static int32         cal_cps_avg[CAL_NUM_SAMPLES];
@@ -255,21 +260,6 @@ static uint8 motor_cal_index;
  * Print Functions
  *-------------------------------------------------------------------------------------------------*/
 
-/*---------------------------------------------------------------------------------------------------
- * Name: PrintAllMotorParams
- * Description: Prints the left/right, forward/backward count/sec and pwm calibration values
- * Parameters: None
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-static void PrintAllMotorParams()
-{
-    Ser_PutString("\r\n");
-    Cal_PrintSamples("Left-Forward", (int32 *) p_cal_eeprom->left_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_fwd.pwm_data);
-    Cal_PrintSamples("Left-Backward", (int32 *) p_cal_eeprom->left_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_bwd.pwm_data);
-    Cal_PrintSamples("Right-Forward", (int32 *) p_cal_eeprom->right_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_fwd.pwm_data);
-    Cal_PrintSamples("Right-Backward", (int32 *) p_cal_eeprom->right_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_bwd.pwm_data);
-}
 
 /*---------------------------------------------------------------------------------------------------
  * Name: CalculateMinMaxCpsSample
@@ -284,22 +274,28 @@ static void PrintAllMotorParams()
 static void CalculateMinMaxCpsSample(int32 *samples, int32 *min, int32 *max)
 {
     uint8 ii;
-    *min = INT_MAX;
-    *max = INT_MIN;    
+    /* Note: it was necessary to introduce local variables.  Accessing min/max parameters had 
+       unexpected results.
+    */
+    int32 tmp_min = INT_MAX;
+    int32 tmp_max = INT_MIN;
 
     for (ii = 0; ii < CAL_NUM_SAMPLES; ++ii)
     {
-        if (samples[ii] > *max)
+        if (samples[ii] > tmp_max)
         {
-            *max = samples[ii];
+            tmp_max = samples[ii];
         }
         
-        if (samples[ii] < *min)
+        if (samples[ii] < tmp_min)
         {
-            *min = samples[ii];
+            tmp_min = samples[ii];
         }
-        Ser_PutStringFormat("min/max: %d/%d\r\n", *min, *max);
+        //Ser_PutStringFormat("Sample(%d): %d, Min/Max: %d/%d\r\n", ii, samples[ii], tmp_min, tmp_max);
     }
+
+    *min = tmp_min;
+    *max = tmp_max;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -441,7 +437,7 @@ static uint8 PerformMotorCalibrationIteration(CAL_MOTOR_PARAMS *params)
             total_sample_time = params->sample_time * num_cps_samples_collected;
             total_counts = params->p_cps_samples[params->cps_index];
             params->p_cps_samples[params->cps_index] = total_counts * MILLIS_PER_SECOND / total_sample_time;
-            Ser_PutStringFormat("tst: %d, tc: %d, cps: %d\r\n", total_sample_time, total_counts, params->p_cps_samples[params->cps_index]);
+            //Ser_PutStringFormat("tst: %d, tc: %d, cps: %d\r\n", total_sample_time, total_counts, params->p_cps_samples[params->cps_index]);
             pwm_running = FALSE;
         } 
     }
@@ -475,7 +471,7 @@ static uint8 PerformMotorCalibrateAverage(CAL_MOTOR_PARAMS *params)
     for (ii = 0; ii < CAL_NUM_SAMPLES; ++ii)
     {
         params->p_cps_avg[ii] = params->p_cps_avg[ii]/MAX_MOTOR_CAL_ITERATION;
-        Ser_PutStringFormat("Avg CPS (%d): %d\r\n", params->p_pwm_samples[ii], params->p_cps_avg[ii]);
+        //Ser_PutStringFormat("Avg CPS (%d): %d\r\n", params->p_pwm_samples[ii], params->p_cps_avg[ii]);
     }
     
     return CALIBRATION_ITERATION_DONE;
@@ -502,7 +498,7 @@ static void StoreMotorCalibration(CAL_MOTOR_PARAMS *params)
     function before writing to NVRAM which works.
     */
 
-    /* Remove unwanted neg/pos values */
+    /* Remove unwanted spurious neg/pos values */
     for (ii = 0; ii < CAL_NUM_SAMPLES; ++ii)
     {
         if (params->direction == DIR_FORWARD)
@@ -522,14 +518,14 @@ static void StoreMotorCalibration(CAL_MOTOR_PARAMS *params)
         }
     }
 
-    CalculateMinMaxCpsSample(params->p_cps_avg, &cal_data.cps_min, &cal_data.cps_max);
+    CalculateMinMaxCpsSample(params->p_cps_avg, (int32 *) &cal_data.cps_min, (int32 *) &cal_data.cps_max);
     
     for (ii = 0; ii < CAL_NUM_SAMPLES; ++ii)
     {
-        cal_data.pwm_data[ii] = params->p_pwm_samples[ii];
-        cal_data.cps_data[ii] = params->p_cps_avg[ii];       
+        /* Note: Just a reminder, count/sec storage is int16 */
+        cal_data.pwm_data[ii] = (int16) params->p_pwm_samples[ii];
+        cal_data.cps_data[ii] = (int16) params->p_cps_avg[ii];       
     }
-    Ser_PutStringFormat("\r\nMin/Max: %d/%d\r\n", cal_data.cps_min, cal_data.cps_max);
 
     /* Retrieve the non-volatile storage offset for the specified wheel and direction */
     uint16 offset = NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(WHEEL_DIR_TO_CAL_DATA[params->wheel][params->direction]);
@@ -683,7 +679,7 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
     params = params;
     
     Ser_PutString("\r\nPrinting motor calibration results\r\n");
-    PrintAllMotorParams();
+    Cal_PrintAllMotorParams();
         
     return CAL_OK;
 }
