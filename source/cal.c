@@ -41,6 +41,7 @@ SOFTWARE.
 #include "pid.h"
 #include "nvstore.h"
 #include "calmotor.h"
+#include "valmotor.h"
 #include "calpid.h"
 #include "callin.h"
 #include "calang.h"
@@ -143,15 +144,20 @@ static float RightTarget()
 void Cal_ClearCalibrationStatusBit(uint16 bit)
 {
     uint16 status = p_cal_eeprom->status &= ~bit;
-    //Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
+    Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
     Control_ClearCalibrationStatusBit(bit);
 }
 
 void Cal_SetCalibrationStatusBit(uint16 bit)
 {
     uint16 status = p_cal_eeprom->status | bit;
-    //Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
+    Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
     Control_SetCalibrationStatusBit(bit);   
+}
+
+uint16 Cal_GetCalibrationStatusBit(uint16 bit)
+{
+    return p_cal_eeprom->status & bit;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -193,15 +199,12 @@ void Cal_PrintSamples(char *label, int32 *cps_samples, uint16 *pwm_samples)
  *-------------------------------------------------------------------------------------------------*/
 void Cal_PrintGains(char *label, float *gains)
 {
-    char pgain_str[10];
-    char igain_str[10];
-    char dgain_str[10];
-    
-    ftoa(gains[0], pgain_str, 3);
-    ftoa(gains[1], igain_str, 3);
-    ftoa(gains[2], dgain_str, 3);
-    
-    Ser_PutStringFormat("%s - P: %s, I: %s, D: %s\r\n", label, pgain_str, igain_str, dgain_str);
+    Ser_PutStringFormat("%s - P: %.3f, I: %.3f, D: %.3f\r\n", label, gains[0], gains[1], gains[2]);
+}
+
+void Cal_PrintStatus(char *label, uint16 status)
+{
+    Ser_PutStringFormat("%s - %02x\r\n", label, status);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -212,13 +215,7 @@ void Cal_PrintGains(char *label, float *gains)
  *-------------------------------------------------------------------------------------------------*/
 void Cal_PrintBias()
 {
-    char linear_bias_str[10];
-    char angular_bias_str[10];
-    
-    ftoa(Cal_GetLinearBias(), linear_bias_str, 3);
-    ftoa(Cal_GetAngularBias(), angular_bias_str, 3);
-    
-    Ser_PutStringFormat("Linear Bias: %s, Angular Bias: %s\r\n", linear_bias_str, angular_bias_str);
+    Ser_PutStringFormat("Linear Bias: %.2f, Angular Bias: %.2f\r\n", Cal_GetLinearBias(), Cal_GetAngularBias());
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -380,11 +377,16 @@ static void ProcessSettingsCmd(uint8 cmd)
             Ser_WriteByte(cmd);
             Ser_PutString("\r\nDisplaying all calibration/settings\r\n");
             Cal_PrintSamples("Left-Backward", (int32 *) p_cal_eeprom->left_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_bwd.pwm_data);
+            Ser_PutStringFormat("Left-Backward Min/Max: %d/%d\r\n", p_cal_eeprom->left_motor_bwd.cps_min, p_cal_eeprom->left_motor_bwd.cps_max);
             Cal_PrintSamples("Left-Forward", (int32 *) p_cal_eeprom->left_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->left_motor_fwd.pwm_data);
+            Ser_PutStringFormat("Left-Forward Min/Max: %d/%d\r\n", p_cal_eeprom->left_motor_fwd.cps_min, p_cal_eeprom->left_motor_fwd.cps_max);
             Cal_PrintSamples("Right-Backward", (int32 *) p_cal_eeprom->right_motor_bwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_bwd.pwm_data);
+            Ser_PutStringFormat("Right-Backward Min/Max: %d/%d\r\n", p_cal_eeprom->right_motor_bwd.cps_min, p_cal_eeprom->right_motor_bwd.cps_max);
             Cal_PrintSamples("Right-Forward", (int32 *) p_cal_eeprom->right_motor_fwd.cps_data, (uint16 *) p_cal_eeprom->right_motor_fwd.pwm_data);
+            Ser_PutStringFormat("Right-Forward Min/Max: %d/%d\r\n", p_cal_eeprom->right_motor_fwd.cps_min, p_cal_eeprom->right_motor_fwd.cps_max);
             Cal_PrintGains("Left PID", (float *) &p_cal_eeprom->left_gains);
             Cal_PrintGains("Right PID", (float *) &p_cal_eeprom->right_gains);
+            Cal_PrintStatus("Status", p_cal_eeprom->status);
             Cal_PrintBias();
 
             DisplaySettingsMenu();
@@ -503,9 +505,9 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
         case VAL_MOTOR_CMD:
             Ser_WriteByte(cmd);
             Ser_PutString("\r\nPerforming Motor Validation by operating the motors at varying velocities.\r\n");
-            CalMotor_Validation->stage = CAL_VALIDATE_STAGE;
-            CalMotor_Validation->state = CAL_INIT_STATE;
-            return (CALIBRATION_TYPE *) CalMotor_Validation;
+            ValMotor_Validation->stage = CAL_VALIDATE_STAGE;
+            ValMotor_Validation->state = CAL_INIT_STATE;
+            return (CALIBRATION_TYPE *) ValMotor_Validation;
             break;
             
         case VAL_PID_CMD:
@@ -714,10 +716,20 @@ static void Process(CALIBRATION_TYPE *calval)
 void Cal_Init()
 {
     p_cal_eeprom = NVSTORE_CAL_EEPROM_BASE;
+    
+    /* Initialize the direction to calibration data constant.  The constant is used for motor calibration
+       and validation so it is best to initialize it a common location.
+    */
+    WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_fwd;
+    WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd;
+    WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd;
+    WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd;
+    
     Cal_LeftTarget = LeftTarget;
     Cal_RightTarget = RightTarget;
     
     CalMotor_Init();
+    ValMotor_Init();
     CalPid_Init();
     CalLin_Init();
     CalAng_Init();
@@ -826,7 +838,6 @@ void Cal_Update()
             {
                 active_val = GetValidation(cmd);
             }
-            
             if (active_val)
             {
                 Control_OverrideDebug(TRUE);
@@ -915,6 +926,23 @@ CAL_PID_TYPE * Cal_RightGetPidGains()
 }
 
 /*---------------------------------------------------------------------------------------------------
+ * Name: Cal_LinearGetPidGains/Cal_AngularGetPidGains
+ * Description: Returns the linear/angular PID gains from EEPROM. 
+ * Parameters: None
+ * Return: pointer to CAL_PID_TYPE
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+CAL_PID_TYPE * Cal_LinearGetPidGains()
+{
+    return (CAL_PID_TYPE *) &p_cal_eeprom->linear_gains;
+}
+
+CAL_PID_TYPE * Cal_AngularGetPidGains()
+{
+    return (CAL_PID_TYPE *) &p_cal_eeprom->angular_gains;
+}
+
+/*---------------------------------------------------------------------------------------------------
  * Name: Cal_SetLeftRightVelocity
  * Description: Sets the left/right velocity for calibration/validation.  This routine is called from 
  *              calibration submodules to set wheel speed. 
@@ -925,6 +953,7 @@ CAL_PID_TYPE * Cal_RightGetPidGains()
  *-------------------------------------------------------------------------------------------------*/
 void Cal_SetLeftRightVelocity(float left, float right)
 {
+    Ser_PutStringFormat("Left/Right: %.3f, %.3f\r\n", left, right);
     left_cmd_velocity = left;
     right_cmd_velocity = right;
 }
@@ -950,10 +979,10 @@ PWM_TYPE Cal_CpsToPwm(WHEEL_TYPE wheel, float cps)
     if (p_cal_eeprom->status & CAL_MOTOR_BIT)
     {
     
-        CAL_DATA_TYPE *p_cal_data = WHEEL_DIR_TO_CAL_DATA[wheel][cps > 0 ? 0 : 1];
+        CAL_DATA_TYPE *p_cal_data = WHEEL_DIR_TO_CAL_DATA[wheel][cps >= 0 ? 0 : 1];
         
-        cps = constrain((int32)(cps * p_cal_data->cps_scale), p_cal_data->cps_min, p_cal_data->cps_max);
-        pwm = CpsToPwm(cps, &p_cal_data->cps_data[0], &p_cal_data->pwm_data[0], CAL_DATA_SIZE);
+        cps = constrain((int32) cps, p_cal_data->cps_min, p_cal_data->cps_max);
+        pwm = CpsToPwm((int32) cps, &p_cal_data->cps_data[0], &p_cal_data->pwm_data[0], CAL_DATA_SIZE);
     }
     else
     {
@@ -963,7 +992,7 @@ PWM_TYPE Cal_CpsToPwm(WHEEL_TYPE wheel, float cps)
             send_once = 1;
         }
     }
-
+    
     return pwm;
 }
 
@@ -978,6 +1007,38 @@ void Cal_Clear()
 {
     Cal_ClearCalibrationStatusBit(CAL_MOTOR_BIT);
     Cal_ClearCalibrationStatusBit(CAL_PID_BIT);
+}
+
+void Cal_CalcOperatingRange(float low_percent, float high_percent, float domain, float *start, float *stop)
+{
+    *start = low_percent * domain;
+    *stop = high_percent * domain;
+}
+
+void Cal_CalcForwardOperatingRange(float low_percent, float high_percent, float *start, float *stop)
+{        
+    /* Get the min/max forward values for each motor */
+    float left_forward_cps_max = p_cal_eeprom->left_motor_fwd.cps_max;
+    float right_forward_cps_max = p_cal_eeprom->right_motor_fwd.cps_max;
+
+    /* Select the max of the max */
+    float forward_cps_max = min(left_forward_cps_max, right_forward_cps_max);
+
+    Cal_CalcOperatingRange(low_percent, high_percent, forward_cps_max, start, stop);    
+}
+
+void Cal_CalcBackwardOperatingRange(float low_percent, float high_percent, float *start, float *stop)
+{
+    /* Get the min/max reverse values for each motor */
+    float left_backward_cps_min = p_cal_eeprom->left_motor_bwd.cps_min;
+    float right_backward_cps_min = p_cal_eeprom->right_motor_bwd.cps_min;
+    /* Select the min of the min 
+       Note: Backward values are negative 
+     */
+    float backward_cps_max = max(left_backward_cps_min, right_backward_cps_min);
+
+    Cal_CalcOperatingRange(low_percent, high_percent, backward_cps_max, start, stop);
+
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -998,7 +1059,8 @@ void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_
    motor validation to confirm that motor calibration conversion from count/second to pwm is reasonably accurate.
  */
 {
-    uint8 ii;
+    float start;
+    float stop;
 
     memset(forward_profile, 0, num_points * sizeof(float));
     memset(backward_profile, 0, num_points * sizeof(float));
@@ -1013,59 +1075,17 @@ void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_
     
     if (p_cal_eeprom->status & CAL_MOTOR_BIT)
     {    
-        /* Get the min/max forward/reverse values for each motor */
-        float left_forward_cps_max = p_cal_eeprom->left_motor_fwd.cps_max / p_cal_eeprom->left_motor_fwd.cps_scale;
-        float right_forward_cps_max = p_cal_eeprom->right_motor_fwd.cps_max / p_cal_eeprom->right_motor_fwd.cps_scale;
-        float left_backward_cps_min = p_cal_eeprom->left_motor_bwd.cps_min / p_cal_eeprom->left_motor_bwd.cps_scale;
-        float right_backward_cps_min = p_cal_eeprom->right_motor_bwd.cps_min / p_cal_eeprom->right_motor_bwd.cps_scale;
 
-        /* Select the max of the max */
-        float forward_cps_max = min(left_forward_cps_max, right_forward_cps_max);
-        /* Select the min of the min 
-           Note: Backward values are negative 
-         */
-        float backward_cps_max = max(left_backward_cps_min, right_backward_cps_min);
-        
-        /* Select the start/end values for forward/reverse */
-        float fwd_cps_start = lower_limit * forward_cps_max;
-        float fwd_cps_end = upper_limit * forward_cps_max;
-        float bwd_cps_start = lower_limit * backward_cps_max;
-        float bwd_cps_end = upper_limit * backward_cps_max;
+        Cal_CalcForwardOperatingRange(lower_limit, upper_limit, &start, &stop);
+        CalcTriangularProfile(num_points, start, stop, forward_profile);
 
-        /* Calculate the mid point */
-        uint8 mid_sample_offset = num_points / 2;
+        Cal_CalcForwardOperatingRange(lower_limit, upper_limit, &start, &stop);
+        CalcTriangularProfile(num_points, start, stop, backward_profile);
         
-        /* Calculate the delta step */
-        float fwd_cps_delta = (fwd_cps_end - fwd_cps_start)/mid_sample_offset;
-        float bwd_cps_delta = (bwd_cps_end - bwd_cps_start)/mid_sample_offset;
-        
-        /* Set the mid point */
-        forward_profile[mid_sample_offset] = fwd_cps_end;
-        backward_profile[mid_sample_offset] = bwd_cps_end;
-        
-        /* Set the 'up' slope values */
-        float fwd_value = fwd_cps_start;
-        float bwd_value = bwd_cps_start;
-        for (ii = 0; ii < mid_sample_offset; ++ii)
-        {
-            forward_profile[ii] = fwd_value;
-            backward_profile[ii] = bwd_value;
-            
-            fwd_value += fwd_cps_delta;
-            bwd_value += bwd_cps_delta;
-        }
-        
-        /* Set the 'down' slope values */ 
-        fwd_value = fwd_cps_end;
-        bwd_value = bwd_cps_end;
-        for (ii = mid_sample_offset; ii < num_points; ++ii)
-        {
-            forward_profile[ii] = fwd_value;
-            backward_profile[ii] = bwd_value;
-
-            fwd_value -= fwd_cps_delta;
-            bwd_value -= bwd_cps_delta;
-        }
+    }
+    else
+    {
+        Ser_PutString("\r\nMotor calibration not done\r\n");
     }
 }
 
