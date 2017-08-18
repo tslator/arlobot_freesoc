@@ -76,13 +76,6 @@ static float angular_bias;
  *-------------------------------------------------------------------------------------------------*/    
 
 #ifdef ODOM_DUMP_ENABLED
-static char left_speed_str[10];
-static char right_speed_str[10];
-static char x_position_str[10];
-static char y_position_str[10];
-static char theta_str[10];
-static char linear_bias_str[10];
-static char angular_bias_str[10];
 static uint32 last_odom_report = 0;
         
 /*---------------------------------------------------------------------------------------------------
@@ -100,22 +93,14 @@ static void DumpOdom()
         delta_time = millis() - last_odom_report;
         if (delta_time > ODOM_SAMPLE_TIME_MS)
         {
-            ftoa(left_speed, left_speed_str, 3);
-            ftoa(right_speed, right_speed_str, 3);
-            ftoa(x_position, x_position_str, 3);
-            ftoa(y_position, y_position_str, 3);
-            ftoa(theta, theta_str, 3);
-            ftoa(linear_bias, linear_bias_str, 3);
-            ftoa(angular_bias, angular_bias_str, 3);
-            
-            DEBUG_PRINT_ARG("ls: %s rs: %s ld: %s rd: %s hd: %s ab: %s lb: %s\r\n", 
-                            left_speed_str, 
-                            right_speed_str, 
-                            x_position_str, 
-                            y_position_str, 
-                            theta_str,
-                            linear_bias_str,
-                            angular_bias_str);
+            DEBUG_PRINT_ARG("ls: %.3f rs: %.3f ld: %.3f rd: %.3f hd: %.3f ab: %.3f lb: %.3f\r\n", 
+                            left_speed, 
+                            right_speed, 
+                            x_position, 
+                            y_position, 
+                            theta,
+                            linear_bias,
+                            angular_bias);
             
             last_odom_report = millis();
         }

@@ -123,10 +123,6 @@ void Int32ToFourBytes(int32 value, uint8* bytes);
 void Uint16ToTwoBytes(uint16 value, uint8* bytes);
 void FloatToFourBytes(float value, uint8* bytes);
 
-#ifdef USE_FTOA
-void ftoa(float n, char *str, int precision);
-#endif
-
 void BinaryRangeSearch(int32 search, int32 *data_points, uint8 num_points, uint8 *lower_index, uint8 *upper_index);
 int16 Interpolate(int16 x, int16 x1, int16 x2, uint16 y1, uint16 y2);
 

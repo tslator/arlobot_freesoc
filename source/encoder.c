@@ -116,10 +116,6 @@ static ENCODER_TYPE right_enc = {
 };
 
 #if defined (LEFT_ENC_DUMP_ENABLED) || defined (RIGHT_ENC_DUMP_ENABLED)
-static char avg_cps_str[10];
-static char avg_delta_count_str[10];
-static char avg_mps_str[10];
-static char delta_dist_str[10];
 /*---------------------------------------------------------------------------------------------------
  * Name: DumpEncoder
  * Description: Dumps the current state of the encoder to the serial port
@@ -129,18 +125,13 @@ static char delta_dist_str[10];
  *-------------------------------------------------------------------------------------------------*/
  static void DumpEncoder(ENCODER_TYPE *enc)
 {
-    ftoa(enc->avg_cps, avg_cps_str, 3);
-    ftoa(enc->avg_delta_count, avg_delta_count_str, 3);
-    ftoa(enc->avg_mps, avg_mps_str, 3);
-    ftoa(enc->delta_dist, delta_dist_str, 3);
-
-    DEBUG_PRINT_ARG("%s enc: %s %s %s %ld %s\r\n", 
+    DEBUG_PRINT_ARG("%s enc: %.3f %.3f %.3f %ld %.3f\r\n", 
                     enc->name, 
-                    avg_cps_str, 
-                    avg_mps_str, 
-                    avg_delta_count_str, 
+                    enc->avg_cps, 
+                    enc->avg_mps, 
+                    enc->avg_delta_count, 
                     enc->delta_count, 
-                    delta_dist_str);
+                    enc->delta_dist);
 }
 #endif
 

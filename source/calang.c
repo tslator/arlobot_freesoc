@@ -310,27 +310,19 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
     float delta_left_dist;
     float delta_right_dist;
     float heading;
+    float angular_bias;
 
-    char delta_left_dist_str[10];
-    char delta_right_dist_str[10];
-    char heading_str[10];
-    char angular_bias_str[10];
-    
     params = params;
 
     delta_left_dist = Encoder_LeftGetDeltaDist();
     delta_right_dist = Encoder_RightGetDeltaDist();
     heading = Odom_GetHeading();
+    angular_bias = Cal_GetAngularBias();
 
-    ftoa(delta_left_dist, delta_left_dist_str, 3);    
-    ftoa(delta_right_dist, delta_right_dist_str, 3);
-    ftoa(heading, heading_str, 6);
-    ftoa(Cal_GetAngularBias(), angular_bias_str, 3);
-    
-    Ser_PutStringFormat("Left Delta Wheel Distance: %s\r\nRight Delta Wheel Distance: %s\r\n", delta_left_dist_str, delta_right_dist_str);
-    Ser_PutStringFormat("Heading: %s\r\n", heading_str);
+    Ser_PutStringFormat("Left Delta Wheel Distance: %.2f\r\nRight Delta Wheel Distance: %.2f\r\n", delta_left_dist, delta_right_dist);
+    Ser_PutStringFormat("Heading: %.2f\r\n", heading);
     Ser_PutStringFormat("Elapsed Time: %ld\r\n", end_time - start_time);
-    Ser_PutStringFormat("Angular Bias: %s\r\n", angular_bias_str);
+    Ser_PutStringFormat("Angular Bias: %.2f\r\n", angular_bias);
         
     switch (stage)
     {
@@ -345,8 +337,7 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
              */
             float bias = rot_in_degrees >= 360.0 ? 360.0 / rot_in_degrees : rot_in_degrees / 360.0;
     
-            ftoa(bias, angular_bias_str, 3);
-            Ser_PutStringFormat("New Angular Bias: %s\r\n", angular_bias_str);
+            Ser_PutStringFormat("New Angular Bias: %.2f\r\n", bias);
             
             Nvstore_WriteFloat(bias, (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias));
             Cal_SetCalibrationStatusBit(CAL_ANGULAR_BIT);
