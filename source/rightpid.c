@@ -48,7 +48,7 @@ SOFTWARE.
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
 #ifdef RIGHT_PID_DUMP_ENABLED
-#define RIGHTPID_DUMP()  DUMP_PID(DEBUG_RIGHT_PID_ENABLE_BIT, pid, Motor_RightGetPwm())
+#define RIGHTPID_DUMP()  DUMP_PID(DEBUG_RIGHT_PID_ENABLE_BIT, pid.name, &pid.pid)
 #else
 #define RIGHTPID_DUMP()
 #endif
@@ -168,6 +168,7 @@ void RightPid_Start()
     {
         p_gains = Cal_RightGetPidGains();  
         PIDTuningsSet(&pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
+        pid_enabled = TRUE;
     }
     else
     {

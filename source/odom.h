@@ -43,6 +43,8 @@ void Odom_Start();
 void Odom_Update();
 void Odom_Reset();
 float Odom_GetHeading();
+void Odom_LinearGetVelocity(float *value);
+void Odom_AngularGetVelocity(float *value);
 
 #endif
 

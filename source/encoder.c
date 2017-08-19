@@ -117,9 +117,6 @@ static ENCODER_TYPE right_enc = {
     /* set enc count */     Right_QuadDec_SetCounter,
 };
 
-static float linear_velocity;
-static float angular_velocity;
-
 #if defined (LEFT_ENC_DUMP_ENABLED) || defined (RIGHT_ENC_DUMP_ENABLED)
 /*---------------------------------------------------------------------------------------------------
  * Name: DumpEncoder
@@ -163,7 +160,8 @@ static void Encoder_Sample(ENCODER_TYPE *enc, uint32 delta_time)
     
     enc->avg_mps = enc->avg_cps * WHEEL_METER_PER_COUNT;
     
-    enc->delta_dist = WHEEL_METER_PER_REV * enc->avg_delta_count/WHEEL_COUNT_PER_REV;
+    //enc->delta_dist = WHEEL_METER_PER_REV * enc->avg_delta_count/WHEEL_COUNT_PER_REV;
+    enc->delta_dist = (WHEEL_METER_PER_REV * enc->delta_count) / WHEEL_COUNT_PER_REV;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -198,9 +196,6 @@ void Encoder_Init()
     right_enc.avg_cps_ma.n = NUM_AVG_CPS_SAMPLES;
     right_enc.avg_cps = 0;
     right_enc.avg_mps = 0;
-    
-    linear_velocity = 0.0;
-    angular_velocity = 0.0;
     
 }
 
@@ -243,9 +238,7 @@ void Encoder_Update()
         Encoder_Sample(&left_enc, delta_time);
         Encoder_Sample(&right_enc, delta_time);
         LEFT_DUMP_ENC(&left_enc);
-        RIGHT_DUMP_ENC(&right_enc);
-        
-        DiffToUni(left_enc.avg_mps, right_enc.avg_mps, &linear_velocity, &angular_velocity);
+        RIGHT_DUMP_ENC(&right_enc);        
     }                    
     
     ENCODER_UPDATE_END();
@@ -430,23 +423,6 @@ float Encoder_GetCenterDist()
 }
 
 /*---------------------------------------------------------------------------------------------------
- * Name: Encoder_LinearGetVelocity/Encoder_AngularGetVelocity
- * Description: Returns the linear and angular velocity based on the encoder reading.
- * Parameters: None
- * Return: float
- * 
- *-------------------------------------------------------------------------------------------------*/
-float Encoder_LinearGetVelocity()
-{    
-    return linear_velocity;
-}
-
-float Encoder_AngularGetVelocity()
-{
-    return angular_velocity;
-}
-
-/*---------------------------------------------------------------------------------------------------
  * Name: Encoder_Reset
  * Description: Resets the left/right encoder fields.
  * Parameters: None
@@ -477,9 +453,6 @@ void Encoder_Reset()
     right_enc.count = 0;
     right_enc.delta_dist = 0;
 
-    linear_velocity = 0.0;
-    angular_velocity = 0.0;
-    
     LEFT_DUMP_ENC(&left_enc);
     RIGHT_DUMP_ENC(&right_enc);    
 }

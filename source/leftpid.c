@@ -49,7 +49,7 @@ SOFTWARE.
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
 #ifdef LEFT_PID_DUMP_ENABLED
-#define LEFTPID_DUMP()  DUMP_PID(DEBUG_LEFT_PID_ENABLE_BIT, pid, Motor_LeftGetPwm())
+#define LEFTPID_DUMP()  DUMP_PID(DEBUG_LEFT_PID_ENABLE_BIT, pid.name, &pid.pid)
 #else
 #define LEFTPID_DUMP()
 #endif
@@ -174,6 +174,7 @@ void LeftPid_Start()
     {
         p_gains = Cal_LeftGetPidGains();  
         PIDTuningsSet(&pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
+        pid_enabled = TRUE;
     }
     else
     {

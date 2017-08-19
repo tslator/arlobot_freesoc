@@ -213,10 +213,14 @@ void Control_Update()
     control_cmd_velocity(&left_cmd_velocity, &right_cmd_velocity, &timeout);
     
     // Used to override I2C commands (debug)
-    //left_cmd_velocity = 0;
-    //right_cmd_velocity = 0;
-    //timeout = 0;
-    //UniToDiff(0.5, 0, &left_cmd_velocity, &right_cmd_velocity);
+    left_cmd_velocity = 0.31;
+    right_cmd_velocity = 0.31;
+    timeout = 0;
+    //Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
+    //Debug_Enable(DEBUG_LEFT_PID_ENABLE_BIT);
+    //Debug_Enable(DEBUG_RIGHT_PID_ENABLE_BIT);
+    //Debug_Enable(DEBUG_UNIPID_ENABLE_BIT);
+    //UniToDiff(0.31, 0, &left_cmd_velocity, &right_cmd_velocity);
         
     if (timeout > MAX_CMD_VELOCITY_TIMEOUT)
     {
@@ -241,6 +245,8 @@ void Control_Update()
     angular_cmd_velocity = constrain(MAX_ROBOT_CCW_RADIAN_PER_SECOND,
                                      angular_cmd_velocity,
                                      MAX_ROBOT_CW_RADIAN_PER_SECOND);
+
+    //Ser_PutStringFormat("%d %f %f %f %f\r\n", p_cal_eeprom->status, left_cmd_velocity, right_cmd_velocity, linear_cmd_velocity, angular_cmd_velocity);                                     
         
     /* Here seems like a reasonable place to evaluate safety, e.g., can we execute the requested speed change safely
        without running into something or falling into a hole (or down stairs).
@@ -343,6 +349,13 @@ float Control_LinearGetCmdVelocity()
 float Control_AngularGetCmdVelocity()
 {
     return angular_cmd_velocity;
+}
+
+void Control_LinearAngularUpdate(float linear, float angular)
+{
+    linear_cmd_velocity += linear;
+    angular_cmd_velocity += angular;
+    UniToDiff(linear_cmd_velocity, angular_cmd_velocity, &left_cmd_velocity, &right_cmd_velocity);
 }
 
 /*---------------------------------------------------------------------------------------------------

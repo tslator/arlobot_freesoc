@@ -40,9 +40,9 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
-#define DUMP_PID(enable, pid, pwm)  do { \
-                                        if (Debug_IsEnabled(enable)) DumpPid(pid.name, &pid.pid, pwm); \
-                                    } while (0)
+#define DUMP_PID(enable, name, p_pid)       do { \
+                                                if (Debug_IsEnabled(enable)) DumpPid(name, p_pid); \
+                                            } while (0)
         
 
 #define PID_SAMPLE_TIME_MS  SAMPLE_TIME_MS(PID_SAMPLE_RATE)

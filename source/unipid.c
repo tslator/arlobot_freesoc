@@ -48,9 +48,9 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
-#ifdef UNI_PID_DUMP_ENABLED
-//#define LINEARPID_DUMP()  DUMP_PID(DEBUG_UNI_PID_ENABLE_BIT, pid, Control_LinearGetCmdVelocity)
-//#define ANGULARPID_DUMP()  DUMP_PID(DEBUG_UNI_PID_ENABLE_BIT, pid, Control_AngularGetCmdVelocity)
+#ifdef UNIPID_DUMP_ENABLED
+#define LINEARPID_DUMP()  DUMP_PID(DEBUG_UNIPID_ENABLE_BIT, linear_pid.name, &linear_pid.pid, Control_LinearGetCmdVelocity)
+#define ANGULARPID_DUMP()  DUMP_PID(DEBUG_UNIPID_ENABLE_BIT, angular_pid.name, &angular_pid.pid, Control_AngularGetCmdVelocity)
 #else
 #define LINEARPID_DUMP()
 #define ANGULARPID_DUMP()
@@ -65,11 +65,11 @@ SOFTWARE.
 #define ANGULARPID_MAX (MAX_ROBOT_RADIAN_PER_SECOND)        // radian/sec
 
 
-#define LINEAR_KP (0.5)
+#define LINEAR_KP (1)
 #define LINEAR_KI (0)
 #define LINEAR_KD (0)
 
-#define ANGULAR_KP (0.5)
+#define ANGULAR_KP (1)
 #define ANGULAR_KI (0)
 #define ANGULAR_KD (0)
 
@@ -83,8 +83,8 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/
 static float GetLinearCmdVelocity();
 static float GetAngularCmdVelocity();
-static float EncoderLinearInput();
-static float EncoderAngularInput();
+static float OdomLinearInput();
+static float OdomAngularInput();
 static float LinearPidUpdate(float target, float input);
 static float AngularPidUpdate(float target, float input);
 
@@ -97,7 +97,7 @@ static PID_TYPE linear_pid = {
     /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC},
     /* sign */          1.0,
     /* get_target */    GetLinearCmdVelocity,
-    /* get_input */     EncoderLinearInput,
+    /* get_input */     OdomLinearInput,
     /* update */        LinearPidUpdate,
 };
 
@@ -106,7 +106,7 @@ static PID_TYPE angular_pid = {
     /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC},
     /* sign */          1.0,
     /* get_target */    GetAngularCmdVelocity,
-    /* get_input */     EncoderAngularInput,
+    /* get_input */     OdomAngularInput,
     /* update */        AngularPidUpdate,
 };
 
@@ -122,7 +122,7 @@ static float GetLinearCmdVelocity()
 {
     float value = Control_LinearGetCmdVelocity();
     linear_pid.sign = value >= 0.0 ? 1.0 : -1.0;
-    return value;
+    return abs(value);
 }
 
 static float GetAngularCmdVelocity()
@@ -132,40 +132,51 @@ static float GetAngularCmdVelocity()
     return value;
 }
 
-static float EncoderLinearInput()
+static float OdomLinearInput()
 {
-    return Encoder_LinearGetVelocity();
+    float result;
+    Odom_LinearGetVelocity(&result);
+    //Ser_PutStringFormat("linear input: %f\r\n", result);
+    return abs(result);
 }
 
-static float EncoderAngularInput()
+static float OdomAngularInput()
 {
-    return Encoder_AngularGetVelocity();
+    float result;
+    Odom_AngularGetVelocity(&result);
+    //Ser_PutStringFormat("angular input: %f\r\n", result);
+    return result;
 }
 
 static float LinearPidUpdate(float target, float input)
 {
-    PIDSetpointSet(&linear_pid.pid, abs(target));
-    PIDInputSet(&linear_pid.pid, abs(input));
+    float result;
+
+    PIDSetpointSet(&linear_pid.pid, target);
+    PIDInputSet(&linear_pid.pid, input);
     
     if (PIDCompute(&linear_pid.pid))
     {
-        return linear_pid.pid.output * linear_pid.sign;        
+        result = linear_pid.pid.output * linear_pid.sign;        
     }
-    
-    return input;
+    //Ser_PutStringFormat("linear update: %f %f %f\r\n", target, input, result);
+    return result;
 }
 
 static float AngularPidUpdate(float target, float input)
 {
-    PIDSetpointSet(&angular_pid.pid, abs(target));
-    PIDInputSet(&angular_pid.pid, abs(input));
+    float result;
+    
+    PIDSetpointSet(&angular_pid.pid, target);
+    PIDInputSet(&angular_pid.pid, input);
     
     if (PIDCompute(&angular_pid.pid))
     {
-        return angular_pid.pid.output * angular_pid.sign;
+        result = angular_pid.pid.output; // * angular_pid.sign;
     }
+    //Ser_PutStringFormat("angular update: %f %f %f\r\n", target, input, result);
     
-    return input;
+    return result;
 }
 /*---------------------------------------------------------------------------------------------------
  * Name: UniPid_Init
@@ -178,8 +189,8 @@ void UniPid_Init()
 {
     pid_enabled = 0;
     
-    PIDInit(&linear_pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, LINEARPID_MIN, LINEARPID_MAX, AUTOMATIC, DIRECT);        
-    PIDInit(&angular_pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, ANGULARPID_MIN, ANGULARPID_MAX, AUTOMATIC, DIRECT);        
+    PIDInit(&linear_pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, LINEARPID_MIN, LINEARPID_MAX, AUTOMATIC, DIRECT);
+    PIDInit(&angular_pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, -PI, PI, AUTOMATIC, DIRECT);
 }
     
 /*---------------------------------------------------------------------------------------------------
@@ -235,18 +246,28 @@ void UniPid_Process()
     
     linear_output = linear_pid.update(linear_target, linear_input);
     angular_output = angular_pid.update(angular_target, angular_input);
+
+    //Ser_PutStringFormat("lv %f av %f\r\n", linear_pid.update(linear_target, linear_input), angular_pid.update(angular_target, angular_input));
+    //Ser_PutStringFormat("lv %f av %f\r\n", linear_output, angular_output);
     
-    LINEARPID_DUMP();
-    ANGULARPID_DUMP();
+    //LINEARPID_DUMP();
+    //ANGULARPID_DUMP();
+    //DumpPid(linear_pid.name, &linear_pid.pid);
+    //DumpPid(angular_pid.name, &angular_pid.pid);
+
+    Control_LinearAngularUpdate(linear_output, angular_output);
     
-    UniToDiff(linear_output, angular_output, &left, &right);
+    //UniToDiff(linear_output, angular_output, &left, &right);
     
     /* Convert mps to cps before setting motor pwm */
-    left_cps = left * WHEEL_COUNT_PER_METER;
-    right_cps = right * WHEEL_COUNT_PER_METER;
+    //left_cps = left * WHEEL_COUNT_PER_METER;
+    //right_cps = right * WHEEL_COUNT_PER_METER;
+
+    //Ser_PutStringFormat("lm %f rm %f lc %f r %f\r\n", left, right, left_cps, right_cps);
+
     
-    Motor_LeftSetPwm(Cal_CpsToPwm(WHEEL_LEFT, left_cps));
-    Motor_RightSetPwm(Cal_CpsToPwm(WHEEL_RIGHT, right_cps));
+    //Motor_LeftSetPwm(Cal_CpsToPwm(WHEEL_LEFT, left_cps));
+    //Motor_RightSetPwm(Cal_CpsToPwm(WHEEL_RIGHT, right_cps));
 }
 
 /*---------------------------------------------------------------------------------------------------

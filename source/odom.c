@@ -70,6 +70,8 @@ static float y_position;
 static float theta;
 static float linear_bias;
 static float angular_bias;
+static float linear;
+static float angular;
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -93,12 +95,14 @@ static void DumpOdom()
         delta_time = millis() - last_odom_report;
         if (delta_time > ODOM_SAMPLE_TIME_MS)
         {
-            DEBUG_PRINT_ARG("ls: %.3f rs: %.3f ld: %.3f rd: %.3f hd: %.3f ab: %.3f lb: %.3f\r\n", 
+            DEBUG_PRINT_ARG("ls: %.3f rs: %.3f x: %.3f y: %.3f th: %.3f lv: %.3f av: %.3f lb: %.3f ab: %.3f\r\n", 
                             left_speed, 
                             right_speed, 
                             x_position, 
                             y_position, 
                             theta,
+                            linear,
+                            angular,
                             linear_bias,
                             angular_bias);
             
@@ -122,6 +126,8 @@ void Odom_Init()
     x_position = 0.0;
     y_position = 0.0;
     theta = 0.0;
+    linear = 0.0;
+    angular = 0.0;
     
     angular_bias = Cal_GetAngularBias();
     linear_bias = Cal_GetLinearBias();
@@ -164,11 +170,13 @@ void Odom_Update()
         
         float left_delta_dist = Encoder_LeftGetDeltaDist();
         float right_delta_dist = Encoder_RightGetDeltaDist();
-        float center_delta_dist = Encoder_GetCenterDist();
+        float center_delta_dist = linear_bias * Encoder_GetCenterDist();
         
         x_position += center_delta_dist * cos(theta);
         y_position += center_delta_dist * sin(theta);
-        theta += (right_delta_dist - left_delta_dist) / TRACK_WIDTH;
+        theta += angular_bias * (right_delta_dist - left_delta_dist) / TRACK_WIDTH;
+
+        DiffToUni(left_speed, right_speed, &linear, &angular);
         
         Control_WriteOdom(left_speed, right_speed, x_position, y_position, theta);
         
@@ -192,6 +200,8 @@ void Odom_Reset()
     x_position = 0;
     y_position = 0;
     theta = 0;
+    linear = 0;
+    angular = 0;
     
     linear_bias = Cal_GetLinearBias();
     angular_bias = Cal_GetAngularBias();
@@ -205,4 +215,22 @@ float Odom_GetHeading()
     return theta;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Odom_LinearGetVelocity/Odom_AngularGetVelocity
+ * Description: Returns the linear and angular velocity based on the odometry calculations.
+ * Parameters: None
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+ void Odom_LinearGetVelocity(float *value)
+ {    
+     *value = linear;
+ }
+ 
+ void Odom_AngularGetVelocity(float *value)
+ {
+    *value = angular;
+ }
+ 
+ 
 /* [] END OF FILE */

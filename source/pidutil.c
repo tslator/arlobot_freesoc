@@ -45,7 +45,7 @@ SOFTWARE.
  * Functions
  *-------------------------------------------------------------------------------------------------*/
 
-#if defined (LEFT_PID_DUMP_ENABLED) || defined(RIGHT_PID_DUMP_ENABLED) || defined(CTRL_LINEAR_PID_DUMP_ENABLED) || defined(CTRL_ANGULAR_PID_DUMP_ENABLED)
+//#if defined (LEFT_PID_DUMP_ENABLED) || defined(RIGHT_PID_DUMP_ENABLED) || defined(UNIPID_DUMP_ENABLED)
 
 static float set_point;
 static float input;
@@ -54,20 +54,20 @@ static float last_input;
 static float iterm;
 static float output;
     
-void DumpPid(char *name, PIDControl *pid, uint16 pwm)
+void DumpPid(char *name, PIDControl *pid)
 {
-    if (Debug_IsEnabled(DEBUG_LEFT_PID_ENABLE_BIT|DEBUG_RIGHT_PID_ENABLE_BIT))
-    {
+    //if (Debug_IsEnabled(DEBUG_LEFT_PID_ENABLE_BIT|DEBUG_RIGHT_PID_ENABLE_BIT|DEBUG_UNIPID_ENABLE_BIT))
+    //{
         set_point = IS_NAN_DEFAULT(pid->setpoint, 0);
         input = IS_NAN_DEFAULT(pid->input, 0);
         error = IS_NAN_DEFAULT(pid->setpoint - pid->input, 0);
         last_input = IS_NAN_DEFAULT(pid->lastInput, 0);
         iterm = IS_NAN_DEFAULT(pid->iTerm, 0);
-        output = IS_NAN_DEFAULT(pid->output, 0);
+        //output = IS_NAN_DEFAULT(pid->output, 0);
 
-        DEBUG_PRINT_ARG("%s pid: %.3f %.3f %.3f %.3f %.3f %.3f %d\r\n", name, set_point, input, error, last_input, iterm, output, pwm);
-    }
+        DEBUG_PRINT_ARG("%s pid: %f %f %f %f %f %f\r\n", name, set_point, input, error, last_input, iterm, pid->output);
+    //}
 }
-#endif
+//#endif
 
 /* [] END OF FILE */

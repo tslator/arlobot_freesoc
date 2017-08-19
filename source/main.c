@@ -88,16 +88,18 @@ int main()
         MAIN_LOOP_START();
         
         /* Update any control changes */
-        Control_Update();
+        Control_Update();  // sets left/right, linear/angular
         
         /* Update encoder-related values */
-        Encoder_Update();
+        Encoder_Update();  // calc left/right speed
 
         /* Apply the velocity command to PID */
-        Pid_Update();
+        Pid_Update();      // unipid - calc adjustment to linear/angular -> left/right
+                           // leftpid - calc pwm based on left
+                           // rightpid - calc pwm based on left
 
         /* Update the odometry calculation */
-        Odom_Update();
+        Odom_Update();      // calc left/right speed, x/y position, heading, linear/angular
 
         /* Diagnostic update */
         Diag_Update();        

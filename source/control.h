@@ -71,6 +71,7 @@ float Control_LeftGetCmdVelocity();
 float Control_RightGetCmdVelocity();
 float Control_LinearGetCmdVelocity();
 float Control_AngularGetCmdVelocity();
+void Control_LinearAngularUpdate(float linear, float angular);
 void Control_OverrideDebug(uint8 override);
 
 void Control_SetDeviceStatusBit(uint16 bit);

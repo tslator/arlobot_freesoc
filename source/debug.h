@@ -52,7 +52,8 @@ SOFTWARE.
 #define DEBUG_RIGHT_MOTOR_ENABLE_BIT        (0x0020)
 #define DEBUG_ODOM_ENABLE_BIT               (0x0040)
 #define DEBUG_SAMPLE_ENABLE_BIT             (0x0080)
-    
+#define DEBUG_UNIPID_ENABLE_BIT             (0x0100)
+
 
 /* The following defines enable "dump" logging methods for each feature */
 #define LEFT_PID_DUMP_ENABLED
@@ -61,6 +62,7 @@ SOFTWARE.
 #define RIGHT_ENC_DUMP_ENABLED
 #define MOTOR_DUMP_ENABLED
 #define ODOM_DUMP_ENABLED
+#define UNIPID_DUMP_ENABLED
 
 /* The following defines enable "cycle" logging for each feature */
 //#define ENC_UPDATE_DELTA_ENABLED
