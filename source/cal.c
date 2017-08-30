@@ -1136,7 +1136,6 @@ float Cal_GetLinearBias()
     {        
         linear_bias = constrain(p_cal_eeprom->linear_bias, CAL_LINEAR_BIAS_MIN, CAL_LINEAR_BIAS_MAX);
     }
-    
     return linear_bias;
 }
 
@@ -1157,7 +1156,6 @@ float Cal_GetAngularBias()
     {
         angular_bias = constrain(p_cal_eeprom->angular_bias, CAL_ANGULAR_BIAS_MIN, CAL_ANGULAR_BIAS_MAX);
     }
-    
     return angular_bias;
 }
 

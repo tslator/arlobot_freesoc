@@ -160,7 +160,6 @@ static void Encoder_Sample(ENCODER_TYPE *enc, uint32 delta_time)
     
     enc->avg_mps = enc->avg_cps * WHEEL_METER_PER_COUNT;
     
-    //enc->delta_dist = WHEEL_METER_PER_REV * enc->avg_delta_count/WHEEL_COUNT_PER_REV;
     enc->delta_dist = (WHEEL_METER_PER_REV * enc->delta_count) / WHEEL_COUNT_PER_REV;
 }
 

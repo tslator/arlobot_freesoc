@@ -57,7 +57,7 @@ void I2CIF_Start();
 
 uint16 I2CIF_ReadDeviceControl();
 uint16 I2CIF_ReadDebugControl();
-void I2CIF_ReadCmdVelocity(float *left, float *right, uint32 *timeout);
+void I2CIF_ReadCmdVelocity(float *linear, float *angular, uint32 *timeout);
 
 void I2CIF_SetDeviceStatusBit(uint16 bit);
 void I2CIF_ClearDeviceStatusBit(uint16 bit);
@@ -67,7 +67,7 @@ void I2CIF_SetCalibrationStatusBit(uint16 bit);
 void I2CIF_ClearCalibrationStatusBit(uint16 bit);
 
 
-void I2CIF_WriteSpeed(float left_speed, float right_speed);
+void I2CIF_WriteSpeed(float linear, float angular);
 void I2CIF_WritePosition(float x_position, float y_position);
 void I2CIF_WriteHeading(float heading);
 void I2CIF_UpdateHeartbeat(uint32 heartbeat);

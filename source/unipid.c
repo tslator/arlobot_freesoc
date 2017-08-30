@@ -36,6 +36,7 @@ SOFTWARE.
 #include "control.h"
 #include "encoder.h"
 #include "motor.h"
+#include "odom.h"
 #include "cal.h"
 #include "pid.h"
 #include "unipid.h"
@@ -159,6 +160,10 @@ static float LinearPidUpdate(float target, float input)
     {
         result = linear_pid.pid.output * linear_pid.sign;        
     }
+    else
+    {
+        result = target;
+    }
     //Ser_PutStringFormat("linear update: %f %f %f\r\n", target, input, result);
     return result;
 }
@@ -173,6 +178,10 @@ static float AngularPidUpdate(float target, float input)
     if (PIDCompute(&angular_pid.pid))
     {
         result = angular_pid.pid.output; // * angular_pid.sign;
+    }
+    else
+    {
+        result = target;
     }
     //Ser_PutStringFormat("angular update: %f %f %f\r\n", target, input, result);
     

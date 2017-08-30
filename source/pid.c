@@ -41,7 +41,6 @@ SOFTWARE.
 #include "pid.h"
 #include "leftpid.h"
 #include "rightpid.h"
-#include "unipid.h"
 #include "utils.h"
 #include "pidutil.h"
 #include "debug.h"
@@ -87,7 +86,6 @@ void Pid_Init()
 {
     LeftPid_Init();    
     RightPid_Init();
-    UniPid_Init();
 }
     
 /*---------------------------------------------------------------------------------------------------
@@ -101,7 +99,6 @@ void Pid_Start()
 {
     LeftPid_Start();    
     RightPid_Start();
-    UniPid_Start();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -125,7 +122,6 @@ void Pid_Update()
     {    
         last_update_time = millis();
         
-        //UniPid_Process();
         LeftPid_Process();
         RightPid_Process();
     }
@@ -147,11 +143,6 @@ void Pid_SetLeftRightTarget(GET_TARGET_FUNC_TYPE left_target, GET_TARGET_FUNC_TY
 {
     LeftPid_SetTarget(left_target);
     RightPid_SetTarget(right_target);
-}
-
-void Pid_SetUniTarget(GET_TARGET_FUNC_TYPE linear_target, GET_TARGET_FUNC_TYPE angular_target)
-{
-    UniPid_SetTarget(linear_target, angular_target);
 }
 
 /*---------------------------------------------------------------------------------------------------

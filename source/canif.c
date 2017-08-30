@@ -53,8 +53,8 @@ typedef union _cmd_vel_tag
     uint8 bytes[8];
     struct
     {
-        float left;
-        float right;
+        float linear;
+        float angular;
     };
 } __attribute__ ((packed)) CMD_VELOCITY_TYPE;
 
@@ -170,7 +170,7 @@ uint16 CANIF_ReadDebugControl()
     return control;
 }
 
-void CANIF_ReadCmdVelocity(float *left, float *right, uint32 *timeout)
+void CANIF_ReadCmdVelocity(float *linear, float *angular, uint32 *timeout)
 {
     DisableInterrupt();
     if (write_occurred)
@@ -184,8 +184,8 @@ void CANIF_ReadCmdVelocity(float *left, float *right, uint32 *timeout)
         last_cmd_velocity_time = millis();
     }    
     
-    *left = cmd_velocity.left;
-    *right = cmd_velocity.right;
+    *linear = cmd_velocity.linear;
+    *angular = cmd_velocity.angular;
     
     *timeout = cmd_velocity_timeout;
     EnableInterrupt();
@@ -200,17 +200,17 @@ static void WriteStatusMsg()
     CAN_TX_DATA_BYTE4(CAN_TX_MAILBOX_Status) = calibration_status & 0x0F;
 }
 
-static void WriteSpeedMsg(float left, float right)
+static void WriteSpeedMsg(float linear, float angular)
 {
     uint8 *p_bytes;
     
-    p_bytes = (uint8 *) &left;
+    p_bytes = (uint8 *) &linear;
     CAN_TX_DATA_BYTE1(CAN_TX_MAILBOX_LeftRightSpeed) = p_bytes[0];
     CAN_TX_DATA_BYTE2(CAN_TX_MAILBOX_LeftRightSpeed) = p_bytes[1];
     CAN_TX_DATA_BYTE3(CAN_TX_MAILBOX_LeftRightSpeed) = p_bytes[2];
     CAN_TX_DATA_BYTE4(CAN_TX_MAILBOX_LeftRightSpeed) = p_bytes[3];
     
-    p_bytes = (uint8 *) &right;
+    p_bytes = (uint8 *) &angular;
     CAN_TX_DATA_BYTE1(CAN_TX_MAILBOX_LeftRightSpeed) = p_bytes[0];
     CAN_TX_DATA_BYTE2(CAN_TX_MAILBOX_LeftRightSpeed) = p_bytes[1];
     CAN_TX_DATA_BYTE3(CAN_TX_MAILBOX_LeftRightSpeed) = p_bytes[2];
@@ -291,9 +291,9 @@ void CANIF_ClearCalibrationStatusBit(uint16 bit)
     WriteStatusMsg();
 }
 
-void CANIF_WriteSpeed(float left_speed, float right_speed)
+void CANIF_WriteSpeed(float linear, float angular)
 {
-    WriteSpeedMsg(left_speed, right_speed);
+    WriteSpeedMsg(linear, angular);
 }
 
 void CANIF_WritePosition(float x_position, float y_position)

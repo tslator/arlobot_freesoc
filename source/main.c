@@ -93,10 +93,8 @@ int main()
         /* Update encoder-related values */
         Encoder_Update();  // calc left/right speed
 
-        /* Apply the velocity command to PID */
-        Pid_Update();      // unipid - calc adjustment to linear/angular -> left/right
-                           // leftpid - calc pwm based on left
-                           // rightpid - calc pwm based on left
+        /* Apply the velocity command to PIDs */
+        Pid_Update();
 
         /* Update the odometry calculation */
         Odom_Update();      // calc left/right speed, x/y position, heading, linear/angular
