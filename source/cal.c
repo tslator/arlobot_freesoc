@@ -113,9 +113,14 @@ static float right_cmd_velocity;
  * Functions
  *-------------------------------------------------------------------------------------------------*/
 
+/*---------------------------------------------------------------------------------------------------
+ * Calibration Print Routines 
+ *  
+ * Routines used by other calibration modules for printing values to the serial port 
+ *-------------------------------------------------------------------------------------------------*/    
 
 /*---------------------------------------------------------------------------------------------------
- * Name: PrintAllMotorParams
+ * Name: Cal_PrintAllMotorParams
  * Description: Prints the left/right, forward/backward count/sec and pwm calibration values
  * Parameters: None
  * Return: None
@@ -128,62 +133,6 @@ static float right_cmd_velocity;
     Cal_PrintSamples("Right-Backward", (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd);
     Cal_PrintSamples("Right-Forward", (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd);
 }
-
-/*---------------------------------------------------------------------------------------------------
- * Name: LeftTarget/RightTarget
- * Description: Local functions used to replace the left/right velocity source for calibration/validation.
- *              Normally, the left/right velocity is received from the I2C module via the Control
- *              module.  However, for calibration/validation left/right velocity values under control
- *              of the calibration module via Left/RightTarget.
- * Parameters: None
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-static float LeftTarget()
-{
-    return left_cmd_velocity;
-}
-
-static float RightTarget()
-{
-    return right_cmd_velocity;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: ClearCalibrationStatusBit/SetCalibrationStatusBit
- * Description: Clears/Sets the specified bit in the calibration status register and the EEPROM 
- *              status field.
- * Parameters: bit - the bit number to be Cleared/Set - 0 .. 15.
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-void Cal_ClearCalibrationStatusBit(uint16 bit)
-{
-    uint16 status = p_cal_eeprom->status &= ~bit;
-    Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
-    //Ser_PutStringFormat("Clear Calibration Status: %02x\r\n", p_cal_eeprom->status);
-    Control_ClearCalibrationStatusBit(bit);
-}
-
-void Cal_SetCalibrationStatusBit(uint16 bit)
-{
-    uint16 status = p_cal_eeprom->status | bit;
-    Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
-    //Ser_PutStringFormat("Calibration Status: %02x\r\n", p_cal_eeprom->status);
-    Control_SetCalibrationStatusBit(bit);   
-}
-
-uint16 Cal_GetCalibrationStatusBit(uint16 bit)
-{
-    //Ser_PutStringFormat("Get Calibration Status: %02x\r\n", p_cal_eeprom->status);
-    return p_cal_eeprom->status & bit;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Calibration Print Routines 
- *  
- * Routines used by other calibration modules for printing values to the serial port 
- *-------------------------------------------------------------------------------------------------*/    
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Cal_PrintSamples
@@ -235,6 +184,54 @@ void Cal_PrintBias()
     Ser_PutStringFormat("Linear Bias: %.2f, Angular Bias: %.2f\r\n", Cal_GetLinearBias(), Cal_GetAngularBias());
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: LeftTarget/RightTarget
+ * Description: Local functions used to replace the left/right velocity source for calibration/validation.
+ *              Normally, the left/right velocity is received from the I2C module via the Control
+ *              module.  However, for calibration/validation left/right velocity values under control
+ *              of the calibration module via Left/RightTarget.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+ static float LeftTarget()
+ {
+     return left_cmd_velocity;
+ }
+ 
+ static float RightTarget()
+ {
+     return right_cmd_velocity;
+ }
+ 
+ /*---------------------------------------------------------------------------------------------------
+  * Name: ClearCalibrationStatusBit/SetCalibrationStatusBit/GetCalibrationStatusBit
+  * Description: Clears/Sets the specified bit in the calibration status register and the EEPROM 
+  *              status field.
+  * Parameters: bit - the bit number to be Cleared/Set - 0 .. 15.
+  * Return: None
+  * 
+  *-------------------------------------------------------------------------------------------------*/
+ void Cal_ClearCalibrationStatusBit(uint16 bit)
+ {
+     uint16 status = p_cal_eeprom->status &= ~bit;
+     Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
+     Control_ClearCalibrationStatusBit(bit);
+ }
+ 
+ void Cal_SetCalibrationStatusBit(uint16 bit)
+ {
+     uint16 status = p_cal_eeprom->status | bit;
+     Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
+     Control_SetCalibrationStatusBit(bit);   
+ }
+ 
+ uint16 Cal_GetCalibrationStatusBit(uint16 bit)
+ {
+     return p_cal_eeprom->status & bit;
+ }
+ 
+ 
 /*---------------------------------------------------------------------------------------------------
  * Calibration Menu Routines 
  *-------------------------------------------------------------------------------------------------*/    
@@ -758,7 +755,9 @@ void Cal_Init()
 void Cal_Start()
 {
     uint16 status = p_cal_eeprom->status;
-    //Cal_Clear();
+    /* Uncomment for debugging
+    Cal_Clear();
+    */
     Control_SetCalibrationStatus(status);        
 }
 
@@ -966,7 +965,6 @@ CAL_PID_TYPE * Cal_AngularGetPidGains()
  *-------------------------------------------------------------------------------------------------*/
 void Cal_SetLeftRightVelocity(float left, float right)
 {
-    Ser_PutStringFormat("Left/Right: %.3f, %.3f\r\n", left, right);
     left_cmd_velocity = left;
     right_cmd_velocity = right;
 }
@@ -1034,15 +1032,12 @@ void Cal_CalcForwardOperatingRange(float low_percent, float high_percent, float 
     /* Select the max of the max */
     int16 forward_cps_max = min(left_forward_cps_max, right_forward_cps_max);
 
-    Ser_PutStringFormat("forward operating range: %f %f %d\r\n", low_percent, high_percent, forward_cps_max);
-
     tmp_start = low_percent * (float) forward_cps_max;
     tmp_stop = high_percent * (float) forward_cps_max;
 
     *start = tmp_start;
     *stop = tmp_stop;
 
-    Ser_PutStringFormat("forward operating range: %f %f %d %f %f %f %f\r\n", low_percent, high_percent, forward_cps_max, tmp_start, tmp_stop, *start, *stop);
 }
 
 void Cal_CalcBackwardOperatingRange(float low_percent, float high_percent, float *start, float *stop)
@@ -1057,15 +1052,11 @@ void Cal_CalcBackwardOperatingRange(float low_percent, float high_percent, float
     /* Select the min of the max */
     int16 backward_cps_max = max(left_backward_cps_max, right_backward_cps_max);
 
-    Ser_PutStringFormat("forward operating range: %f %f %d\r\n", low_percent, high_percent, backward_cps_max);
-
     tmp_start = low_percent * (float) backward_cps_max;
     tmp_stop = high_percent * (float) backward_cps_max;
 
     *start = tmp_start;
     *stop = tmp_stop;
-
-    Ser_PutStringFormat("forward operating range: %f %f %d %f %f %f %f\r\n", low_percent, high_percent, backward_cps_max, tmp_start, tmp_stop, *start, *stop);
 }
 
 /*---------------------------------------------------------------------------------------------------

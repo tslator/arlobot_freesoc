@@ -252,6 +252,9 @@ static CAL_MOTOR_PARAMS motor_cal_params[NUM_MOTOR_CAL_PARAMS] =
 
 static uint8 motor_cal_index;
 
+static char *wheel_str[2] = {"left", "right"};
+static char *direction_str[2] = {"forward", "backward"};
+
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
@@ -536,8 +539,6 @@ static void StoreMotorCalibration(CAL_MOTOR_PARAMS *params)
   
 static uint8 PerformMotorCalibration(CAL_MOTOR_PARAMS *cal_params)
 {
-    static char *wheel_str[2] = {"left", "right"};
-    static char *direction_str[2] = {"forward", "backward"};
     static uint8 running = FALSE;
     uint8 result;
     
