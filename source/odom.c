@@ -181,8 +181,11 @@ void Odom_Update()
         float right_delta_dist = Encoder_RightGetDeltaDist();
         float center_delta_dist = Encoder_GetCenterDist();
         
-        x_position += center_delta_dist * cos(theta);
-        y_position += center_delta_dist * sin(theta);
+        float delta_x = center_delta_dist * cos(theta);
+        float delta_y = center_delta_dist * sin(theta);
+
+        x_position += cos(theta) * delta_x - sin(theta) * delta_y;
+        y_position += sin(theta) * delta_x + cos(theta) * delta_y;
         theta += (right_delta_dist - left_delta_dist) / TRACK_WIDTH;
         
         Control_WriteOdom(left_speed, right_speed, x_position, y_position, theta);
