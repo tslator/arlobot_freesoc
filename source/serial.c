@@ -50,7 +50,7 @@ SOFTWARE.
 
 #define MAX_STRING_LENGTH (255)
 
-#define CDC_IS_READY_TIMEOUT (500)
+#define CDC_IS_READY_TIMEOUT (1000)
 
 
 /*---------------------------------------------------------------------------------------------------

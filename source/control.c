@@ -71,6 +71,13 @@ static float max_robot_backward_linear_velocity;
 
 static float linear_bias;
 static float angular_bias;
+static float gain;
+static float trim;
+
+static float linear_odom_velocity;
+static float angular_odom_velocity;
+static float linear_gain;
+static float angular_gain;
 
 
 void Update_Debug(uint16 bits)
@@ -137,6 +144,14 @@ void Update_Debug(uint16 bits)
 void Control_Init()
 {
     control_cmd_velocity = ReadCmdVelocity;
+    gain = 1.0;
+    trim = 0.0;
+    
+    linear_odom_velocity = 0.0;
+    angular_odom_velocity = 0.0;
+    linear_gain = 0.5;
+    angular_gain = 0.5;
+    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -177,6 +192,7 @@ void Control_Update()
     uint16 device_control;
     uint16 debug_control;
     
+    
     CONTROL_UPDATE_START();
     
     device_control = ReadDeviceControl();
@@ -213,51 +229,13 @@ void Control_Update()
     {
         Cal_Clear();
     }
-
     
     control_cmd_velocity(&linear_cmd_velocity, &angular_cmd_velocity, &timeout);
-
-    if (timeout > MAX_CMD_VELOCITY_TIMEOUT)
-    {
-        linear_cmd_velocity = 0;
-        angular_cmd_velocity = 0;
-    }
     
-    linear_cmd_velocity = constrain(max_robot_backward_linear_velocity, linear_cmd_velocity, max_robot_forward_linear_velocity);
-    angular_cmd_velocity = constrain(MAX_ROBOT_CCW_RADIAN_PER_SECOND, angular_cmd_velocity, MAX_ROBOT_CW_RADIAN_PER_SECOND);
-
-    // Used to override I2C commands (debug)
-    //linear_cmd_velocity = 0.024;
-    //linear_cmd_velocity = 0.0;
+    //linear_cmd_velocity = 0.0151;
     //angular_cmd_velocity = 0.0;
-    //angular_cmd_velocity = -0.2;
     //timeout = 0;
-    Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
-    //Debug_Enable(DEBUG_LEFT_PID_ENABLE_BIT);
-    //Debug_Enable(DEBUG_RIGHT_PID_ENABLE_BIT);
-    //Debug_Enable(DEBUG_UNIPID_ENABLE_BIT);
-
-    /* Ensure Omega 
-        Consider porting the 'ensure omega' code here
-        Ensure omega modifies the linear velocity of the wheel to ensure the requested angular velocity can be acheived
-        For example, if both wheels are running full speed forward with no angular velocity and then an angular velocity
-        is requested it will not be possible to turn unless one of the wheels is slowed down first.  Ensure omega derives
-        the resulting left/right wheel velocities necessary to acheive the specified angular velocity.
-    */
-
-    linear_cmd_velocity *= linear_bias;
-    angular_cmd_velocity *= angular_bias;
-    
-    /* Calculate Linear/Angular velocities for linear/angular PID control */
-    UniToDiff(linear_cmd_velocity, angular_cmd_velocity, &left_cmd_velocity, &right_cmd_velocity);
-
-    /* Constrain the left/right velocities to the allowable range */
-    left_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, 
-        left_cmd_velocity, 
-        MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
-    right_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, 
-         right_cmd_velocity, 
-         MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
+    //Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
 
     /* Here seems like a reasonable place to evaluate safety, e.g., can we execute the requested speed change safely
        without running into something or falling into a hole (or down stairs).
@@ -284,6 +262,15 @@ void Control_Update()
     
     */    
     
+    if (timeout > MAX_CMD_VELOCITY_TIMEOUT)
+    {
+        linear_cmd_velocity = 0;
+        angular_cmd_velocity = 0;
+    }
+    
+    linear_cmd_velocity = constrain(max_robot_backward_linear_velocity, linear_cmd_velocity, max_robot_forward_linear_velocity);
+    angular_cmd_velocity = constrain(MAX_ROBOT_CCW_RADIAN_PER_SECOND, angular_cmd_velocity, MAX_ROBOT_CW_RADIAN_PER_SECOND);
+
     CONTROL_UPDATE_END();
 }
 
@@ -362,11 +349,18 @@ float Control_AngularGetCmdVelocity()
     return angular_cmd_velocity;
 }
 
+void Control_GetCmdVelocity(float *linear, float *angular)
+{
+    *linear = linear_cmd_velocity;
+    *angular = angular_cmd_velocity;
+}
+
 void Control_LinearAngularUpdate(float linear, float angular)
 {
-    linear_cmd_velocity += linear;
-    angular_cmd_velocity += angular;
-    UniToDiff(linear_cmd_velocity, angular_cmd_velocity, &left_cmd_velocity, &right_cmd_velocity);
+    UniToDiff(linear, angular, &left_cmd_velocity, &right_cmd_velocity);
+    
+    left_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, left_cmd_velocity, MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
+    right_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, right_cmd_velocity,MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -412,6 +406,9 @@ void Control_WriteOdom(float linear,
                        float y_position, 
                        float heading)
 {
+    linear_odom_velocity = linear;
+    angular_odom_velocity = angular;
+    
     WriteSpeed(linear, angular);
     WritePosition(x_position, y_position);
     WriteHeading(heading);

@@ -96,7 +96,7 @@ static uint8 IsMoveFinished(DIR_TYPE direction, float *heading, float *distance)
 {
     float new_heading;
 
-    new_heading = NormalizeHeading(Odom_GetHeading(), direction);
+    new_heading = NormalizeHeading(Odom_GetHeading());
     
     if (new_heading >= *heading)
     {
@@ -188,7 +188,7 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
     Odom_Reset();
 
     UniToDiff(p_ang_params->mps, p_ang_params->rps, &left, &right);    
-    p_ang_params->heading = NormalizeHeading(Odom_GetHeading(), p_ang_params->direction);
+    p_ang_params->heading = NormalizeHeading(Odom_GetHeading());
 
     switch (stage)
     {

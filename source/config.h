@@ -68,15 +68,16 @@ typedef enum {DIR_FORWARD, DIR_BACKWARD, DIR_CW, DIR_CCW} DIR_TYPE;
  * Motors
  *-------------------------------------------------------------------------------------------------*/
 #define PI (3.1415926535897932384626433832795)
+#define TWOPI (2 * PI)
 #define MILLIS_PER_SECOND (1000)
 
 #define SEC_PER_MIN (60.0)
-#define RADIAN_PER_REV (2 * PI)
+#define RADIAN_PER_REV (TWOPI)
  
 #define MAX_WHEEL_RPM  (95.0)                 // rpm
-#define WHEEL_RADIUS   (0.0785)             // meter
+#define WHEEL_RADIUS   (0.0775)             // meter
 #define WHEEL_DIAMETER (2 * WHEEL_RADIUS)   // meter
-#define TRACK_WIDTH (0.392)                 // meter
+#define TRACK_WIDTH (0.3937)                 // meter
 
 #define WHEEL_CIRCUMFERENCE (PI * WHEEL_DIAMETER)          // meter
 #define WHEEL_METER_PER_REV (WHEEL_CIRCUMFERENCE)         // meter

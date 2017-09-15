@@ -60,9 +60,9 @@ SOFTWARE.
 
 /* The following PID values were determined experimentally and show good tracking behavior.
 */
-#define LEFT_KP (1.000)
-#define LEFT_KI (4.000)
-#define LEFT_KD (0.000)
+#define LEFT_KP (3.800)
+#define LEFT_KI (3.000)
+#define LEFT_KD (0.640)
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -82,7 +82,7 @@ static float PidUpdate(float target, float input);
 
 static PID_TYPE pid = { 
     /* name */          "left",
-    /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC},
+    /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC, NULL},
     /* sign */          1.0,
     /* get_target */    GetCmdVelocity,
     /* get_input */     EncoderInput,
@@ -102,8 +102,6 @@ static float GetCmdVelocity()
 {
     float value = target_source();
     pid.sign = value >= 0.0 ? 1.0 : -1.0;
-    //Ser_PutStringFormat("getcmdvelocity: %f\r\n", value);
-    
     return abs(value / WHEEL_METER_PER_COUNT);
 }
 
@@ -122,17 +120,13 @@ static float PidUpdate(float target, float input)
     /* Note: PIDCompute returns TRUE when in AUTOMATIC mode and FALSE when in MANUAL mode */
     if (PIDCompute(&pid.pid))
     {
-        //Ser_PutStringFormat("pid auto\r\n");
         pwm = Cal_CpsToPwm(WHEEL_LEFT, pid.pid.output * pid.sign);
     }
     else
     {
-        //Ser_PutStringFormat("pid manual\r\n");
         pwm = Cal_CpsToPwm(WHEEL_LEFT, target / WHEEL_METER_PER_COUNT);
     }
 
-    //Ser_PutStringFormat("pidupdate %f %f %f %d\r\n", target, input, pid.pid.output * pid.sign, pwm);
-    
     Motor_LeftSetPwm(pwm);
     
     /* Note: The PID update return value is not used. */ 
@@ -152,7 +146,7 @@ void LeftPid_Init()
     
     target_source = Control_LeftGetCmdVelocity;
     old_target_source = NULL;
-    PIDInit(&pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, LEFTPID_MIN, LEFTPID_MAX, AUTOMATIC, DIRECT);        
+    PIDInit(&pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, LEFTPID_MIN, LEFTPID_MAX, AUTOMATIC, DIRECT, NULL);        
 }
     
 /*---------------------------------------------------------------------------------------------------

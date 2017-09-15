@@ -63,13 +63,13 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/    
-static float left_speed;
-static float right_speed;
+static float left_mps;
+static float right_mps;
 static float x_position;
 static float y_position;
 static float theta;
-static float linear;
-static float angular;
+static float linear_meas_velocity;
+static float angular_meas_velocity;
 
 
 /*---------------------------------------------------------------------------------------------------
@@ -79,6 +79,8 @@ static float angular;
 #ifdef ODOM_DUMP_ENABLED
 static float linear_bias;
 static float angular_bias;
+static MOVING_AVERAGE_FLOAT_TYPE linear_meas_velocity_ma;
+static MOVING_AVERAGE_FLOAT_TYPE angular_meas_velocity_ma;
         
 /*---------------------------------------------------------------------------------------------------
  * Name: DumpOdom
@@ -92,13 +94,13 @@ static void DumpOdom()
     if (Debug_IsEnabled(DEBUG_ODOM_ENABLE_BIT))
     {
         DEBUG_PRINT_ARG("ls: %.3f rs: %.3f x: %.3f y: %.3f th: %.3f lv: %.3f av: %.3f lb: %.3f ab: %.3f\r\n", 
-                        left_speed, 
-                        right_speed, 
+                        left_mps, 
+                        right_mps, 
                         x_position, 
                         y_position, 
                         theta,
-                        linear,
-                        angular,
+                        linear_meas_velocity,
+                        angular_meas_velocity,
                         linear_bias,
                         angular_bias);
             
@@ -115,13 +117,13 @@ static void DumpOdom()
  *-------------------------------------------------------------------------------------------------*/
 void Odom_Init()
 {
-    left_speed = 0.0;
-    right_speed = 0.0;
+    left_mps = 0.0;
+    right_mps = 0.0;
     x_position = 0.0;
     y_position = 0.0;
     theta = 0.0;
-    linear = 0.0;
-    angular = 0.0;
+    linear_meas_velocity = 0.0;
+    angular_meas_velocity = 0.0;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -160,9 +162,12 @@ void Odom_Update()
     {
         last_update_time = millis();
         
-        left_speed = Encoder_LeftGetMeterPerSec();
-        right_speed = Encoder_RightGetMeterPerSec();
+        left_mps = Encoder_LeftGetMeterPerSec();
+        right_mps = Encoder_RightGetMeterPerSec();
+    
+        DiffToUni(left_mps, right_mps, &linear_meas_velocity, &angular_meas_velocity);
         
+#ifdef RUNGE_KUTTA        
         /* With meter/sec wheel velocity do the following to calculate x, y, theta using Runge-Kutta (4th order)
             1. Calculate Linear/Angular velocity using DiffToUni
             2. Calculate Runge-Kutta terms
@@ -174,8 +179,6 @@ void Odom_Update()
         float dt_2_sec = dt_sec / 2.0;
         float dt_6_sec = dt_sec / 6.0;
         
-        DiffToUni(left_speed, right_speed, &linear, &angular);
-
         float k00 = linear * cos(theta);
         float k01 = linear * sin(theta);
         float k02 = angular;
@@ -201,11 +204,20 @@ void Odom_Update()
             theta = theta + t/6 * 6w = theta + t*w
         */
         theta += dt_sec * angular;
+#else
+        float left_delta_dist = left_mps * delta_time / 1000.0;
+        float right_delta_dist = right_mps * delta_time / 1000.0;
+        float center_delta_dist = (left_delta_dist + right_delta_dist) / 2.0;
         
+        theta += (right_delta_dist - left_delta_dist)/TRACK_WIDTH;
+        x_position += center_delta_dist * cos(theta);
+        y_position += center_delta_dist * sin(theta);
+        
+#endif        
         /* Constrain theta to -PI to PI */
-        theta = fmodf(theta, 2*PI) + (theta >= PI ? -PI : PI);
+        theta = NormalizeHeading(theta);
 
-        Control_WriteOdom(linear, angular, x_position, y_position, theta);
+        Control_WriteOdom(linear_meas_velocity, angular_meas_velocity, x_position, y_position, theta);
         
         DUMP_ODOM();
     }
@@ -222,18 +234,16 @@ void Odom_Update()
  *-------------------------------------------------------------------------------------------------*/
 void Odom_Reset()
 {
-    left_speed = 0;
-    right_speed = 0;
     x_position = 0;
     y_position = 0;
     theta = 0;
-    linear = 0;
-    angular = 0;
+    linear_meas_velocity = 0;
+    angular_meas_velocity = 0;
     
     linear_bias = Cal_GetLinearBias();
     angular_bias = Cal_GetAngularBias();
     
-    Control_WriteOdom(left_speed, right_speed, x_position, y_position, theta);
+    Control_WriteOdom(linear_meas_velocity, angular_meas_velocity, x_position, y_position, theta);
     DUMP_ODOM();       
 }
 
@@ -243,20 +253,16 @@ float Odom_GetHeading()
 }
 
 /*---------------------------------------------------------------------------------------------------
- * Name: Odom_LinearGetVelocity/Odom_AngularGetVelocity
+ * Name: Odom_GetMeasVelocity
  * Description: Returns the linear and angular velocity based on the odometry calculations.
  * Parameters: None
  * Return: float
  * 
  *-------------------------------------------------------------------------------------------------*/
- void Odom_LinearGetVelocity(float *value)
- {    
-     *value = linear;
- }
- 
- void Odom_AngularGetVelocity(float *value)
+ void Odom_GetMeasVelocity(float *linear, float *angular)
  {
-    *value = angular;
+    *linear = linear_meas_velocity;
+    *angular = angular_meas_velocity;     
  }
  
  

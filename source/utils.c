@@ -455,56 +455,27 @@ uint16 CpsToPwm(int16 cps, int16 *cps_data, uint16 *pwm_data, uint8 data_size)
 
 /*---------------------------------------------------------------------------------------------------
  * Name: NormalizeHeading
- * Description: Returns a heading ranging from 0 to 2*Pi relative to the direction 
+ * Description: Returns a heading ranging from -PI to Pi relative to the direction 
  *  
  * Parameters: heading - raw non-normalized heading as calculated in CalcHeading 
  *             direction - the direction of the rotation, i.e., CW or CCW 
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-float NormalizeHeading(float heading, DIR_TYPE direction)
+float NormalizeHeading(float heading)
 {
     float result = 0.0;
 
-    if( direction != DIR_CW && direction != DIR_CCW )
-    {
-        return result;
+    result = heading;
+    
+    result -= (float)( (int)(result/TWOPI) ) * TWOPI;
+    if (result < -PI) 
+    { 
+        result += TWOPI;
     }
-
-    if (direction == DIR_CW)
+    else if (result > PI)
     {
-        if( heading >= -PI && heading <= 0.0 )
-        {
-            /* If the direction is CW and the heading ranges from 0 to -Pi
-                    adjust heading by taking absolute value
-             */
-            result = abs(heading);
-        }
-        else
-        {
-            /*   If the direction is CW and the heading ranges from Pi to 0
-                    adjust heading to be Pi to 2*Pi
-             */
-            result = 2*PI - heading;
-        }
-    }
-    else if (direction == DIR_CCW)
-    {
-        if( heading >= 0.0 && heading <= PI )
-        {
-            /*
-               If the direction is CCW and the heading ranges from 0 to Pi
-                    use the heading
-             */
-            result = heading;
-        }
-        else
-        {
-            /* If the direction is CCW and the heading ranges from -Pi to 0
-                    adjust heading to be Pi to 2*Pi
-             */
-            result = 2*PI - abs(heading);
-        }
+        result -= TWOPI; 
     }
 
     return result;

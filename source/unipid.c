@@ -31,6 +31,7 @@ SOFTWARE.
  * Includes
  *-------------------------------------------------------------------------------------------------*/    
 #include <stdio.h>
+#include <math.h>
 #include "config.h"
 #include "time.h"
 #include "control.h"
@@ -50,29 +51,19 @@ SOFTWARE.
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
 #ifdef UNIPID_DUMP_ENABLED
-#define LINEARPID_DUMP()  DUMP_PID(DEBUG_UNIPID_ENABLE_BIT, linear_pid.name, &linear_pid.pid, Control_LinearGetCmdVelocity)
-#define ANGULARPID_DUMP()  DUMP_PID(DEBUG_UNIPID_ENABLE_BIT, angular_pid.name, &angular_pid.pid, Control_AngularGetCmdVelocity)
+//#define UNIPID_DUMP()  DUMP_PID(DEBUG_UNIPID_ENABLE_BIT, pid.name, &pid.pid, GetControlVelocity)
+#define UNIPID_DUMP()
 #else
-#define LINEARPID_DUMP()
-#define ANGULARPID_DUMP()
+#define UNIPID_DUMP()
 #endif
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/    
-#define LINEARPID_MIN (0)                                   // meter/sec
-#define LINEARPID_MAX (MAX_WHEEL_FORWARD_LINEAR_VELOCITY)   // meter/sec
-#define ANGULARPID_MIN (0)                                  // radian/sec
-#define ANGULARPID_MAX (MAX_ROBOT_RADIAN_PER_SECOND)        // radian/sec
+#define THETAPID_MIN (0.0)  // radian/sec
+#define THETAPID_MAX (PI/4.0)   // radian/sec
 
-
-#define LINEAR_KP (1)
-#define LINEAR_KI (0)
-#define LINEAR_KD (0)
-
-#define ANGULAR_KP (1)
-#define ANGULAR_KI (0)
-#define ANGULAR_KD (0)
+#define THETA_KP    (5)
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -82,33 +73,22 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Prototypes
  *-------------------------------------------------------------------------------------------------*/
-static float GetLinearCmdVelocity();
-static float GetAngularCmdVelocity();
-static float OdomLinearInput();
-static float OdomAngularInput();
-static float LinearPidUpdate(float target, float input);
-static float AngularPidUpdate(float target, float input);
+static float GetControlVelocity();
+static float GetOdomVelocity();
+static float ThetaPidUpdate(float target, float input);
+static float Calc_Angle_Error(float desired, float measured);
 
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/    
 
-static PID_TYPE linear_pid = { 
-    /* name */          "linear",
-    /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC},
+static PID_TYPE pid = { 
+    /* name */          "theta",
+    /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC, Calc_Angle_Error},
     /* sign */          1.0,
-    /* get_target */    GetLinearCmdVelocity,
-    /* get_input */     OdomLinearInput,
-    /* update */        LinearPidUpdate,
-};
-
-static PID_TYPE angular_pid = { 
-    /* name */          "angular",
-    /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC},
-    /* sign */          1.0,
-    /* get_target */    GetAngularCmdVelocity,
-    /* get_input */     OdomAngularInput,
-    /* update */        AngularPidUpdate,
+    /* get_target */    GetControlVelocity,
+    /* get_input */     GetOdomVelocity,
+    /* update */        ThetaPidUpdate,
 };
 
 static uint8 pid_enabled;
@@ -118,75 +98,92 @@ float angular_input_velocity;
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/    
-
-static float GetLinearCmdVelocity()
+ 
+static float Calc_Angle(float linear, float angular)
 {
-    float value = Control_LinearGetCmdVelocity();
-    linear_pid.sign = value >= 0.0 ? 1.0 : -1.0;
+    /* Calculate a theta between linear and angular.
+      w
+        |____
+        |   /|
+        |  / |
+        | /th|
+        |/___|____________ v
+
+        Theta is the angle between v and w and represents the control variable
+        Tracking theta between the desired velocity, vd/wd, and the measured
+        velocity, vo/wo, couples the wheels and improves straight line motion
+    */
+    float pow_2_linear;
+    float pow_2_angular;
+    float hyp;
+    float asin_result;
+     
+    pow_2_linear = linear * linear;
+    pow_2_angular = angular * angular;
+    hyp = sqrt(pow_2_linear + pow_2_angular);
+     
+    asin_result = asin(angular / hyp);
+    /* For some reason, asin returns Nan when angular == 0 which messes up the remaining calculations
+       The range of possible angles between linear and angular velocity is -pi/4 .. pi/4
+       0 is certainly a legitimate value so its not clear why Nan is returned.
+       Possibly sqrt is returning Nan, but the debug when asin return Nan showed hyp as non-Nan
+    */
+    if (isnan(asin_result))
+    {
+        asin_result = 0.0;
+    }
+     
+    return asin_result;    
+}
+ 
+static float Calc_Angle_Error(float desired, float measured)
+{
+    return atan2(sin(desired - measured), cos(desired - measured));    
+}
+ 
+static float GetControlVelocity()
+{
+    float linear;
+    float angular;
+    float value;
+
+    Control_GetCmdVelocity(&linear, &angular);
+    value = Calc_Angle(linear, angular);
+    pid.sign = value > 0.0 ? 1.0 : -1.0;
     return abs(value);
 }
 
-static float GetAngularCmdVelocity()
+static float GetOdomVelocity()
 {
-    float value = Control_AngularGetCmdVelocity();
-    angular_pid.sign = value >= 0.0 ? 1.0 : -1.0;
-    return value;
+    float linear;
+    float angular;
+    float value;
+
+    Odom_GetMeasVelocity(&linear, &angular);
+
+    value = Calc_Angle(linear, angular);
+    return abs(value);
 }
 
-static float OdomLinearInput()
+static float ThetaPidUpdate(float target, float input)
 {
     float result;
-    Odom_LinearGetVelocity(&result);
-    //Ser_PutStringFormat("linear input: %f\r\n", result);
-    return abs(result);
-}
-
-static float OdomAngularInput()
-{
-    float result;
-    Odom_AngularGetVelocity(&result);
-    //Ser_PutStringFormat("angular input: %f\r\n", result);
-    return result;
-}
-
-static float LinearPidUpdate(float target, float input)
-{
-    float result;
-
-    PIDSetpointSet(&linear_pid.pid, target);
-    PIDInputSet(&linear_pid.pid, input);
     
-    if (PIDCompute(&linear_pid.pid))
+    PIDSetpointSet(&pid.pid, target);
+    PIDInputSet(&pid.pid, input);
+    
+    if (PIDCompute(&pid.pid))
     {
-        result = linear_pid.pid.output * linear_pid.sign;        
+        result = pid.pid.output * pid.sign;
     }
     else
     {
         result = target;
     }
-    //Ser_PutStringFormat("linear update: %f %f %f\r\n", target, input, result);
+    
     return result;
 }
 
-static float AngularPidUpdate(float target, float input)
-{
-    float result;
-    
-    PIDSetpointSet(&angular_pid.pid, target);
-    PIDInputSet(&angular_pid.pid, input);
-    
-    if (PIDCompute(&angular_pid.pid))
-    {
-        result = angular_pid.pid.output; // * angular_pid.sign;
-    }
-    else
-    {
-        result = target;
-    }
-    //Ser_PutStringFormat("angular update: %f %f %f\r\n", target, input, result);
-    
-    return result;
-}
 /*---------------------------------------------------------------------------------------------------
  * Name: UniPid_Init
  * Description: Starts the EEPROM component used for storing calibration information.
@@ -198,8 +195,7 @@ void UniPid_Init()
 {
     pid_enabled = 0;
     
-    PIDInit(&linear_pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, LINEARPID_MIN, LINEARPID_MAX, AUTOMATIC, DIRECT);
-    PIDInit(&angular_pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, -PI, PI, AUTOMATIC, DIRECT);
+    PIDInit(&pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, THETAPID_MIN, THETAPID_MAX, AUTOMATIC, DIRECT, Calc_Angle_Error);
 }
     
 /*---------------------------------------------------------------------------------------------------
@@ -211,19 +207,8 @@ void UniPid_Init()
  *-------------------------------------------------------------------------------------------------*/
 void UniPid_Start()
 {
-    CAL_PID_TYPE *p_gains;
-    
-    // Note: the PID gains are stored in EEPROM.  The EEPROM cannot be accessed until the EEPROM
-    // component is started which is handled in the Nvstore module.  
-    // UniPid_Start is called after Nvstore_Start.
-    
-    p_gains = Cal_LinearGetPidGains();
-    //PIDTuningsSet(&linear_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);    
-    PIDTuningsSet(&linear_pid.pid, LINEAR_KP, 0.0, 0.0);
-
-    p_gains = Cal_AngularGetPidGains();
-    //PIDTuningsSet(&angular_pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);    
-    PIDTuningsSet(&angular_pid.pid, ANGULAR_KP, 0.0, 0.0);
+    PIDTuningsSet(&pid.pid, THETA_KP, 0.0, 0.0);
+    pid_enabled = TRUE;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -235,77 +220,22 @@ void UniPid_Start()
  *-------------------------------------------------------------------------------------------------*/
 void UniPid_Process()
 {
-    float linear_target;
-    float angular_target;
-    float linear_input;
-    float angular_input;
-    float linear_output;
-    float angular_output;
-    float left;
-    float right;
-    float left_cps;
-    float right_cps;
+    float target;
+    float input;
+    float delta;
+    float linear_desired;
+    float angular_desired;
     
-    
-    linear_target = linear_pid.get_target();
-    linear_input = linear_pid.get_input();
-    
-    angular_target = angular_pid.get_target();
-    angular_input = angular_pid.get_input();
-    
-    linear_output = linear_pid.update(linear_target, linear_input);
-    angular_output = angular_pid.update(angular_target, angular_input);
-
-    //Ser_PutStringFormat("lv %f av %f\r\n", linear_pid.update(linear_target, linear_input), angular_pid.update(angular_target, angular_input));
-    //Ser_PutStringFormat("lv %f av %f\r\n", linear_output, angular_output);
-    
-    //LINEARPID_DUMP();
-    //ANGULARPID_DUMP();
-    //DumpPid(linear_pid.name, &linear_pid.pid);
-    //DumpPid(angular_pid.name, &angular_pid.pid);
-
-    Control_LinearAngularUpdate(linear_output, angular_output);
-    
-    //UniToDiff(linear_output, angular_output, &left, &right);
-    
-    /* Convert mps to cps before setting motor pwm */
-    //left_cps = left * WHEEL_COUNT_PER_METER;
-    //right_cps = right * WHEEL_COUNT_PER_METER;
-
-    //Ser_PutStringFormat("lm %f rm %f lc %f r %f\r\n", left, right, left_cps, right_cps);
-
-    
-    //Motor_LeftSetPwm(Cal_CpsToPwm(WHEEL_LEFT, left_cps));
-    //Motor_RightSetPwm(Cal_CpsToPwm(WHEEL_RIGHT, right_cps));
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: UniPid_SetTarget
- * Description: Sets the unicycle get_target fields to a different function.
- *              Note: This is done during calibration to allow internal control of the linear/angular
- *              speed.
- * Parameters: linear_target - the function that will be used to get the linear target speed
- *             angular_target - the function that will be used to get the angular target speed
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-void UniPid_SetTarget(GET_TARGET_FUNC_TYPE linear_target, GET_TARGET_FUNC_TYPE angular_target)
-{
-    linear_pid.get_target = linear_target;
-    angular_pid.get_target = angular_target;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: UniPid_RestoreTarget
- * Description: Restores the unicycle get_target fields to the default function.
- * Parameters: None
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-void UniPid_RestoreTarget()
-{
-    linear_pid.get_target = Control_LinearGetCmdVelocity;
-    angular_pid.get_target = Control_AngularGetCmdVelocity;
+    if (pid_enabled)
+    {
+        Control_GetCmdVelocity(&linear_desired, &angular_desired);
+        target = pid.get_target();
+        input = pid.get_input();        
+        delta = pid.update(target, input);
+        angular_desired = target + delta;
+        UNIPID_DUMP();
+        Control_LinearAngularUpdate(linear_desired, angular_desired);
+    }
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -317,17 +247,12 @@ void UniPid_RestoreTarget()
  *-------------------------------------------------------------------------------------------------*/
 void UniPid_Reset()
 {
-    linear_pid.pid.input = 0;
-    linear_pid.pid.iTerm = 0;
-    linear_pid.pid.lastInput = 0;
-    linear_pid.pid.setpoint = 0;
-    linear_pid.pid.output = 0;
+    pid.pid.input = 0;
+    pid.pid.iTerm = 0;
+    pid.pid.lastInput = 0;
+    pid.pid.setpoint = 0;
+    pid.pid.output = 0;
 
-    angular_pid.pid.input = 0;
-    angular_pid.pid.iTerm = 0;
-    angular_pid.pid.lastInput = 0;
-    angular_pid.pid.setpoint = 0;
-    angular_pid.pid.output = 0;    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -337,17 +262,13 @@ void UniPid_Reset()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void UniPid_Enable(uint8 enable)
+void UniPid_Enable(uint8 value)
 {
-    PIDMode mode = MANUAL;
-    
-    if (enable)
+    pid_enabled = value;
+    if (value)
     {
-        mode = AUTOMATIC;
+        PIDModeSet(&pid.pid, AUTOMATIC);
     }
-    
-    PIDModeSet(&linear_pid.pid, mode);
-    PIDModeSet(&angular_pid.pid, mode);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -362,11 +283,9 @@ void UniPid_Enable(uint8 enable)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void UniPid_SetGains(float linear_kp, float linear_ki, float linear_kd, 
-                     float angular_kp, float angular_ki, float angular_kd)
+void UniPid_SetGains(float kp, float ki, float kd)
 {
-    PIDTuningsSet(&linear_pid.pid, linear_kp, linear_ki, linear_kd);
-    PIDTuningsSet(&angular_pid.pid, angular_kp, angular_ki, angular_kd);
+    PIDTuningsSet(&pid.pid, kp, ki, kd);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -381,16 +300,11 @@ void UniPid_SetGains(float linear_kp, float linear_ki, float linear_kd,
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void UniPid_GetGains(float *linear_kp, float *linear_ki, float *linear_kd, 
-                     float *angular_kp, float *angular_ki, float *angular_kd)
+void UniPid_GetGains(float *kp, float *ki, float *kd)
 {
-    *linear_kp = linear_pid.pid.dispKp;
-    *linear_ki = linear_pid.pid.dispKi;
-    *linear_kd = linear_pid.pid.dispKd;
-
-    *angular_kp = angular_pid.pid.dispKp;
-    *angular_ki = angular_pid.pid.dispKi;
-    *angular_kd = angular_pid.pid.dispKd;
+    *kp = pid.pid.dispKp;
+    *ki = pid.pid.dispKi;
+    *kd = pid.pid.dispKd;
 }
 
 /* [] END OF FILE */

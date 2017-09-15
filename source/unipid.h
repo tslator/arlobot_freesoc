@@ -52,16 +52,12 @@ void UniPid_Init();
 void UniPid_Start();
 void UniPid_Process();
 
-void UniPid_SetGains(float linear_kp, float linear_ki, float linear_kd, 
-                     float angular_kp, float angular_ki, float angular_kd);
-void UniPid_GetGains(float *linear_kp, float *linear_ki, float *linear_kd, 
-                     float *angular_kp, float *angular_ki, float *angular_kd);
-
-void UniPid_SetTarget(GET_TARGET_FUNC_TYPE linear_target, GET_TARGET_FUNC_TYPE angular_target);
-void UniPid_RestoreTarget();
+void UniPid_SetGains(float theta_kp, float theta_ki, float theta_kd);
+void UniPid_GetGains(float *theta_kp, float *theta_ki, float *theta_kd);
 
 void UniPid_Reset();
 void UniPid_Enable(uint8 enable);
+void UniPid_Bypass(uint8 bypass);
 
 
 #endif

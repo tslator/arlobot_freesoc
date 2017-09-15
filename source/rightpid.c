@@ -60,9 +60,9 @@ SOFTWARE.
 /* The following PID values were determined experimentally and show good tracking behavior.
 */
 
-#define RIGHT_KP (1.000)
-#define RIGHT_KI (4.000)
-#define RIGHT_KD (0.000)
+#define RIGHT_KP (3.800)
+#define RIGHT_KI (3.000)
+#define RIGHT_KD (0.640)
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -82,7 +82,7 @@ static float PidUpdate(float target, float input);
 
 static PID_TYPE pid = { 
     /* name */          "right",
-    /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC},
+    /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC, NULL},
     /* sign */          1.0,
     /* get_target */    GetCmdVelocity,
     /* get_input */     EncoderInput,
@@ -146,7 +146,7 @@ void RightPid_Init()
     
     target_source = Control_RightGetCmdVelocity;
     old_target_source = NULL;
-    PIDInit(&pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, RIGHTPID_MIN, RIGHTPID_MAX, AUTOMATIC, DIRECT);        
+    PIDInit(&pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, RIGHTPID_MIN, RIGHTPID_MAX, AUTOMATIC, DIRECT, NULL);        
 }
     
 /*---------------------------------------------------------------------------------------------------

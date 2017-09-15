@@ -131,7 +131,7 @@ void DiffToUni(float left, float right, float *linear, float *angular);
 float CalcHeading(float left_count, float right_count, float radius, float width, float count_per_rev, float bias);
 uint16 CpsToPwm(int16 cps, int16 *cps_data, uint16 *pwm_data, uint8 data_size);
 
-float NormalizeHeading(float heading, DIR_TYPE direction);
+float NormalizeHeading(float heading);
 
 void CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_limit, float *profile);
 

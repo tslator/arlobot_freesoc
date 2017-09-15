@@ -71,6 +71,7 @@ float Control_LeftGetCmdVelocity();
 float Control_RightGetCmdVelocity();
 float Control_LinearGetCmdVelocity();
 float Control_AngularGetCmdVelocity();
+void Control_GetCmdVelocity(float *linear, float *angular);
 void Control_LinearAngularUpdate(float linear, float angular);
 void Control_OverrideDebug(uint8 override);
 
@@ -83,7 +84,6 @@ void Control_ClearCalibrationStatusBit(uint16 bit);
 
 void Control_WriteOdom(float linear, float angular, float left_dist, float right_dist, float heading);
 void Control_UpdateHeartbeat(uint32 heartbeat);
-
 
 #endif
 
