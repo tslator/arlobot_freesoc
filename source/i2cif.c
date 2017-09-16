@@ -254,7 +254,6 @@ uint16 I2CIF_ReadDebugControl()
  *-------------------------------------------------------------------------------------------------*/
 void I2CIF_ReadCmdVelocity(float *linear, float *angular, uint32 *timeout)
 {
-    static int latched = 0;
     /* GetActivity() returns the status of the I2C activity: write, read, busy, or error
        Wrt to I2C writes, only the first 12 bytes can be written to.  Of those 12 bytes, 2 are for the control register,
        2 are for the calibration register, and 8 are for the commanded velocity (left and right).  The commanded 

@@ -79,8 +79,6 @@ static float angular_meas_velocity;
 #ifdef ODOM_DUMP_ENABLED
 static float linear_bias;
 static float angular_bias;
-static MOVING_AVERAGE_FLOAT_TYPE linear_meas_velocity_ma;
-static MOVING_AVERAGE_FLOAT_TYPE angular_meas_velocity_ma;
         
 /*---------------------------------------------------------------------------------------------------
  * Name: DumpOdom

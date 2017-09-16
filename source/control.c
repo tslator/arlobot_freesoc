@@ -273,8 +273,6 @@ void Control_Update()
     linear_cmd_velocity = constrain(max_robot_backward_linear_velocity, linear_cmd_velocity, max_robot_forward_linear_velocity);
     angular_cmd_velocity = constrain(MAX_ROBOT_CCW_RADIAN_PER_SECOND, angular_cmd_velocity, MAX_ROBOT_CW_RADIAN_PER_SECOND);
 
-    UniToDiff(linear_cmd_velocity, angular_cmd_velocity, &left_cmd_velocity, &right_cmd_velocity);
-    
     CONTROL_UPDATE_END();
 }
 
@@ -364,10 +362,10 @@ void Control_SetCmdVelocity(float linear, float angular)
     linear_cmd_velocity = linear;
     angular_cmd_velocity = angular;
 
-    //UniToDiff(linear, angular, &left_cmd_velocity, &right_cmd_velocity);
+    UniToDiff(linear, angular, &left_cmd_velocity, &right_cmd_velocity);
     
-    //left_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, left_cmd_velocity, MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
-    //right_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, right_cmd_velocity,MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
+    left_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, left_cmd_velocity, MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
+    right_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, right_cmd_velocity,MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
 }
 
 /*---------------------------------------------------------------------------------------------------

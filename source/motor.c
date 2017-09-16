@@ -277,8 +277,6 @@ void Motor_Stop()
     #define MAX_PWM_STEP (10)
 
     PWM_TYPE curr_pwm;
-    PWM_TYPE pwm_step;
-    PWM_TYPE pwm;
     int16 delta_pwm;
     int8 dir_factor;
 

@@ -208,7 +208,7 @@ void UniPid_Init()
 void UniPid_Start()
 {
     PIDTuningsSet(&pid.pid, THETA_KP, 0.0, 0.0);
-    //pid_enabled = TRUE;
+    pid_enabled = TRUE;
 }
 
 /*---------------------------------------------------------------------------------------------------
