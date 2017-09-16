@@ -63,7 +63,7 @@ SOFTWARE.
 #define THETAPID_MIN (0.0)  // radian/sec
 #define THETAPID_MAX (PI/4.0)   // radian/sec
 
-#define THETA_KP    (5)
+#define THETA_KP    (0)
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -193,7 +193,7 @@ static float ThetaPidUpdate(float target, float input)
  *-------------------------------------------------------------------------------------------------*/
 void UniPid_Init()
 {
-    pid_enabled = 0;
+    pid_enabled = FALSE;
     
     PIDInit(&pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, THETAPID_MIN, THETAPID_MAX, AUTOMATIC, DIRECT, Calc_Angle_Error);
 }
@@ -208,7 +208,7 @@ void UniPid_Init()
 void UniPid_Start()
 {
     PIDTuningsSet(&pid.pid, THETA_KP, 0.0, 0.0);
-    pid_enabled = TRUE;
+    //pid_enabled = TRUE;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -226,16 +226,16 @@ void UniPid_Process()
     float linear_desired;
     float angular_desired;
     
+    Control_GetCmdVelocity(&linear_desired, &angular_desired);
     if (pid_enabled)
     {
-        Control_GetCmdVelocity(&linear_desired, &angular_desired);
         target = pid.get_target();
         input = pid.get_input();        
         delta = pid.update(target, input);
         angular_desired = target + delta;
         UNIPID_DUMP();
-        Control_LinearAngularUpdate(linear_desired, angular_desired);
     }
+    Control_SetCmdVelocity(linear_desired, angular_desired);
 }
 
 /*---------------------------------------------------------------------------------------------------

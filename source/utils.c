@@ -324,8 +324,8 @@ void UniToDiff(float linear, float angular, float *left, float *right)
     Vr = (2*V + W*L)/(2*R)
     Vl = (2*V - W*L)/(2*R)
     where 
-        Vr - the velocity of the right wheel
-        Vl - the velocity of the left wheel
+        Vr - the velocity of the right wheel (rad/s)
+        Vl - the velocity of the left wheel (rad/s)
         V - the linear velocity
         W - the angular velocity
         L - the separation of the left and right wheels
@@ -334,16 +334,21 @@ void UniToDiff(float linear, float angular, float *left, float *right)
 {
     *left = (2*linear - angular*TRACK_WIDTH)/WHEEL_DIAMETER;
     *right = (2*linear + angular*TRACK_WIDTH)/WHEEL_DIAMETER;
+
+    /* Convert to meter/sec */
+    *left = *left * WHEEL_RADIUS; //WHEEL_RADIAN_PER_METER;
+    *right = *right * WHEEL_RADIUS; // WHEEL_RADIAN_PER_METER;
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: DiffToUni
- * Description: Converts differential left/right velocity to unicycle linear/angular velocity
+ * Description: Converts differential left/right velocity to unicycle linear/angular 
+ *              velocity
  *  
- * Parameters: left     - the differential left velocity
- *             right    - the differential right velocity
- *             *linear  - the linear velocity
- *             *angular - the angular velocity
+ * Parameters: left     - the differential left velocity (m/s)
+ *             right    - the differential right velocity (m/s)
+ *             *linear  - the linear velocity (m/s)
+ *             *angular - the angular velocity (rad/s)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
@@ -358,10 +363,15 @@ void DiffToUni(float left, float right, float *linear, float *angular)
         R - the radius of the wheel
         Vr - the velocity of the right wheel
         Vl - the velocity of the left wheel
+
+    However, Vr/Vl are in m/s not rad/s so there is not need to multiple by R
+    
+        V = R/2 * (Vr + Vl) / R => (Vr + Vl) / 2
+        W = R/L * (Vr - Vl) / R => (Vr - Vl) / L
 */
 {
-    *linear = WHEEL_RADIUS * (right + left) / 2;
-    *angular = WHEEL_RADIUS * (right - left) / TRACK_WIDTH;    
+    *linear = (right + left) / 2;
+    *angular = (right - left) / TRACK_WIDTH;    
 }
 
 /*---------------------------------------------------------------------------------------------------

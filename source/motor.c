@@ -261,61 +261,122 @@ void Motor_Stop()
 }
 
 /*---------------------------------------------------------------------------------------------------
- * Name: RampDown
- * Description: Ramps down the motor velocity over the given time (in milliseconds).
+ * Name: CalcRampParams
+ * Description: Calculates the parameters used to ramp the motor velocity
  * Parameters: motor - the relevant motor, left or right
- *             millis - the time in milliseconds over which the motor speed will be reduced.
+ *             time - the time in milliseconds over which the motor speed will be reduced.
+ *             target - the target pwm
+ *             step - the resolution of the change; modified to match the change in pwm value
+ *             time_delay - the time between for each step change
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void RampDown(MOTOR_TYPE *motor, uint32 millis)
+ static void CalcRampParams(MOTOR_TYPE *motor, uint32 time_ms, PWM_TYPE target, int16 *step, uint32 *time_delay)
 {
+    #define MIN_PWM_STEP (1)
     #define MAX_PWM_STEP (10)
-    static PWM_TYPE pwm;
-    static int16 delta_pwm;
-    static uint32 time_delay;
-    static int16 pwm_step;
-    
-    pwm = motor->get_pwm();    
-    if (pwm == PWM_STOP)
+
+    PWM_TYPE curr_pwm;
+    PWM_TYPE pwm_step;
+    PWM_TYPE pwm;
+    int16 delta_pwm;
+    int8 dir_factor;
+
+    /* Calculate delta pwm and time_delay */
+    curr_pwm = motor->get_pwm();    
+    delta_pwm = ((int16) target) - ((int16) curr_pwm);
+
+    dir_factor = delta_pwm > 0 ? 1 : -1;
+
+    if (delta_pwm == 0)
     {
-        return;
+        *step = 0;
+        *time_delay = 0;
     }
-    
-    delta_pwm = ((int16) PWM_STOP) - ((int16) pwm);
-    time_delay = (millis * MAX_PWM_STEP)/((uint32) abs(delta_pwm));
-    pwm_step = delta_pwm > 0 ? MAX_PWM_STEP : -MAX_PWM_STEP;
+    else
+    {
+        *step = constrain(*step, MIN_PWM_STEP, min(abs(delta_pwm), MAX_PWM_STEP));
+        *time_delay = (time_ms * (uint32) *step) /(uint32) abs(delta_pwm);
+        *step *= dir_factor;
+    }
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: Ramp
+ * Description: Ramps the motor velocity to the target over the given time (in milliseconds).
+ * Parameters: motor - the relevant motor, left or right
+ *             time_ms - the time in milliseconds over which the motor speed will be reduced.
+ *             target - the target pwm
+ *             step - the resolution of the change
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+ static void Ramp(MOTOR_TYPE *motor, uint32 time_ms, PWM_TYPE target, PWM_TYPE step)
+{
+    int16 pwm_step;
+    PWM_TYPE pwm;
+    uint32 time_delay;
+
+    pwm_step = step;
+    CalcRampParams(motor, time_ms, target, &pwm_step, &time_delay);
+    Ser_PutStringFormat("Ramp: %d %d %d %d\r\n", time_ms, target, pwm_step, time_delay);
+    pwm = motor->get_pwm();
     
     do
     {
         pwm += pwm_step;
         motor->set_pwm(pwm);
-        CyDelay(time_delay);        
-    } while (pwm != PWM_STOP);
+        CyDelay(time_delay);
+    } while (pwm != target);
+
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: Motor_LeftRamp
+ * Description: Ramps the left motor velocity to the target over the given time (in milliseconds).
+ * Parameters: time - the time in milliseconds over which the motor speed will be adjusted.
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+ void Motor_LeftRamp(uint32 time, PWM_TYPE target)
+{
+    Ramp(&left_motor, time, target, 10);
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: Motor_RightRamp
+ * Description: Ramps the right motor velocity to the target over the given time (in milliseconds).
+ * Parameters: time - the time in milliseconds over which the motor speed will be adjusted.
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+ void Motor_RightRamp(uint32 time, PWM_TYPE target)
+{
+    Ramp(&right_motor, time, target, 10);
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Motor_LeftRampDown
  * Description: Ramps down the left motor velocity over the given time (in milliseconds).
- * Parameters: millis - the time in milliseconds over which the motor speed will be reduced.
+ * Parameters: time - the time in milliseconds over which the motor speed will be reduced.
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Motor_LeftRampDown(uint32 millis)
+void Motor_LeftRampDown(uint32 time)
 {
-    RampDown(&left_motor, millis);
+    Ramp(&left_motor, time, PWM_STOP, 10);
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Motor_RightRampDown
  * Description: Ramps down the right motor velocity over the given time (in milliseconds).
- * Parameters: millis - the time in milliseconds over which the motor speed will be reduced.
+ * Parameters: time - the time in milliseconds over which the motor speed will be reduced.
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Motor_RightRampDown(uint32 millis)
+void Motor_RightRampDown(uint32 time)
 {
-    RampDown(&right_motor, millis);
+    Ramp(&right_motor, time, PWM_STOP, 10);
 }
 
 

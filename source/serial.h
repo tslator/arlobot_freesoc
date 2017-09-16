@@ -40,7 +40,7 @@ SOFTWARE.
  * Functions
  *-------------------------------------------------------------------------------------------------*/    
 void Ser_Init();
-void Ser_Start();
+void Ser_Start(uint8 disable);
 void Ser_Update();
 
 void Ser_PutString(char *str);

@@ -232,10 +232,12 @@ void Control_Update()
     
     control_cmd_velocity(&linear_cmd_velocity, &angular_cmd_velocity, &timeout);
     
-    //linear_cmd_velocity = 0.0151;
+    //linear_cmd_velocity = 0.05;
     //angular_cmd_velocity = 0.0;
     //timeout = 0;
-    //Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
+    Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
+    
+    
 
     /* Here seems like a reasonable place to evaluate safety, e.g., can we execute the requested speed change safely
        without running into something or falling into a hole (or down stairs).
@@ -271,6 +273,8 @@ void Control_Update()
     linear_cmd_velocity = constrain(max_robot_backward_linear_velocity, linear_cmd_velocity, max_robot_forward_linear_velocity);
     angular_cmd_velocity = constrain(MAX_ROBOT_CCW_RADIAN_PER_SECOND, angular_cmd_velocity, MAX_ROBOT_CW_RADIAN_PER_SECOND);
 
+    UniToDiff(linear_cmd_velocity, angular_cmd_velocity, &left_cmd_velocity, &right_cmd_velocity);
+    
     CONTROL_UPDATE_END();
 }
 
@@ -355,12 +359,15 @@ void Control_GetCmdVelocity(float *linear, float *angular)
     *angular = angular_cmd_velocity;
 }
 
-void Control_LinearAngularUpdate(float linear, float angular)
+void Control_SetCmdVelocity(float linear, float angular)
 {
-    UniToDiff(linear, angular, &left_cmd_velocity, &right_cmd_velocity);
+    linear_cmd_velocity = linear;
+    angular_cmd_velocity = angular;
+
+    //UniToDiff(linear, angular, &left_cmd_velocity, &right_cmd_velocity);
     
-    left_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, left_cmd_velocity, MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
-    right_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, right_cmd_velocity,MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
+    //left_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, left_cmd_velocity, MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
+    //right_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, right_cmd_velocity,MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
 }
 
 /*---------------------------------------------------------------------------------------------------

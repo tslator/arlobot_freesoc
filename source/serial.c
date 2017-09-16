@@ -50,8 +50,10 @@ SOFTWARE.
 
 #define MAX_STRING_LENGTH (255)
 
-#define CDC_IS_READY_TIMEOUT (1000)
+#define CDC_IS_READY_TIMEOUT (10000000)
 
+
+static uint8 global_disable;
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -63,7 +65,7 @@ static void WaitForCDCIsReady(uint32 timeout)
        if nothing is connected to the USB then obviously we're not interested in the output and
        so we don't want the main loop to be blocked by calls to check the CDC.
     */
-       
+#ifdef XXX       
     uint32 tick;
 
     if (timeout > 0)
@@ -79,6 +81,10 @@ static void WaitForCDCIsReady(uint32 timeout)
             tick--;
         }
     }    
+#endif
+    while (0 == USBUART_CDCIsReady())
+    {
+    }
 }
 
 
@@ -91,6 +97,7 @@ static void WaitForCDCIsReady(uint32 timeout)
  *-------------------------------------------------------------------------------------------------*/
 void Ser_Init()
 {
+    global_disable = 0;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -100,8 +107,15 @@ void Ser_Init()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Ser_Start()
+void Ser_Start(uint8 disable)
 {
+    global_disable = disable;
+    
+    if (global_disable)
+    {
+        return;
+    }
+    
     /* Start USBFS operation with 5-V operation. */
     USBUART_Start(USBFS_DEVICE, USBUART_5V_OPERATION);
 
@@ -122,7 +136,6 @@ void Ser_Start()
     {
         USBUART_PutString("USB UART is configured!\r\n");
     }
-    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -134,6 +147,11 @@ void Ser_Start()
  *-------------------------------------------------------------------------------------------------*/
 void Ser_Update()
 {
+    if (global_disable)
+    {
+        return;
+    }
+    
     /* Host can send double SET_INTERFACE request. */
     if (0u != USBUART_IsConfigurationChanged())
     {
@@ -157,6 +175,11 @@ void Ser_Update()
  *-------------------------------------------------------------------------------------------------*/
 void Ser_PutString(char *str)
 {
+    if (global_disable)
+    {
+        return;
+    }
+    
     if (0u != USBUART_GetConfiguration())
     {
         WaitForCDCIsReady(CDC_IS_READY_TIMEOUT);
@@ -190,6 +213,11 @@ uint8 Ser_ReadData(uint8_t *data)
     uint8 count = 0;
     uint8 buffer[64];
     
+    if (global_disable)
+    {
+        return 0;
+    }
+    
     if (0u != USBUART_GetConfiguration())
     {
         /* Check for input data from host. */
@@ -218,6 +246,11 @@ uint8 Ser_ReadData(uint8_t *data)
  *-------------------------------------------------------------------------------------------------*/
 uint8 Ser_ReadByte()
 {
+    if (global_disable)
+    {
+        return 0;
+    }
+    
     /* Service USB CDC when device is configured. */
     if (0u != USBUART_GetConfiguration())
     {
@@ -241,6 +274,10 @@ uint8 Ser_ReadByte()
  *-------------------------------------------------------------------------------------------------*/
 void Ser_WriteByte(uint8 value)
 {
+    if (global_disable)
+    {
+        return;
+    }
     
     if (0u != USBUART_GetConfiguration())
     {
