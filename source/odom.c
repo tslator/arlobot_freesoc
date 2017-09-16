@@ -179,14 +179,12 @@ void Odom_Update()
         float dt_2_sec = dt_sec / 2.0;
         float dt_6_sec = dt_sec / 6.0;
         
-<<<<<<<
         float delta_x = center_delta_dist * cos(theta);
         float delta_y = center_delta_dist * sin(theta);
 
         x_position += cos(theta) * delta_x - sin(theta) * delta_y;
         y_position += sin(theta) * delta_x + cos(theta) * delta_y;
         theta += (right_delta_dist - left_delta_dist) / TRACK_WIDTH;
-=======
         float k00 = linear * cos(theta);
         float k01 = linear * sin(theta);
         float k02 = angular;
@@ -220,7 +218,6 @@ void Odom_Update()
         theta += (right_delta_dist - left_delta_dist)/TRACK_WIDTH;
         x_position += center_delta_dist * cos(theta);
         y_position += center_delta_dist * sin(theta);
->>>>>>>
         
 #endif        
         /* Constrain theta to -PI to PI */
