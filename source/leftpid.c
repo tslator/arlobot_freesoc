@@ -32,42 +32,37 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/    
 #include <stdio.h>
 #include "config.h"
-#include "pid.h"
-#include "leftpid.h"
 #include "time.h"
-#include "utils.h"
+#include "control.h"
 #include "encoder.h"
 #include "motor.h"
-#include "pid_controller.h"
-#include "diag.h"
-#include "debug.h"
 #include "odom.h"
-#include "control.h"
+#include "pid_controller.h"
+#include "pid.h"
+#include "leftpid.h"
+#include "utils.h"
 #include "pidutil.h"
 #include "debug.h"
+#include "diag.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
 #ifdef LEFT_PID_DUMP_ENABLED
-#define LEFTPID_DUMP()  DUMP_PID(DEBUG_LEFT_PID_ENABLE_BIT, pid, Motor_LeftGetPwm())
+#define LEFTPID_DUMP()  DUMP_PID(DEBUG_LEFT_PID_ENABLE_BIT, pid.name, &pid.pid)
 #else
 #define LEFTPID_DUMP()
 #endif
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
- *-------------------------------------------------------------------------------------------------*/    
-#define LEFTPID_MIN (0)     // count/sec
-#define LEFTPID_MAX (5000)  // count/sec
-
+ *-------------------------------------------------------------------------------------------------*/
 
 /* The following PID values were determined experimentally and show good tracking behavior.
-    Left PID - P: 3.400, I: 1.450, D: 0.899
 */
-#define left_kp (3.400)
-#define left_ki (1.450)
-#define left_kd (0.899)
+#define LEFT_KP (5.000)
+#define LEFT_KI (3.000)
+#define LEFT_KD (1.000)
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -79,7 +74,7 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/
 static float GetCmdVelocity();
 static float EncoderInput();
-static void PidUpdate(float target, float input);
+static float PidUpdate(float target, float input);
 
 /*---------------------------------------------------------------------------------------------------
  * Variables
@@ -87,7 +82,7 @@ static void PidUpdate(float target, float input);
 
 static PID_TYPE pid = { 
     /* name */          "left",
-    /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC},
+    /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC, NULL},
     /* sign */          1.0,
     /* get_target */    GetCmdVelocity,
     /* get_input */     EncoderInput,
@@ -96,6 +91,8 @@ static PID_TYPE pid = {
 
 static uint8 pid_enabled;
 
+static GET_TARGET_FUNC_TYPE old_target_source;
+static GET_TARGET_FUNC_TYPE target_source;
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -103,30 +100,42 @@ static uint8 pid_enabled;
 
 static float GetCmdVelocity()
 {
-    float value = Control_LeftGetCmdVelocity();
+    float value = target_source();
     pid.sign = value >= 0.0 ? 1.0 : -1.0;
-    return value;
+    return abs(value / WHEEL_METER_PER_COUNT);
 }
 
 static float EncoderInput()
 {
-    return Encoder_LeftGetCntsPerSec();
+    return abs(Encoder_LeftGetCntsPerSec());
 }
 
-static void PidUpdate(float target, float input)
+static float PidUpdate(float target, float input)
 {
-    PIDSetpointSet(&pid.pid, abs(target / METER_PER_COUNT));
-    PIDInputSet(&pid.pid, abs(input));
+    PWM_TYPE pwm;
     
+    PIDSetpointSet(&pid.pid, target);
+    PIDInputSet(&pid.pid, input);
+    
+    /* Note: PIDCompute returns TRUE when in AUTOMATIC mode and FALSE when in MANUAL mode */
     if (PIDCompute(&pid.pid))
     {
-        Motor_LeftSetPwm(Cal_CpsToPwm(WHEEL_LEFT, pid.pid.output * pid.sign));
+        pwm = Cal_CpsToPwm(WHEEL_LEFT, pid.pid.output * pid.sign);
     }
+    else
+    {
+        pwm = Cal_CpsToPwm(WHEEL_LEFT, target / WHEEL_METER_PER_COUNT);
+    }
+
+    Motor_LeftSetPwm(pwm);
+    
+    /* Note: The PID update return value is not used. */ 
+    return 0.0;
 }
 
 /*---------------------------------------------------------------------------------------------------
- * Name: Pid_Init
- * Description: Starts the EEPROM component used for storing calibration information.
+ * Name: LeftPid_Init
+ * Description: Initializes module variables to default values.
  * Parameters: None
  * Return: None
  * 
@@ -135,12 +144,14 @@ void LeftPid_Init()
 {
     pid_enabled = 0;
     
-    PIDInit(&pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, LEFTPID_MIN, LEFTPID_MAX, AUTOMATIC, DIRECT);        
+    target_source = Control_LeftGetCmdVelocity;
+    old_target_source = NULL;
+    PIDInit(&pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, LEFTPID_MIN, LEFTPID_MAX, AUTOMATIC, DIRECT, NULL);        
 }
     
 /*---------------------------------------------------------------------------------------------------
- * Name: Pid_Start
- * Description: Obtains the left/right PID gains and sets them into the left/right PID controller.
+ * Name: LeftPid_Start
+ * Description: Obtains the left PID gains and sets them into the left PID controller.
  * Parameters: None
  * Return: None
  * 
@@ -153,8 +164,16 @@ void LeftPid_Start()
     // component is started which is handled in the Nvstore module.  
     // Pid_Start is called after Nvstore_Start.
     
-    p_gains = Cal_LeftGetPidGains();    
-    PIDTuningsSet(&pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);    
+    if (Cal_GetCalibrationStatusBit(CAL_PID_BIT))
+    {
+        p_gains = Cal_LeftGetPidGains();  
+        PIDTuningsSet(&pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
+        pid_enabled = TRUE;
+    }
+    else
+    {
+        Ser_PutString("No valid PID calibration\r\n");
+    }
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -169,43 +188,47 @@ void LeftPid_Process()
     float target;
     float input;
     
-    target = pid.get_target();
-    input = pid.get_input();
-    pid.update(target, input);
-    LEFTPID_DUMP();    
+    /* Note: If PID processing is disabled, then skip all PID-related work */
+    if (pid_enabled)
+    {
+        target = pid.get_target();
+        input = pid.get_input();
+        pid.update(target, input);
+        LEFTPID_DUMP();
+    }
 }
 
 
 /*---------------------------------------------------------------------------------------------------
  * Name: LeftPid_SetTarget
- * Description: Sets the left/right get_target fields to a different function.
- *              Note: This is done during calibration to allow internal control of the left/right
+ * Description: Sets the left target source to the specified function.
+ *              Note: This is done during calibration to allow internal control of the left
  *              wheel speed.
- * Parameters: left_target - the function that will be used to get the left target speed
- *             right_target - the function that will be used to get the right target speed
+ * Parameters: target - the function that will be the source of the left target speed.
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
 void LeftPid_SetTarget(GET_TARGET_FUNC_TYPE target)
 {
-    pid.get_target = target;
+    old_target_source = target_source;
+    target_source = target;
 }
 
 /*---------------------------------------------------------------------------------------------------
- * Name: Pid_RestoreLeftRightTarget
- * Description: Restores the left/right get_target fields to the default function.
+ * Name: LeftPid_RestoreTarget
+ * Description: Restores the left target source to the default function.
  * Parameters: None
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
 void LeftPid_RestoreTarget()
 {
-    pid.get_target = Control_LeftGetCmdVelocity;
+    target_source = old_target_source;
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: LeftPid_Reset
- * Description: Resets the left/right PID fields.
+ * Description: Resets the left PID fields.
  * Parameters: None
  * Return: None
  * 
@@ -221,18 +244,39 @@ void LeftPid_Reset()
 
 /*---------------------------------------------------------------------------------------------------
  * Name: LeftPid_Enable
- * Description: Enables/Disables the PID.  This is needed for motor and PID calibration.
+ * Description: Enables/Disables PID processing (see LeftPid_Process).  There are times when the PID
+ *              needs to be completely disabled but still callable from the main loop.
  * Parameters: None
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void LeftPid_Enable(uint8 enable)
+void LeftPid_Enable(uint8 value)
 {
-    PIDMode mode = MANUAL;
-    
-    if (enable)
+    pid_enabled = value;
+    if (value)
     {
-        mode = AUTOMATIC;
+        PIDModeSet(&pid.pid, AUTOMATIC);
+    }
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: LeftPid_Bypass
+ * Description: Bypassing the PID calculation by setting the PID mode to either MANUAL or AUTOMATIC.
+ *              MANUAL mode bypasses the PID control calculation and uses the unmodified target value.
+ *              AUTOMATIC mode performs the PID control calculation and uses the PID output value.
+ * Parameters: value - TRUE if the PID calculation is to be bypassed; otherwise, FALSE.
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+void LeftPid_Bypass(uint8 value)
+{
+    PIDMode mode = AUTOMATIC;
+    
+    /* Note: To bypass the PID calculation, PID processing must be enabled. */
+    if (value)
+    {
+        pid_enabled = TRUE;
+        mode = MANUAL;
     }
     
     PIDModeSet(&pid.pid, mode);

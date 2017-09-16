@@ -38,6 +38,9 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
+// Right PID min/max in count/sec
+#define RIGHTPID_MIN (0)
+#define RIGHTPID_MAX (min(MAX_WHEEL_FORWARD_COUNT_PER_SEC, abs(MAX_WHEEL_BACKWARD_COUNT_PER_SEC)))
     
 
 /*---------------------------------------------------------------------------------------------------
@@ -59,7 +62,8 @@ void RightPid_SetTarget(GET_TARGET_FUNC_TYPE target);
 void RightPid_RestoreTarget();
 
 void RightPid_Reset();
-void RightPid_Enable(uint8 enable);
+void RightPid_Enable(uint8 value);
+void RightPid_Bypass(uint8 value);
 
 #endif
 

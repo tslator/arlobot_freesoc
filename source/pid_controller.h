@@ -57,6 +57,8 @@ extern "C"
 // Macros and Globals
 //*********************************************************************************
 
+typedef float (*PIDCalcError)(float setpoint, float input);
+
 typedef enum
 {
     MANUAL,
@@ -138,6 +140,12 @@ typedef struct
     // AUTOMATIC: PID controller is on.
     // 
     PIDMode mode;
+
+    //
+    // Function that computes the error
+    // Default (when NULL is passed) is an internal function that does a simple subtract
+    // Note: Using PID control on angles requires other than a simple subtract
+    PIDCalcError calcError;
 } PIDControl;
 
 //*********************************************************************************
@@ -170,7 +178,7 @@ typedef struct
 // 
 void PIDInit(PIDControl *pid, float kp, float ki, float kd, 
              float sampleTimeSeconds, float minOutput, float maxOutput, 
-             PIDMode mode, PIDDirection controllerDirection);     	
+             PIDMode mode, PIDDirection controllerDirection, PIDCalcError calcError);     	
 
 // 
 // PID Compute

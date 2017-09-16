@@ -40,26 +40,19 @@ SOFTWARE.
 #include "cal.h"
 #include "nvstore.h"
 
-
 /*---------------------------------------------------------------------------------------------------
  * Main Function
  *-------------------------------------------------------------------------------------------------*/    
 int main()
 {       
-    /* Think about whether this should be enabled before all of the init and start calls.  Maybe interrupts shouldn't
-       be enabled until everything is ready to go?
-     */
-    CyGlobalIntEnable;      /* Enable global interrupts */
+    CyGlobalIntEnable;
     
-    /* Start this right away so that we debug as soon as possible */
     Nvstore_Init();
     Ser_Init();
     Debug_Init();
-    Debug_Start();
-    
+    Debug_Start();    
     Diag_Init();
-    Diag_Start();
-        
+    Diag_Start();        
     I2CIF_Init();
     Control_Init();
     Cal_Init();
@@ -70,7 +63,7 @@ int main()
     Odom_Init();
 
     Nvstore_Start();
-    Ser_Start();
+    Ser_Start(0);
     I2CIF_Start();
     Control_Start();
     Cal_Start();
@@ -80,28 +73,29 @@ int main()
     Pid_Start();
     Odom_Start();
 
-    DEBUG_PRINT_STR("Hello, my name is ArloSoc!\r\n");
-    DEBUG_PRINT_STR("I am the microcontroller for Arlobot.\r\n");
-    DEBUG_PRINT_STR("I'm entering my main loop now!\r\n");
+    //DEBUG_PRINT_STR("Hello, my name is ArloSoc!\r\n");
+    //DEBUG_PRINT_STR("I am the microcontroller for Arlobot.\r\n");
+    //DEBUG_PRINT_STR("I'm entering my main loop now!\r\n");
 
     for(;;)
     {
         MAIN_LOOP_START();
         
         /* Update any control changes */
-        Control_Update();
+        Control_Update();  // reads and validates linear/angular
         
         /* Update encoder-related values */
-        Encoder_Update();
+        Encoder_Update();  // measures current left/right speed
 
-        /* Apply the velocity command to PID */
-        Pid_Update();
+        /* Apply the velocity command to PIDs */
+        Pid_Update(); // tracks linear/angular velocity
 
         /* Update the odometry calculation */
-        Odom_Update();
-
+        Odom_Update();      // measures left/right speed, x/y position, heading, linear/angular
+        
         /* Diagnostic update */
-        Diag_Update();        
+        Diag_Update();
+
         /* Handle calibration request */
         Cal_Update();
         

@@ -39,8 +39,8 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
-#define MPS_TO_CPS(mps) (mps / METER_PER_COUNT)
-#define CPS_TO_MPS(cps) (cps * METER_PER_COUNT)
+#define MPS_TO_CPS(mps) (mps / WHEEL_METER_PER_COUNT)
+#define CPS_TO_MPS(cps) (cps * WHEEL_METER_PER_COUNT)
 
 #define DEG_TO_RAD(deg) ((deg / 360.0) * 2*PI)
 #define RAD_TO_DEG(rad) ((rad / 2*PI) * 360.0)
@@ -244,84 +244,6 @@ float FourBytesToFloat(uint8 *bytes)
     return value;
 }
 
-#ifdef USE_FTOA
-/*---------------------------------------------------------------------------------------------------
- * Name: insert_zeros
- * Description: Inserts zeros after the decimal point
- *  
- * Parameters: value     - the fractional part of the floating point value in integer form
- *             str       - pointer to the resulting string
- *             offset    - the offset into the string
- *             precision - the number of significant digits
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-static int insert_zeros(int value, char *str, int offset, int precision)
-{
-    int num_digits = 0;
-    
-    // Count digits in number
-    while (value)
-    {
-        value /= 10;
-        num_digits++;
-    }
-    
-    // If num_digits is less than precision then insert zeros
-    while (num_digits < precision)
-    {
-        str[offset] = '0';
-        offset++;
-        num_digits++;
-    }
-        
-    return offset;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: ftoa
- * Description: Converts a floating point number to a string.
- *              Note: Often this function is provided by the C runtime but there appears to be an issue
- *              in the GCC implementation.  Need to add a Cypress reference here.
- *  
- * Parameters: n         - the floating point value
- *             str       - pointer to the resulting string
- *             precision - the number of significant digits
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-void ftoa(float n, char *str, int precision)
-{   
-    int i = 0;
-    
-    if (n < 0)
-    {
-        str[i] = '-';
-        i++;
-        n = abs(n);
-    }
-    
-    // Extract integer part
-    int ipart = (int)n;
-
-    // convert integer part to string
-    i += strlen(itoa(ipart, &str[i], 10));
-    
-    // check for display option after point
-    if (precision > 0)
-    {
-        str[i] = '.';  // add dot
-        i++;
- 
-        int fpart = (int) ( (n - (float)ipart) * pow(10, precision) );
-        
-        i = insert_zeros(fpart, str, i, precision);
-        
-        itoa( (int)fpart, &str[i], 10);
-    }
-}
-#endif
-
 /*---------------------------------------------------------------------------------------------------
  * Name: BinaryRangeSearch
  * Description: Performs a binary search to find a range, i.e., lower and upper values, within which
@@ -335,7 +257,7 @@ void ftoa(float n, char *str, int precision)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void BinaryRangeSearch(int32 search, int32 *data_points, uint8 num_points, uint8 *lower_index, uint8 *upper_index)
+void BinaryRangeSearch(int16 search, int16 *data_points, uint8 num_points, uint8 *lower_index, uint8 *upper_index)
 /*
     This is a binary search modified to return a range, e.g., lower and upper, when searching for an element.
 
@@ -402,8 +324,8 @@ void UniToDiff(float linear, float angular, float *left, float *right)
     Vr = (2*V + W*L)/(2*R)
     Vl = (2*V - W*L)/(2*R)
     where 
-        Vr - the velocity of the right wheel
-        Vl - the velocity of the left wheel
+        Vr - the velocity of the right wheel (rad/s)
+        Vl - the velocity of the left wheel (rad/s)
         V - the linear velocity
         W - the angular velocity
         L - the separation of the left and right wheels
@@ -412,16 +334,21 @@ void UniToDiff(float linear, float angular, float *left, float *right)
 {
     *left = (2*linear - angular*TRACK_WIDTH)/WHEEL_DIAMETER;
     *right = (2*linear + angular*TRACK_WIDTH)/WHEEL_DIAMETER;
+
+    /* Convert to meter/sec */
+    *left = *left * WHEEL_RADIUS; //WHEEL_RADIAN_PER_METER;
+    *right = *right * WHEEL_RADIUS; // WHEEL_RADIAN_PER_METER;
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: DiffToUni
- * Description: Converts differential left/right velocity to unicycle linear/angular velocity
+ * Description: Converts differential left/right velocity to unicycle linear/angular 
+ *              velocity
  *  
- * Parameters: left     - the differential left velocity
- *             right    - the differential right velocity
- *             *linear  - the linear velocity
- *             *angular - the angular velocity
+ * Parameters: left     - the differential left velocity (m/s)
+ *             right    - the differential right velocity (m/s)
+ *             *linear  - the linear velocity (m/s)
+ *             *angular - the angular velocity (rad/s)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
@@ -436,10 +363,15 @@ void DiffToUni(float left, float right, float *linear, float *angular)
         R - the radius of the wheel
         Vr - the velocity of the right wheel
         Vl - the velocity of the left wheel
+
+    However, Vr/Vl are in m/s not rad/s so there is not need to multiple by R
+    
+        V = R/2 * (Vr + Vl) / R => (Vr + Vl) / 2
+        W = R/L * (Vr - Vl) / R => (Vr - Vl) / L
 */
 {
-    *linear = WHEEL_RADIUS * (right + left) / 2;
-    *angular = WHEEL_RADIUS * (right - left) / TRACK_WIDTH;    
+    *linear = (right + left) / 2;
+    *angular = (right - left) / TRACK_WIDTH;    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -511,7 +443,7 @@ float CalcHeading(float left_count, float right_count, float radius, float width
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-uint16 CpsToPwm(int32 cps, int32 *cps_data, uint16 *pwm_data, uint8 data_size)
+uint16 CpsToPwm(int16 cps, int16 *cps_data, uint16 *pwm_data, uint8 data_size)
 {   
     PWM_TYPE pwm = PWM_STOP;
     uint8 lower = 0;
@@ -526,64 +458,77 @@ uint16 CpsToPwm(int32 cps, int32 *cps_data, uint16 *pwm_data, uint8 data_size)
         return constrain(pwm, MIN_PWM_VALUE, MAX_PWM_VALUE);
     }
 
+    //Ser_PutStringFormat("CpsToPwm: %d -> %d\r\n", cps, pwm);
+
     return pwm;
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: NormalizeHeading
- * Description: Returns a heading ranging from 0 to 2*Pi relative to the direction 
+ * Description: Returns a heading ranging from -PI to Pi relative to the direction 
  *  
  * Parameters: heading - raw non-normalized heading as calculated in CalcHeading 
  *             direction - the direction of the rotation, i.e., CW or CCW 
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-float NormalizeHeading(float heading, DIR_TYPE direction)
+float NormalizeHeading(float heading)
 {
     float result = 0.0;
 
-    if( direction != DIR_CW && direction != DIR_CCW )
-    {
-        return result;
+    result = heading;
+    
+    result -= (float)( (int)(result/TWOPI) ) * TWOPI;
+    if (result < -PI) 
+    { 
+        result += TWOPI;
     }
-
-    if (direction == DIR_CW)
+    else if (result > PI)
     {
-        if( heading >= -PI && heading <= 0.0 )
-        {
-            /* If the direction is CW and the heading ranges from 0 to -Pi
-                    adjust heading by taking absolute value
-             */
-            result = abs(heading);
-        }
-        else
-        {
-            /*   If the direction is CW and the heading ranges from Pi to 0
-                    adjust heading to be Pi to 2*Pi
-             */
-            result = 2*PI - heading;
-        }
-    }
-    else if (direction == DIR_CCW)
-    {
-        if( heading >= 0.0 && heading <= PI )
-        {
-            /*
-               If the direction is CCW and the heading ranges from 0 to Pi
-                    use the heading
-             */
-            result = heading;
-        }
-        else
-        {
-            /* If the direction is CCW and the heading ranges from -Pi to 0
-                    adjust heading to be Pi to 2*Pi
-             */
-            result = 2*PI - abs(heading);
-        }
+        result -= TWOPI; 
     }
 
     return result;
 }
+
+void CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_limit, float *profile)
+{
+    uint8 mid_sample_offset;
+    float delta;
+    float value;
+    uint8 ii;
+
+    if (num_points % 2 == 0)
+    {
+        assert("Profile requires odd number of points");
+    }
+
+    /* Calculate the mid point */
+    mid_sample_offset = num_points / 2;
+    
+    /* Calculate the delta step */
+    delta = (upper_limit - lower_limit)/mid_sample_offset;
+    
+    /* Set the mid point */
+    profile[mid_sample_offset] = upper_limit;
+    
+    /* Set the 'up' slope values */
+    value = lower_limit;
+    for (ii = 0; ii < mid_sample_offset; ++ii)
+    {
+        profile[ii] = value;
+        value += delta;
+    }
+    
+    /* Set the 'down' slope values */ 
+    value = upper_limit;
+    for (ii = mid_sample_offset; ii < num_points; ++ii)
+    {
+        profile[ii] = value;
+        value -= delta;
+    }
+    
+}
+
 
 /* [] END OF FILE */

@@ -40,6 +40,8 @@ SOFTWARE.
  * Types
  *-------------------------------------------------------------------------------------------------*/    
 typedef float (*GET_ENCODER_FUNC_TYPE)();
+typedef int32 (*GET_RAW_COUNT_FUNC_TYPE)();
+typedef void (*RESET_COUNT_FUNC_TYPE)();
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -47,6 +49,12 @@ typedef float (*GET_ENCODER_FUNC_TYPE)();
 void Encoder_Init();
 void Encoder_Start();
 void Encoder_Update();
+
+void Encoder_LeftReset();
+void Encoder_RightReset();
+
+int32 Encoder_LeftGetRawCount();
+int32 Encoder_RightGetRawCount();
 
 float Encoder_LeftGetCntsPerSec();
 float Encoder_RightGetCntsPerSec();
@@ -64,6 +72,10 @@ float Encoder_LeftGetDeltaDist();
 float Encoder_RightGetDeltaDist();
 
 float Encoder_GetCenterDist();
+
+float Encoder_LinearGetVelocity();
+float Encoder_AngularGetVelocity();
+
 
 void Encoder_Reset();
 

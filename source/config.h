@@ -34,17 +34,12 @@ SOFTWARE.
  * Includes
  *-------------------------------------------------------------------------------------------------*/
 #include <project.h>
+#include <assert.h>    
     
 /*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/
 
-/* There is a known issue with printf/sprintf and float formating which can be resolved by converting floats to string
-   and then using format to include into a string.  However, the gcc compiler does not support ftoa so I had to role my
-   own (stolen from others who rolled their own).  This define enables the home-grown ftoa (in utils.c)
- */
-#define USE_FTOA
-    
 /* Testing Macros    
  */    
     
@@ -72,45 +67,82 @@ typedef enum {DIR_FORWARD, DIR_BACKWARD, DIR_CW, DIR_CCW} DIR_TYPE;
 /*---------------------------------------------------------------------------------------------------
  * Motors
  *-------------------------------------------------------------------------------------------------*/
-
 #define PI (3.1415926535897932384626433832795)
-#define WHEEL_RADIUS   (0.0785)       // meter
-#define WHEEL_DIAMETER (2 * WHEEL_RADIUS)
-#define TRACK_WIDTH (0.392)           // meter
-#define PI_D (PI * WHEEL_DIAMETER)
-#define METER_PER_REVOLUTION (PI_D)   // meter
-#define ENCODER_TICK_PER_REVOLUTION (500)
-#define COUNT_PER_REVOLUTION (ENCODER_TICK_PER_REVOLUTION * 4)  /* encoder tick per revolution times 4x encoder (quadrature encoding) */
-#define METER_PER_COUNT (METER_PER_REVOLUTION/COUNT_PER_REVOLUTION)
-#define COUNT_PER_METER (COUNTS_PER_REVOLUTION/METER_PER_REVOLUTION)
-#define RADIAN_PER_COUNT (PI * (WHEEL_DIAMETER/(TRACK_WIDTH*COUNT_PER_REVOLUTION)))
-#define RADIAN_PER_METER (PI * (WHEEL_DIAMETER/(TRACK_WIDTH*METER_PER_REVOLUTION)))
+#define TWOPI (2 * PI)
+#define MILLIS_PER_SECOND (1000)
 
-// Note: These are the theoretical values, so it may be prudent to back these down to more conservative values
+#define SEC_PER_MIN (60.0)
+#define RADIAN_PER_REV (TWOPI)
+ 
+#define MAX_WHEEL_RPM  (95.0)                 // rpm
+#define WHEEL_RADIUS   (0.0775)             // meter
+#define WHEEL_DIAMETER (2 * WHEEL_RADIUS)   // meter
+#define TRACK_WIDTH (0.3937)                 // meter
 
-#define MIN_LINEAR_VELOCITY     (-MAX_METER_PER_SECOND)
-#define MAX_LINEAR_VELOCITY     (MAX_METER_PER_SECOND)
-#define MIN_ANGULAR_VELOCITY    (-MAX_RADIAN_PER_SECOND)
-#define MAX_ANGULAR_VELOCITY    (MAX_RADIAN_PER_SECOND)
+#define WHEEL_CIRCUMFERENCE (PI * WHEEL_DIAMETER)          // meter
+#define WHEEL_METER_PER_REV (WHEEL_CIRCUMFERENCE)         // meter
+#define WHEEL_ENCODER_TICK_PER_REV (500)   // ticks or counts
+#define WHEEL_COUNT_PER_REV (WHEEL_ENCODER_TICK_PER_REV * 4)  /* encoder tick per revolution times 4x encoder (quadrature encoding) */
+#define WHEEL_METER_PER_COUNT (WHEEL_METER_PER_REV/WHEEL_COUNT_PER_REV)
+#define WHEEL_COUNT_PER_METER (WHEEL_COUNT_PER_REV/WHEEL_METER_PER_REV)
+#define WHEEL_RADIAN_PER_COUNT (PI * (WHEEL_DIAMETER/(TRACK_WIDTH*WHEEL_COUNT_PER_REV)))
+#define WHEEL_RADIAN_PER_METER (PI * (WHEEL_DIAMETER/(TRACK_WIDTH*WHEEL_METER_PER_REV)))
 
-#define MAX_WHEEL_RPM       (95)
-#define WHEEL_CIRCUMFERENCE (2 * PI * WHEEL_RADIUS)
-#define MAX_WHEEL_VELOCITY  (MAX_WHEEL_RPM * WHEEL_CIRCUMFERENCE)/60
-#define MIN_LEFT_VELOCITY   (-MAX_WHEEL_VELOCITY)
-#define MAX_LEFT_VELOCITY   (MAX_WHEEL_VELOCITY)
-#define MIN_RIGHT_VELOCITY   (-MAX_WHEEL_VELOCITY)
-#define MAX_RIGHT_VELOCITY   (MAX_WHEEL_VELOCITY)
+/* Wheel maximum angular velocity: 
+    omega = theta / sec = RPM/60 * 2PI
+ */
+#define MAX_WHEEL_RADIAN_PER_SECOND   ((MAX_WHEEL_RPM / SEC_PER_MIN) * RADIAN_PER_REV)
+/* Wheel maximum linear velocity:
+    v = omega * radius
+ */
+#define MAX_WHEEL_METER_PER_SECOND    (MAX_WHEEL_RADIAN_PER_SECOND * WHEEL_RADIUS)
 
-#define MAX_METER_PER_SECOND    ((MAX_WHEEL_RPM / 60) * PI_D)
-#define MAX_RADIAN_PER_SECOND   ((2 * MAX_METER_PER_SECOND)/TRACK_WIDTH)
+
+#define MAX_WHEEL_FORWARD_LINEAR_VELOCITY  (MAX_WHEEL_METER_PER_SECOND)     // meter/sec
+#define MAX_WHEEL_BACKWARD_LINEAR_VELOCITY (-MAX_WHEEL_METER_PER_SECOND)    // meter/sec
+#define MAX_WHEEL_CW_ANGULAR_VELOCITY      (MAX_WHEEL_RADIAN_PER_SECOND)    // radian/sec
+#define MIN_WHEEL_CCW_ANGULAR_VELOCITY     (-MAX_WHEEL_RADIAN_PER_SECOND)   // radian/sec
+
+#define MAX_WHEEL_FORWARD_COUNT_PER_SEC (MAX_WHEEL_FORWARD_LINEAR_VELOCITY * WHEEL_COUNT_PER_METER)
+#define MAX_WHEEL_BACKWARD_COUNT_PER_SEC (MAX_WHEEL_BACKWARD_LINEAR_VELOCITY * WHEEL_COUNT_PER_METER)
+#define MAX_WHEEL_CW_COUNT_PER_SEC (MAX_WHEEL_CW_ANGULAR_VELOCITY / WHEEL_RADIAN_PER_COUNT)
+#define MAX_WHEEL_CCW_COUNT_PER_SEC (MIN_WHEEL_CCW_ANGULAR_VELOCITY / WHEEL_RADIAN_PER_COUNT)
+                
+
+/* Calculate the maximum rotation of the robot */
+
+/* This is the circumference of the circle made when the robot turns in place, i.e., one wheel max forward, one wheel 
+   max reverse.  Only in this case is the angular velocity maximum.   
+ */
+
+/* Calculate robot max RPM 
+    RPM = v * 60 / (2 * PI * r) = v * 60 / (PI * d)
+    where,
+        v is the linear velocity of the wheel
+        r is half the track width (or using d which is the track width)
+*/
+#define MAX_ROBOT_RPM ((MAX_WHEEL_FORWARD_LINEAR_VELOCITY * 60) / (PI * TRACK_WIDTH))
+
+/* Calculate angular velocity of robot rotation from linear velocity of wheel:
+    circumference = (RPM / 60) * 2 * PI
+ */
+#define MAX_ROBOT_RADIAN_PER_SECOND ((MAX_ROBOT_RPM / SEC_PER_MIN) * RADIAN_PER_REV)
+
+#define ROBOT_METER_PER_REV (PI * TRACK_WIDTH)
+#define ROBOT_NUM_WHEEL_ROTATION_PER_ROBOT_REV (ROBOT_METER_PER_REV / WHEEL_METER_PER_REV) // num of wheel rotations per robot revolution
+#define ROBOT_COUNT_PER_REV (ROBOT_NUM_WHEEL_ROTATION_PER_ROBOT_REV * WHEEL_COUNT_PER_REV) // count/robot revolution
+
+#define MAX_ROBOT_CW_RADIAN_PER_SECOND (MAX_ROBOT_RADIAN_PER_SECOND)
+#define MAX_ROBOT_CCW_RADIAN_PER_SECOND (-MAX_ROBOT_RADIAN_PER_SECOND)
+
 
 /*----------------------------------------------------------------------------------------------------------------------
 
 Sample Rates
 
 ----------------------------------------------------------------------------------------------------------------------*/
-#define ENC_SAMPLE_RATE     (20) /* Hz */
-#define PID_SAMPLE_RATE     (25) /* Hz */
+#define ENC_SAMPLE_RATE     (50) /* Hz */
+#define PID_SAMPLE_RATE     (50) /* Hz */
 #define ODOM_SAMPLE_RATE    (25) /* Hz */
 #define HEARTBEAT_RATE      (2)  /* Hz */
 #define STATUS_LED_RATE     (2)  /* Hz */
@@ -119,8 +151,8 @@ Sample Rates
    sampling from happening all of the same time, by introducing a one-time initial delay or sampling offset.
  */
 #define ENC_SCHED_OFFSET    (7)   /* ms */
-#define PID_SCHED_OFFSET    (19)  /* ms */
-#define ODOM_SCHED_OFFSET   (11)  /* ms */
+#define PID_SCHED_OFFSET    (11)  /* ms */
+#define ODOM_SCHED_OFFSET   (23)  /* ms */
 
 /*----------------------------------------------------------------------------------------------------------------------
 

@@ -123,19 +123,19 @@ void Int32ToFourBytes(int32 value, uint8* bytes);
 void Uint16ToTwoBytes(uint16 value, uint8* bytes);
 void FloatToFourBytes(float value, uint8* bytes);
 
-#ifdef USE_FTOA
-void ftoa(float n, char *str, int precision);
-#endif
-
-void BinaryRangeSearch(int32 search, int32 *data_points, uint8 num_points, uint8 *lower_index, uint8 *upper_index);
+void BinaryRangeSearch(int16 search, int16 *data_points, uint8 num_points, uint8 *lower_index, uint8 *upper_index);
 int16 Interpolate(int16 x, int16 x1, int16 x2, uint16 y1, uint16 y2);
 
 void UniToDiff(float linear, float angular, float *left, float *right);
 void DiffToUni(float left, float right, float *linear, float *angular);
 float CalcHeading(float left_count, float right_count, float radius, float width, float count_per_rev, float bias);
-uint16 CpsToPwm(int32 cps, int32 *cps_data, uint16 *pwm_data, uint8 data_size);
+uint16 CpsToPwm(int16 cps, int16 *cps_data, uint16 *pwm_data, uint8 data_size);
 
-float NormalizeHeading(float heading, DIR_TYPE direction);
+float NormalizeHeading(float heading);
+
+void CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_limit, float *profile);
+
+
 #endif
 
 /* [] END OF FILE */

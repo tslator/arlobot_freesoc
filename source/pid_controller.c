@@ -46,9 +46,14 @@
 //*********************************************************************************
 // Functions
 //*********************************************************************************
+static float CalcError(float setpoint, float input)
+{
+    return setpoint - input;
+}
+
 void PIDInit(PIDControl *pid, float kp, float ki, float kd, 
              float sampleTimeSeconds, float minOutput, float maxOutput, 
-             PIDMode mode, PIDDirection controllerDirection)     	
+             PIDMode mode, PIDDirection controllerDirection, PIDCalcError calcError)     	
 {
     pid->controllerDirection = controllerDirection;
     pid->mode = mode;
@@ -57,6 +62,7 @@ void PIDInit(PIDControl *pid, float kp, float ki, float kd,
     pid->lastInput = 0.0f;
     pid->output = 0.0f;
     pid->setpoint = 0.0f;
+    pid->calcError = (calcError == (void *)0) ? CalcError : calcError;
     
     if(sampleTimeSeconds > 0.0f)
     {
@@ -71,7 +77,7 @@ void PIDInit(PIDControl *pid, float kp, float ki, float kd,
     PIDOutputLimitsSet(pid, minOutput, maxOutput);
     PIDTuningsSet(pid, kp, ki, kd);
 }
-        
+
 bool PIDCompute(PIDControl *pid) 
 {
     float error, dInput;
@@ -82,7 +88,8 @@ bool PIDCompute(PIDControl *pid)
     }
     
     // The classic PID error term
-    error = (pid->setpoint) - (pid->input);
+    //error = (pid->setpoint) - (pid->input);
+    error = pid->calcError(pid->setpoint, pid->input);
     
     // Compute the integral term separately ahead of time
     pid->iTerm += (pid->alteredKi) * error;

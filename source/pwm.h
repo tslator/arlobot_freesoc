@@ -75,11 +75,19 @@ SOFTWARE.
 #define RIGHT_PWM_FULL_BACKWARD     (MAX_PWM_VALUE)
 #define RIGHT_PWM_BACKWARD_DOMAIN   (RIGHT_PWM_FULL_BACKWARD - RIGHT_PWM_STOP)
     
-
+ 
 /*---------------------------------------------------------------------------------------------------
  * Types
  *-------------------------------------------------------------------------------------------------*/
 typedef uint16 PWM_TYPE;
+ 
+typedef struct _pwm_params
+{
+    uint16 start;
+    uint16 end;
+    int16 step;
+} PWM_PARAMS_TYPE;
+
 
 #endif
 

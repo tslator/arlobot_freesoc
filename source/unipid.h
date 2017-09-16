@@ -23,58 +23,43 @@ SOFTWARE.
 */
 
 /*---------------------------------------------------------------------------------------------------
-   Description: This module provides the implementation for communicating over I2C.
+   Description: This module provides the implementation of the linear velocity PID.
  *-------------------------------------------------------------------------------------------------*/    
 
-
-#ifndef I2CIF_H
-#define I2CIF_H
-
+#ifndef UNIPID_H
+#define UNIPID_H
+    
 /*---------------------------------------------------------------------------------------------------
  * Includes
  *-------------------------------------------------------------------------------------------------*/    
 #include <project.h>
+#include "pid.h"
     
-/*---------------------------------------------------------------------------------------------------
- * Constants
- *-------------------------------------------------------------------------------------------------*/    
-
-
 /*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
-#ifdef TEST_I2C
-#define I2CIF_TEST()  I2CIF_Test()
-#else
-#define I2CIF_TEST()
-#endif        
     
+
+/*---------------------------------------------------------------------------------------------------
+ * Types
+ *-------------------------------------------------------------------------------------------------*/
+
+
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/    
-void I2CIF_Init();
-void I2CIF_Start();
+void UniPid_Init();
+void UniPid_Start();
+void UniPid_Process();
 
-uint16 I2CIF_ReadDeviceControl();
-uint16 I2CIF_ReadDebugControl();
-void I2CIF_ReadCmdVelocity(float *linear, float *angular, uint32 *timeout);
+void UniPid_SetGains(float theta_kp, float theta_ki, float theta_kd);
+void UniPid_GetGains(float *theta_kp, float *theta_ki, float *theta_kd);
 
-void I2CIF_SetDeviceStatusBit(uint16 bit);
-void I2CIF_ClearDeviceStatusBit(uint16 bit);
-
-void I2CIF_SetCalibrationStatus(uint16 status);
-void I2CIF_SetCalibrationStatusBit(uint16 bit);
-void I2CIF_ClearCalibrationStatusBit(uint16 bit);
+void UniPid_Reset();
+void UniPid_Enable(uint8 enable);
+void UniPid_Bypass(uint8 bypass);
 
 
-void I2CIF_WriteSpeed(float linear, float angular);
-void I2CIF_WritePosition(float x_position, float y_position);
-void I2CIF_WriteHeading(float heading);
-void I2CIF_UpdateHeartbeat(uint32 heartbeat);
-
-#ifdef TEST_I2C
-void I2CIF_Test();
-#endif
 #endif
 
 /* [] END OF FILE */

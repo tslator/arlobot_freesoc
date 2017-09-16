@@ -68,6 +68,8 @@ SOFTWARE.
 #define ENC_SAMPLE_TIME_MS  SAMPLE_TIME_MS(ENC_SAMPLE_RATE)
 #define ENC_SAMPLE_TIME_SEC SAMPLE_TIME_SEC(ENC_SAMPLE_RATE)
 
+#define NUM_DELTA_COUNT_SAMPLES (10)
+#define NUM_AVG_CPS_SAMPLES (10)
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -116,10 +118,6 @@ static ENCODER_TYPE right_enc = {
 };
 
 #if defined (LEFT_ENC_DUMP_ENABLED) || defined (RIGHT_ENC_DUMP_ENABLED)
-static char avg_cps_str[10];
-static char avg_delta_count_str[10];
-static char avg_mps_str[10];
-static char delta_dist_str[10];
 /*---------------------------------------------------------------------------------------------------
  * Name: DumpEncoder
  * Description: Dumps the current state of the encoder to the serial port
@@ -129,18 +127,13 @@ static char delta_dist_str[10];
  *-------------------------------------------------------------------------------------------------*/
  static void DumpEncoder(ENCODER_TYPE *enc)
 {
-    ftoa(enc->avg_cps, avg_cps_str, 3);
-    ftoa(enc->avg_delta_count, avg_delta_count_str, 3);
-    ftoa(enc->avg_mps, avg_mps_str, 3);
-    ftoa(enc->delta_dist, delta_dist_str, 3);
-
-    DEBUG_PRINT_ARG("%s enc: %s %s %s %ld %s\r\n", 
+    DEBUG_PRINT_ARG("%s enc: %.3f %.3f %.3f %ld %.3f\r\n", 
                     enc->name, 
-                    avg_cps_str, 
-                    avg_mps_str, 
-                    avg_delta_count_str, 
+                    enc->avg_cps, 
+                    enc->avg_mps, 
+                    enc->avg_delta_count, 
                     enc->delta_count, 
-                    delta_dist_str);
+                    enc->delta_dist);
 }
 #endif
 
@@ -165,9 +158,9 @@ static void Encoder_Sample(ENCODER_TYPE *enc, uint32 delta_time)
     
     enc->avg_cps = MovingAverageFloat(&enc->avg_cps_ma, cps);
     
-    enc->avg_mps = enc->avg_cps * METER_PER_COUNT;
+    enc->avg_mps = enc->avg_cps * WHEEL_METER_PER_COUNT;
     
-    enc->delta_dist = PI_D * enc->avg_delta_count/COUNT_PER_REVOLUTION;
+    enc->delta_dist = (WHEEL_METER_PER_REV * enc->delta_count) / WHEEL_COUNT_PER_REV;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -185,9 +178,9 @@ void Encoder_Init()
     left_enc.avg_delta_count = 0;
     left_enc.delta_dist = 0.0;
     left_enc.delta_count_ma.last = 0;
-    left_enc.delta_count_ma.n = 20;
+    left_enc.delta_count_ma.n = NUM_DELTA_COUNT_SAMPLES;
     left_enc.avg_cps_ma.last = 0;
-    left_enc.avg_cps_ma.n = 10;
+    left_enc.avg_cps_ma.n = NUM_AVG_CPS_SAMPLES;
     left_enc.avg_cps = 0;
     left_enc.avg_mps = 0;
     
@@ -197,11 +190,12 @@ void Encoder_Init()
     right_enc.avg_delta_count = 0;
     right_enc.delta_dist = 0.0;
     right_enc.delta_count_ma.last = 0;
-    right_enc.delta_count_ma.n = 20;
+    right_enc.delta_count_ma.n = NUM_DELTA_COUNT_SAMPLES;
     right_enc.avg_cps_ma.last = 0;
-    right_enc.avg_cps_ma.n = 10;
+    right_enc.avg_cps_ma.n = NUM_AVG_CPS_SAMPLES;
     right_enc.avg_cps = 0;
     right_enc.avg_mps = 0;
+    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -243,10 +237,30 @@ void Encoder_Update()
         Encoder_Sample(&left_enc, delta_time);
         Encoder_Sample(&right_enc, delta_time);
         LEFT_DUMP_ENC(&left_enc);
-        RIGHT_DUMP_ENC(&right_enc);
+        RIGHT_DUMP_ENC(&right_enc);        
     }                    
     
     ENCODER_UPDATE_END();
+}
+
+void Encoder_LeftReset()
+{
+    Left_QuadDec_SetCounter(0);
+}
+
+void Encoder_RightReset()
+{
+    Right_QuadDec_SetCounter(0);
+}
+
+int32 Encoder_LeftGetRawCount()
+{
+    return Left_QuadDec_GetCounter();
+}
+
+int32 Encoder_RightGetRawCount()
+{
+    return Right_QuadDec_GetCounter();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -437,7 +451,7 @@ void Encoder_Reset()
     right_enc.avg_cps_ma.last = 0;
     right_enc.count = 0;
     right_enc.delta_dist = 0;
-    
+
     LEFT_DUMP_ENC(&left_enc);
     RIGHT_DUMP_ENC(&right_enc);    
 }

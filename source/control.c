@@ -66,6 +66,19 @@ static float linear_cmd_velocity;
 static float angular_cmd_velocity;
 static uint8 debug_override;
 
+static float max_robot_forward_linear_velocity;
+static float max_robot_backward_linear_velocity;
+
+static float linear_bias;
+static float angular_bias;
+static float gain;
+static float trim;
+
+static float linear_odom_velocity;
+static float angular_odom_velocity;
+static float linear_gain;
+static float angular_gain;
+
 
 void Update_Debug(uint16 bits)
 {
@@ -131,6 +144,14 @@ void Update_Debug(uint16 bits)
 void Control_Init()
 {
     control_cmd_velocity = ReadCmdVelocity;
+    gain = 1.0;
+    trim = 0.0;
+    
+    linear_odom_velocity = 0.0;
+    angular_odom_velocity = 0.0;
+    linear_gain = 0.5;
+    angular_gain = 0.5;
+    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -142,6 +163,18 @@ void Control_Init()
  *-------------------------------------------------------------------------------------------------*/ 
 void Control_Start()
 {   
+    float max_robot_linear_velocity;
+    float dont_care;
+    
+    /* Calculate the min/max forward/backward differential velocities */
+    
+    UniToDiff(MAX_WHEEL_FORWARD_LINEAR_VELOCITY, 0, &max_robot_linear_velocity, &dont_care);
+    
+    max_robot_forward_linear_velocity = max_robot_linear_velocity;
+    max_robot_backward_linear_velocity = -max_robot_linear_velocity;
+
+    linear_bias = Cal_GetLinearBias();
+    angular_bias = Cal_GetAngularBias();    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -158,6 +191,7 @@ void Control_Update()
     uint32 timeout;
     uint16 device_control;
     uint16 debug_control;
+    
     
     CONTROL_UPDATE_START();
     
@@ -195,27 +229,16 @@ void Control_Update()
     {
         Cal_Clear();
     }
+    
+    control_cmd_velocity(&linear_cmd_velocity, &angular_cmd_velocity, &timeout);
+    
+    //linear_cmd_velocity = 0.05;
+    //angular_cmd_velocity = 0.0;
+    //timeout = 0;
+    Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
+    
+    
 
-    
-    control_cmd_velocity(&left_cmd_velocity, &right_cmd_velocity, &timeout);
-    
-    // Used to override I2C commands (debug)
-    //left_cmd_velocity = 0;
-    //right_cmd_velocity = 0;
-    //UniToDiff(0.065, 0, &left_cmd_velocity, &right_cmd_velocity);
-        
-    if (timeout > MAX_CMD_VELOCITY_TIMEOUT)
-    {
-        left_cmd_velocity = 0;
-        right_cmd_velocity = 0;
-    }
-    
-    left_cmd_velocity = max(MIN_LEFT_VELOCITY, min(left_cmd_velocity, MAX_LEFT_VELOCITY));
-    right_cmd_velocity = max(MIN_RIGHT_VELOCITY, min(right_cmd_velocity, MAX_RIGHT_VELOCITY));
-    
-    /* Calculate Linear/Angular velocities for linear/angular PID control */
-    DiffToUni(left_cmd_velocity, right_cmd_velocity, &linear_cmd_velocity, &angular_cmd_velocity);
-        
     /* Here seems like a reasonable place to evaluate safety, e.g., can we execute the requested speed change safely
        without running into something or falling into a hole (or down stairs).
     
@@ -240,6 +263,17 @@ void Control_Update()
        disable the PWM if the distance (voltage) exceeds a threshold - no software required.
     
     */    
+    
+    if (timeout > MAX_CMD_VELOCITY_TIMEOUT)
+    {
+        linear_cmd_velocity = 0;
+        angular_cmd_velocity = 0;
+    }
+    
+    linear_cmd_velocity = constrain(max_robot_backward_linear_velocity, linear_cmd_velocity, max_robot_forward_linear_velocity);
+    angular_cmd_velocity = constrain(MAX_ROBOT_CCW_RADIAN_PER_SECOND, angular_cmd_velocity, MAX_ROBOT_CW_RADIAN_PER_SECOND);
+
+    UniToDiff(linear_cmd_velocity, angular_cmd_velocity, &left_cmd_velocity, &right_cmd_velocity);
     
     CONTROL_UPDATE_END();
 }
@@ -295,14 +329,45 @@ float Control_RightGetCmdVelocity()
     return right_cmd_velocity;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Control_LinearGetCmdVelocity
+ * Description: Accessor function used to return the linear commanded velocity.  
+ * Parameters: None
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/ 
 float Control_LinearGetCmdVelocity()
 {
     return linear_cmd_velocity;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Control_AngularGetCmdVelocity
+ * Description: Accessor function used to return the angular commanded velocity.  
+ * Parameters: None
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/ 
 float Control_AngularGetCmdVelocity()
 {
     return angular_cmd_velocity;
+}
+
+void Control_GetCmdVelocity(float *linear, float *angular)
+{
+    *linear = linear_cmd_velocity;
+    *angular = angular_cmd_velocity;
+}
+
+void Control_SetCmdVelocity(float linear, float angular)
+{
+    linear_cmd_velocity = linear;
+    angular_cmd_velocity = angular;
+
+    //UniToDiff(linear, angular, &left_cmd_velocity, &right_cmd_velocity);
+    
+    //left_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, left_cmd_velocity, MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
+    //right_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, right_cmd_velocity,MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -342,13 +407,16 @@ void Control_ClearCalibrationStatusBit(uint16 bit)
     ClearCalibrationStatusBit(bit);
 }
 
-void Control_WriteOdom(float left_speed, 
-                       float right_speed, 
+void Control_WriteOdom(float linear, 
+                       float angular, 
                        float x_position, 
                        float y_position, 
                        float heading)
 {
-    WriteSpeed(left_speed, right_speed);
+    linear_odom_velocity = linear;
+    angular_odom_velocity = angular;
+    
+    WriteSpeed(linear, angular);
     WritePosition(x_position, y_position);
     WriteHeading(heading);
 }

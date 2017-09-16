@@ -75,8 +75,8 @@ SOFTWARE.
                                                                 - Bit 3: Enable/Disable Odometry debug
                                                                 - Bit 4: Enable/Disable Sample debug
         <---- Commanded Velocity ---->
-      04           4         [left wheel velocity]          commanded left wheel velocity in meter/second
-      08           4         [right wheel velocity]         commanded right wheel velocity in meter/second
+      04           4         [linear velocity]              commanded linear velocity in meter/second
+      08           4         [angular velocity]             commanded angular velocity in radian/second
     ------------------------------ Read/Write Boundary --------------------------------------------
       12           2         [device status]                contains bits that represent the status of the Psoc device
                                                                - Bit 0: HB25 Motor Controller Initialized
@@ -86,8 +86,8 @@ SOFTWARE.
                                                                - Bit 2: Linear
                                                                - Bit 3: Angular
            <------ Odometry ------>
-      16           4         [left speed]                   measured left speed
-      20           4         [right speed]                  measured right speed
+      16           4         [linear velocity]              measured linear velocity
+      20           4         [angular velocity]             measured angular velocity
       24           4         [x position]                   measured x position 
       28           4         [y position]                   measured y position
       32           4         [heading]                      measured heading
@@ -99,16 +99,16 @@ typedef struct
 {
     uint16 device_control;
     uint16 debug_control;
-    float  left_cmd_velocity;
-    float  right_cmd_velocity;
+    float  linear_cmd_velocity;
+    float  angular_cmd_velocity;
 } __attribute__ ((packed)) READWRITE_TYPE;
 
 /* Define the odometry structure for communicating the position, heading and velocity of the wheel 
  */
 typedef struct
 {
-    float left_speed;
-    float right_speed;
+    float linear_velocity;
+    float angular_velocity;
     float x_position;
     float y_position;
     float heading;
@@ -247,13 +247,14 @@ uint16 I2CIF_ReadDebugControl()
 
 /*---------------------------------------------------------------------------------------------------
  * Name: I2CIF_ReadCmdVelocity
- * Description: Accessor function used to read the commanded left/right wheel velocity.
+ * Description: Accessor function used to read the commanded linear/angular velocity.
  * Parameters: None
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void I2CIF_ReadCmdVelocity(float *left, float *right, uint32 *timeout)
+void I2CIF_ReadCmdVelocity(float *linear, float *angular, uint32 *timeout)
 {
+    static int latched = 0;
     /* GetActivity() returns the status of the I2C activity: write, read, busy, or error
        Wrt to I2C writes, only the first 12 bytes can be written to.  Of those 12 bytes, 2 are for the control register,
        2 are for the calibration register, and 8 are for the commanded velocity (left and right).  The commanded 
@@ -279,10 +280,10 @@ void I2CIF_ReadCmdVelocity(float *left, float *right, uint32 *timeout)
         last_cmd_velocity_time = millis();
     }
 
-    *left = i2c_buf.read_write.left_cmd_velocity;
-    *right = i2c_buf.read_write.right_cmd_velocity;
-    
-    *timeout = cmd_velocity_timeout;    
+    *linear = i2c_buf.read_write.linear_cmd_velocity;
+    *angular = i2c_buf.read_write.angular_cmd_velocity;
+
+    *timeout = cmd_velocity_timeout;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -351,10 +352,10 @@ void I2CIF_ClearCalibrationStatusBit(uint16 bit)
     i2c_buf.read_only.calibration_status = calibration_status;
 }
 
-void I2CIF_WriteSpeed(float left_speed, float right_speed)
+void I2CIF_WriteSpeed(float linear, float angular)
 {
-    i2c_buf.read_only.odom.left_speed = left_speed;
-    i2c_buf.read_only.odom.right_speed = right_speed;
+    i2c_buf.read_only.odom.linear_velocity = linear;
+    i2c_buf.read_only.odom.angular_velocity = angular;
 }
 
 void I2CIF_WritePosition(float x_position, float y_position)

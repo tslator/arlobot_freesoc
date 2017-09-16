@@ -69,6 +69,10 @@ void Control_SetCommandVelocityFunc(COMMAND_FUNC_TYPE cmd);
 void Control_RestoreCommandVelocityFunction();
 float Control_LeftGetCmdVelocity();
 float Control_RightGetCmdVelocity();
+float Control_LinearGetCmdVelocity();
+float Control_AngularGetCmdVelocity();
+void Control_GetCmdVelocity(float *linear, float *angular);
+void Control_SetCmdVelocity(float linear, float angular);
 void Control_OverrideDebug(uint8 override);
 
 void Control_SetDeviceStatusBit(uint16 bit);
@@ -78,9 +82,8 @@ void Control_SetCalibrationStatus(uint16 status);
 void Control_SetCalibrationStatusBit(uint16 bit);
 void Control_ClearCalibrationStatusBit(uint16 bit);
 
-void Control_WriteOdom(float left_speed, float right_speed, float left_dist, float right_dist, float heading);
+void Control_WriteOdom(float linear, float angular, float left_dist, float right_dist, float heading);
 void Control_UpdateHeartbeat(uint32 heartbeat);
-
 
 #endif
 

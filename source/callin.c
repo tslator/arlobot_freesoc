@@ -298,27 +298,19 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
     float delta_left_dist;
     float delta_right_dist;
     float heading;
-
-    char delta_left_dist_str[10];
-    char delta_right_dist_str[10];
-    char heading_str[10];
-    char linear_bias_str[10];
+    float linear_bias;
     
     params = params;
 
     delta_left_dist = Encoder_LeftGetDeltaDist();
     delta_right_dist = Encoder_RightGetDeltaDist();
     heading = Odom_GetHeading();
+    linear_bias = Cal_GetLinearBias();
 
-    ftoa(delta_left_dist, delta_left_dist_str, 3);    
-    ftoa(delta_right_dist, delta_right_dist_str, 3);
-    ftoa(heading, heading_str, 6);
-    ftoa(Cal_GetLinearBias(), linear_bias_str, 3);
-    
-    Ser_PutStringFormat("Left Delta Wheel Distance: %s\r\nRight Delta Wheel Distance: %s\r\n", delta_left_dist_str, delta_right_dist_str);
-    Ser_PutStringFormat("Heading: %s\r\n", heading_str);
+    Ser_PutStringFormat("Left Delta Wheel Distance: %.2f\r\nRight Delta Wheel Distance: %.2f\r\n", delta_left_dist, delta_right_dist);
+    Ser_PutStringFormat("Heading: %.3f\r\n", heading);
     Ser_PutStringFormat("Elapsed Time: %ld\r\n", end_time - start_time);
-    Ser_PutStringFormat("Linear Bias: %s\r\n", linear_bias_str);
+    Ser_PutStringFormat("Linear Bias: %.2f\r\n", linear_bias);
     
     switch (stage)
     {
@@ -330,9 +322,7 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
 
             if (distance < CAL_LINEAR_BIAS_MIN || distance > CAL_LINEAR_BIAS_MAX)
             {
-                char distance_str[10];
-                ftoa(distance, distance_str, 6);
-                Ser_PutStringFormat("The distance entered %s is out of the allowed range.  No change will be made.\r\n", distance_str);
+                Ser_PutStringFormat("The distance entered %.2f is out of the allowed range.  No change will be made.\r\n", distance);
                 distance = p_cal_eeprom->linear_bias;
             }
             distance = constrain(distance, CAL_LINEAR_BIAS_MIN, CAL_LINEAR_BIAS_MAX);

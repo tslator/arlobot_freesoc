@@ -33,19 +33,19 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/    
 #include <stdio.h>
 #include "config.h"
-#include "pid.h"
-#include "leftpid.h"
-#include "rightpid.h"
 #include "time.h"
-#include "utils.h"
+#include "control.h"
 #include "encoder.h"
 #include "motor.h"
-#include "diag.h"
-#include "debug.h"
 #include "odom.h"
-#include "control.h"
+#include "pid.h"
+#include "unipid.h"
+#include "leftpid.h"
+#include "rightpid.h"
+#include "utils.h"
 #include "pidutil.h"
 #include "debug.h"
+#include "diag.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -61,8 +61,6 @@ SOFTWARE.
  * Constants
  *-------------------------------------------------------------------------------------------------*/    
 
-
-
 /*---------------------------------------------------------------------------------------------------
  * Types
  *-------------------------------------------------------------------------------------------------*/
@@ -71,13 +69,9 @@ SOFTWARE.
  * Variables
  *-------------------------------------------------------------------------------------------------*/    
 
-static uint8 pid_enabled;
-
-
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/    
-
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Pid_Init
@@ -88,12 +82,9 @@ static uint8 pid_enabled;
  *-------------------------------------------------------------------------------------------------*/
 void Pid_Init()
 {
-    pid_enabled = 0;
-    
+    UniPid_Init();
     LeftPid_Init();    
     RightPid_Init();
-    //LinearPid_Init();
-    //AngularPid_Init();
 }
     
 /*---------------------------------------------------------------------------------------------------
@@ -105,10 +96,9 @@ void Pid_Init()
  *-------------------------------------------------------------------------------------------------*/
 void Pid_Start()
 {
+    UniPid_Start();
     LeftPid_Start();    
     RightPid_Start();
-    //LinearPid_Start();
-    //AngularPid_Start();    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -132,10 +122,9 @@ void Pid_Update()
     {    
         last_update_time = millis();
         
+        //UniPid_Process();
         LeftPid_Process();
         RightPid_Process();
-        //LinearPid_Process();
-        //AngularPid_Process();
     }
     
     PID_UPDATE_END();    
@@ -179,6 +168,7 @@ void Pid_RestoreLeftRightTarget()
  *-------------------------------------------------------------------------------------------------*/
 void Pid_Reset()
 {
+    UniPid_Reset();
     LeftPid_Reset();
     RightPid_Reset();
 }
@@ -192,8 +182,16 @@ void Pid_Reset()
  *-------------------------------------------------------------------------------------------------*/
 void Pid_Enable(uint8 enable)
 {
+    UniPid_Enable(enable);
     LeftPid_Enable(enable);
     RightPid_Enable(enable);
+}
+
+void Pid_Bypass(uint8 bypass)
+{
+    UniPid_Bypass(bypass);
+    LeftPid_Bypass(bypass);
+    RightPid_Bypass(bypass);
 }
 
 /* [] END OF FILE */

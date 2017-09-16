@@ -32,7 +32,7 @@ SOFTWARE.
 #include <project.h>
 #include "pid_controller.h"
     
-void DumpPid(char *name, PIDControl *pid, uint16 pwm);
+void DumpPid(char *name, PIDControl *pid);
     
 #endif
 
