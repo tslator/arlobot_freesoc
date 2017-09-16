@@ -182,9 +182,6 @@ void Odom_Update()
         float delta_x = center_delta_dist * cos(theta);
         float delta_y = center_delta_dist * sin(theta);
 
-        x_position += cos(theta) * delta_x - sin(theta) * delta_y;
-        y_position += sin(theta) * delta_x + cos(theta) * delta_y;
-        theta += (right_delta_dist - left_delta_dist) / TRACK_WIDTH;
         float k00 = linear * cos(theta);
         float k01 = linear * sin(theta);
         float k02 = angular;
