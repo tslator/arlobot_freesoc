@@ -102,7 +102,7 @@ static float GetCmdVelocity()
 {
     float value = target_source();
     pid.sign = value >= 0.0 ? 1.0 : -1.0;
-    return abs(value / WHEEL_METER_PER_COUNT);
+    return abs(value);
 }
 
 static float EncoderInput()
@@ -124,7 +124,7 @@ static float PidUpdate(float target, float input)
     }
     else
     {
-        pwm = Cal_CpsToPwm(WHEEL_LEFT, target / WHEEL_METER_PER_COUNT);
+        pwm = Cal_CpsToPwm(WHEEL_LEFT, target);
     }
 
     Motor_LeftSetPwm(pwm);

@@ -51,8 +51,7 @@ SOFTWARE.
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
 #ifdef UNIPID_DUMP_ENABLED
-//#define UNIPID_DUMP()  DUMP_PID(DEBUG_UNIPID_ENABLE_BIT, pid.name, &pid.pid, GetControlVelocity)
-#define UNIPID_DUMP()
+#define UNIPID_DUMP() DUMP_PID(DEBUG_UNIPID_ENABLE_BIT, pid.name, &pid.pid)
 #else
 #define UNIPID_DUMP()
 #endif
@@ -63,7 +62,7 @@ SOFTWARE.
 #define THETAPID_MIN (0.0)  // radian/sec
 #define THETAPID_MAX (PI/4.0)   // radian/sec
 
-#define THETA_KP    (0)
+#define THETA_KP    (10.0)
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -138,7 +137,7 @@ static float Calc_Angle(float linear, float angular)
  
 static float Calc_Angle_Error(float desired, float measured)
 {
-    return atan2(sin(desired - measured), cos(desired - measured));    
+    return atan2(sin(desired - measured), cos(desired - measured));
 }
  
 static float GetControlVelocity()

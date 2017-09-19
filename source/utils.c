@@ -334,10 +334,6 @@ void UniToDiff(float linear, float angular, float *left, float *right)
 {
     *left = (2*linear - angular*TRACK_WIDTH)/WHEEL_DIAMETER;
     *right = (2*linear + angular*TRACK_WIDTH)/WHEEL_DIAMETER;
-
-    /* Convert to meter/sec */
-    *left = *left * WHEEL_RADIUS; //WHEEL_RADIAN_PER_METER;
-    *right = *right * WHEEL_RADIUS; // WHEEL_RADIAN_PER_METER;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -364,14 +360,10 @@ void DiffToUni(float left, float right, float *linear, float *angular)
         Vr - the velocity of the right wheel
         Vl - the velocity of the left wheel
 
-    However, Vr/Vl are in m/s not rad/s so there is not need to multiple by R
-    
-        V = R/2 * (Vr + Vl) / R => (Vr + Vl) / 2
-        W = R/L * (Vr - Vl) / R => (Vr - Vl) / L
 */
 {
-    *linear = (right + left) / 2;
-    *angular = (right - left) / TRACK_WIDTH;    
+    *linear = WHEEL_RADIUS * (right + left) / 2;
+    *angular = WHEEL_RADIUS * (right - left) / TRACK_WIDTH;    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -530,5 +522,65 @@ void CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_limi
     
 }
 
+void EnsureAngularVelocity(float *v, float *w)
+{
+    /*
+    Ensure specified angular velocity can be met by adjusting linear velocity
+    :param v: Linear velocity
+    :param w: Angular velocity
+    :param track_width: Wheel base width
+    :param wheel_radius: Wheel radius
+    :param ang_wheel_max: Maximum allowed angular velocity
+    :return: Linear/Angular velocity
+    */
+
+    float l_v_d;
+    float r_v_d;
+    float max_rl_v;
+    float min_rl_v;
+    float temp_v;
+    float temp_w;
+    float l_v;
+    float r_v;
+
+    temp_v = *v;
+    temp_w = *w;
+    
+    UniToDiff(temp_v, temp_w, &l_v_d, &r_v_d);
+
+    max_rl_v = max(l_v_d, r_v_d);
+    min_rl_v = min(l_v_d, r_v_d);
+
+    l_v = 0;
+    r_v = 0;
+
+    //print("{:6.3f} {:6.3f} {:6.3f} {:6.3f} {:6.3f}".format(l_v_d, r_v_d, track_width, wheel_radius, ang_wheel_max))
+
+    /* Only adjust if v and w are non-zero
+    */
+    if (temp_v != 0.0 && temp_w != 0.0)
+    {
+        if (max_rl_v > MAX_WHEEL_RADIAN_PER_SECOND)
+        {
+            r_v = r_v_d - (max_rl_v - MAX_WHEEL_RADIAN_PER_SECOND);
+            l_v = l_v_d - (max_rl_v - MAX_WHEEL_RADIAN_PER_SECOND);
+        }
+        else if (min_rl_v < -MAX_WHEEL_RADIAN_PER_SECOND)
+        {
+            r_v = r_v_d - (min_rl_v + MAX_WHEEL_RADIAN_PER_SECOND);
+            l_v = l_v_d - (min_rl_v + MAX_WHEEL_RADIAN_PER_SECOND);
+        }
+        else
+        {
+            l_v = l_v_d;
+            r_v = r_v_d;
+        }
+
+        DiffToUni(l_v, r_v, &temp_v, &temp_w);
+
+        *v = temp_v;
+        *w = temp_w;
+    }
+}
 
 /* [] END OF FILE */

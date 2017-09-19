@@ -67,6 +67,9 @@ void Debug_Init()
 #if  defined RIGHT_PID_DUMP_ENABLED
     debug_control_enabled |= DEBUG_RIGHT_PID_ENABLE_BIT;
 #endif
+#if  defined UNIPID_DUMP_ENABLED
+    debug_control_enabled |= DEBUG_UNIPID_ENABLE_BIT;
+#endif
 #if defined MOTOR_DUMP_ENABLED
     debug_control_enabled |= DEBUG_LEFT_MOTOR_ENABLE_BIT | DEBUG_RIGHT_MOTOR_ENABLE_BIT;
 #endif   
@@ -114,7 +117,9 @@ void Debug_Disable(uint16 flag)
 
 uint8 Debug_IsEnabled(uint16 flag)
 {
+#ifdef COMMS_DEBUG_ENABLED
     return debug_control_enabled & flag;
+#endif
 }
 
 void Debug_EnableAll()

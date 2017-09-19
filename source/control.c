@@ -232,12 +232,12 @@ void Control_Update()
     
     control_cmd_velocity(&linear_cmd_velocity, &angular_cmd_velocity, &timeout);
     
-    //linear_cmd_velocity = 0.05;
-    //angular_cmd_velocity = 0.0;
+    //linear_cmd_velocity = 0.0;
+    //angular_cmd_velocity = 0.5;
     //timeout = 0;
-    Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
+    //Debug_Enable(DEBUG_UNIPID_ENABLE_BIT);
     
-    
+    //EnsureAngularVelocity(&linear_cmd_velocity, &angular_cmd_velocity);    
 
     /* Here seems like a reasonable place to evaluate safety, e.g., can we execute the requested speed change safely
        without running into something or falling into a hole (or down stairs).
@@ -270,8 +270,10 @@ void Control_Update()
         angular_cmd_velocity = 0;
     }
     
-    linear_cmd_velocity = constrain(max_robot_backward_linear_velocity, linear_cmd_velocity, max_robot_forward_linear_velocity);
-    angular_cmd_velocity = constrain(MAX_ROBOT_CCW_RADIAN_PER_SECOND, angular_cmd_velocity, MAX_ROBOT_CW_RADIAN_PER_SECOND);
+    UniToDiff(linear_cmd_velocity, angular_cmd_velocity, &left_cmd_velocity, &right_cmd_velocity);
+        
+    //linear_cmd_velocity = constrain(max_robot_backward_linear_velocity, linear_cmd_velocity, max_robot_forward_linear_velocity);
+    //angular_cmd_velocity = constrain(MAX_ROBOT_CCW_RADIAN_PER_SECOND, angular_cmd_velocity, MAX_ROBOT_CW_RADIAN_PER_SECOND);
 
     CONTROL_UPDATE_END();
 }
@@ -312,7 +314,8 @@ void Control_RestoreCommandVelocityFunc()
  *-------------------------------------------------------------------------------------------------*/ 
 float Control_LeftGetCmdVelocity()
 {
-    return left_cmd_velocity;
+    /* Convert rad/s to count/s */
+    return left_cmd_velocity * WHEEL_COUNT_PER_RADIAN;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -324,7 +327,8 @@ float Control_LeftGetCmdVelocity()
  *-------------------------------------------------------------------------------------------------*/ 
 float Control_RightGetCmdVelocity()
 {
-    return right_cmd_velocity;
+    /* Convert rad/s to count/s */
+    return right_cmd_velocity * WHEEL_COUNT_PER_RADIAN;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -359,13 +363,14 @@ void Control_GetCmdVelocity(float *linear, float *angular)
 
 void Control_SetCmdVelocity(float linear, float angular)
 {
-    linear_cmd_velocity = linear;
-    angular_cmd_velocity = angular;
-
+    /* Note: This function is called from the unipid to track angular velocity.  Basically, we are taking the adjustment
+       to linear/angular velocity and converting to left/right velocity (in rad/s).  The left/right pids will pick
+       up left/right velocity (converted to count/s) and track linear velocity.
+    */
     UniToDiff(linear, angular, &left_cmd_velocity, &right_cmd_velocity);
     
-    left_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, left_cmd_velocity, MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
-    right_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, right_cmd_velocity,MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
+    //left_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, left_cmd_velocity, MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
+    //right_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, right_cmd_velocity,MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
 }
 
 /*---------------------------------------------------------------------------------------------------

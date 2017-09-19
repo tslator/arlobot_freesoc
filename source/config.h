@@ -85,8 +85,7 @@ typedef enum {DIR_FORWARD, DIR_BACKWARD, DIR_CW, DIR_CCW} DIR_TYPE;
 #define WHEEL_COUNT_PER_REV (WHEEL_ENCODER_TICK_PER_REV * 4)  /* encoder tick per revolution times 4x encoder (quadrature encoding) */
 #define WHEEL_METER_PER_COUNT (WHEEL_METER_PER_REV/WHEEL_COUNT_PER_REV)
 #define WHEEL_COUNT_PER_METER (WHEEL_COUNT_PER_REV/WHEEL_METER_PER_REV)
-#define WHEEL_RADIAN_PER_COUNT (PI * (WHEEL_DIAMETER/(TRACK_WIDTH*WHEEL_COUNT_PER_REV)))
-#define WHEEL_RADIAN_PER_METER (PI * (WHEEL_DIAMETER/(TRACK_WIDTH*WHEEL_METER_PER_REV)))
+#define WHEEL_COUNT_PER_RADIAN (WHEEL_COUNT_PER_REV / TWOPI)
 
 /* Wheel maximum angular velocity: 
     omega = theta / sec = RPM/60 * 2PI
@@ -143,7 +142,7 @@ Sample Rates
 ----------------------------------------------------------------------------------------------------------------------*/
 #define ENC_SAMPLE_RATE     (50) /* Hz */
 #define PID_SAMPLE_RATE     (50) /* Hz */
-#define ODOM_SAMPLE_RATE    (25) /* Hz */
+#define ODOM_SAMPLE_RATE    (50) /* Hz */
 #define HEARTBEAT_RATE      (2)  /* Hz */
 #define STATUS_LED_RATE     (2)  /* Hz */
 

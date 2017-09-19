@@ -152,6 +152,11 @@ void Odom_Update()
     static uint32 last_update_time = ODOM_SCHED_OFFSET;
     static uint32 delta_time;
     
+    float left_cps;
+    float right_cps;
+    float left_rps;
+    float right_rps;
+    
     ODOM_UPDATE_START();
     
     delta_time = millis() - last_update_time;
@@ -162,8 +167,14 @@ void Odom_Update()
         
         left_mps = Encoder_LeftGetMeterPerSec();
         right_mps = Encoder_RightGetMeterPerSec();
+        
+        left_cps = Encoder_LeftGetCntsPerSec();
+        right_cps = Encoder_RightGetCntsPerSec();
+        
+        left_rps = left_cps * TWOPI / WHEEL_COUNT_PER_REV;
+        right_rps = right_cps * TWOPI / WHEEL_COUNT_PER_REV;
     
-        DiffToUni(left_mps, right_mps, &linear_meas_velocity, &angular_meas_velocity);
+        DiffToUni(left_rps, right_rps, &linear_meas_velocity, &angular_meas_velocity);
         
 #ifdef RUNGE_KUTTA        
         /* With meter/sec wheel velocity do the following to calculate x, y, theta using Runge-Kutta (4th order)

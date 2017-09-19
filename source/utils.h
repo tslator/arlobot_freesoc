@@ -134,7 +134,7 @@ uint16 CpsToPwm(int16 cps, int16 *cps_data, uint16 *pwm_data, uint8 data_size);
 float NormalizeHeading(float heading);
 
 void CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_limit, float *profile);
-
+void EnsureAngularVelocity(float *linear_cmd_velocity, float *angular_cmd_velocity);
 
 #endif
 
