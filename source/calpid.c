@@ -189,7 +189,6 @@ static float GetStepVelocity()
     int16 max_leftright_cps;
     int16 max_leftright_pid;
     int16 max_cps;
-    float max_mps;
 
     left_fwd_max = abs(p_cal_eeprom->left_motor_fwd.cps_max);
     left_bwd_max = abs(p_cal_eeprom->left_motor_bwd.cps_min);
@@ -202,10 +201,9 @@ static float GetStepVelocity()
     max_leftright_cps = min(left_max, right_max);
     max_leftright_pid = min(LEFTPID_MAX, RIGHTPID_MAX);
     
-    max_cps = min(max_leftright_cps, max_leftright_pid);
-    max_mps = (float) (max_cps * WHEEL_METER_PER_COUNT * STEP_VELOCITY_PERCENT);
+    max_cps = min(max_leftright_cps, max_leftright_pid) * STEP_VELOCITY_PERCENT;
 
-    return max_mps;
+    return max_cps;
     
 }
 
@@ -379,6 +377,7 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
             Ser_PutString("\r\n");
             
             Pid_Enable(TRUE);
+            UniPid_Enable(FALSE);
             Encoder_Reset();
             Pid_Reset();
             Odom_Reset();

@@ -62,7 +62,7 @@ SOFTWARE.
 #define THETAPID_MIN (0.0)  // radian/sec
 #define THETAPID_MAX (PI/4.0)   // radian/sec
 
-#define THETA_KP    (10.0)
+#define THETA_KP    (8.0)
 
 /*---------------------------------------------------------------------------------------------------
  * Types

@@ -60,9 +60,9 @@ SOFTWARE.
 /* The following PID values were determined experimentally and show good tracking behavior.
 */
 
-#define RIGHT_KP (5.000)
-#define RIGHT_KI (3.000)
-#define RIGHT_KD (1.000)
+#define RIGHT_KP (2.900)
+#define RIGHT_KI (2.720)
+#define RIGHT_KD (0.530)
 
 /*---------------------------------------------------------------------------------------------------
  * Types

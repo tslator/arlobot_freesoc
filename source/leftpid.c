@@ -60,9 +60,9 @@ SOFTWARE.
 
 /* The following PID values were determined experimentally and show good tracking behavior.
 */
-#define LEFT_KP (5.000)
-#define LEFT_KI (3.000)
-#define LEFT_KD (1.000)
+#define LEFT_KP (2.950)
+#define LEFT_KI (2.800)
+#define LEFT_KD (0.525)
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -116,6 +116,7 @@ static float PidUpdate(float target, float input)
     
     PIDSetpointSet(&pid.pid, target);
     PIDInputSet(&pid.pid, input);
+
     
     /* Note: PIDCompute returns TRUE when in AUTOMATIC mode and FALSE when in MANUAL mode */
     if (PIDCompute(&pid.pid))

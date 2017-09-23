@@ -317,7 +317,6 @@ void Motor_Stop()
 
     pwm_step = step;
     CalcRampParams(motor, time_ms, target, &pwm_step, &time_delay);
-    Ser_PutStringFormat("Ramp: %d %d %d %d\r\n", time_ms, target, pwm_step, time_delay);
     pwm = motor->get_pwm();
     
     do

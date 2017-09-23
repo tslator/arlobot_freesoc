@@ -63,7 +63,7 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/
-#define MAX_MOTOR_CAL_ITERATION (1)
+#define MAX_MOTOR_CAL_ITERATION (3)
 #define CALIBRATION_ITERATION_DONE (255)
 #define MAX_CPS_ARRAY (51)
 #define NUM_MOTOR_CAL_PARAMS (4)
@@ -625,17 +625,11 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
 {
     params = params;
     
-    uint16 motor_bit;
     CAL_MOTOR_PARAMS *cal_params = (CAL_MOTOR_PARAMS *) &motor_cal_params[motor_cal_index];
     
-    motor_bit = (cal_params->wheel == WHEEL_LEFT) ? DEBUG_LEFT_MOTOR_ENABLE_BIT : DEBUG_RIGHT_MOTOR_ENABLE_BIT;
-
-    Debug_Enable(motor_bit);
-
     uint8 result = PerformMotorCalibration(cal_params);
     if ( result == CALIBRATION_ITERATION_DONE )
     {
-        Debug_Disable(motor_bit);
         motor_cal_index++;
 
         if ( motor_cal_index == NUM_MOTOR_CAL_PARAMS )
