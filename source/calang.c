@@ -47,9 +47,9 @@ SOFTWARE.
  * Constants
  *-------------------------------------------------------------------------------------------------*/
 #define ANGULAR_BIAS_ANGLE (2*PI)   // rad
-#define ANGULAR_MAX_TIME (10000)
+#define ANGULAR_MAX_TIME (15000)
 #define ANGULAR_BIAS_DIR (DIR_CW)
-#define ANGULAR_BIAS_VELOCITY (0.05) // rad/s
+#define ANGULAR_BIAS_VELOCITY (0.5) // rad/s
 
 
 /*---------------------------------------------------------------------------------------------------
@@ -92,24 +92,50 @@ static CALIBRATION_TYPE angular_calibration = {CAL_INIT_STATE,
  *             direction - the direction of the move, i.e., CW or CCW 
  * Return: uint8 - TRUE if the move is complete; otherwise, FALSE
  *-------------------------------------------------------------------------------------------------*/
-static uint8 IsMoveFinished(DIR_TYPE direction, float *heading, float *distance)
+static uint8 IsMoveFinished(DIR_TYPE direction, float heading, float distance)
 {
-    float new_heading;
+    #define TOLERANCE (0.01)
+    uint8 result;
 
-    new_heading = NormalizeHeading(Odom_GetHeading());
+    /* Note: We are taking advantage of the fact that heading starts at zero due to Odometry reset
+       prior to running the calibration.  Therefore, we only need to test when we get close to
+       0 again.
+    */
     
-    if (new_heading >= *heading)
+    float curr_heading = Odom_GetHeading();
+    
+    if (direction == DIR_CCW)
     {
-        *distance -= new_heading - *heading;
-        if( *distance <= 0.0 )
+        if (curr_heading < 0.0)
         {
-            return TRUE;
+            return FALSE;
         }
-        *heading = new_heading;
+        else
+        {
+            if (curr_heading >= -TOLERANCE && curr_heading <= TOLERANCE)
+            {
+                return TRUE;
+            }
+
+            return FALSE;
+        }
     }
-    else
+
+    else if (direction == DIR_CW)
     {
-        return TRUE;
+        if (curr_heading > 0.0)
+        {
+            return FALSE;
+        }
+        else
+        {
+            if (curr_heading >= -TOLERANCE && curr_heading <= TOLERANCE)
+            {
+                return TRUE;
+            }
+
+            return FALSE;
+        }                
     }
 
     return FALSE;
@@ -148,7 +174,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
             Ser_PutString("\r\nPlace a mark on the floor corresponding to the center of one of the wheels\r\n");
 
             p_ang_params->distance = ANGULAR_BIAS_ANGLE;
-            p_ang_params->rps = p_ang_params->direction == DIR_CW ? -ANGULAR_BIAS_VELOCITY : ANGULAR_BIAS_VELOCITY;
+            p_ang_params->angular = p_ang_params->direction == DIR_CW ? -ANGULAR_BIAS_VELOCITY : ANGULAR_BIAS_VELOCITY;
             
             break;
 
@@ -159,7 +185,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
                                 p_ang_params->direction == DIR_CW ? "Clockwise" : "Counter Clockwise");
             
             p_ang_params->distance = ANGULAR_BIAS_ANGLE;
-            p_ang_params->rps = p_ang_params->direction == DIR_CW ? -ANGULAR_BIAS_VELOCITY : ANGULAR_BIAS_VELOCITY;
+            p_ang_params->angular = p_ang_params->direction == DIR_CW ? -ANGULAR_BIAS_VELOCITY : ANGULAR_BIAS_VELOCITY;
             break;
 
         default:
@@ -187,12 +213,13 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
     Pid_Reset();
     Odom_Reset();
 
-    UniToDiff(p_ang_params->mps, p_ang_params->rps, &left, &right);    
-    p_ang_params->heading = NormalizeHeading(Odom_GetHeading());
+    UniToDiff(p_ang_params->linear, p_ang_params->angular, &left, &right);    
+    p_ang_params->heading = Odom_GetHeading();
 
     switch (stage)
     {
         case CAL_CALIBRATE_STAGE:
+            Ser_PutStringFormat("Current Heading: %.6f\r\n", Odom_GetHeading());
             Ser_PutString("Angular Calibration Start\r\n");            
             Ser_PutString("\r\nCalibrating\r\n");
 
@@ -214,7 +241,7 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
             break;
     }
 
-    Cal_SetLeftRightVelocity(left, right);            
+    Cal_SetLeftRightVelocity(left * WHEEL_COUNT_PER_RADIAN, right * WHEEL_COUNT_PER_RADIAN);            
     start_time = millis();
 
     return CAL_OK;
@@ -237,10 +264,18 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
     {
         case CAL_CALIBRATE_STAGE:
         case CAL_VALIDATE_STAGE:
-        
-            if (millis() - start_time < p_ang_params->run_time)
+            /* Note: Wait 1 second before testing, so that the heading gets a chance to change.
+               We're simplifying the angle calculation by taking advantage of the fact that the 
+               heading will start and end at 0.0
+            */
+            if (millis() - start_time < 1000)
             {
-                if (IsMoveFinished(p_ang_params->direction, &p_ang_params->heading, &p_ang_params->distance))
+                return CAL_OK;
+            }
+            
+            else if (millis() - start_time < p_ang_params->run_time)
+            {
+                if (IsMoveFinished(p_ang_params->direction, p_ang_params->heading, p_ang_params->distance))
                 {
                     end_time = millis();
                     return CAL_COMPLETE;
@@ -307,22 +342,21 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Results(CAL_STAGE_TYPE stage, void *params)
 {
-    float delta_left_dist;
-    float delta_right_dist;
+    float x;
+    float y;
     float heading;
     float angular_bias;
 
     params = params;
 
-    delta_left_dist = Encoder_LeftGetDeltaDist();
-    delta_right_dist = Encoder_RightGetDeltaDist();
+    Odom_GetXYPosition(&x, &y);
     heading = Odom_GetHeading();
     angular_bias = Cal_GetAngularBias();
 
-    Ser_PutStringFormat("Left Delta Wheel Distance: %.2f\r\nRight Delta Wheel Distance: %.2f\r\n", delta_left_dist, delta_right_dist);
-    Ser_PutStringFormat("Heading: %.2f\r\n", heading);
+    Ser_PutStringFormat("X: %.6f\r\nY: %.6f\r\n", x, y);
+    Ser_PutStringFormat("Heading: %.6f\r\n", heading);
     Ser_PutStringFormat("Elapsed Time: %ld\r\n", end_time - start_time);
-    Ser_PutStringFormat("Angular Bias: %.2f\r\n", angular_bias);
+    Ser_PutStringFormat("Angular Bias: %.6f\r\n", angular_bias);
         
     switch (stage)
     {
@@ -333,11 +367,11 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
             Ser_PutString("\r\n");
             
             /* If the actual rotation is less than 360.0 then each delta is too small, i.e., lengthen delta by 360/rotation
-               If the actual rotation is greater than 360.0 then each delta is too small, i.e., shorten delta by rotation/360
+               If the actual rotation is greater than 360.0 then each delta is too big, i.e., shorten delta by rotation/360
              */
             float bias = rot_in_degrees >= 360.0 ? 360.0 / rot_in_degrees : rot_in_degrees / 360.0;
     
-            Ser_PutStringFormat("New Angular Bias: %.2f\r\n", bias);
+            Ser_PutStringFormat("New Angular Bias: %.6f\r\n", bias);
             
             Nvstore_WriteFloat(bias, (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias));
             Cal_SetCalibrationStatusBit(CAL_ANGULAR_BIT);

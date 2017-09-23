@@ -50,7 +50,8 @@ typedef struct _linear_params
     DIR_TYPE direction;
     uint32   run_time;
     float    distance;
-    float    mps;
+    float    linear;
+    float    angular;
 } CAL_LIN_PARAMS;
 
 /*---------------------------------------------------------------------------------------------------

@@ -71,13 +71,9 @@ static float max_robot_backward_linear_velocity;
 
 static float linear_bias;
 static float angular_bias;
-static float gain;
-static float trim;
 
 static float linear_odom_velocity;
 static float angular_odom_velocity;
-static float linear_gain;
-static float angular_gain;
 
 
 void Update_Debug(uint16 bits)
@@ -144,14 +140,8 @@ void Update_Debug(uint16 bits)
 void Control_Init()
 {
     control_cmd_velocity = ReadCmdVelocity;
-    gain = 1.0;
-    trim = 0.0;
-    
     linear_odom_velocity = 0.0;
     angular_odom_velocity = 0.0;
-    linear_gain = 0.5;
-    angular_gain = 0.5;
-    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -272,6 +262,9 @@ void Control_Update()
     
     UniToDiff(linear_cmd_velocity, angular_cmd_velocity, &left_cmd_velocity, &right_cmd_velocity);
         
+    /* The motors have physical limits.  Do not allow the robot to be command beyond reasonable those limits.
+       Configuration limits can be found in config.h.
+     */
     //linear_cmd_velocity = constrain(max_robot_backward_linear_velocity, linear_cmd_velocity, max_robot_forward_linear_velocity);
     //angular_cmd_velocity = constrain(MAX_ROBOT_CCW_RADIAN_PER_SECOND, angular_cmd_velocity, MAX_ROBOT_CW_RADIAN_PER_SECOND);
 
@@ -335,7 +328,7 @@ float Control_RightGetCmdVelocity()
  * Name: Control_LinearGetCmdVelocity
  * Description: Accessor function used to return the linear commanded velocity.  
  * Parameters: None
- * Return: float
+ * Return: float (meter/sec)
  * 
  *-------------------------------------------------------------------------------------------------*/ 
 float Control_LinearGetCmdVelocity()
@@ -347,7 +340,7 @@ float Control_LinearGetCmdVelocity()
  * Name: Control_AngularGetCmdVelocity
  * Description: Accessor function used to return the angular commanded velocity.  
  * Parameters: None
- * Return: float
+ * Return: float (rad/sec)
  * 
  *-------------------------------------------------------------------------------------------------*/ 
 float Control_AngularGetCmdVelocity()
@@ -355,13 +348,29 @@ float Control_AngularGetCmdVelocity()
     return angular_cmd_velocity;
 }
 
-void Control_GetCmdVelocity(float *linear, float *angular)
+/*---------------------------------------------------------------------------------------------------
+ * Name: Control_GetCmdVelocity
+ * Description: Accessor function used to return the linear/angular commanded velocities.
+ * Parameters: (out) linear - linear velocity (meter/sec)
+ *             (out) angular - angular velocity (rad/sec)
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/ 
+ void Control_GetCmdVelocity(float *linear, float *angular)
 {
     *linear = linear_cmd_velocity;
     *angular = angular_cmd_velocity;
 }
 
-void Control_SetCmdVelocity(float linear, float angular)
+/*---------------------------------------------------------------------------------------------------
+ * Name: Control_SetCmdVelocity
+ * Description: Accessor function used to set the linear/angular commanded velocities.
+ * Parameters: (in) linear - linear velocity (meter/sec)
+ *             (in) angular - angular velocity (rad/sec)
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/ 
+ void Control_SetCmdVelocity(float linear, float angular)
 {
     /* Note: This function is called from the unipid to track angular velocity.  Basically, we are taking the adjustment
        to linear/angular velocity and converting to left/right velocity (in rad/s).  The left/right pids will pick

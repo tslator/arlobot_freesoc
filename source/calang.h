@@ -51,8 +51,8 @@ typedef struct _angular_params
     uint32   run_time;
     float    heading;
     float    distance;
-    float    mps;
-    float    rps;
+    float    linear;
+    float    angular;
 } CAL_ANG_PARAMS;
     
 /*---------------------------------------------------------------------------------------------------

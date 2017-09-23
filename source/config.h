@@ -79,7 +79,7 @@ typedef enum {DIR_FORWARD, DIR_BACKWARD, DIR_CW, DIR_CCW} DIR_TYPE;
 #define WHEEL_DIAMETER (2 * WHEEL_RADIUS)   // meter
 #define TRACK_WIDTH (0.3937)                 // meter
 
-#define WHEEL_CIRCUMFERENCE (PI * WHEEL_DIAMETER)          // meter
+#define WHEEL_CIRCUMFERENCE (PI * WHEEL_DIAMETER)          // meter  Note: 0.4869
 #define WHEEL_METER_PER_REV (WHEEL_CIRCUMFERENCE)         // meter
 #define WHEEL_ENCODER_TICK_PER_REV (500)   // ticks or counts
 #define WHEEL_COUNT_PER_REV (WHEEL_ENCODER_TICK_PER_REV * 4)  /* encoder tick per revolution times 4x encoder (quadrature encoding) */

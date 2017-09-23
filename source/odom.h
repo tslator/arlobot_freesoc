@@ -44,6 +44,7 @@ void Odom_Update();
 void Odom_Reset();
 float Odom_GetHeading();
 void Odom_GetMeasVelocity(float *linear, float *angular);
+void Odom_GetXYPosition(float * x, float * y);
 
 #endif
 

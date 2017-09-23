@@ -38,6 +38,7 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/
 
 #include <math.h>
+#include "control.h"
 #include "callin.h"
 #include "odom.h"
 #include "motor.h"
@@ -54,7 +55,7 @@ SOFTWARE.
  * Constants
  *-------------------------------------------------------------------------------------------------*/
 #define LINEAR_DISTANCE (1.0)
-#define LINEAR_VELOCITY (0.150)
+#define LINEAR_VELOCITY (0.2)
 #define LINEAR_MAX_TIME (10000)
 
 /*---------------------------------------------------------------------------------------------------
@@ -66,6 +67,7 @@ static uint32 end_time;
 static CAL_LIN_PARAMS linear_params = {DIR_FORWARD, 
                                        LINEAR_MAX_TIME, 
                                        LINEAR_DISTANCE,
+                                       0.0,
                                        0.0};
 
 static uint8 Init(CAL_STAGE_TYPE stage, void *params);
@@ -87,22 +89,23 @@ static CALIBRATION_TYPE linear_calibration = {CAL_INIT_STATE,
  * Functions
  *-------------------------------------------------------------------------------------------------*/
 
-static uint8 IsMoveFinished(float *distance)
+static uint8 IsMoveFinished(float * distance)
 {
-    float delta_left_dist;
-    float delta_right_dist;
+    float x;
+    float y;
+    float dist_so_far;
 
-    delta_left_dist = Encoder_LeftGetDeltaDist();
-    delta_right_dist = Encoder_RightGetDeltaDist();
+    Odom_GetXYPosition(&x, &y);
+
+    dist_so_far = sqrt(pow(x, 2) + pow(y, 2)) * p_cal_eeprom->linear_bias;
     
-    *distance -= min(abs(delta_left_dist), abs(delta_right_dist));
-    
-    if ( *distance <= 0.0 )
+    if ( dist_so_far < *distance )
     {
-        return TRUE;
+        return FALSE;
     }
 
-    return FALSE;
+    *distance = dist_so_far;
+    return TRUE;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -121,7 +124,8 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
     Debug_Store();
         
     p_lin_params->distance = p_lin_params->direction == DIR_FORWARD ? LINEAR_DISTANCE : -LINEAR_DISTANCE;
-    p_lin_params->mps = p_lin_params->direction == DIR_FORWARD ? LINEAR_VELOCITY : -LINEAR_VELOCITY;
+    p_lin_params->linear = p_lin_params->direction == DIR_FORWARD ? LINEAR_VELOCITY : -LINEAR_VELOCITY;
+    p_lin_params->angular = 0.0;
     Cal_SetLeftRightVelocity(0, 0);
     Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
     
@@ -140,7 +144,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
             Ser_PutString("\r\nPlace a meter stick along side the robot starting centered");
             Ser_PutString("\r\non the wheel and extending toward the front of the robot\r\n");
                         
-            Debug_Enable(DEBUG_ODOM_ENABLE_BIT | DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT);
+            Debug_Enable(DEBUG_ODOM_ENABLE_BIT | DEBUG_LEFT_PID_ENABLE_BIT|DEBUG_RIGHT_PID_ENABLE_BIT|DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT);
             
             break;            
             
@@ -170,6 +174,8 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 static uint8 Start(CAL_STAGE_TYPE stage, void *params)
 {
     CAL_LIN_PARAMS *p_lin_params = (CAL_LIN_PARAMS *) params;
+    float left;
+    float right;
 
     Pid_Enable(TRUE);            
     Encoder_Reset();
@@ -202,7 +208,8 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
 
 
     /* Because the encoder is reset above, the left/right distances will be 0.0 and the target is just the distance */
-    Cal_SetLeftRightVelocity(p_lin_params->mps, p_lin_params->mps);
+    UniToDiff(p_lin_params->linear, p_lin_params->angular, &left, &right);
+    Cal_SetLeftRightVelocity(left * WHEEL_COUNT_PER_RADIAN, right * WHEEL_COUNT_PER_RADIAN);
     start_time = millis();
 
     return CAL_OK;
@@ -294,23 +301,22 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Results(CAL_STAGE_TYPE stage, void *params)
 {
-    float distance;
-    float delta_left_dist;
-    float delta_right_dist;
     float heading;
     float linear_bias;
+    float x;
+    float y;
+    float distance;
     
-    params = params;
+    CAL_LIN_PARAMS *p_lin_params = (CAL_LIN_PARAMS *)params;
 
-    delta_left_dist = Encoder_LeftGetDeltaDist();
-    delta_right_dist = Encoder_RightGetDeltaDist();
+    Odom_GetXYPosition(&x, &y);    
     heading = Odom_GetHeading();
     linear_bias = Cal_GetLinearBias();
 
-    Ser_PutStringFormat("Left Delta Wheel Distance: %.2f\r\nRight Delta Wheel Distance: %.2f\r\n", delta_left_dist, delta_right_dist);
-    Ser_PutStringFormat("Heading: %.3f\r\n", heading);
+    Ser_PutStringFormat("X: %.6f\r\nY: %.6f\r\nDistance: %.6f\r\n", x, y, p_lin_params->distance);
+    Ser_PutStringFormat("Heading: %.6f\r\n", heading);
     Ser_PutStringFormat("Elapsed Time: %ld\r\n", end_time - start_time);
-    Ser_PutStringFormat("Linear Bias: %.2f\r\n", linear_bias);
+    Ser_PutStringFormat("Linear Bias: %.6f\r\n", p_cal_eeprom->linear_bias);
     
     switch (stage)
     {

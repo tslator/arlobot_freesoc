@@ -216,9 +216,15 @@ void Odom_Update()
 #else
         float left_delta_dist = left_mps * delta_time / 1000.0;
         float right_delta_dist = right_mps * delta_time / 1000.0;
-        float center_delta_dist = (left_delta_dist + right_delta_dist) / 2.0;
+        /* Note: Linear bias attempts to account for aggregated mechanical errors in the system
+           that affect the accuracy of linear motion
+        */
+        float center_delta_dist = linear_bias * (left_delta_dist + right_delta_dist) / 2.0;
         
-        theta += (right_delta_dist - left_delta_dist)/TRACK_WIDTH;
+        /* Note: Angular bias attempts to account for aggregated mechanical errors in the system
+           that affect the accuracy of angular motion
+        */
+        theta += angular_bias * (right_delta_dist - left_delta_dist)/TRACK_WIDTH;
         x_position += center_delta_dist * cos(theta);
         y_position += center_delta_dist * sin(theta);
         
@@ -256,7 +262,14 @@ void Odom_Reset()
     DUMP_ODOM();       
 }
 
-float Odom_GetHeading()
+/*---------------------------------------------------------------------------------------------------
+ * Name: Odom_GetHeading
+ * Description: Returns the heading based on the odometry calculations.
+ * Parameters: None
+ * Return: float (rad)
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+ float Odom_GetHeading()
 {
     return theta;
 }
@@ -268,11 +281,24 @@ float Odom_GetHeading()
  * Return: float
  * 
  *-------------------------------------------------------------------------------------------------*/
- void Odom_GetMeasVelocity(float *linear, float *angular)
- {
-    *linear = linear_meas_velocity;
-    *angular = angular_meas_velocity;     
- }
+void Odom_GetMeasVelocity(float *linear, float *angular)
+{
+   *linear = linear_meas_velocity;
+   *angular = angular_meas_velocity;     
+}
  
- 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Odom_GetXYPosition
+ * Description: Returns the x/y position based on the odometry calculations.
+ * Parameters: (out) x - x travel offset
+ *             (out) y - y travel offset
+ * Return: float
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+ void Odom_GetXYPosition(float * x, float * y)
+{
+    *x = x_position;
+    *y = y_position;
+} 
+
 /* [] END OF FILE */
