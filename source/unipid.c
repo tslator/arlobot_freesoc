@@ -62,7 +62,7 @@ SOFTWARE.
 #define THETAPID_MIN (0.0)  // radian/sec
 #define THETAPID_MAX (PI/4.0)   // radian/sec
 
-#define THETA_KP    (8.0)
+#define THETA_KP    (0.01)
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -149,6 +149,7 @@ static float GetControlVelocity()
     Control_GetCmdVelocity(&linear, &angular);
     value = Calc_Angle(linear, angular);
     pid.sign = value > 0.0 ? 1.0 : -1.0;
+    
     return abs(value);
 }
 
@@ -222,19 +223,23 @@ void UniPid_Process()
     float target;
     float input;
     float delta;
-    float linear_desired;
-    float angular_desired;
+    float linear_cmd;
+    float angular_cmd;
     
-    Control_GetCmdVelocity(&linear_desired, &angular_desired);
+    Control_GetCmdVelocity(&linear_cmd, &angular_cmd);
+    
     if (pid_enabled)
     {
         target = pid.get_target();
         input = pid.get_input();        
         delta = pid.update(target, input);
-        angular_desired = target + delta;
+        
+        angular_cmd += delta;
         UNIPID_DUMP();
+        //DumpPid(pid.name, &pid.pid);
     }
-    Control_SetCmdVelocity(linear_desired, angular_desired);
+    
+    Control_SetCmdVelocity(linear_cmd, angular_cmd);
 }
 
 /*---------------------------------------------------------------------------------------------------

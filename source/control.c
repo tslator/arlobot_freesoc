@@ -225,7 +225,7 @@ void Control_Update()
     //linear_cmd_velocity = 0.0;
     //angular_cmd_velocity = 0.5;
     //timeout = 0;
-    //Debug_Enable(DEBUG_UNIPID_ENABLE_BIT);
+    Debug_Enable(DEBUG_UNIPID_ENABLE_BIT);
     
     //EnsureAngularVelocity(&linear_cmd_velocity, &angular_cmd_velocity);    
 
@@ -261,7 +261,9 @@ void Control_Update()
     }
     
     UniToDiff(linear_cmd_velocity, angular_cmd_velocity, &left_cmd_velocity, &right_cmd_velocity);
-        
+
+    //Ser_PutStringFormat("v: %.3f w: %.3f l: %.3f r: %.3f\r\n", linear_cmd_velocity, angular_cmd_velocity, left_cmd_velocity, right_cmd_velocity);
+    
     /* The motors have physical limits.  Do not allow the robot to be command beyond reasonable those limits.
        Configuration limits can be found in config.h.
      */
