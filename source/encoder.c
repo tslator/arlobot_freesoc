@@ -68,8 +68,8 @@ SOFTWARE.
 #define ENC_SAMPLE_TIME_MS  SAMPLE_TIME_MS(ENC_SAMPLE_RATE)
 #define ENC_SAMPLE_TIME_SEC SAMPLE_TIME_SEC(ENC_SAMPLE_RATE)
 
-#define NUM_DELTA_COUNT_SAMPLES (10)
-#define NUM_AVG_CPS_SAMPLES (10)
+#define NUM_DELTA_COUNT_SAMPLES (5)
+#define NUM_AVG_CPS_SAMPLES (5)
 
 /*---------------------------------------------------------------------------------------------------
  * Types
