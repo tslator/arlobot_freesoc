@@ -165,7 +165,7 @@ void Cal_PrintSamples(char *label, CAL_DATA_TYPE *cal_data)
  *-------------------------------------------------------------------------------------------------*/
 void Cal_PrintGains(char *label, float *gains)
 {
-    Ser_PutStringFormat("%s - P: %.3f, I: %.3f, D: %.3f\r\n", label, gains[0], gains[1], gains[2]);
+    Ser_PutStringFormat("%s - P: %.3f, I: %.3f, D: %.3f, F: %.3f\r\n", label, gains[0], gains[1], gains[2], gains[3]);
 }
 
 void Cal_PrintStatus(char *label, uint16 status)
@@ -758,7 +758,9 @@ void Cal_Start()
     /* Uncomment for debugging
     Cal_Clear();
     */
-    Control_SetCalibrationStatus(status);        
+    Control_SetCalibrationStatus(status); 
+    
+    CalPid_Start();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -934,7 +936,7 @@ CAL_PID_TYPE * Cal_LeftGetPidGains()
 
 CAL_PID_TYPE * Cal_RightGetPidGains()
 {
-    return (CAL_PID_TYPE *) &p_cal_eeprom->right_gains;
+    return (CAL_PID_TYPE *) &p_cal_eeprom->right_gains;    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -958,8 +960,8 @@ CAL_PID_TYPE * Cal_AngularGetPidGains()
  * Name: Cal_SetLeftRightVelocity
  * Description: Sets the left/right velocity for calibration/validation.  This routine is called from 
  *              calibration submodules to set wheel speed. 
- * Parameters: left - the left wheel speed in meter/second 
- *             right - the right wheel speed in meter/second 
+ * Parameters: left - the left wheel speed in count/second 
+ *             right - the right wheel speed in count/second 
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/

@@ -83,7 +83,7 @@ static float Calc_Angle_Error(float desired, float measured);
 
 static PID_TYPE pid = { 
     /* name */          "theta",
-    /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC, Calc_Angle_Error},
+    /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, /*Kf*/0, 0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC, Calc_Angle_Error},
     /* sign */          1.0,
     /* get_target */    GetControlVelocity,
     /* get_input */     GetOdomVelocity,
@@ -195,7 +195,7 @@ void UniPid_Init()
 {
     pid_enabled = FALSE;
     
-    PIDInit(&pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, THETAPID_MIN, THETAPID_MAX, AUTOMATIC, DIRECT, Calc_Angle_Error);
+    PIDInit(&pid.pid, 0, 0, 0, 0, PID_SAMPLE_TIME_SEC, THETAPID_MIN, THETAPID_MAX, AUTOMATIC, DIRECT, Calc_Angle_Error);
 }
     
 /*---------------------------------------------------------------------------------------------------
@@ -207,8 +207,8 @@ void UniPid_Init()
  *-------------------------------------------------------------------------------------------------*/
 void UniPid_Start()
 {
-    PIDTuningsSet(&pid.pid, THETA_KP, 0.0, 0.0);
-    pid_enabled = TRUE;
+    PIDTuningsSet(&pid.pid, THETA_KP, 0.0, 0.0, 0.0);
+    pid_enabled = FALSE;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -276,6 +276,30 @@ void UniPid_Enable(uint8 value)
 }
 
 /*---------------------------------------------------------------------------------------------------
+ * Name: UniPid_Bypass
+ * Description: Bypassing the PID calculation by setting the PID mode to either MANUAL or AUTOMATIC.
+ *              MANUAL mode bypasses the PID control calculation and uses the unmodified target value.
+ *              AUTOMATIC mode performs the PID control calculation and uses the PID output value.
+ * Parameters: value - TRUE if the PID calculation is to be bypassed; otherwise, FALSE.
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+ void UniPid_Bypass(uint8 value)
+ {
+     PIDMode mode = AUTOMATIC;
+     
+     /* Note: To bypass the PID calculation, PID processing must be enabled. */
+     if (value)
+     {
+         pid_enabled = TRUE;
+         mode = MANUAL;
+     }
+     
+     PIDModeSet(&pid.pid, mode);
+ }
+ 
+
+/*---------------------------------------------------------------------------------------------------
  * Name: UniPid_SetGains
  * Description: Sets the unicycle PID gains.
  * Parameters: linear_kp - the linear proportional gain
@@ -287,9 +311,9 @@ void UniPid_Enable(uint8 value)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void UniPid_SetGains(float kp, float ki, float kd)
+void UniPid_SetGains(float kp, float ki, float kd, float kf)
 {
-    PIDTuningsSet(&pid.pid, kp, ki, kd);
+    PIDTuningsSet(&pid.pid, kp, ki, kd, kf);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -304,11 +328,12 @@ void UniPid_SetGains(float kp, float ki, float kd)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void UniPid_GetGains(float *kp, float *ki, float *kd)
+void UniPid_GetGains(float *kp, float *ki, float *kd, float *kf)
 {
     *kp = pid.pid.dispKp;
     *ki = pid.pid.dispKi;
     *kd = pid.pid.dispKd;
+    *kf = pid.pid.dispKf;
 }
 
 /* [] END OF FILE */

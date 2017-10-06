@@ -48,6 +48,7 @@ SOFTWARE.
 #define PID_SAMPLE_TIME_MS  SAMPLE_TIME_MS(PID_SAMPLE_RATE)
 #define PID_SAMPLE_TIME_SEC SAMPLE_TIME_SEC(PID_SAMPLE_RATE)
 
+    
 /*---------------------------------------------------------------------------------------------------
  * Types
  *-------------------------------------------------------------------------------------------------*/
@@ -75,8 +76,9 @@ void Pid_Update();
 void Pid_SetLeftRightTarget(GET_TARGET_FUNC_TYPE left_target, GET_TARGET_FUNC_TYPE right_target);
 void Pid_RestoreLeftRightTarget();
 void Pid_Reset();
-void Pid_Enable(uint8 enable);
-void Pid_Bypass(uint8 bypass);
+void Pid_Enable(uint8 left, uint8 right, uint8 uni);
+void Pid_Bypass(uint8 left, uint8 right, uint8 uni);
+uint8 Pid_SetGains(PIDControl *p_pid, CAL_PID_TYPE *p_gains);
 
 #endif
 

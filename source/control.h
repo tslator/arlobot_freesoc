@@ -57,7 +57,7 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Types
  *-------------------------------------------------------------------------------------------------*/
-typedef void (*COMMAND_FUNC_TYPE)(float *left, float *right, uint32 *timeout);
+typedef void (*COMMAND_FUNC_TYPE)(float *linear, float *angular, uint32 *timeout);
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -66,7 +66,7 @@ void Control_Init();
 void Control_Start();
 void Control_Update();
 void Control_SetCommandVelocityFunc(COMMAND_FUNC_TYPE cmd);
-void Control_RestoreCommandVelocityFunction();
+void Control_RestoreCommandVelocityFunc();
 float Control_LeftGetCmdVelocity();
 float Control_RightGetCmdVelocity();
 float Control_LinearGetCmdVelocity();

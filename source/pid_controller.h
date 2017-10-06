@@ -95,6 +95,7 @@ typedef struct
     float dispKp;
     float dispKi;
     float dispKd;
+    float dispKf;
     
     // 
     // Gain constant values that the controller alters for
@@ -103,6 +104,7 @@ typedef struct
     float alteredKp;
     float alteredKi;
     float alteredKd;
+    float alteredKf;
     
     // 
     // The Integral Term
@@ -162,6 +164,7 @@ typedef struct
 //      kp - Positive P gain constant value.
 //      ki - Positive I gain constant value.
 //      kd - Positive D gain constant value.
+//      kf - Positive F gain (feedforward) constant value.
 //      sampleTimeSeconds - Interval in seconds on which PIDCompute will be called.
 //      minOutput - Constrain PID output to this minimum value.
 //      maxOutput - Constrain PID output to this maximum value.
@@ -176,7 +179,7 @@ typedef struct
 // Returns:
 //      Nothing.
 // 
-void PIDInit(PIDControl *pid, float kp, float ki, float kd, 
+void PIDInit(PIDControl *pid, float kp, float ki, float kd, float kf,
              float sampleTimeSeconds, float minOutput, float maxOutput, 
              PIDMode mode, PIDDirection controllerDirection, PIDCalcError calcError);     	
 
@@ -232,10 +235,11 @@ void PIDOutputLimitsSet(PIDControl *pid, float min, float max);
 //      kp - Positive P gain constant value.
 //      ki - Positive I gain constant value.
 //      kd - Positive D gain constant value.
+//      kf - Positive F gain (feedforward) constant value.
 // Returns:
 //      Nothing.
 // 
-void PIDTuningsSet(PIDControl *pid, float kp, float ki, float kd);         	                                         
+void PIDTuningsSet(PIDControl *pid, float kp, float ki, float kd, float kf);         	                                         
 
 // 
 // PID Tuning Gain Constant P Set
@@ -252,7 +256,7 @@ void PIDTuningKpSet(PIDControl *pid, float kp);
 // 
 // PID Tuning Gain Constant I Set
 // Description:
-//      Sets the proportional gain constant value.
+//      Sets the integral gain constant value.
 // Parameters:
 //      pid - The address of a PIDControl instantiation.
 //      ki - Positive I gain constant value.
@@ -264,7 +268,7 @@ void PIDTuningKiSet(PIDControl *pid, float ki);
 // 
 // PID Tuning Gain Constant D Set
 // Description:
-//      Sets the proportional gain constant value.
+//      Sets the derivative gain constant value.
 // Parameters:
 //      pid - The address of a PIDControl instantiation.
 //      kd - Positive D gain constant value.
@@ -272,6 +276,18 @@ void PIDTuningKiSet(PIDControl *pid, float ki);
 //      Nothing.
 // 
 void PIDTuningKdSet(PIDControl *pid, float kd);
+
+// 
+// PID Tuning Gain Constant F Set
+// Description:
+//      Sets the feedforward gain constant value.
+// Parameters:
+//      pid - The address of a PIDControl instantiation.
+//      kf - Positive F gain constant value.
+// Returns:
+//      Nothing.
+// 
+void PIDTunningKfSet(PIDControl *pid, float kf);
 
 // 
 // PID Controller Direction Set

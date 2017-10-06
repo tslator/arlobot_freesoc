@@ -51,7 +51,7 @@ static float CalcError(float setpoint, float input)
     return setpoint - input;
 }
 
-void PIDInit(PIDControl *pid, float kp, float ki, float kd, 
+void PIDInit(PIDControl *pid, float kp, float ki, float kd, float kf,
              float sampleTimeSeconds, float minOutput, float maxOutput, 
              PIDMode mode, PIDDirection controllerDirection, PIDCalcError calcError)     	
 {
@@ -75,7 +75,7 @@ void PIDInit(PIDControl *pid, float kp, float ki, float kd,
     }
     
     PIDOutputLimitsSet(pid, minOutput, maxOutput);
-    PIDTuningsSet(pid, kp, ki, kd);
+    PIDTuningsSet(pid, kp, ki, kd, kf);
 }
 
 bool PIDCompute(PIDControl *pid) 
@@ -101,7 +101,7 @@ bool PIDCompute(PIDControl *pid)
     dInput = (pid->input) - (pid->lastInput);
     
     // Run all the terms together to get the overall output
-    pid->output = (pid->alteredKp) * error + (pid->iTerm) - (pid->alteredKd) * dInput;
+    pid->output = pid->alteredKf * pid->setpoint + (pid->alteredKp) * error + (pid->iTerm) - (pid->alteredKd) * dInput;
     
     // Bound the output
     pid->output = CONSTRAIN( (pid->output), (pid->outMin), (pid->outMax) );
@@ -148,10 +148,10 @@ void PIDOutputLimitsSet(PIDControl *pid, float min, float max)
     }
 }
 
-void PIDTuningsSet(PIDControl *pid, float kp, float ki, float kd)         	                                         
+void PIDTuningsSet(PIDControl *pid, float kp, float ki, float kd, float kf)         	                                         
 {
     // Check if the parameters are valid
-    if(kp < 0.0f || ki < 0.0f || kd < 0.0f)
+    if(kp < 0.0f || ki < 0.0f || kd < 0.0f || kf < 0.0f)
     {
         return;
     }
@@ -160,11 +160,13 @@ void PIDTuningsSet(PIDControl *pid, float kp, float ki, float kd)
     pid->dispKp = kp;
     pid->dispKi = ki;
     pid->dispKd = kd;
+    pid->dispKf = kf;
     
     // Alter the parameters for PID
     pid->alteredKp = kp;
     pid->alteredKi = ki * pid->sampleTime;
     pid->alteredKd = kd / pid->sampleTime;
+    pid->alteredKf = kf;
     
     // Apply reverse direction to the altered values if necessary
     if(pid->controllerDirection == REVERSE)
@@ -172,22 +174,28 @@ void PIDTuningsSet(PIDControl *pid, float kp, float ki, float kd)
         pid->alteredKp = -(pid->alteredKp);
         pid->alteredKi = -(pid->alteredKi);
         pid->alteredKd = -(pid->alteredKd);
+        pid->alteredKf = -(pid->alteredKf);
     }
 }
 
 void PIDTuningKpSet(PIDControl *pid, float kp)
 {
-    PIDTuningsSet(pid, kp, pid->dispKi, pid->dispKd);
+    PIDTuningsSet(pid, kp, pid->dispKi, pid->dispKd, pid->dispKf);
 }
 
 void PIDTuningKiSet(PIDControl *pid, float ki)
 {
-    PIDTuningsSet(pid, pid->dispKp, ki, pid->dispKd);
+    PIDTuningsSet(pid, pid->dispKp, ki, pid->dispKd, pid->dispKf);
 }
 
 void PIDTuningKdSet(PIDControl *pid, float kd)
 {
-    PIDTuningsSet(pid, pid->dispKp, pid->dispKi, kd);
+    PIDTuningsSet(pid, pid->dispKp, pid->dispKi, kd, pid->dispKf);
+}
+
+void PIDTunningKfSet(PIDControl *pid, float kf)
+{
+    PIDTuningsSet(pid, pid->dispKp, pid->dispKi, pid->dispKd, kf);
 }
 
 void PIDControllerDirectionSet(PIDControl *pid, PIDDirection controllerDirection)	  									  									  									  
@@ -199,6 +207,7 @@ void PIDControllerDirectionSet(PIDControl *pid, PIDDirection controllerDirection
         pid->alteredKp = -(pid->alteredKp);
         pid->alteredKi = -(pid->alteredKi);
         pid->alteredKd = -(pid->alteredKd);
+        pid->alteredKf = -(pid->alteredKf);
     }
     
     pid->controllerDirection = controllerDirection;
@@ -230,7 +239,9 @@ float PIDKpGet(PIDControl *pid) { return pid->dispKp; }
 
 float PIDKiGet(PIDControl *pid) { return pid->dispKi; }						  
 
-float PIDKdGet(PIDControl *pid) { return pid->dispKd; }						  
+float PIDKdGet(PIDControl *pid) { return pid->dispKd; }	
+
+float PIDKfGet(PIDControl *pid) { return pid->dispKf; }
 
 PIDMode PIDModeGet(PIDControl *pid) { return pid->mode; }						  
 

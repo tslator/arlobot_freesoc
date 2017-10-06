@@ -55,8 +55,8 @@ void LeftPid_Init();
 void LeftPid_Start();
 void LeftPid_Process();
 
-void LeftPid_SetGains(float kp, float ki, float kd);
-void LeftPid_GetGains(float *kp, float *ki, float *kd);
+void LeftPid_SetGains(float kp, float ki, float kd, float kf);
+void LeftPid_GetGains(float *kp, float *ki, float *kd, float *kf);
 
 void LeftPid_SetTarget(GET_TARGET_FUNC_TYPE target);
 void LeftPid_RestoreTarget();

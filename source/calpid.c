@@ -39,6 +39,7 @@ SOFTWARE.
 #include "pid.h"
 #include "leftpid.h"
 #include "rightpid.h"
+#include "unipid.h"
 #include "utils.h"
 #include "encoder.h"
 #include "time.h"
@@ -108,6 +109,8 @@ static float val_bwd_cps[MAX_NUM_VELOCITIES] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.
 static uint8 vel_index = 0;
 
 
+static float max_cps;
+
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
@@ -156,6 +159,7 @@ static void StoreLeftGains(float *gains)
     Nvstore_WriteFloat(gains[0], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.kp));
     Nvstore_WriteFloat(gains[1], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.ki));
     Nvstore_WriteFloat(gains[2], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.kd));
+    Nvstore_WriteFloat(gains[3], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.kf));
 }
 
 static void StoreRightGains(float *gains)
@@ -163,6 +167,7 @@ static void StoreRightGains(float *gains)
     Nvstore_WriteFloat(gains[0], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.kp));
     Nvstore_WriteFloat(gains[1], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.ki));
     Nvstore_WriteFloat(gains[2], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.kd));
+    Nvstore_WriteFloat(gains[3], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.kf));
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -172,7 +177,7 @@ static void StoreRightGains(float *gains)
  * Return: float - velocity (meter/second)
  * 
  *-------------------------------------------------------------------------------------------------*/
-static float GetStepVelocity()
+static void CalcMaxCps()
 /* The step input velocity is 80% of maximum wheel velocity.
    Maximum wheel velocity is determined considering two factors:
         1. the maximum left/right PID value (derived from the theoretical maximum)
@@ -188,7 +193,6 @@ static float GetStepVelocity()
     int16 right_max;
     int16 max_leftright_cps;
     int16 max_leftright_pid;
-    int16 max_cps;
 
     left_fwd_max = abs(p_cal_eeprom->left_motor_fwd.cps_max);
     left_bwd_max = abs(p_cal_eeprom->left_motor_bwd.cps_min);
@@ -201,10 +205,8 @@ static float GetStepVelocity()
     max_leftright_cps = min(left_max, right_max);
     max_leftright_pid = min(LEFTPID_MAX, RIGHTPID_MAX);
     
-    max_cps = min(max_leftright_cps, max_leftright_pid) * STEP_VELOCITY_PERCENT;
+    max_cps = min(max_leftright_cps, max_leftright_pid);
 
-    return max_cps;
-    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -248,7 +250,7 @@ static float GetNextValidationVelocity(DIR_TYPE dir)
     vel_index++;
 
     /* Note: Convert CPS to MPS */
-    return value * WHEEL_METER_PER_COUNT;
+    return value;// * WHEEL_METER_PER_COUNT;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -362,7 +364,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Start(CAL_STAGE_TYPE stage, void *params)
 {
-    float gains[3];       
+    float gains[4];
     CAL_PID_PARAMS *p_pid_params = (CAL_PID_PARAMS *) params;
     
     switch (stage)
@@ -374,25 +376,26 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
             gains[1] = Cal_ReadResponse();
             Ser_PutString("\r\nEnter derivative gain: ");
             gains[2] = Cal_ReadResponse();
+            Ser_PutString("\r\nEnter feedforward gain: ");
+            gains[3] = Cal_ReadResponse();
             Ser_PutString("\r\n");
             
-            Pid_Enable(TRUE);
-            UniPid_Enable(FALSE);
+            Pid_Enable(TRUE, TRUE, FALSE);
             Encoder_Reset();
             Pid_Reset();
             Odom_Reset();
             
-            float step_velocity = GetStepVelocity();
+            float step_velocity = max_cps * STEP_VELOCITY_PERCENT;
 
             switch (p_pid_params->pid_type)
             {
                 case PID_TYPE_LEFT:
-                    LeftPid_SetGains(gains[0], gains[1], gains[2]);
+                    LeftPid_SetGains(gains[0], gains[1], gains[2], gains[3]);
                     Cal_SetLeftRightVelocity(step_velocity, 0);
                     break;
                     
                 case PID_TYPE_RIGHT:
-                    RightPid_SetGains(gains[0], gains[1], gains[2]);
+                    RightPid_SetGains(gains[0], gains[1], gains[2], gains[3]);
                     Cal_SetLeftRightVelocity(0, step_velocity);
                     break;                    
             }
@@ -404,7 +407,7 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
 
             
         case CAL_VALIDATE_STAGE:
-            Pid_Enable(TRUE);            
+            Pid_Enable(TRUE, TRUE, FALSE);            
             Encoder_Reset();
             Pid_Reset();
             Odom_Reset();
@@ -475,7 +478,7 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
 static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
 {
     CAL_PID_PARAMS *p_pid_params = (CAL_PID_PARAMS *)params;
-    float gains[3];
+    float gains[4];
 
     Cal_SetLeftRightVelocity(0, 0);
 
@@ -486,12 +489,12 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
             switch (p_pid_params->pid_type)
             {
                 case PID_TYPE_LEFT:
-                    LeftPid_GetGains(&gains[0], &gains[1], &gains[2]);
+                    LeftPid_GetGains(&gains[0], &gains[1], &gains[2], &gains[3]);
                     StoreLeftGains(gains);
                     break;
                     
                 case PID_TYPE_RIGHT:
-                    RightPid_GetGains(&gains[0], &gains[1], &gains[2]);
+                    RightPid_GetGains(&gains[0], &gains[1], &gains[2], &gains[3]);
                     StoreRightGains(gains);
                     break;
             }
@@ -522,7 +525,7 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Results(CAL_STAGE_TYPE stage, void *params)
 {
-    float gains[3];
+    float gains[4];
     CAL_PID_PARAMS *p_pid_params = (CAL_PID_PARAMS *)params;
     
     switch (stage)
@@ -534,12 +537,12 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
             switch (p_pid_params->pid_type)
             {
                 case PID_TYPE_LEFT:
-                    LeftPid_GetGains(&gains[0], &gains[1], &gains[2]);
+                    LeftPid_GetGains(&gains[0], &gains[1], &gains[2], &gains[3]);
                     Cal_PrintGains("Left PID", gains);
                     break;
                 
                 case PID_TYPE_RIGHT:
-                    RightPid_GetGains(&gains[0], &gains[1], &gains[2]);
+                    RightPid_GetGains(&gains[0], &gains[1], &gains[2], &gains[3]);
                     Cal_PrintGains("Right PID", gains);
                     break;
             }
@@ -574,6 +577,13 @@ void CalPid_Init()
     CalPid_RightCalibration = &right_pid_calibration;
     CalPid_LeftValidation = &left_pid_validation;
     CalPid_RightValidation = &right_pid_validation;
+
+    max_cps = 0.0;
+}
+
+void CalPid_Start()
+{
+    CalcMaxCps();    
 }
 
 /*-------------------------------------------------------------------------------*/

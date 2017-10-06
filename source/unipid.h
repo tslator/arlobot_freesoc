@@ -52,8 +52,8 @@ void UniPid_Init();
 void UniPid_Start();
 void UniPid_Process();
 
-void UniPid_SetGains(float theta_kp, float theta_ki, float theta_kd);
-void UniPid_GetGains(float *theta_kp, float *theta_ki, float *theta_kd);
+void UniPid_SetGains(float theta_kp, float theta_ki, float theta_kd, float theta_kf);
+void UniPid_GetGains(float *theta_kp, float *theta_ki, float *theta_kd, float *theta_kf);
 
 void UniPid_Reset();
 void UniPid_Enable(uint8 enable);

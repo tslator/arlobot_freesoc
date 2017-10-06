@@ -61,5 +61,6 @@ CALIBRATION_TYPE *CalPid_RightValidation;
  * Functions
  *-------------------------------------------------------------------------------------------------*/
 void CalPid_Init();
+void CalPid_Start();
 
 #endif

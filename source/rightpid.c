@@ -82,7 +82,7 @@ static float PidUpdate(float target, float input);
 
 static PID_TYPE pid = { 
     /* name */          "right",
-    /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC, NULL},
+    /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, /*Kf*/0, 0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC, NULL},
     /* sign */          1.0,
     /* get_target */    GetCmdVelocity,
     /* get_input */     EncoderInput,
@@ -100,9 +100,11 @@ static GET_TARGET_FUNC_TYPE target_source;
 
 static float GetCmdVelocity()
 {
-    float value = target_source();
-    pid.sign = value >= 0.0 ? 1.0 : -1.0;
-    return abs(value);
+    float cps = target_source();
+    Motor_RightSetPwm(Cal_CpsToPwm(WHEEL_RIGHT, cps));
+    
+    pid.sign = cps >= 0.0 ? 1.0 : -1.0;
+    return abs(cps);
 }
 
 static float EncoderInput()
@@ -146,7 +148,7 @@ void RightPid_Init()
     
     target_source = Control_RightGetCmdVelocity;
     old_target_source = NULL;
-    PIDInit(&pid.pid, 0, 0, 0, PID_SAMPLE_TIME_SEC, RIGHTPID_MIN, RIGHTPID_MAX, AUTOMATIC, DIRECT, NULL);        
+    PIDInit(&pid.pid, 0, 0, 0, 0, PID_SAMPLE_TIME_SEC, RIGHTPID_MIN, RIGHTPID_MAX, AUTOMATIC, DIRECT, NULL);        
 }
     
 /*---------------------------------------------------------------------------------------------------
@@ -158,22 +160,7 @@ void RightPid_Init()
  *-------------------------------------------------------------------------------------------------*/
 void RightPid_Start()
 {
-    CAL_PID_TYPE *p_gains;
-    
-    // Note: the PID gains are stored in EEPROM.  The EEPROM cannot be accessed until the EEPROM
-    // component is started which is handled in the Nvstore module.  
-    // Pid_Start is called after Nvstore_Start.
-    
-    if (Cal_GetCalibrationStatusBit(CAL_PID_BIT))
-    {
-        p_gains = Cal_RightGetPidGains();  
-        PIDTuningsSet(&pid.pid, p_gains->kp, p_gains->ki, p_gains->kd);
-        pid_enabled = TRUE;
-    }
-    else
-    {
-        Ser_PutString("No valid PID calibration\r\n");
-    }
+    pid_enabled = Pid_SetGains(&pid.pid, Cal_RightGetPidGains());
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -291,9 +278,9 @@ void RightPid_Bypass(uint8 value)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void RightPid_SetGains(float kp, float ki, float kd)
+void RightPid_SetGains(float kp, float ki, float kd, float kf)
 {
-    PIDTuningsSet(&pid.pid, kp, ki, kd);
+    PIDTuningsSet(&pid.pid, kp, ki, kd, kf);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -305,11 +292,12 @@ void RightPid_SetGains(float kp, float ki, float kd)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void RightPid_GetGains(float *kp, float *ki, float *kd)
+void RightPid_GetGains(float *kp, float *ki, float *kd, float *kf)
 {
     *kp = pid.pid.dispKp;
     *ki = pid.pid.dispKi;
     *kd = pid.pid.dispKd;
+    *kf = pid.pid.dispKf;
 }
 
 /* [] END OF FILE */

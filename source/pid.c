@@ -180,18 +180,40 @@ void Pid_Reset()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Pid_Enable(uint8 enable)
+void Pid_Enable(uint8 left, uint8 right, uint8 uni)
 {
-    UniPid_Enable(enable);
-    LeftPid_Enable(enable);
-    RightPid_Enable(enable);
+    LeftPid_Enable(left);
+    RightPid_Enable(right);
+    UniPid_Enable(uni);
 }
 
-void Pid_Bypass(uint8 bypass)
+void Pid_Bypass(uint8 left, uint8 right, uint8 uni)
 {
-    UniPid_Bypass(bypass);
-    LeftPid_Bypass(bypass);
-    RightPid_Bypass(bypass);
+    LeftPid_Bypass(left);
+    RightPid_Bypass(right);
+    UniPid_Bypass(uni);
 }
+
+uint8 Pid_SetGains(PIDControl *p_pid, CAL_PID_TYPE *p_gains)
+{
+    uint8 result = FALSE;
+
+    // Note: the PID gains are stored in EEPROM.  The EEPROM cannot be accessed until the EEPROM
+    // component is started which is handled in the Nvstore module.  
+    // Pid_Start is called after Nvstore_Start.
+    
+    if (Cal_GetCalibrationStatusBit(CAL_PID_BIT))
+    {
+        PIDTuningsSet(p_pid, p_gains->kp, p_gains->ki, p_gains->kd, p_gains->kf);
+        result = TRUE;
+    }
+    else
+    {
+        Ser_PutString("No valid PID calibration\r\n");        
+    }
+    
+    return result;
+}
+
 
 /* [] END OF FILE */

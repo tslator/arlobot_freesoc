@@ -606,7 +606,7 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
     
     Ser_PutString("\r\nPerforming motor calibration\r\n");
     Debug_Store();
-    Pid_Enable(FALSE);
+    Pid_Enable(FALSE, FALSE, FALSE);
     Motor_SetPwm(PWM_STOP, PWM_STOP);
     
     return CAL_OK;

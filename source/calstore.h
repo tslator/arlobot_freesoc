@@ -60,8 +60,7 @@ typedef struct _cal_pid_tag
     float kp;
     float ki;
     float kd;
-    // Added to force row alignment
-    uint8 reversed[4];
+    float kf;
     // Note: Total size is 16 bytes, 1 row
 } __attribute__ ((packed)) CAL_PID_TYPE;
 

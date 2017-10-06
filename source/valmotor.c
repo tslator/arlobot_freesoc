@@ -418,7 +418,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
                               val_bwd_cps);
 
     /* Left/Right wheel validation uses the main loop so the PID must be enabled */
-    Pid_Enable(TRUE);
+    Pid_Enable(TRUE, TRUE, TRUE);
     Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
     
     return CAL_OK;

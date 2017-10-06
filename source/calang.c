@@ -208,7 +208,7 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
     float left;
     float right;
 
-    Pid_Enable(TRUE);            
+    Pid_Enable(TRUE, TRUE, FALSE);            
     Encoder_Reset();
     Pid_Reset();
     Odom_Reset();

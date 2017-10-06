@@ -70,10 +70,8 @@ static float max_robot_forward_linear_velocity;
 static float max_robot_backward_linear_velocity;
 
 static float linear_bias;
+static float linear_trim;
 static float angular_bias;
-
-static float linear_odom_velocity;
-static float angular_odom_velocity;
 
 
 void Update_Debug(uint16 bits)
@@ -140,8 +138,8 @@ void Update_Debug(uint16 bits)
 void Control_Init()
 {
     control_cmd_velocity = ReadCmdVelocity;
-    linear_odom_velocity = 0.0;
-    angular_odom_velocity = 0.0;
+    linear_bias = 1.0;
+    linear_trim = 0.001;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -163,8 +161,8 @@ void Control_Start()
     max_robot_forward_linear_velocity = max_robot_linear_velocity;
     max_robot_backward_linear_velocity = -max_robot_linear_velocity;
 
-    linear_bias = Cal_GetLinearBias();
-    angular_bias = Cal_GetAngularBias();    
+    //linear_bias = Cal_GetLinearBias();
+    //angular_bias = Cal_GetAngularBias();    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -225,7 +223,7 @@ void Control_Update()
     //linear_cmd_velocity = 0.0;
     //angular_cmd_velocity = 0.5;
     //timeout = 0;
-    Debug_Enable(DEBUG_UNIPID_ENABLE_BIT);
+    //Debug_Enable(DEBUG_UNIPID_ENABLE_BIT);
     
     //EnsureAngularVelocity(&linear_cmd_velocity, &angular_cmd_velocity);    
 
@@ -253,23 +251,23 @@ void Control_Update()
        disable the PWM if the distance (voltage) exceeds a threshold - no software required.
     
     */    
-    
-    if (timeout > MAX_CMD_VELOCITY_TIMEOUT)
-    {
-        linear_cmd_velocity = 0;
-        angular_cmd_velocity = 0;
-    }
-    
-    UniToDiff(linear_cmd_velocity, angular_cmd_velocity, &left_cmd_velocity, &right_cmd_velocity);
 
-    //Ser_PutStringFormat("v: %.3f w: %.3f l: %.3f r: %.3f\r\n", linear_cmd_velocity, angular_cmd_velocity, left_cmd_velocity, right_cmd_velocity);
+    UniToDiff(linear_cmd_velocity, angular_cmd_velocity, &left_cmd_velocity, &right_cmd_velocity);
     
     /* The motors have physical limits.  Do not allow the robot to be command beyond reasonable those limits.
        Configuration limits can be found in config.h.
      */
     //linear_cmd_velocity = constrain(max_robot_backward_linear_velocity, linear_cmd_velocity, max_robot_forward_linear_velocity);
     //angular_cmd_velocity = constrain(MAX_ROBOT_CCW_RADIAN_PER_SECOND, angular_cmd_velocity, MAX_ROBOT_CW_RADIAN_PER_SECOND);
-
+    
+    if (timeout > MAX_CMD_VELOCITY_TIMEOUT)
+    {
+        linear_cmd_velocity = 0;
+        angular_cmd_velocity = 0;
+        left_cmd_velocity = 0;
+        right_cmd_velocity = 0;
+    }
+    
     CONTROL_UPDATE_END();
 }
 
@@ -302,20 +300,41 @@ void Control_RestoreCommandVelocityFunc()
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Control_LeftGetCmdVelocity
- * Description: Accessor function used to return the left commanded velocity.  
+ * Description: Accessor function used to return the left commanded velocity (in count/sec).  
  * Parameters: None
  * Return: float
  * 
  *-------------------------------------------------------------------------------------------------*/ 
 float Control_LeftGetCmdVelocity()
 {
+    float velocity;
+#ifdef WITH_ACCEL
+    #define ACCEL_MAX (1)
+    static float last_velocity = 0.0;
+    static uint32 last_time = 0;
+    float delta_time;
+    float delta_velocity;
+    float accel;
+    float velocity;
+    
     /* Convert rad/s to count/s */
-    return left_cmd_velocity * WHEEL_COUNT_PER_RADIAN;
+    
+    /* Apply an acceleration limit */
+    delta_time = (float) (millis() - last_time) / 1000.0;
+    delta_velocity = left_cmd_velocity - last_velocity;
+    accel = delta_velocity / delta_time;
+    
+    velocity = last_velocity + min(accel, ACCEL_MAX);
+    last_velocity = velocity;
+#else
+    velocity = left_cmd_velocity;
+#endif
+    return (linear_bias - linear_trim) * velocity * WHEEL_COUNT_PER_RADIAN;
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Control_RightGetCmdVelocity
- * Description: Accessor function used to return the right commanded velocity.  
+ * Description: Accessor function used to return the right commanded velocity (in count/sec).  
  * Parameters: None
  * Return: float
  * 
@@ -323,7 +342,7 @@ float Control_LeftGetCmdVelocity()
 float Control_RightGetCmdVelocity()
 {
     /* Convert rad/s to count/s */
-    return right_cmd_velocity * WHEEL_COUNT_PER_RADIAN;
+    return (linear_bias + linear_trim) * right_cmd_velocity * WHEEL_COUNT_PER_RADIAN;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -427,9 +446,6 @@ void Control_WriteOdom(float linear,
                        float y_position, 
                        float heading)
 {
-    linear_odom_velocity = linear;
-    angular_odom_velocity = angular;
-    
     WriteSpeed(linear, angular);
     WritePosition(x_position, y_position);
     WriteHeading(heading);
