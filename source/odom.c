@@ -77,8 +77,6 @@ static float angular_meas_velocity;
  *-------------------------------------------------------------------------------------------------*/    
 
 #ifdef ODOM_DUMP_ENABLED
-static float linear_bias;
-static float angular_bias;
         
 /*---------------------------------------------------------------------------------------------------
  * Name: DumpOdom
@@ -91,16 +89,14 @@ static void DumpOdom()
 {
     if (Debug_IsEnabled(DEBUG_ODOM_ENABLE_BIT))
     {
-        DEBUG_PRINT_ARG("ls: %.3f rs: %.3f x: %.3f y: %.3f th: %.3f lv: %.3f av: %.3f lb: %.3f ab: %.3f\r\n", 
+        DEBUG_PRINT_ARG("ls: %.3f rs: %.3f x: %.3f y: %.3f th: %.3f lv: %.3f av: %.3f\r\n", 
                         left_mps, 
                         right_mps, 
                         x_position, 
                         y_position, 
                         theta,
                         linear_meas_velocity,
-                        angular_meas_velocity,
-                        linear_bias,
-                        angular_bias);
+                        angular_meas_velocity);
             
     }
 }
@@ -133,10 +129,6 @@ void Odom_Init()
  *-------------------------------------------------------------------------------------------------*/
 void Odom_Start()
 {
-#ifdef ODOM_DUMP_ENABLED
-    linear_bias = Cal_GetLinearBias();
-    angular_bias = Cal_GetAngularBias();
-#endif
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -216,15 +208,9 @@ void Odom_Update()
 #else
         float left_delta_dist = left_mps * delta_time / 1000.0;
         float right_delta_dist = right_mps * delta_time / 1000.0;
-        /* Note: Linear bias attempts to account for aggregated mechanical errors in the system
-           that affect the accuracy of linear motion
-        */
-        float center_delta_dist = linear_bias * (left_delta_dist + right_delta_dist) / 2.0;
+        float center_delta_dist = (left_delta_dist + right_delta_dist) / 2.0;
         
-        /* Note: Angular bias attempts to account for aggregated mechanical errors in the system
-           that affect the accuracy of angular motion
-        */
-        theta += angular_bias * (right_delta_dist - left_delta_dist)/TRACK_WIDTH;
+        theta += (right_delta_dist - left_delta_dist)/TRACK_WIDTH;
         x_position += center_delta_dist * cos(theta);
         y_position += center_delta_dist * sin(theta);
         
@@ -255,10 +241,8 @@ void Odom_Reset()
     linear_meas_velocity = 0;
     angular_meas_velocity = 0;
     
-    linear_bias = Cal_GetLinearBias();
-    angular_bias = Cal_GetAngularBias();
-    
     Control_WriteOdom(linear_meas_velocity, angular_meas_velocity, x_position, y_position, theta);
+    
     DUMP_ODOM();       
 }
 

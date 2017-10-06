@@ -161,6 +161,7 @@ void RightPid_Init()
 void RightPid_Start()
 {
     pid_enabled = Pid_SetGains(&pid.pid, Cal_RightGetPidGains());
+    pid_enabled = TRUE;
 }
 
 /*---------------------------------------------------------------------------------------------------

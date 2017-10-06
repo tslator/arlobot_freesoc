@@ -139,7 +139,7 @@ void Control_Init()
 {
     control_cmd_velocity = ReadCmdVelocity;
     linear_bias = 1.0;
-    linear_trim = 0.001;
+    linear_trim = 0.0;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -223,7 +223,7 @@ void Control_Update()
     //linear_cmd_velocity = 0.0;
     //angular_cmd_velocity = 0.5;
     //timeout = 0;
-    //Debug_Enable(DEBUG_UNIPID_ENABLE_BIT);
+    //Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
     
     //EnsureAngularVelocity(&linear_cmd_velocity, &angular_cmd_velocity);    
 
@@ -253,6 +253,8 @@ void Control_Update()
     */    
 
     UniToDiff(linear_cmd_velocity, angular_cmd_velocity, &left_cmd_velocity, &right_cmd_velocity);
+    
+    //Ser_PutStringFormat("LCV: %.3f, RCV: %.3f\r\n", left_cmd_velocity, right_cmd_velocity);
     
     /* The motors have physical limits.  Do not allow the robot to be command beyond reasonable those limits.
        Configuration limits can be found in config.h.
@@ -326,10 +328,11 @@ float Control_LeftGetCmdVelocity()
     
     velocity = last_velocity + min(accel, ACCEL_MAX);
     last_velocity = velocity;
-#else
-    velocity = left_cmd_velocity;
 #endif
-    return (linear_bias - linear_trim) * velocity * WHEEL_COUNT_PER_RADIAN;
+    velocity = (linear_bias - linear_trim) * left_cmd_velocity * WHEEL_COUNT_PER_RADIAN;
+    //Ser_PutStringFormat("LCPS: %.3f\r\n", velocity);
+    
+    return velocity;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -341,8 +344,12 @@ float Control_LeftGetCmdVelocity()
  *-------------------------------------------------------------------------------------------------*/ 
 float Control_RightGetCmdVelocity()
 {
+    float velocity;
     /* Convert rad/s to count/s */
-    return (linear_bias + linear_trim) * right_cmd_velocity * WHEEL_COUNT_PER_RADIAN;
+    velocity = (linear_bias - linear_trim) * right_cmd_velocity * WHEEL_COUNT_PER_RADIAN;
+    //Ser_PutStringFormat("RCPS: %.3f\r\n", velocity);
+    
+    return velocity;
 }
 
 /*---------------------------------------------------------------------------------------------------

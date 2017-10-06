@@ -74,10 +74,10 @@ typedef enum {DIR_FORWARD, DIR_BACKWARD, DIR_CW, DIR_CCW} DIR_TYPE;
 #define SEC_PER_MIN (60.0)
 #define RADIAN_PER_REV (TWOPI)
  
-#define MAX_WHEEL_RPM  (95.0)                 // rpm
+#define MAX_WHEEL_RPM  (95.0)               // rpm
 #define WHEEL_RADIUS   (0.0775)             // meter
 #define WHEEL_DIAMETER (2 * WHEEL_RADIUS)   // meter
-#define TRACK_WIDTH (0.3937)                 // meter
+#define TRACK_WIDTH (0.3968)                // meter
 
 #define WHEEL_CIRCUMFERENCE (PI * WHEEL_DIAMETER)          // meter  Note: 0.4869
 #define WHEEL_METER_PER_REV (WHEEL_CIRCUMFERENCE)         // meter
