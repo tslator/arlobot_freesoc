@@ -114,18 +114,21 @@ typedef enum {DIR_FORWARD, DIR_BACKWARD, DIR_CW, DIR_CCW} DIR_TYPE;
    max reverse.  Only in this case is the angular velocity maximum.   
  */
 
-/* Calculate robot max RPM 
-    RPM = v * 60 / (2 * PI * r) = v * 60 / (PI * d)
-    where,
-        v is the linear velocity of the wheel
-        r is half the track width (or using d which is the track width)
-*/
-#define MAX_ROBOT_RPM ((MAX_WHEEL_FORWARD_LINEAR_VELOCITY * 60) / (PI * TRACK_WIDTH))
-
 /* Calculate angular velocity of robot rotation from linear velocity of wheel:
-    circumference = (RPM / 60) * 2 * PI
+    v = w * r => w = v / r
+    where,
+        r is half the track width
+        v is MAX_WHEEL_METER_PER_SECOND
  */
-#define MAX_ROBOT_RADIAN_PER_SECOND ((MAX_ROBOT_RPM / SEC_PER_MIN) * RADIAN_PER_REV)
+#define MAX_ROBOT_RADIAN_PER_SECOND (MAX_WHEEL_METER_PER_SECOND / (TRACK_WIDTH / 2))
+
+/* Calculate robot max RPM 
+    w = 2 * PI * n / 60 => n = (w * 60) / (2 * PI) 
+    where,
+        w is the angular velocity of the robot
+*/
+#define MAX_ROBOT_RPM ((MAX_ROBOT_RADIAN_PER_SECOND * 60) / (PI * TRACK_WIDTH))
+
 
 #define ROBOT_METER_PER_REV (PI * TRACK_WIDTH)
 #define ROBOT_NUM_WHEEL_ROTATION_PER_ROBOT_REV (ROBOT_METER_PER_REV / WHEEL_METER_PER_REV) // num of wheel rotations per robot revolution

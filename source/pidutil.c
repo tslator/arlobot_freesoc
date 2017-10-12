@@ -39,7 +39,6 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/
-#define IS_NAN_DEFAULT(x,d)   isnan(x) ? d : x
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -63,7 +62,6 @@ void DumpPid(char *name, PIDControl *pid)
         error = IS_NAN_DEFAULT(pid->setpoint - pid->input, 0);
         last_input = IS_NAN_DEFAULT(pid->lastInput, 0);
         iterm = IS_NAN_DEFAULT(pid->iTerm, 0);
-        //output = IS_NAN_DEFAULT(pid->output, 0);
 
         DEBUG_PRINT_ARG("%s pid: %f %f %f %f %f %f\r\n", name, set_point, input, error, last_input, iterm, pid->output);
     //}
