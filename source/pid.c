@@ -39,7 +39,7 @@ SOFTWARE.
 #include "motor.h"
 #include "odom.h"
 #include "pid.h"
-#include "unipid.h"
+#include "angpid.h"
 #include "leftpid.h"
 #include "rightpid.h"
 #include "utils.h"
@@ -82,7 +82,7 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/
 void Pid_Init()
 {
-    UniPid_Init();
+    AngPid_Init();
     LeftPid_Init();    
     RightPid_Init();
 }
@@ -96,7 +96,7 @@ void Pid_Init()
  *-------------------------------------------------------------------------------------------------*/
 void Pid_Start()
 {
-    UniPid_Start();
+    AngPid_Start();
     LeftPid_Start();    
     RightPid_Start();
 }
@@ -122,7 +122,7 @@ void Pid_Update()
     {    
         last_update_time = millis();
         
-        UniPid_Process();
+        AngPid_Process();
         LeftPid_Process();
         RightPid_Process();
     }
@@ -168,7 +168,7 @@ void Pid_RestoreLeftRightTarget()
  *-------------------------------------------------------------------------------------------------*/
 void Pid_Reset()
 {
-    UniPid_Reset();
+    AngPid_Reset();
     LeftPid_Reset();
     RightPid_Reset();
 }
@@ -182,16 +182,16 @@ void Pid_Reset()
  *-------------------------------------------------------------------------------------------------*/
 void Pid_Enable(uint8 left, uint8 right, uint8 uni)
 {
+    AngPid_Enable(uni);
     LeftPid_Enable(left);
     RightPid_Enable(right);
-    UniPid_Enable(uni);
 }
 
 void Pid_Bypass(uint8 left, uint8 right, uint8 uni)
 {
+    AngPid_Bypass(uni);
     LeftPid_Bypass(left);
     RightPid_Bypass(right);
-    UniPid_Bypass(uni);
 }
 
 uint8 Pid_SetGains(PIDControl *p_pid, CAL_PID_TYPE *p_gains)

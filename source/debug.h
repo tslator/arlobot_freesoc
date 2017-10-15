@@ -53,6 +53,7 @@ SOFTWARE.
 #define DEBUG_ODOM_ENABLE_BIT               (0x0040)
 #define DEBUG_SAMPLE_ENABLE_BIT             (0x0080)
 #define DEBUG_UNIPID_ENABLE_BIT             (0x0100)
+#define DEBUG_ANGPID_ENABLE_BIT             (0x0200)
 
 
 /* The following defines enable "dump" logging methods for each feature */

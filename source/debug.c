@@ -70,6 +70,9 @@ void Debug_Init()
 #if  defined UNIPID_DUMP_ENABLED
     debug_control_enabled |= DEBUG_UNIPID_ENABLE_BIT;
 #endif
+#if  defined ANGPID_DUMP_ENABLED
+    debug_control_enabled |= DEBUG_ANGPID_ENABLE_BIT;
+#endif
 #if defined MOTOR_DUMP_ENABLED
     debug_control_enabled |= DEBUG_LEFT_MOTOR_ENABLE_BIT | DEBUG_RIGHT_MOTOR_ENABLE_BIT;
 #endif   

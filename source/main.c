@@ -73,10 +73,14 @@ int main()
     Pid_Start();
     Odom_Start();
 
-    //DEBUG_PRINT_STR("Hello, my name is ArloSoc!\r\n");
-    //DEBUG_PRINT_STR("I am the microcontroller for Arlobot.\r\n");
-    //DEBUG_PRINT_STR("I'm entering my main loop now!\r\n");
+            
+    //Ser_PutString("Hello, my name is ArloSoc!\r\n");
+    //Ser_PutString("I am the microcontroller for Arlobot.\r\n");
+    //Ser_PutString("I'm entering my main loop now!\r\n");
 
+    Pid_Bypass(0, 0, 0);
+    Pid_Enable(1, 1, 0);
+    
     for(;;)
     {
         MAIN_LOOP_START();

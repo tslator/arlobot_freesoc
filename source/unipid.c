@@ -59,10 +59,11 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/    
-#define THETAPID_MIN (0.0)  // radian/sec
+#define THETAPID_MIN (-PI/4.0)  // radian/sec
 #define THETAPID_MAX (PI/4.0)   // radian/sec
 
-#define THETA_KP    (0.01)
+#define THETA_KP    (0.0)
+#define THETA_KF    (3.0)
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -207,7 +208,7 @@ void UniPid_Init()
  *-------------------------------------------------------------------------------------------------*/
 void UniPid_Start()
 {
-    PIDTuningsSet(&pid.pid, THETA_KP, 0.0, 0.0, 0.0);
+    PIDTuningsSet(&pid.pid, 1.0, 0.0, 0.0, 0.0);
     pid_enabled = FALSE;
 }
 
@@ -235,7 +236,7 @@ void UniPid_Process()
         delta = pid.update(target, input);
         
         angular_cmd += delta;
-        UNIPID_DUMP();
+        //UNIPID_DUMP();
         //DumpPid(pid.name, &pid.pid);
     }
     
@@ -302,12 +303,10 @@ void UniPid_Enable(uint8 value)
 /*---------------------------------------------------------------------------------------------------
  * Name: UniPid_SetGains
  * Description: Sets the unicycle PID gains.
- * Parameters: linear_kp - the linear proportional gain
- *             linear_ki - the linear integral gain
- *             linear_kd - the linear derivative gain
- *             angular_kp - the angular proportional gain
- *             angularki - the angular integral gain
- *             angularkd - the angular derivative gain
+ * Parameters: kp - the linear proportional gain
+ *             ki - the linear integral gain
+ *             kd - the linear derivative gain
+ *             kf - the feedforward gain
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
@@ -319,12 +318,10 @@ void UniPid_SetGains(float kp, float ki, float kd, float kf)
 /*---------------------------------------------------------------------------------------------------
  * Name: UniPid_GetGains
  * Description: Returns the unicycle PID gains
- * Parameters: linear_kp - the linear proportional gain
- *             linear_ki - the linear integral gain
- *             linear_kd - the linear derivative gain
- *             angular_kp - the angular proportional gain
- *             angularki - the angular integral gain
- *             angularkd - the angular derivative gain
+ * Parameters: kp - the linear proportional gain
+ *             ki - the linear integral gain
+ *             kd - the linear derivative gain
+ *             kf - the feedforward gain
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/

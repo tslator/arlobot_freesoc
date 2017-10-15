@@ -39,7 +39,6 @@ SOFTWARE.
 #include "pid.h"
 #include "leftpid.h"
 #include "rightpid.h"
-#include "unipid.h"
 #include "utils.h"
 #include "encoder.h"
 #include "time.h"
