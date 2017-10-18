@@ -23,23 +23,36 @@ SOFTWARE.
 */
 
 /*---------------------------------------------------------------------------------------------------
-   Description: This module provides the implementation for validating the motor calibration.
+   Description: This module provides the implementation for validating the PID.
  *-------------------------------------------------------------------------------------------------*/    
 
-#ifndef VALMOTOR_H
-#define VALMOTOR_H
+#ifndef VALPID_H
+#define VALPID_H
     
 /*---------------------------------------------------------------------------------------------------
  * Includes
  *-------------------------------------------------------------------------------------------------*/
 #include <project.h>
+#include "config.h"
 #include "cal.h"
+
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------------------------------
+ * Types
+ *-------------------------------------------------------------------------------------------------*/
+typedef enum {VAL_PID_LEFT_FORWARD, 
+              VAL_PID_LEFT_BACKWARD, 
+              VAL_PID_RIGHT_FORWARD, 
+              VAL_PID_RIGHT_BACKWARD} VAL_PID_TYPE;
 
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
-void ValMotor_Init();
-CALVAL_INTERFACE_TYPE * ValMotor_Start();
+void ValPid_Init();
+CALVAL_INTERFACE_TYPE * ValPid_Start(VAL_PID_TYPE val_pid);
 
-#endif    
+#endif

@@ -98,7 +98,7 @@ typedef uint8 (*RESULTS_FUNC_TYPE)(CAL_STAGE_TYPE stage, void *params);
 typedef void (*SET_LEFT_RIGHT_VELOCITY_TYPE)(float left, float right);
 
 
-typedef struct calibration_type_tag
+typedef struct calval_interface_type_tag
 {
     CAL_STATE_TYPE state;
     CAL_STAGE_TYPE stage;
@@ -108,7 +108,7 @@ typedef struct calibration_type_tag
     UPDATE_FUNC_TYPE update;
     STOP_FUNC_TYPE stop;
     RESULTS_FUNC_TYPE results;
-} CALIBRATION_TYPE;
+} CALVAL_INTERFACE_TYPE;
 
 /*---------------------------------------------------------------------------------------------------
  * Variables
@@ -131,12 +131,46 @@ GET_TARGET_FUNC_TYPE Cal_RightTarget;
 /* The CPS values must be stored from lowest (most negative) to higest (most positive) which means the index used
    for storage must be adjusted based on direction
  */     
- #define PWM_CALC_OFFSET(direction, index)  (direction == DIR_BACKWARD ? CAL_NUM_SAMPLES - 1 - index : index)
+#define PWM_CALC_OFFSET(direction, index)  (direction == DIR_BACKWARD ? CAL_NUM_SAMPLES - 1 - index : index)
  
+
+/*---------------------------------------------------------------------------------------------------
+ * Types
+ *-------------------------------------------------------------------------------------------------*/
+typedef enum {PID_TYPE_LEFT, PID_TYPE_RIGHT} PID_ENUM_TYPE;
+ 
+typedef struct calval_pid_params_tag
+{
+    char name[6];
+    PID_ENUM_TYPE pid_type;
+    DIR_TYPE direction;
+    uint32 run_time;
+} CALVAL_PID_PARAMS;
+
+typedef struct _linear_params
+{
+    DIR_TYPE direction;
+    uint32   run_time;
+    float    distance;
+    float    linear;
+    float    angular;
+} CALVAL_LIN_PARAMS;
+
+typedef struct _angular_params
+{
+    DIR_TYPE direction;
+    uint32   run_time;
+    float    heading;
+    float    distance;
+    float    linear;
+    float    angular;
+} CALVAL_ANG_PARAMS;
+
+
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/
- CAL_DATA_TYPE * WHEEL_DIR_TO_CAL_DATA[2][2];
+CAL_DATA_TYPE * WHEEL_DIR_TO_CAL_DATA[2][2];
  
 
 /*---------------------------------------------------------------------------------------------------

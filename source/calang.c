@@ -58,7 +58,7 @@ SOFTWARE.
 static uint32 start_time;
 static uint32 end_time;
 
-static CAL_ANG_PARAMS angular_params = {ANGULAR_BIAS_DIR,
+static CALVAL_ANG_PARAMS angular_params = {ANGULAR_BIAS_DIR,
                                         ANGULAR_MAX_TIME, 
                                         0.0,
                                         ANGULAR_BIAS_ANGLE,
@@ -72,7 +72,7 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params);
 static uint8 Stop(CAL_STAGE_TYPE stage, void *params);
 static uint8 Results(CAL_STAGE_TYPE stage, void *params);
 
-static CALIBRATION_TYPE angular_calibration = {CAL_INIT_STATE,
+static CALVAL_INTERFACE_TYPE angular_calibration = {CAL_INIT_STATE,
                                                CAL_CALIBRATE_STAGE,
                                                &angular_params,
                                                Init,
@@ -153,7 +153,7 @@ static uint8 IsMoveFinished(DIR_TYPE direction, float heading, float distance)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 {
-    CAL_ANG_PARAMS *p_ang_params = (CAL_ANG_PARAMS *)params;
+    CALVAL_ANG_PARAMS *p_ang_params = (CALVAL_ANG_PARAMS *)params;
 
     Cal_SetLeftRightVelocity(0, 0);
     Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
@@ -204,7 +204,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Start(CAL_STAGE_TYPE stage, void *params)
 {
-    CAL_ANG_PARAMS *p_ang_params = (CAL_ANG_PARAMS *) params;
+    CALVAL_ANG_PARAMS *p_ang_params = (CALVAL_ANG_PARAMS *) params;
     float left;
     float right;
 
@@ -258,7 +258,7 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Update(CAL_STAGE_TYPE stage, void *params)
 {
-    CAL_ANG_PARAMS * p_ang_params = (CAL_ANG_PARAMS *) params;
+    CALVAL_ANG_PARAMS * p_ang_params = (CALVAL_ANG_PARAMS *) params;
 
     switch (stage)
     {
@@ -306,7 +306,7 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
 {
-    CAL_ANG_PARAMS *p_ang_params = (CAL_ANG_PARAMS *)params;
+    CALVAL_ANG_PARAMS *p_ang_params = (CALVAL_ANG_PARAMS *)params;
 
     Cal_SetLeftRightVelocity(0, 0);
     Motor_SetPwm(PWM_STOP, PWM_STOP);
@@ -402,8 +402,13 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
  *-------------------------------------------------------------------------------------------------*/
 void CalAng_Init()
 {
-    CalAng_Calibration = &angular_calibration;
-    CalAng_Validation = &angular_calibration;
+}
+
+CALVAL_INTERFACE_TYPE *CalAng_Start()
+{
+    angular_calibration.state = CAL_INIT_STATE;
+    angular_calibration.stage = CAL_CALIBRATE_STAGE;
+    return (CALVAL_INTERFACE_TYPE *) &angular_calibration;
 }
 
 /*-------------------------------------------------------------------------------*/

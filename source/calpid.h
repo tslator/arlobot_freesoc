@@ -39,28 +39,15 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Types
  *-------------------------------------------------------------------------------------------------*/
-typedef enum {PID_TYPE_LEFT, PID_TYPE_RIGHT} PID_ENUM_TYPE;
-
-typedef struct cal_pid_params_tag
-{
-    char name[6];
-    PID_ENUM_TYPE pid_type;
-    DIR_TYPE direction;
-    uint32 run_time;
-} CAL_PID_PARAMS;
 
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/
-CALIBRATION_TYPE *CalPid_LeftCalibration;
-CALIBRATION_TYPE *CalPid_RightCalibration;
-CALIBRATION_TYPE *CalPid_LeftValidation;
-CALIBRATION_TYPE *CalPid_RightValidation;
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
 void CalPid_Init();
-void CalPid_Start();
+CALVAL_INTERFACE_TYPE* CalPid_Start(WHEEL_TYPE wheel);
 
 #endif
