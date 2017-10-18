@@ -65,7 +65,7 @@ static void WaitForCDCIsReady(uint32 timeout)
        if nothing is connected to the USB then obviously we're not interested in the output and
        so we don't want the main loop to be blocked by calls to check the CDC.
     */
-#ifdef XXX       
+#ifdef CDC_TIMEOUT       
     uint32 tick;
 
     if (timeout > 0)
@@ -81,10 +81,13 @@ static void WaitForCDCIsReady(uint32 timeout)
             tick--;
         }
     }    
-#endif
+#else
+    timeout = timeout;
+    
     while (0 == USBUART_CDCIsReady())
     {
     }
+#endif
 }
 
 
@@ -263,6 +266,44 @@ uint8 Ser_ReadByte()
     }
     
     return 0;
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: Ser_ReadLine
+ * Description: Non-blocking reads all serial data until a newline is received.
+ *              Note: Putty apparently does not send \n so \r is being used.
+ * Parameters: line - pointer to charater buffer
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+uint8 Ser_ReadLine(char *line, uint8 echo)
+{
+    char ch;
+    static uint8 ii = 0;
+    uint8 length;
+    
+    length = 0;
+    ch = Ser_ReadByte();
+    if (ch == 0x00)
+    {
+        return length;
+    }
+    else if (ch == '\n' || ch == '\r')
+    {   
+        length = ii;
+        ii = 0;
+    }
+    else
+    {
+        line[ii] = ch;
+        ii++;
+        if (echo)
+        {
+            Ser_WriteByte(ch);
+        }
+    }
+    
+    return length;
 }
 
 /*---------------------------------------------------------------------------------------------------

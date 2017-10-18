@@ -44,7 +44,7 @@ SOFTWARE.
  * Main Function
  *-------------------------------------------------------------------------------------------------*/    
 int main()
-{       
+{   
     CyGlobalIntEnable;
     
     Nvstore_Init();
@@ -55,24 +55,24 @@ int main()
     Diag_Start();        
     I2CIF_Init();
     Control_Init();
-    Cal_Init();
     Time_Init();
     Encoder_Init();
     Motor_Init();
     Pid_Init();
     Odom_Init();
-
+    Cal_Init();
+    
     Nvstore_Start();
     Ser_Start(0);
     I2CIF_Start();
     Control_Start();
-    Cal_Start();
     Time_Start();
     Encoder_Start();
     Motor_Start();
     Pid_Start();
     Odom_Start();
-
+    Cal_Start();
+    
             
     //Ser_PutString("Hello, my name is ArloSoc!\r\n");
     //Ser_PutString("I am the microcontroller for Arlobot.\r\n");
@@ -84,7 +84,7 @@ int main()
     for(;;)
     {
         MAIN_LOOP_START();
-        
+
         /* Update any control changes */
         Control_Update();  // reads and validates linear/angular
         
@@ -107,7 +107,6 @@ int main()
         Ser_Update();
 
         I2CIF_TEST();
-        
         MAIN_LOOP_END();
     }
 }

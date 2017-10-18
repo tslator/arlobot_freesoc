@@ -349,7 +349,7 @@ void Control_Update()
     
     control_cmd_velocity(&linear_cmd_velocity, &angular_cmd_velocity, &timeout);
     
-    Debug_Enable(DEBUG_ODOM_ENABLE_BIT);//DEBUG_ANGPID_ENABLE_BIT);
+    //Debug_Enable(DEBUG_ODOM_ENABLE_BIT);//DEBUG_ANGPID_ENABLE_BIT);
 #ifdef ENABLE_VELOCITY_REPEAT
     RepeatVelocity(&linear_cmd_velocity, &angular_cmd_velocity, &timeout);
 #endif
@@ -450,47 +450,9 @@ void Control_RestoreCommandVelocityFunc()
 float Control_LeftGetCmdVelocity()
 {    
     float velocity = 0.0;
-#ifdef LIMIT_ACCEL
-    static float last_velocity = 0.0;
-    static uint32 last_time = 0;
-    float delta_time;
-    float delta_velocity;
-    float percent_velocity_change;
-    float adjust;
 
-    /* sampling time is 0.020
-       max delta time is 0.250
-
-       0.250 / 0.020 = 12.5 step changes
-
-       dv / 12.5 = velocity adjustment
-
-    */
-    /* Apply an acceleration limit */
-    delta_time = (float) (millis() - last_time) / 1000.0;
-    last_time = millis();
-    delta_velocity = left_cmd_velocity - last_velocity;
-
-    percent_velocity_change = abs(delta_velocity / MAX_WHEEL_RADIAN_PER_SECOND);    
-    adjust = IS_NAN_DEFAULT(delta_velocity / (RESPONSE_TIME * percent_velocity_change / delta_time), 0.0);
-    
-    if (last_velocity <= left_cmd_velocity)
-    {
-        velocity = min(last_velocity + adjust, left_cmd_velocity);
-    }
-    else if (last_velocity > left_cmd_velocity)
-    {
-        velocity = max(last_velocity + adjust, left_cmd_velocity);
-    }
-    last_velocity = velocity;
-    
-    //Ser_PutStringFormat("LEFT - DV: %.3f PVC: %.3f ADJ: %.3f LCV %.3f LV: %.3f\r\n", delta_velocity, percent_velocity_change, adjust, left_cmd_velocity, last_velocity);
-    
-    /* Convert rad/s to count/s */    
-    velocity = (linear_bias - linear_trim) * velocity * WHEEL_COUNT_PER_RADIAN;
-#else
     velocity = (linear_bias - linear_trim) * left_cmd_velocity * WHEEL_COUNT_PER_RADIAN;
-#endif    
+
     //Ser_PutStringFormat("Control_LeftGetCmdVelocity: %.3f %.3f\r\n", left_cmd_velocity, velocity);
     return velocity;
 }
@@ -505,47 +467,9 @@ float Control_LeftGetCmdVelocity()
 float Control_RightGetCmdVelocity()
 {
     float velocity = 0.0;
-#ifdef LIMIT_ACCEL    
-    static float last_velocity = 0.0;
-    static uint32 last_time = 0;
-    float delta_time;
-    float delta_velocity;
-    float percent_velocity_change;
-    float adjust;
 
-    /* sampling time is 0.020
-       max delta time is 0.250
-
-       0.250 / 0.020 = 12.5 step changes
-
-       dv / 12.5 = velocity adjustment
-
-    */
-    /* Apply an acceleration limit */
-    delta_time = (float) (millis() - last_time) / 1000.0;
-    last_time = millis();
-    delta_velocity = right_cmd_velocity - last_velocity;
-
-    percent_velocity_change = abs(delta_velocity / MAX_WHEEL_RADIAN_PER_SECOND);    
-    adjust = IS_NAN_DEFAULT(delta_velocity / (RESPONSE_TIME * percent_velocity_change / delta_time), 0.0);
-    
-    if (last_velocity <= left_cmd_velocity)
-    {
-        velocity = min(last_velocity + adjust, right_cmd_velocity);
-    }
-    else if (last_velocity > left_cmd_velocity)
-    {
-        velocity = max(last_velocity + adjust, right_cmd_velocity);
-    }
-    last_velocity = velocity;
-    
-    //Ser_PutStringFormat("LEFT - DV: %.3f PVC: %.3f ADJ: %.3f LCV %.3f LV: %.3f\r\n", delta_velocity, percent_velocity_change, adjust, right_cmd_velocity, last_velocity);
-    
-    /* Convert rad/s to count/s */    
-    velocity = (linear_bias + linear_trim) * velocity * WHEEL_COUNT_PER_RADIAN;
-#else
     velocity = (linear_bias + linear_trim) * right_cmd_velocity * WHEEL_COUNT_PER_RADIAN;
-#endif    
+    
     //Ser_PutStringFormat("Control_RightGetCmdVelocity: %.3f %.3f\r\n", right_cmd_velocity, velocity);
     return velocity;
 }

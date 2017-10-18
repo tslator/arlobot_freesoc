@@ -67,7 +67,7 @@ static uint32 end_time;
 static float linear_cmd_velocity;
 static float angular_cmd_velocity;
 
-static CAL_LIN_PARAMS linear_params = {DIR_FORWARD, 
+static CALVAL_LIN_PARAMS linear_params = {DIR_FORWARD, 
                                        LINEAR_MAX_TIME, 
                                        LINEAR_DISTANCE,
                                        0.0,
@@ -79,7 +79,7 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params);
 static uint8 Stop(CAL_STAGE_TYPE stage, void *params);
 static uint8 Results(CAL_STAGE_TYPE stage, void *params);
 
-static CALIBRATION_TYPE linear_calibration = {CAL_INIT_STATE,
+static CALVAL_INTERFACE_TYPE linear_calibration = {CAL_INIT_STATE,
                                               CAL_CALIBRATE_STAGE,
                                               &linear_params,
                                               Init,
@@ -129,7 +129,7 @@ static uint8 IsMoveFinished(float * distance)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 {
-    CAL_LIN_PARAMS *p_lin_params = (CAL_LIN_PARAMS *)params;
+    CALVAL_LIN_PARAMS *p_lin_params = (CALVAL_LIN_PARAMS *)params;
     
     Debug_Store();
         
@@ -138,36 +138,19 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
     p_lin_params->angular = 0.0;
     Control_SetCommandVelocityFunc(GetCommandVelocity);
     
-    switch (stage)
-    {
-        case CAL_CALIBRATE_STAGE:
-            /* This should look just like the validation except after moving forward, we need to prompt the user to 
-               enter the actual distance moved.
-               Also, we need to add a linear scaler to nvram storage, initialize the scaler on startup and apply the
-               scalar in the encoder.
-             */
-            /* Note: Do we want to support both forward and backward calibration?  How would the
-               bias be different?  How would it be applied?
-             */
-            Ser_PutString("\r\nLinear Calibration\r\n");
-            Ser_PutString("\r\nPlace a meter stick along side the robot starting centered");
-            Ser_PutString("\r\non the wheel and extending toward the front of the robot\r\n");
-                        
-            Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
-            
-            break;            
-            
-        case CAL_VALIDATE_STAGE:
-            Ser_PutStringFormat("\r\n%s Linear validation\r\n", 
-                                p_lin_params->direction == DIR_FORWARD ? "Forward" : "Backward");
-
-            Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
-            
-            break;
-
-        default:
-            break;
-    }
+    /* This should look just like the validation except after moving forward, we need to prompt the user to 
+        enter the actual distance moved.
+        Also, we need to add a linear scaler to nvram storage, initialize the scaler on startup and apply the
+        scalar in the encoder.
+        */
+    /* Note: Do we want to support both forward and backward calibration?  How would the
+        bias be different?  How would it be applied?
+        */
+    Ser_PutString("\r\nLinear Calibration\r\n");
+    Ser_PutString("\r\nPlace a meter stick along side the robot starting centered");
+    Ser_PutString("\r\non the wheel and extending toward the front of the robot\r\n");
+                
+    Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
 
     return CAL_OK;
 }
@@ -182,7 +165,7 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Start(CAL_STAGE_TYPE stage, void *params)
 {
-    CAL_LIN_PARAMS *p_lin_params = (CAL_LIN_PARAMS *) params;
+    CALVAL_LIN_PARAMS *p_lin_params = (CALVAL_LIN_PARAMS *) params;
     float left;
     float right;
     int32 left_count;
@@ -195,29 +178,14 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
     Pid_Reset();
     Odom_Reset();
 
-    switch (stage)
-    {
-        case CAL_CALIBRATE_STAGE:
-            Ser_PutString("Linear Calibration Start\r\n");         
-            Ser_PutString("\r\nCalibrating\r\n");
-            
-            /* Note: The linear bit is used to by the Encoder module to select the default linear bias or the value
-               stored in EEPROM.  Therefore, because linear calibration can be an iterative process, we need to clear 
-               the bit after we've reset the Encoder; otherwise, we'll pick up the default and never see the results.
-             */
-            Cal_ClearCalibrationStatusBit(CAL_LINEAR_BIT);
-            
-            break;
-            
-        case CAL_VALIDATE_STAGE:
-            Ser_PutString("Linear Validation Start\r\n");
-            Ser_PutString("\r\nValidating\r\n");
-
-            break;
-
-        default:
-            break;
-    }
+    Ser_PutString("Linear Calibration Start\r\n");         
+    Ser_PutString("\r\nCalibrating\r\n");
+    
+    /* Note: The linear bit is used to by the Encoder module to select the default linear bias or the value
+        stored in EEPROM.  Therefore, because linear calibration can be an iterative process, we need to clear 
+        the bit after we've reset the Encoder; otherwise, we'll pick up the default and never see the results.
+        */
+    Cal_ClearCalibrationStatusBit(CAL_LINEAR_BIT);
 
     left_count = Encoder_LeftGetCount();
     right_count = Encoder_RightGetCount();
@@ -243,31 +211,22 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Update(CAL_STAGE_TYPE stage, void *params)
 {
-    CAL_LIN_PARAMS * p_lin_params = (CAL_LIN_PARAMS *) params;
+    CALVAL_LIN_PARAMS * p_lin_params = (CALVAL_LIN_PARAMS *) params;
 
-    switch (stage)
+    if (millis() - start_time < p_lin_params->run_time)
     {
-        case CAL_CALIBRATE_STAGE:
-        case CAL_VALIDATE_STAGE:        
-            if (millis() - start_time < p_lin_params->run_time)
-            {
-                if( IsMoveFinished(&p_lin_params->distance) )
-                {
-                    end_time = millis();
-                    linear_cmd_velocity = 0.0;
-                    angular_cmd_velocity = 0.0;
-                    Motor_SetPwm(PWM_STOP, PWM_STOP);
-                    return CAL_COMPLETE;
-                }
-                return CAL_OK;
-            }
+        if( IsMoveFinished(&p_lin_params->distance) )
+        {
             end_time = millis();
-            Ser_PutString("\r\nRun time expired\r\n");
-            break;
-
-        default:
-            break;
+            linear_cmd_velocity = 0.0;
+            angular_cmd_velocity = 0.0;
+            Motor_SetPwm(PWM_STOP, PWM_STOP);
+            return CAL_COMPLETE;
+        }
+        return CAL_OK;
     }
+    end_time = millis();
+    Ser_PutString("\r\nRun time expired\r\n");
 
     return CAL_COMPLETE;
 }
@@ -282,24 +241,12 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
 {
-    CAL_LIN_PARAMS *p_lin_params = (CAL_LIN_PARAMS *)params;
+    CALVAL_LIN_PARAMS *p_lin_params = (CALVAL_LIN_PARAMS *)params;
 
     Control_RestoreCommandVelocityFunc();
     Debug_Restore();    
     
-    switch (stage)
-    {
-        case CAL_VALIDATE_STAGE:
-            Ser_PutStringFormat("\r\n%s Linear Validation complete\r\n", p_lin_params->direction == DIR_FORWARD ? "Forward" : "Backward");
-            break;
-            
-        case CAL_CALIBRATE_STAGE:
-            Ser_PutString("\r\nLinear Calibration complete\r\n");
-            break;
-            
-        default:
-            break;
-    }
+    Ser_PutString("\r\nLinear Calibration complete\r\n");
 
     return CAL_OK;
 }
@@ -323,7 +270,7 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
     int32 left_count;
     int32 right_count;
     
-    CAL_LIN_PARAMS *p_lin_params = (CAL_LIN_PARAMS *)params;
+    CALVAL_LIN_PARAMS *p_lin_params = (CALVAL_LIN_PARAMS *)params;
 
     Odom_GetXYPosition(&x, &y);    
     heading = Odom_GetHeading();
@@ -336,38 +283,21 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
     Ser_PutStringFormat("Elapsed Time: %ld\r\n", end_time - start_time);
     Ser_PutStringFormat("Linear Bias: %.6f\r\n", p_cal_eeprom->linear_bias);
     
-    switch (stage)
+    Ser_PutString("\r\nMeasure the distance traveled by the robot.");
+    Ser_PutString("\r\nEnter the distance (0.5 to 1.5): ");
+    distance = Cal_ReadResponse();
+    Ser_PutString("\r\n");
+
+    if (distance < CAL_LINEAR_BIAS_MIN || distance > CAL_LINEAR_BIAS_MAX)
     {
-        case CAL_CALIBRATE_STAGE:
-            Ser_PutString("\r\nMeasure the distance traveled by the robot.");
-            Ser_PutString("\r\nEnter the distance (0.5 to 1.5): ");
-            distance = Cal_ReadResponse();
-            Ser_PutString("\r\n");
-
-            if (distance < CAL_LINEAR_BIAS_MIN || distance > CAL_LINEAR_BIAS_MAX)
-            {
-                Ser_PutStringFormat("The distance entered %.2f is out of the allowed range.  No change will be made.\r\n", distance);
-                distance = p_cal_eeprom->linear_bias;
-            }
-            distance = constrain(distance, CAL_LINEAR_BIAS_MIN, CAL_LINEAR_BIAS_MAX);
-
-            Nvstore_WriteFloat(distance, (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->linear_bias));
-            Cal_SetCalibrationStatusBit(CAL_LINEAR_BIT);
-            
-            break;
-            
-        case CAL_VALIDATE_STAGE:
-            Ser_PutString("\r\nPrinting Linear validation results\r\n");
-            /* Get the left, right and average distance traveled
-                Need to capture the left, right delta distance at the start (probably 0 because odometry is reset)
-                We want to see how far each wheel went and compute the error
-               */
-            break;
-
-        default:
-            break;    
+        Ser_PutStringFormat("The distance entered %.2f is out of the allowed range.  No change will be made.\r\n", distance);
+        distance = p_cal_eeprom->linear_bias;
     }
+    distance = constrain(distance, CAL_LINEAR_BIAS_MIN, CAL_LINEAR_BIAS_MAX);
 
+    Nvstore_WriteFloat(distance, (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->linear_bias));
+    Cal_SetCalibrationStatusBit(CAL_LINEAR_BIT);
+        
     return CAL_OK;
 }
 
@@ -380,12 +310,15 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
  *-------------------------------------------------------------------------------------------------*/
 void CalLin_Init()
 {
-    CalLin_Validation = &linear_calibration;
-    CalLin_Calibration = &linear_calibration;
-
     linear_cmd_velocity = 0.0;
-    angular_cmd_velocity = 0.0;
-        
+    angular_cmd_velocity = 0.0;        
+}
+
+CALVAL_INTERFACE_TYPE* CalLin_Start()
+{
+    linear_calibration.state = CAL_INIT_STATE;
+    linear_calibration.stage = CAL_CALIBRATE_STAGE;
+    return &linear_calibration;
 }
 
 /*-------------------------------------------------------------------------------*/

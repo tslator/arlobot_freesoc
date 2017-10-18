@@ -118,7 +118,7 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params);
 static uint8 Stop(CAL_STAGE_TYPE stage, void *params);
 static uint8 Results(CAL_STAGE_TYPE stage, void *params);
 
-static CALIBRATION_TYPE motor_calibration = { CAL_INIT_STATE, 
+static CALVAL_INTERFACE_TYPE motor_calibration = { CAL_INIT_STATE, 
                                               CAL_CALIBRATE_STAGE,
                                               NULL,
                                               Init, 
@@ -684,7 +684,11 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
  *---------------------------------------------------------------------------------------------------------------------*/
 void CalMotor_Init()
 {
-    CalMotor_Calibration = &motor_calibration;
+}
+
+CALVAL_INTERFACE_TYPE *CalMotor_Start()
+{
+    return &motor_calibration;
 }
 
 /* [] END OF FILE */

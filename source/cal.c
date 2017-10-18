@@ -43,8 +43,11 @@ SOFTWARE.
 #include "calmotor.h"
 #include "valmotor.h"
 #include "calpid.h"
+#include "valpid.h"
 #include "callin.h"
+#include "vallin.h"
 #include "calang.h"
+#include "valang.h"
 #include "debug.h"
 #include "control.h"
 
@@ -54,40 +57,53 @@ SOFTWARE.
 
 /* Calibration interface commands */
 #define NO_CMD              '0'
-#define CAL_REQUEST         'c'
-#define VAL_REQUEST         'v'
-#define SETTING_REQUEST     's'
-#define EXIT_CMD            'x'
+#define CAL_REQUEST         1
+#define VAL_REQUEST         2
+#define SETTING_REQUEST     3
+#define EXIT_CMD            255
 #define NULL_CMD            0
+#define CAL_REQUEST_CHR      'c'
+#define CAL_REQUEST_UCHR     'C'
+#define VAL_REQUEST_CHR      'v'
+#define VAL_REQUEST_UCHR     'V'
+#define SETTING_REQUEST_CHR  'd'
+#define SETTING_REQUEST_UCHR 'D'
+#define EXIT_CMD_CHR         'x'
+#define EXIT_CMD_UCHR        'X'
 
-#define CAL_MOTOR_CMD       'a'
-#define CAL_PID_LEFT_CMD    'b'
-#define CAL_PID_RIGHT_CMD   'c'
-#define CAL_LINEAR_CMD      'e'
-#define CAL_ANGULAR_CMD     'f'
+#define CAL_MOTOR_CMD       1
+#define CAL_PID_LEFT_CMD    2
+#define CAL_PID_RIGHT_CMD   3
+#define CAL_LINEAR_CMD      4
+#define CAL_ANGULAR_CMD     5
 #define CAL_FIRST_CMD       CAL_MOTOR_CMD
 #define CAL_LAST_CMD        CAL_ANGULAR_CMD
 
-#define VAL_MOTOR_CMD           'a'
-#define VAL_PID_CMD             'b'
-#define VAL_PID_LEFT_FWD_CMD    'c'
-#define VAL_PID_LEFT_BWD_CMD    'e'
-#define VAL_PID_RIGHT_FWD_CMD   'f'
-#define VAL_PID_RIGHT_BWD_CMD   'g'
-#define VAL_LINEAR_FWD_CMD      'h'
-#define VAL_LINEAR_BWD_CMD      'i'
-#define VAL_ANGULAR_CW_CMD      'j'
-#define VAL_ANGULAR_CCW_CMD     'k'
+#define VAL_MOTOR_CMD           1
+#define VAL_PID_CMD             2
+#define VAL_PID_LEFT_FWD_CMD    3
+#define VAL_PID_LEFT_BWD_CMD    4
+#define VAL_PID_RIGHT_FWD_CMD   5
+#define VAL_PID_RIGHT_BWD_CMD   6
+#define VAL_LINEAR_FWD_CMD      7
+#define VAL_LINEAR_BWD_CMD      8
+#define VAL_ANGULAR_CW_CMD      9
+#define VAL_ANGULAR_CCW_CMD     10
 #define VAL_FIRST_CMD           VAL_MOTOR_CMD
 #define VAL_LAST_CMD            VAL_ANGULAR_CCW_CMD
 
-#define DISP_MOTOR_LEFT_CMD  'a'
-#define DISP_MOTOR_RIGHT_CMD 'b'
-#define DISP_PID_CMD         'c'
-#define DISP_BIAS_CMD        'e'
-#define DISP_ALL_CMD         'f'
+#define DISP_MOTOR_LEFT_CMD  1
+#define DISP_MOTOR_RIGHT_CMD 2
+#define DISP_PID_CMD         3
+#define DISP_BIAS_CMD        4
+#define DISP_ALL_CMD         5
 #define DISP_FIRST_CMD       DISP_MOTOR_LEFT_CMD
 #define DISP_LAST_CMD        DISP_ALL_CMD
+
+#define CMD_TOP_LEVEL (0)
+#define CMD_CALIBRATION (1)
+#define CMD_VALIDATION (2)
+#define CMD_SETTINGS (3)
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -103,8 +119,7 @@ char* cal_state_to_string[] = {"INIT STATE", "START STATE", "RUNNING STATE", "ST
 
 static UI_STATE_ENUM ui_state;
 
-static CALIBRATION_TYPE *active_cal;
-static CALIBRATION_TYPE *active_val;
+static CALVAL_INTERFACE_TYPE *active_calval;
 
 static float left_cmd_velocity;
 static float right_cmd_velocity;
@@ -247,15 +262,15 @@ static void DisplayCalMenu()
 {
     Ser_PutString("\r\nWelcome to the Arlobot calibration interface.\r\n");
     Ser_PutString("The following calibration operations are allowed:\r\n");
-    Ser_PutStringFormat("    %c. Motor Calibration - creates mapping between count/sec and PWM.\r\n",  CAL_MOTOR_CMD);
-    Ser_PutStringFormat("    %c. PID Left Calibration - enter gains, execute step input, print velocity response.\r\n", CAL_PID_LEFT_CMD);
-    Ser_PutStringFormat("    %c. PID Right Calibration - enter gains, execute step input, print velocity response.\r\n", CAL_PID_RIGHT_CMD);
-    Ser_PutStringFormat("    %c. Linear Calibration - move 1 meter forward, measure and enter actual distance.\r\n", CAL_LINEAR_CMD);
-    Ser_PutStringFormat("    %c. Angular Calibration - rotate 360 degrees clockwise, measure and enter actual rotation.\r\n", CAL_ANGULAR_CMD);
+    Ser_PutStringFormat("    %d. Motor Calibration - creates mapping between count/sec and PWM.\r\n",  CAL_MOTOR_CMD);
+    Ser_PutStringFormat("    %d. PID Left Calibration - enter gains, execute step input, print velocity response.\r\n", CAL_PID_LEFT_CMD);
+    Ser_PutStringFormat("    %d. PID Right Calibration - enter gains, execute step input, print velocity response.\r\n", CAL_PID_RIGHT_CMD);
+    Ser_PutStringFormat("    %d. Linear Calibration - move 1 meter forward, measure and enter actual distance.\r\n", CAL_LINEAR_CMD);
+    Ser_PutStringFormat("    %d. Angular Calibration - rotate 360 degrees clockwise, measure and enter actual rotation.\r\n", CAL_ANGULAR_CMD);
     Ser_PutString("\r\n");
-    Ser_PutStringFormat("\r\nEnter %c/%c to exit calibration\r\n", EXIT_CMD, toupper(EXIT_CMD));
+    Ser_PutStringFormat("\r\nEnter %c/%c to exit calibration\r\n", EXIT_CMD_CHR, EXIT_CMD_UCHR);
     Ser_PutString("\r\n");
-    Ser_PutStringFormat("Make an entry [%c-%c,%c/%c]: ", CAL_FIRST_CMD, CAL_LAST_CMD, EXIT_CMD, toupper(EXIT_CMD));
+    Ser_PutStringFormat("Make an entry [%d-%d,%c/%c]: ", CAL_FIRST_CMD, CAL_LAST_CMD, EXIT_CMD_CHR, EXIT_CMD_UCHR);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -269,18 +284,18 @@ static void DisplayValMenu()
 {
     Ser_PutString("\r\nWelcome to the Arlobot validation interface.\r\n");
     Ser_PutString("The following validation operations are allowed:\r\n");
-    Ser_PutStringFormat("    %c. Motor Validation - operates the motors at varying velocities.\r\n", VAL_MOTOR_CMD);
-    Ser_PutStringFormat("    %c. PID Validation - operates the motors at varying velocities, moves in a straight line and rotates in place.\r\n",VAL_PID_CMD);
-    Ser_PutStringFormat("    %c. Left PID (forward) Validation - operates the left motor in the forward direction at various velocities.\r\n", VAL_PID_LEFT_FWD_CMD);
-    Ser_PutStringFormat("    %c. Left PID (backward) Validation - operates the left motor in the backward direction at various velocities.\r\n", VAL_PID_LEFT_BWD_CMD);
-    Ser_PutStringFormat("    %c. Right PID (forward) Validation - operates the right motor in the forward direction at various velocities.\r\n", VAL_PID_RIGHT_FWD_CMD);
-    Ser_PutStringFormat("    %c. Right PID (backward) Validation - operates the right motor in the backward direction at various velocities.\r\n", VAL_PID_RIGHT_BWD_CMD);
-    Ser_PutStringFormat("    %c. Straight Line (forward) Validation - operates the robot in the forward direction at a constant (slow) velocity.\r\n", VAL_LINEAR_FWD_CMD);
-    Ser_PutStringFormat("    %c. Straight Line (backward) Validation - operates the robot in the backward direction at a constant (slow) velocity.\r\n", VAL_LINEAR_BWD_CMD);
-    Ser_PutStringFormat("    %c. Rotation (cw) Validation - rotates the robot in place in the clockwise direction at a constant (slow) velocity.\r\n", VAL_ANGULAR_CW_CMD);
-    Ser_PutStringFormat("    %c. Rotation (ccw) Validation - rotates the robot in place in the counter clockwise direction at a constant (slow) velocity.\r\n", VAL_ANGULAR_CCW_CMD);
-    Ser_PutStringFormat("\r\n\r\nEnter %c/%c to exit validation\r\n", EXIT_CMD, toupper(EXIT_CMD));
-    Ser_PutStringFormat("\r\nMake an entry [%c-%c,%c/%c]: ", VAL_FIRST_CMD, VAL_LAST_CMD, EXIT_CMD, toupper(EXIT_CMD));
+    Ser_PutStringFormat("    %d. Motor Validation - operates the motors at varying velocities.\r\n", VAL_MOTOR_CMD);
+    Ser_PutStringFormat("    %d. PID Validation - operates the motors at varying velocities, moves in a straight line and rotates in place.\r\n",VAL_PID_CMD);
+    Ser_PutStringFormat("    %d. Left PID (forward) Validation - operates the left motor in the forward direction at various velocities.\r\n", VAL_PID_LEFT_FWD_CMD);
+    Ser_PutStringFormat("    %d. Left PID (backward) Validation - operates the left motor in the backward direction at various velocities.\r\n", VAL_PID_LEFT_BWD_CMD);
+    Ser_PutStringFormat("    %d. Right PID (forward) Validation - operates the right motor in the forward direction at various velocities.\r\n", VAL_PID_RIGHT_FWD_CMD);
+    Ser_PutStringFormat("    %d. Right PID (backward) Validation - operates the right motor in the backward direction at various velocities.\r\n", VAL_PID_RIGHT_BWD_CMD);
+    Ser_PutStringFormat("    %d. Straight Line (forward) Validation - operates the robot in the forward direction at a constant (slow) velocity.\r\n", VAL_LINEAR_FWD_CMD);
+    Ser_PutStringFormat("    %d. Straight Line (backward) Validation - operates the robot in the backward direction at a constant (slow) velocity.\r\n", VAL_LINEAR_BWD_CMD);
+    Ser_PutStringFormat("    %d. Rotation (cw) Validation - rotates the robot in place in the clockwise direction at a constant (slow) velocity.\r\n", VAL_ANGULAR_CW_CMD);
+    Ser_PutStringFormat("    %d. Rotation (ccw) Validation - rotates the robot in place in the counter clockwise direction at a constant (slow) velocity.\r\n", VAL_ANGULAR_CCW_CMD);
+    Ser_PutStringFormat("\r\n\r\nEnter %c/%c to exit validation\r\n", EXIT_CMD_CHR, EXIT_CMD_UCHR);
+    Ser_PutStringFormat("\r\nMake an entry [%d-%d,%c/%c]: ", VAL_FIRST_CMD, VAL_LAST_CMD, EXIT_CMD_CHR, EXIT_CMD_UCHR);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -294,13 +309,13 @@ static void DisplaySettingsMenu()
 {
     Ser_PutString("\r\nWelcome to the Arlobot settings display\r\n");
     Ser_PutString("The following settings can be displayed\r\n");
-    Ser_PutStringFormat("    %c. Left Motor Calibration\r\n", DISP_MOTOR_LEFT_CMD);
-    Ser_PutStringFormat("    %c. Right Motor Calibration\r\n", DISP_MOTOR_RIGHT_CMD);
-    Ser_PutStringFormat("    %c. PID Gains: left pid and right pid\r\n", DISP_PID_CMD);
-    Ser_PutStringFormat("    %c. Linear/Angular Bias: linear and angular biases\r\n", DISP_BIAS_CMD);
-    Ser_PutStringFormat("    %c. Display All\r\n", DISP_ALL_CMD);
-    Ser_PutStringFormat("\r\n\r\nEnter %c/%c to exit validation\r\n", EXIT_CMD, toupper(EXIT_CMD));
-    Ser_PutStringFormat("\r\nMake an entry [%c-%c,%c/%c]: ", DISP_FIRST_CMD, DISP_LAST_CMD, EXIT_CMD, toupper(EXIT_CMD));
+    Ser_PutStringFormat("    %d. Left Motor Calibration\r\n", DISP_MOTOR_LEFT_CMD);
+    Ser_PutStringFormat("    %d. Right Motor Calibration\r\n", DISP_MOTOR_RIGHT_CMD);
+    Ser_PutStringFormat("    %d. PID Gains: left pid and right pid\r\n", DISP_PID_CMD);
+    Ser_PutStringFormat("    %d. Linear/Angular Bias: linear and angular biases\r\n", DISP_BIAS_CMD);
+    Ser_PutStringFormat("    %d. Display All\r\n", DISP_ALL_CMD);
+    Ser_PutStringFormat("\r\n\r\nEnter %c/%c to exit validation\r\n", EXIT_CMD_CHR, EXIT_CMD_UCHR);
+    Ser_PutStringFormat("\r\nMake an entry [%d-%d,%c/%c]: ", DISP_FIRST_CMD, DISP_LAST_CMD, EXIT_CMD_CHR, EXIT_CMD_UCHR);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -313,7 +328,10 @@ static void DisplaySettingsMenu()
 static void DisplayExit()
 {
     Ser_PutString("\r\nExiting Arlobot calibration/validation interface.");
-    Ser_PutString("\r\nType 'C' to enter calibration, 'V' to enter validation, 'D' to display settings\r\n");
+    Ser_PutStringFormat("\r\nType '%c/%c' to enter calibration, '%c/%c' to enter validation, '%c/%c' to display settings\r\n", 
+                    CAL_REQUEST_CHR, CAL_REQUEST_UCHR,
+                    VAL_REQUEST_CHR, VAL_REQUEST_UCHR,
+                    SETTING_REQUEST_CHR, SETTING_REQUEST_UCHR);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -349,7 +367,6 @@ static void ProcessSettingsCmd(uint8 cmd)
     switch (cmd)
     {
         case DISP_MOTOR_LEFT_CMD:
-            Ser_WriteByte(cmd);
             Ser_PutString("\r\nDisplaying left motor calibration: count/sec, pwm mapping\r\n");
             Cal_PrintSamples("Left-Backward", (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd);
             Cal_PrintSamples("Left-Forward", (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_fwd);
@@ -359,7 +376,6 @@ static void ProcessSettingsCmd(uint8 cmd)
             break;
             
         case DISP_MOTOR_RIGHT_CMD:
-            Ser_WriteByte(cmd);
             Ser_PutString("\r\nDisplaying right motor calibration: count/sec, pwm mapping\r\n");
             Cal_PrintSamples("Right-Backward", (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd);
             Cal_PrintSamples("Right-Forward", (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd);
@@ -369,7 +385,6 @@ static void ProcessSettingsCmd(uint8 cmd)
             break;
             
         case DISP_PID_CMD:
-            Ser_WriteByte(cmd);
             Ser_PutString("\r\nDisplaying all PID gains: left, right\r\n");
             Cal_PrintGains("Left PID", (float *) &p_cal_eeprom->left_gains);
             Cal_PrintGains("Right PID", (float *) &p_cal_eeprom->right_gains);
@@ -379,7 +394,6 @@ static void ProcessSettingsCmd(uint8 cmd)
             break;
             
         case DISP_BIAS_CMD:
-            Ser_WriteByte(cmd);
             Ser_PutString("\r\nDisplaying linear/angular bias\r\n");
             Cal_PrintBias();
             Ser_PutString("\r\n");
@@ -388,7 +402,6 @@ static void ProcessSettingsCmd(uint8 cmd)
             break;
             
         case DISP_ALL_CMD:
-            Ser_WriteByte(cmd);
             Ser_PutString("\r\nDisplaying all calibration/settings\r\n");
 
             Cal_PrintAllMotorParams();
@@ -408,46 +421,157 @@ static void ProcessSettingsCmd(uint8 cmd)
 }
 
 /*---------------------------------------------------------------------------------------------------
+ * Name: GetTopLevelCommand
+ * Description: Translates command characters to numeric command values
+ * Parameters: cmd - top level command
+ * Return: numeric command
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+static uint8 GetTopLevelCommand(char* cmd)
+{
+    switch (cmd[0])
+    {
+        case CAL_REQUEST_CHR:
+        case CAL_REQUEST_UCHR:
+            return CAL_REQUEST;
+
+        case VAL_REQUEST_CHR:
+        case VAL_REQUEST_UCHR:
+            return VAL_REQUEST;
+
+        case SETTING_REQUEST_CHR:
+        case SETTING_REQUEST_UCHR:
+            return SETTING_REQUEST;
+
+        case EXIT_CMD_CHR:
+        case EXIT_CMD_UCHR:
+            return EXIT_CMD;
+    }
+
+    return NULL_CMD;
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: GetCalibrationCommand
+ * Description: Translates command characters to numeric command values
+ * Parameters: cmd - calibration command
+ * Return: numeric command
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+static uint8 GetCalibrationCommand(char* cmd)
+{
+    uint8 num_cmd;
+
+    if (cmd[0] == EXIT_CMD_CHR || cmd[0] == EXIT_CMD_UCHR)
+    {
+        return EXIT_CMD;
+    }
+
+    num_cmd = atoi(cmd);
+
+    if (num_cmd >= CAL_FIRST_CMD && num_cmd <= CAL_LAST_CMD)
+    {
+        return num_cmd;
+    }
+
+    return NULL_CMD;
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: GetValidationCommand
+ * Description: Translates command characters to numeric command values
+ * Parameters: cmd - validation command
+ * Return: numeric command
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+static uint8 GetValidationCommand(char* cmd)
+{
+    uint8 num_cmd;
+
+    if (cmd[0] == EXIT_CMD_CHR || cmd[0] == EXIT_CMD_UCHR)
+    {
+        return EXIT_CMD;
+    }
+
+    num_cmd = atoi(cmd);
+
+    if (num_cmd >= VAL_FIRST_CMD && num_cmd <= VAL_LAST_CMD)
+    {
+        return num_cmd;
+    }
+
+    return NULL_CMD;
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: GetSettingsCommand
+ * Description: Translates command characters to numeric command values
+ * Parameters: cmd - settings command
+ * Return: numeric command
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+static uint8 GetSettingsCommand(char* cmd)
+{
+    uint8 num_cmd;
+
+    if (cmd[0] == EXIT_CMD_CHR || cmd[0] == EXIT_CMD_UCHR)
+    {
+        return EXIT_CMD;
+    }
+
+    num_cmd = atoi(cmd);
+    
+    if (num_cmd >= DISP_FIRST_CMD && num_cmd <= DISP_LAST_CMD)
+    {
+        return num_cmd;
+    }
+
+    return NULL_CMD;
+}
+
+/*---------------------------------------------------------------------------------------------------
  * Name: GetCommand
  * Description: Gets the calibration/validation/display command from the serial port
- * Parameters: None
+ * Parameters: cmd_class
  * Return: the command entered on the serial port.
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 GetCommand()
+static uint8 GetCommand(uint8 cmd_class)
 {
-    char value = NULL_CMD;
+    static char value[2] = {NULL_CMD, '\r'};
+    int result;
+    uint8 cmd = NULL_CMD;
 
-    value = Ser_ReadByte();
-
-    switch (value)
+    result = Ser_ReadLine(value, true);
+    if (result != 0)
     {
-        case 'c':
-        case 'C':
-            value = CAL_REQUEST;
-            break;
-            
-        case 'v':
-        case 'V':
-            value = VAL_REQUEST;
-            break;
-            
-        case 'd':
-        case 'D':
-            value = SETTING_REQUEST;
-            break;
 
-        case 'x':
-        case 'X':
-            value = EXIT_CMD;
-            break;
+        switch (cmd_class)
+        {
+            case CMD_TOP_LEVEL:
+                cmd = GetTopLevelCommand(value);
+                break;
+
+            case CMD_CALIBRATION:
+                cmd = GetCalibrationCommand(value);
+                break;
+
+            case CMD_VALIDATION:
+                cmd = GetValidationCommand(value);
+                break;
+
+            case CMD_SETTINGS:
+                cmd = GetSettingsCommand(value);
+        }
+    
+        return cmd;
     }
     
     /* The value returned from the function drives the calibration state machine.  The only values allowed are legitimate
        commands or NULL_CMD (where NULL_CMD is ignored).
      */
     
-    return value;
+    return NULL_CMD;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -457,47 +581,31 @@ static uint8 GetCommand()
  * Return: the specified calibration type; otherwise, NULL.
  * 
  *-------------------------------------------------------------------------------------------------*/
-static CALIBRATION_TYPE* GetCalibration(uint8 cmd)
+static CALVAL_INTERFACE_TYPE* GetCalibration(uint8 cmd)
 {
     switch (cmd)
     {
         case CAL_MOTOR_CMD:
-            Ser_WriteByte(cmd);
-            CalMotor_Calibration->state = CAL_INIT_STATE;
-            return CalMotor_Calibration;
+            return CalMotor_Start();
             
         case CAL_PID_LEFT_CMD:
-            Ser_WriteByte(cmd);
-            CalPid_LeftCalibration->state = CAL_INIT_STATE;
-            return CalPid_LeftCalibration;
-            break;
+            return CalPid_Start(WHEEL_LEFT);
 
         case CAL_PID_RIGHT_CMD:
-            Ser_WriteByte(cmd);
-            CalPid_RightCalibration->state = CAL_INIT_STATE;
-            return CalPid_RightCalibration;
-            break;
-
+            return CalPid_Start(WHEEL_RIGHT);
+            
         case CAL_LINEAR_CMD:
-            Ser_WriteByte(cmd);
-            CalLin_Calibration->state = CAL_INIT_STATE;
-            CalLin_Calibration->stage = CAL_CALIBRATE_STAGE;
-            return (CALIBRATION_TYPE *) CalLin_Calibration;
-            break;
+            return CalLin_Start();
             
         case CAL_ANGULAR_CMD:
-            Ser_WriteByte(cmd);
-            CalAng_Calibration->state = CAL_INIT_STATE;
-            CalAng_Calibration->stage = CAL_CALIBRATE_STAGE;
-            return (CALIBRATION_TYPE *) CalAng_Calibration;
-            break;
+            return CalAng_Start();
             
         default:
             // Do nothing
             break;
     }
     
-    return (CALIBRATION_TYPE *) 0;
+    return (CALVAL_INTERFACE_TYPE *) 0;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -507,97 +615,45 @@ static CALIBRATION_TYPE* GetCalibration(uint8 cmd)
  * Return: the specified validation type; otherwise, NULL.
  * 
  *-------------------------------------------------------------------------------------------------*/
-static CALIBRATION_TYPE* GetValidation(uint8 cmd)
+static CALVAL_INTERFACE_TYPE* GetValidation(uint8 cmd)
 {
     switch (cmd)
     {
         case VAL_MOTOR_CMD:
-            Ser_WriteByte(cmd);
             Ser_PutString("\r\nPerforming Motor Validation by operating the motors at varying velocities.\r\n");
-            ValMotor_Validation->stage = CAL_VALIDATE_STAGE;
-            ValMotor_Validation->state = CAL_INIT_STATE;
-            return (CALIBRATION_TYPE *) ValMotor_Validation;
-            break;
+            return ValMotor_Start();
             
-        case VAL_PID_CMD:
-            Ser_WriteByte(cmd);
-            Ser_PutString("\r\nPerforming Left/Right PID Validation by operating the motors at varying velocities.\r\n");
-            CalPid_LeftValidation->stage = CAL_VALIDATE_STAGE;
-            CalPid_LeftValidation->state = CAL_INIT_STATE;
-            return (CALIBRATION_TYPE *) CalPid_LeftValidation;
-            break;
-                    
         case VAL_PID_LEFT_FWD_CMD:
-            Ser_WriteByte(cmd);
             Ser_PutString("\r\nPerforming Left PID validation in the forward direction.\r\n");
-            CalPid_LeftValidation->stage = CAL_VALIDATE_STAGE;
-            CalPid_LeftValidation->state = CAL_INIT_STATE;
-            ((CAL_PID_PARAMS *)(CalPid_LeftValidation->params))->direction = DIR_FORWARD;
-            return (CALIBRATION_TYPE *) CalPid_LeftValidation;
-            break;
+            return ValPid_Start(VAL_PID_LEFT_FORWARD);
 
         case VAL_PID_LEFT_BWD_CMD:
-            Ser_WriteByte(cmd);
             Ser_PutString("\r\nPerforming Left PID validation in the backward direction.\r\n");
-            CalPid_LeftValidation->stage = CAL_VALIDATE_STAGE;
-            CalPid_LeftValidation->state = CAL_INIT_STATE;
-            ((CAL_PID_PARAMS *)(CalPid_LeftValidation->params))->direction = DIR_BACKWARD;
-            return (CALIBRATION_TYPE *) CalPid_LeftValidation;
-            break;
+            return ValPid_Start(VAL_PID_LEFT_BACKWARD);
 
         case VAL_PID_RIGHT_FWD_CMD:
-            Ser_WriteByte(cmd);
             Ser_PutString("\r\nPerforming Right PID validation in the forward direction.\r\n");
-            CalPid_RightValidation->stage = CAL_VALIDATE_STAGE;
-            CalPid_RightValidation->state = CAL_INIT_STATE;
-            ((CAL_PID_PARAMS *)(CalPid_RightValidation->params))->direction = DIR_FORWARD;
-            return (CALIBRATION_TYPE *) CalPid_RightValidation;
-            break;
+            return ValPid_Start(VAL_PID_RIGHT_FORWARD);
 
         case VAL_PID_RIGHT_BWD_CMD:
-            Ser_WriteByte(cmd);
             Ser_PutString("\r\nPerforming Right PID validation in the backward direction.\r\n");
-            CalPid_RightValidation->stage = CAL_VALIDATE_STAGE;
-            CalPid_RightValidation->state = CAL_INIT_STATE;
-            ((CAL_PID_PARAMS *)(CalPid_RightValidation->params))->direction = DIR_BACKWARD;
-            return (CALIBRATION_TYPE *) CalPid_RightValidation;
-            break;
+            return ValPid_Start(VAL_PID_RIGHT_BACKWARD);
                        
         case VAL_LINEAR_FWD_CMD:
-            Ser_WriteByte(cmd);
             Ser_PutString("\r\nPerforming straight line validation in the forward direction.\r\n");
-            CalLin_Validation->stage = CAL_VALIDATE_STAGE;
-            CalLin_Validation->state = CAL_INIT_STATE;
-            ((CAL_LIN_PARAMS *)(CalLin_Validation->params))->direction = DIR_FORWARD;
-            return (CALIBRATION_TYPE *) CalLin_Validation;
-            break;
+            return ValLin_Start(DIR_FORWARD);
                 
         case VAL_LINEAR_BWD_CMD:
-            Ser_WriteByte(cmd);
             Ser_PutString("\r\nPerforming straight line validation in the backward direction.\r\n");
-            CalLin_Validation->stage = CAL_VALIDATE_STAGE;
-            CalLin_Validation->state = CAL_INIT_STATE;
-            ((CAL_LIN_PARAMS *)(CalLin_Validation->params))->direction = DIR_BACKWARD;
-            return (CALIBRATION_TYPE *) CalLin_Validation;
-            break;
+            return ValLin_Start(DIR_BACKWARD);
             
         case VAL_ANGULAR_CW_CMD:
-            Ser_WriteByte(cmd);
             Ser_PutString("\r\nPerforming rotation validation in the clockwise direction.\r\n");
-            CalAng_Validation->stage = CAL_VALIDATE_STAGE;
-            CalAng_Validation->state = CAL_INIT_STATE;
-            ((CAL_ANG_PARAMS *)(CalAng_Validation->params))->direction = DIR_CW;
-            return (CALIBRATION_TYPE *) CalAng_Validation;
-            break;
+            return ValAng_Start(DIR_CW);
 
         case VAL_ANGULAR_CCW_CMD:
-            Ser_WriteByte(cmd);
             Ser_PutString("\r\nPerforming rotation validation in the counter clockwise direction.\r\n");
-            CalAng_Validation->stage = CAL_VALIDATE_STAGE;
-            CalAng_Validation->state = CAL_INIT_STATE;
-            ((CAL_ANG_PARAMS *)(CalAng_Validation->params))->direction = DIR_CCW;
-            return (CALIBRATION_TYPE *) CalAng_Validation;
-            break;
+            return ValAng_Start(DIR_CCW);
 
         default:
             //Ser_PutStringFormat("\r\nUnknown command: %c\r\n", cmd);
@@ -606,66 +662,66 @@ static CALIBRATION_TYPE* GetValidation(uint8 cmd)
 
     }
     
-    return (CALIBRATION_TYPE *) 0;
+    return (CALVAL_INTERFACE_TYPE *) 0;
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: HandleError
  * Description: Prints an error message to the serial for the specified calibration/validation
- * Parameters: calval - the requested calibration/validation.
+ * Parameters: None
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void HandleError(CALIBRATION_TYPE *calval)
+static void HandleError()
 {
     /* Maybe more can go here, but for now, just print an error */
     
-    Ser_PutStringFormat("Error processing stage %s, state %s\r\n", CAL_STAGE_TO_STRING(calval->stage), CAL_STATE_TO_STRING(calval->state));
+    Ser_PutStringFormat("Error processing stage %s, state %s\r\n", CAL_STAGE_TO_STRING(active_calval->stage), CAL_STATE_TO_STRING(active_calval->state));
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Process
  * Description: The main routine for processing a calibration/validation.  Each calibration/validation 
  *              module provides a common function interface: init, start, update, stop, results. 
- * Parameters: calval - the requested calibration/validation.
+ * Parameters: None
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void Process(CALIBRATION_TYPE *calval)
+static void Process()
 {
     uint8 result;
     
-    switch (calval->state)
+    switch (active_calval->state)
     {
         case CAL_INIT_STATE:
-            result = calval->init(calval->stage, calval->params);
+            result = active_calval->init(active_calval->stage, active_calval->params);
             if (result == CAL_OK)
             {
-                calval->state = CAL_START_STATE;
+                active_calval->state = CAL_START_STATE;
             }
             else
             {
-                HandleError(calval);
+                HandleError();
             }
             break;
             
         case CAL_START_STATE:
-            result = calval->start(calval->stage, calval->params);
+            result = active_calval->start(active_calval->stage, active_calval->params);
             if (result == CAL_OK)
             {
-                calval->state = CAL_RUNNING_STATE;
+                active_calval->state = CAL_RUNNING_STATE;
             }
             else
             {
-                HandleError(calval);
+                HandleError();
             }
             break;
             
         case CAL_RUNNING_STATE:
-            result = calval->update(calval->stage, calval->params);
+            result = active_calval->update(active_calval->stage, active_calval->params);
             if (result == CAL_COMPLETE)
             {
-                calval->state = CAL_STOP_STATE;
+                active_calval->state = CAL_STOP_STATE;
             }
             else if (result == CAL_OK)
             {
@@ -673,39 +729,39 @@ static void Process(CALIBRATION_TYPE *calval)
             }
             else
             {
-                HandleError(calval);
+                HandleError();
             }
             break;
             
         case CAL_STOP_STATE:
-            result = calval->stop(calval->stage, calval->params);
+            result =active_calval->stop(active_calval->stage, active_calval->params);
             if (result == CAL_OK)
             {
-                calval->state = CAL_RESULTS_STATE;
+                active_calval->state = CAL_RESULTS_STATE;
             }
             else
             {
-                HandleError(calval);
+                HandleError();
             }
             break;
             
         case CAL_RESULTS_STATE:
-            result = calval->results(calval->stage, calval->params);
+            result = active_calval->results(active_calval->stage, active_calval->params);
             if (result == CAL_OK)
             {
-                calval->state = CAL_DONE_STATE;                
+                active_calval->state = CAL_DONE_STATE;                
             }
             else
             {
-                HandleError(calval);
+                HandleError();
             }
             break;
             
         case CAL_DONE_STATE:
         default:
-            active_cal = (CALIBRATION_TYPE *) 0;
-            active_val = (CALIBRATION_TYPE *) 0;
-            DisplayMenu(calval->stage);
+            active_calval = (CALVAL_INTERFACE_TYPE *) 0;
+            active_calval = (CALVAL_INTERFACE_TYPE *) 0;
+            DisplayMenu(active_calval->stage);
             break;
     }
 }
@@ -740,6 +796,7 @@ void Cal_Init()
     CalMotor_Init();
     ValMotor_Init();
     CalPid_Init();
+    ValPid_Init();
     CalLin_Init();
     CalAng_Init();
 }
@@ -759,8 +816,6 @@ void Cal_Start()
     Cal_Clear();
     */
     Control_SetCalibrationStatus(status); 
-    
-    CalPid_Start();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -802,12 +857,12 @@ void Cal_Update()
 {
     uint8 cmd;
     
-    cmd = GetCommand();
-    
     switch (ui_state)
     {
         case UI_STATE_INIT:
             {        
+                cmd = GetCommand(CMD_TOP_LEVEL);
+                
                 switch (cmd)
                 {
                     case CAL_REQUEST:
@@ -830,41 +885,31 @@ void Cal_Update()
             break;
         
         case UI_STATE_CALIBRATION:
-            if (!active_cal)
-            {
-                active_cal = GetCalibration(cmd);
-            }            
-                
-            if (active_cal)
-            {
-                Control_OverrideDebug(TRUE);
-                Process(active_cal);
-            }                        
-            
-            if (cmd == EXIT_CMD)
-            {
-                ui_state = UI_STATE_EXIT;
-            }
-            break;
-            
         case UI_STATE_VALIDATION:
-            if (!active_val)
             {
-                active_val = GetValidation(cmd);
-            }
-            if (active_val)
-            {
-                Control_OverrideDebug(TRUE);
-                Process(active_val);
-            }
-            
-            if (cmd == EXIT_CMD)
-            {
-                ui_state = UI_STATE_EXIT;
+                uint8 cal_val = (ui_state == UI_STATE_CALIBRATION) ? CMD_CALIBRATION : CMD_VALIDATION;
+                cmd = GetCommand(cal_val);
+
+                if (!active_calval)
+                {
+                    active_calval = (ui_state == UI_STATE_CALIBRATION) ? GetCalibration(cmd) : GetValidation(cmd);
+                }            
+                    
+                if (active_calval)
+                {
+                    Control_OverrideDebug(TRUE);
+                    Process();
+                }                        
+                
+                if (cmd == EXIT_CMD)
+                {
+                    ui_state = UI_STATE_EXIT;
+                }
             }
             break;
-            
+        
         case UI_STATE_SETTINGS:
+            cmd = GetCommand(CMD_SETTINGS);
             ProcessSettingsCmd(cmd);
             
             if (cmd == EXIT_CMD)
@@ -895,9 +940,10 @@ void Cal_Update()
  *-------------------------------------------------------------------------------------------------*/
 float Cal_ReadResponse()
 {
+#ifdef OLD_WAY
+    char value;
     uint8 digits[6];
     uint8 index = 0;
-    uint8 value;
     do
     {
         Ser_Update();
@@ -920,6 +966,22 @@ float Cal_ReadResponse()
     float result = atof((char *) digits);
     
     return result;
+#else
+    static char digits[10] = {'0'};
+    int result;
+    do
+    {
+        Ser_Update();
+    
+        result = Ser_ReadLine(digits, true);
+        if (result > 0)
+        {
+            return atof((char *) digits);
+        }
+    } while (result == 0);
+    
+    return 0.0;
+#endif
 }
 
 /*---------------------------------------------------------------------------------------------------

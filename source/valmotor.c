@@ -108,7 +108,7 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params);
 static uint8 Stop(CAL_STAGE_TYPE stage, void *params);
 static uint8 Results(CAL_STAGE_TYPE stage, void *params);
 
-static CALIBRATION_TYPE motor_validation = {CAL_INIT_STATE, 
+static CALVAL_INTERFACE_TYPE motor_validation = {CAL_INIT_STATE, 
                                             CAL_VALIDATE_STAGE,
                                             NULL,
                                             Init, 
@@ -300,46 +300,6 @@ static void SetNextVelocity(VAL_MOTOR_PARAMS *params, float cps)
     }
 }
 
-/*---------------------------------------------------------------------------------------------------
- * Name: InitCalibrationParams
- * Description: Calculates an array of pwm values based on the specified wheel, and direction. 
- * Parameters: wheel - left/right wheel 
- *             dir - forward/backward direction
- *             pwm_samples - array of pwm values
- *             reverse_pwm - indicates the ordering within the pwm samples
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-static void InitValidationParams(VAL_MOTOR_PARAMS *params)
-{
-    //uint8 ii;
-    //uint16 pwm;
-    //uint16 pwm_start;
-    //int16 pwm_step;
-    //WHEEL_TYPE wheel;
-    //DIR_TYPE dir;
-     
-    params = params;
-    
-    //wheel = params->wheel;
-    //dir = params->direction;
-        
-    //pwm_start = pwm_params[wheel][dir].start;
-    //pwm_step = pwm_params[wheel][dir].step;
-     
-    /* The pwm samples are filled in from lowest value to highest PWM value.  This ensures that the
-       corresponding count/sec values (stored in a different array) are ordered from lowest value to
-       highest value, i.e., forward: 0 to max cps, reverse: -max cps to 0.
-    */
-    //for (ii =0, pwm = pwm_start; ii < CAL_NUM_SAMPLES; ++ii, pwm += pwm_step)
-    //{
-    //}
-  
-    /* The first pwm entry is always PWM_STOP and it must correspond to CPS value 0 in order to stop the motor.  So,
-       So, set pwm_index to start at 1.
-    */
-}
-
 static uint8 PerformMotorValidation(VAL_MOTOR_PARAMS *val_params)
 {
     static uint8 running = FALSE;
@@ -518,7 +478,13 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
  *---------------------------------------------------------------------------------------------------------------------*/
 void ValMotor_Init()
 {    
-    ValMotor_Validation = &motor_validation;
+}
+
+CALVAL_INTERFACE_TYPE * ValMotor_Start()
+{
+    motor_validation.stage = CAL_VALIDATE_STAGE;
+    motor_validation.state = CAL_INIT_STATE;
+    return &motor_validation;        
 }
 
 /* [] END OF FILE */
