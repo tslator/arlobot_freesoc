@@ -90,11 +90,11 @@ SOFTWARE.
 typedef enum {CAL_INIT_STATE, CAL_START_STATE, CAL_RUNNING_STATE, CAL_STOP_STATE, CAL_RESULTS_STATE, CAL_DONE_STATE} CAL_STATE_TYPE;
 typedef enum {CAL_CALIBRATE_STAGE, CAL_VALIDATE_STAGE } CAL_STAGE_TYPE;
 
-typedef uint8 (*INIT_FUNC_TYPE)(CAL_STAGE_TYPE stage, void *params);
-typedef uint8 (*START_FUNC_TYPE)(CAL_STAGE_TYPE stage, void *params);
-typedef uint8 (*UPDATE_FUNC_TYPE)(CAL_STAGE_TYPE stage, void *params);
-typedef uint8 (*STOP_FUNC_TYPE)(CAL_STAGE_TYPE stage, void *params);
-typedef uint8 (*RESULTS_FUNC_TYPE)(CAL_STAGE_TYPE stage, void *params);
+typedef uint8 (*INIT_FUNC_TYPE)();
+typedef uint8 (*START_FUNC_TYPE)();
+typedef uint8 (*UPDATE_FUNC_TYPE)();
+typedef uint8 (*STOP_FUNC_TYPE)();
+typedef uint8 (*RESULTS_FUNC_TYPE)();
 typedef void (*SET_LEFT_RIGHT_VELOCITY_TYPE)(float left, float right);
 
 

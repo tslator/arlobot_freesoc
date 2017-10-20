@@ -102,11 +102,11 @@ static float val_fwd_cps[VAL_NUM_PROFILE_DATA_POINTS] = {0.0, 0.0, 0.0, 0.0, 0.0
 static float val_bwd_cps[VAL_NUM_PROFILE_DATA_POINTS] = {-0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0};
 
 /* Provides an implementation of the Calibration interface */
-static uint8 Init(CAL_STAGE_TYPE stage, void *params);
-static uint8 Start(CAL_STAGE_TYPE stage, void *params);
-static uint8 Update(CAL_STAGE_TYPE stage, void *params);
-static uint8 Stop(CAL_STAGE_TYPE stage, void *params);
-static uint8 Results(CAL_STAGE_TYPE stage, void *params);
+static uint8 Init();
+static uint8 Start();
+static uint8 Update();
+static uint8 Stop();
+static uint8 Results();
 
 static CALVAL_INTERFACE_TYPE motor_validation = {CAL_INIT_STATE, 
                                             CAL_VALIDATE_STAGE,
@@ -364,11 +364,8 @@ static uint8 PerformMotorValidation(VAL_MOTOR_PARAMS *val_params)
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Init(CAL_STAGE_TYPE stage, void *params)
+static uint8 Init()
 {
-    //uint8 ii;
-    params = params;    
-
     Ser_PutString("\r\nInitialize motor validation\r\n");
 
     Cal_CalcTriangularProfile(VAL_NUM_PROFILE_DATA_POINTS, 
@@ -392,16 +389,13 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Start(CAL_STAGE_TYPE stage, void *params)
+static uint8 Start()
 {
-    params = params;
-    
     Ser_PutString("\r\nPerforming motor validation\r\n");
     Cal_SetLeftRightVelocity(0, 0);            
     Debug_Store();
     Debug_Enable(DEBUG_LEFT_ENCODER_ENABLE_BIT);// | DEBUG_LEFT_MOTOR_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT);
-    
-    
+        
     return CAL_OK;
 }
 
@@ -414,11 +408,8 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
  * Return: uint8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Update(CAL_STAGE_TYPE stage, void *params)
+static uint8 Update()
 {
-    params = params;
-    
-    
     VAL_MOTOR_PARAMS *val_params = &motor_val_params[motor_val_index];
 
     uint8 result = PerformMotorValidation(val_params);
@@ -443,10 +434,8 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
+static uint8 Stop()
 {
-    params = params;
-    
     Ser_PutString("Motor validation complete\r\n");
     Cal_SetLeftRightVelocity(0, 0);
     Pid_RestoreLeftRightTarget();
@@ -464,10 +453,8 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Results(CAL_STAGE_TYPE stage, void *params)
+static uint8 Results()
 {
-    params = params;
-
     Ser_PutString("\r\nPrinting motor validation results\r\n");
 
     return CAL_OK;

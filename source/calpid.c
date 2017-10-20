@@ -60,11 +60,11 @@ static uint32 start_time;
 static CALVAL_PID_PARAMS left_pid_params = {"left", PID_TYPE_LEFT, DIR_FORWARD, 3000};
 static CALVAL_PID_PARAMS right_pid_params = {"right", PID_TYPE_RIGHT, DIR_FORWARD, 3000};
 
-static uint8 Init(CAL_STAGE_TYPE stage, void *params);
-static uint8 Start(CAL_STAGE_TYPE stage, void *params);
-static uint8 Update(CAL_STAGE_TYPE stage, void *params);
-static uint8 Stop(CAL_STAGE_TYPE stage, void *params);
-static uint8 Results(CAL_STAGE_TYPE stage, void *params);
+static uint8 Init();
+static uint8 Start();
+static uint8 Update();
+static uint8 Stop();
+static uint8 Results();
 
 static CALVAL_INTERFACE_TYPE left_pid_calibration = {CAL_INIT_STATE,
                                                 CAL_CALIBRATE_STAGE,
@@ -85,6 +85,7 @@ static CALVAL_INTERFACE_TYPE right_pid_calibration = {CAL_INIT_STATE,
                                                  Results};
 
 static float max_cps;
+static CALVAL_PID_PARAMS *p_pid_params;
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -165,10 +166,8 @@ static void CalcMaxCps()
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Init(CAL_STAGE_TYPE stage, void *params)
+static uint8 Init()
 {
-    CALVAL_PID_PARAMS *p_pid_params = (CALVAL_PID_PARAMS *)params;
-    
     if (!Cal_GetCalibrationStatusBit(CAL_MOTOR_BIT))
     {
         Ser_PutStringFormat("Motor calibration not performed (%02x)\r\n", p_cal_eeprom->status);
@@ -205,10 +204,9 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Start(CAL_STAGE_TYPE stage, void *params)
+static uint8 Start()
 {
     float gains[4];
-    CALVAL_PID_PARAMS *p_pid_params = (CALVAL_PID_PARAMS *) params;
     
     Ser_PutString("\r\nEnter proportional gain: ");
     gains[0] = Cal_ReadResponse();
@@ -255,10 +253,8 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
  * Return: uint8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Update(CAL_STAGE_TYPE stage, void *params)
+static uint8 Update()
 {
-    CALVAL_PID_PARAMS * p_pid_params = (CALVAL_PID_PARAMS *) params;
-        
     if (millis() - start_time < p_pid_params->run_time)
     {
         return CAL_OK;
@@ -275,9 +271,8 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
+static uint8 Stop()
 {
-    CALVAL_PID_PARAMS *p_pid_params = (CALVAL_PID_PARAMS *)params;
     float gains[4];
 
     Cal_SetLeftRightVelocity(0, 0);
@@ -312,10 +307,9 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Results(CAL_STAGE_TYPE stage, void *params)
+static uint8 Results()
 {
     float gains[4];
-    CALVAL_PID_PARAMS *p_pid_params = (CALVAL_PID_PARAMS *)params;
     
     Ser_PutString("\r\nPrinting PID calibration results\r\n");
 
@@ -358,10 +352,12 @@ CALVAL_INTERFACE_TYPE* CalPid_Start(WHEEL_TYPE wheel)
     {
         case WHEEL_LEFT:
             left_pid_calibration.state = CAL_INIT_STATE;
+            p_pid_params = left_pid_calibration.params;
             return &left_pid_calibration;
 
         case WHEEL_RIGHT:
             right_pid_calibration.state = CAL_INIT_STATE;
+            p_pid_params = right_pid_calibration.params;
             return &right_pid_calibration;
             
         default:

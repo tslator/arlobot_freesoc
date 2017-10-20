@@ -73,11 +73,11 @@ static CALVAL_LIN_PARAMS linear_params = {DIR_FORWARD,
                                        0.0,
                                        0.0};
 
-static uint8 Init(CAL_STAGE_TYPE stage, void *params);
-static uint8 Start(CAL_STAGE_TYPE stage, void *params);
-static uint8 Update(CAL_STAGE_TYPE stage, void *params);
-static uint8 Stop(CAL_STAGE_TYPE stage, void *params);
-static uint8 Results(CAL_STAGE_TYPE stage, void *params);
+static uint8 Init();
+static uint8 Start();
+static uint8 Update();
+static uint8 Stop();
+static uint8 Results();
 
 static CALVAL_INTERFACE_TYPE linear_validation = {CAL_INIT_STATE,
                                               CAL_VALIDATE_STAGE,
@@ -88,6 +88,10 @@ static CALVAL_INTERFACE_TYPE linear_validation = {CAL_INIT_STATE,
                                               Stop,
                                               Results};
 
+
+
+static CALVAL_LIN_PARAMS *p_lin_params;
+                                              
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
@@ -127,10 +131,8 @@ static uint8 IsMoveFinished(float * distance)
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Init(CAL_STAGE_TYPE stage, void *params)
+static uint8 Init()
 {
-    CALVAL_LIN_PARAMS *p_lin_params = (CALVAL_LIN_PARAMS *)params;
-    
     Debug_Store();
         
     p_lin_params->distance = p_lin_params->direction == DIR_FORWARD ? LINEAR_DISTANCE : -LINEAR_DISTANCE;
@@ -154,11 +156,8 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Start(CAL_STAGE_TYPE stage, void *params)
+static uint8 Start()
 {
-    CALVAL_LIN_PARAMS *p_lin_params = (CALVAL_LIN_PARAMS *) params;
-    float left;
-    float right;
     int32 left_count;
     int32 right_count;
     float x_pos;
@@ -194,10 +193,8 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
  * Return: uint8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Update(CAL_STAGE_TYPE stage, void *params)
+static uint8 Update()
 {
-    CALVAL_LIN_PARAMS * p_lin_params = (CALVAL_LIN_PARAMS *) params;
-
     if (millis() - start_time < p_lin_params->run_time)
     {
         if( IsMoveFinished(&p_lin_params->distance) )
@@ -224,10 +221,8 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
+static uint8 Stop()
 {
-    CALVAL_LIN_PARAMS *p_lin_params = (CALVAL_LIN_PARAMS *)params;
-
     Control_RestoreCommandVelocityFunc();
     Debug_Restore();    
     
@@ -245,7 +240,7 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Results(CAL_STAGE_TYPE stage, void *params)
+static uint8 Results()
 {
     float heading;
     float linear_bias;
@@ -255,8 +250,6 @@ static uint8 Results(CAL_STAGE_TYPE stage, void *params)
     int32 left_count;
     int32 right_count;
     
-    CALVAL_LIN_PARAMS *p_lin_params = (CALVAL_LIN_PARAMS *)params;
-
     Odom_GetXYPosition(&x, &y);    
     heading = Odom_GetHeading();
     linear_bias = Cal_GetLinearBias();
@@ -294,7 +287,8 @@ CALVAL_INTERFACE_TYPE* ValLin_Start(DIR_TYPE dir)
 {
     linear_validation.state = CAL_INIT_STATE;
     linear_validation.stage = CAL_VALIDATE_STAGE;
-    ((CALVAL_LIN_PARAMS *) &linear_validation.params)->direction = dir;
+    p_lin_params = linear_validation.params;
+    p_lin_params->direction = dir;
     return &linear_validation;
 }
 

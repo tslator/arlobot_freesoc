@@ -694,7 +694,7 @@ static void Process()
     switch (active_calval->state)
     {
         case CAL_INIT_STATE:
-            result = active_calval->init(active_calval->stage, active_calval->params);
+            result = active_calval->init();
             if (result == CAL_OK)
             {
                 active_calval->state = CAL_START_STATE;
@@ -706,7 +706,7 @@ static void Process()
             break;
             
         case CAL_START_STATE:
-            result = active_calval->start(active_calval->stage, active_calval->params);
+            result = active_calval->start();
             if (result == CAL_OK)
             {
                 active_calval->state = CAL_RUNNING_STATE;
@@ -718,7 +718,7 @@ static void Process()
             break;
             
         case CAL_RUNNING_STATE:
-            result = active_calval->update(active_calval->stage, active_calval->params);
+            result = active_calval->update();
             if (result == CAL_COMPLETE)
             {
                 active_calval->state = CAL_STOP_STATE;
@@ -734,7 +734,7 @@ static void Process()
             break;
             
         case CAL_STOP_STATE:
-            result =active_calval->stop(active_calval->stage, active_calval->params);
+            result =active_calval->stop();
             if (result == CAL_OK)
             {
                 active_calval->state = CAL_RESULTS_STATE;
@@ -746,7 +746,7 @@ static void Process()
             break;
             
         case CAL_RESULTS_STATE:
-            result = active_calval->results(active_calval->stage, active_calval->params);
+            result = active_calval->results();
             if (result == CAL_OK)
             {
                 active_calval->state = CAL_DONE_STATE;                
@@ -759,9 +759,8 @@ static void Process()
             
         case CAL_DONE_STATE:
         default:
-            active_calval = (CALVAL_INTERFACE_TYPE *) 0;
-            active_calval = (CALVAL_INTERFACE_TYPE *) 0;
             DisplayMenu(active_calval->stage);
+            active_calval = (CALVAL_INTERFACE_TYPE *) 0;
             break;
     }
 }
@@ -887,11 +886,11 @@ void Cal_Update()
         case UI_STATE_CALIBRATION:
         case UI_STATE_VALIDATION:
             {
-                uint8 cal_val = (ui_state == UI_STATE_CALIBRATION) ? CMD_CALIBRATION : CMD_VALIDATION;
-                cmd = GetCommand(cal_val);
-
                 if (!active_calval)
                 {
+                    uint8 cal_val = (ui_state == UI_STATE_CALIBRATION) ? CMD_CALIBRATION : CMD_VALIDATION;
+                    cmd = GetCommand(cal_val);
+    
                     active_calval = (ui_state == UI_STATE_CALIBRATION) ? GetCalibration(cmd) : GetValidation(cmd);
                 }            
                     
@@ -940,33 +939,6 @@ void Cal_Update()
  *-------------------------------------------------------------------------------------------------*/
 float Cal_ReadResponse()
 {
-#ifdef OLD_WAY
-    char value;
-    uint8 digits[6];
-    uint8 index = 0;
-    do
-    {
-        Ser_Update();
-        
-        value = Ser_ReadByte();
-        /* Note: A delay was necessary here to get minicom on the BBB to read in values.  
-           Its not clear why that is needed for Linux and not for windows
-         */
-        CyDelayUs(1000);
-        Ser_WriteByte(value);
-        if ( (value >= '0' && value <= '9') || value == '.')
-        {
-            digits[index] = value;
-            index++;
-        }
-    } while (index < 5);
-    
-    digits[5] = '\0';
-    
-    float result = atof((char *) digits);
-    
-    return result;
-#else
     static char digits[10] = {'0'};
     int result;
     do
@@ -981,7 +953,6 @@ float Cal_ReadResponse()
     } while (result == 0);
     
     return 0.0;
-#endif
 }
 
 /*---------------------------------------------------------------------------------------------------

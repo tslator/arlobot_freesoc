@@ -60,11 +60,11 @@ static uint32 start_time;
 static CALVAL_PID_PARAMS left_pid_params = {"left", PID_TYPE_LEFT, DIR_FORWARD, 3000};
 static CALVAL_PID_PARAMS right_pid_params = {"right", PID_TYPE_RIGHT, DIR_FORWARD, 3000};
 
-static uint8 Init(CAL_STAGE_TYPE stage, void *params);
-static uint8 Start(CAL_STAGE_TYPE stage, void *params);
-static uint8 Update(CAL_STAGE_TYPE stage, void *params);
-static uint8 Stop(CAL_STAGE_TYPE stage, void *params);
-static uint8 Results(CAL_STAGE_TYPE stage, void *params);
+static uint8 Init();
+static uint8 Start();
+static uint8 Update();
+static uint8 Stop();
+static uint8 Results();
 
 static CALVAL_INTERFACE_TYPE left_pid_validation = {CAL_INIT_STATE,
                                                CAL_VALIDATE_STAGE,
@@ -90,6 +90,7 @@ static uint8 vel_index = 0;
 
 
 static float max_cps;
+static CALVAL_PID_PARAMS *p_pid_params;
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -105,7 +106,7 @@ static float max_cps;
  * Return: float - velocity (count/second)
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void CalcValidationProfile(CALVAL_PID_PARAMS *params, float low_percent, float high_percent, float *val_fwd_cps)
+static void CalcValidationProfile(float low_percent, float high_percent, float *val_fwd_cps)
 {
     float start;
     float stop;
@@ -114,12 +115,12 @@ static void CalcValidationProfile(CALVAL_PID_PARAMS *params, float low_percent, 
     start = 0;
     stop = 0;
 
-    if (params->direction == DIR_FORWARD)
+    if (p_pid_params->direction == DIR_FORWARD)
     {
         start = (float) min(p_cal_eeprom->left_motor_fwd.cps_min, p_cal_eeprom->right_motor_fwd.cps_min);
         stop = (float) min(p_cal_eeprom->left_motor_fwd.cps_max, p_cal_eeprom->right_motor_fwd.cps_max);
     }
-    else if (params->direction == DIR_BACKWARD)
+    else if (p_pid_params->direction == DIR_BACKWARD)
     {
         start = (float) min(p_cal_eeprom->left_motor_bwd.cps_min, p_cal_eeprom->right_motor_bwd.cps_min);
         stop = (float) min(p_cal_eeprom->left_motor_bwd.cps_max, p_cal_eeprom->right_motor_bwd.cps_max);
@@ -187,7 +188,7 @@ static float GetNextValidationVelocity(DIR_TYPE dir)
  * Return: 0 if all the velocities have been used; otherwise 1.
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 SetNextValidationVelocity(CALVAL_PID_PARAMS *p_pid_params)
+static uint8 SetNextValidationVelocity()
 {
     float velocity = GetNextValidationVelocity(p_pid_params->direction);
     switch (p_pid_params->pid_type)
@@ -219,15 +220,13 @@ static uint8 SetNextValidationVelocity(CALVAL_PID_PARAMS *p_pid_params)
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Init(CAL_STAGE_TYPE stage, void *params)
+static uint8 Init()
 {
-    CALVAL_PID_PARAMS *p_pid_params = (CALVAL_PID_PARAMS *)params;
-                
     Ser_PutStringFormat("\r\n%s PID validation\r\n", p_pid_params->name);
     
     Debug_Store();
 
-    CalcValidationProfile(p_pid_params, 0.2, 0.8, &val_fwd_cps[0]);
+    CalcValidationProfile(0.2, 0.8, &val_fwd_cps[0]);
     
     Cal_SetLeftRightVelocity(0, 0);
     Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
@@ -255,10 +254,8 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Start(CAL_STAGE_TYPE stage, void *params)
+static uint8 Start()
 {
-    CALVAL_PID_PARAMS *p_pid_params = (CALVAL_PID_PARAMS *) params;
-                
     Pid_Enable(TRUE, TRUE, FALSE);            
     Encoder_Reset();
     Pid_Reset();
@@ -267,7 +264,7 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
     Ser_PutString("\r\nValidating\r\n");
     start_time = millis();
     
-    SetNextValidationVelocity(p_pid_params);
+    SetNextValidationVelocity();
 
     return CAL_OK;
 }
@@ -281,10 +278,8 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
  * Return: uint8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Update(CAL_STAGE_TYPE stage, void *params)
+static uint8 Update()
 {
-    CALVAL_PID_PARAMS * p_pid_params = (CALVAL_PID_PARAMS *) params;
-        
     /* Assume an array of validation velocities that we want to run through.
         We use update to measure the time and advance through the array
         */
@@ -293,7 +288,7 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
         return CAL_OK;    
     }
     start_time = millis();
-    uint8 result = SetNextValidationVelocity(p_pid_params);
+    uint8 result = SetNextValidationVelocity();
     if (!result)
     {
         return CAL_COMPLETE;
@@ -310,10 +305,8 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
+static uint8 Stop()
 {
-    CALVAL_PID_PARAMS *p_pid_params = (CALVAL_PID_PARAMS *)params;
-
     Cal_SetLeftRightVelocity(0, 0);
 
     Ser_PutStringFormat("\r\n%s PID validation complete\r\n", p_pid_params->name);
@@ -331,10 +324,8 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Results(CAL_STAGE_TYPE stage, void *params)
+static uint8 Results()
 {
-    params = params;
-    
     Ser_PutString("\r\nPrinting PID validation results\r\n");
         
     return CAL_OK;
@@ -363,25 +354,29 @@ CALVAL_INTERFACE_TYPE * ValPid_Start(VAL_PID_TYPE val_pid)
         case VAL_PID_LEFT_FORWARD:
             left_pid_validation.stage = CAL_VALIDATE_STAGE;
             left_pid_validation.state = CAL_INIT_STATE;
-            ((CALVAL_PID_PARAMS *) left_pid_validation.params)->direction = DIR_FORWARD;
+            p_pid_params = left_pid_validation.params;
+            p_pid_params->direction = DIR_FORWARD;
             return &left_pid_validation;
 
         case VAL_PID_LEFT_BACKWARD:
             left_pid_validation.stage = CAL_VALIDATE_STAGE;
             left_pid_validation.state = CAL_INIT_STATE;
-            ((CALVAL_PID_PARAMS *) left_pid_validation.params)->direction = DIR_BACKWARD;
+            p_pid_params = left_pid_validation.params;
+            p_pid_params->direction = DIR_BACKWARD;
             return &left_pid_validation;
 
         case VAL_PID_RIGHT_FORWARD:
             right_pid_validation.stage = CAL_VALIDATE_STAGE;
             right_pid_validation.state = CAL_INIT_STATE;
-            ((CALVAL_PID_PARAMS *) right_pid_validation.params)->direction = DIR_FORWARD;
+            p_pid_params = right_pid_validation.params;
+            p_pid_params->direction = DIR_FORWARD;
             return &right_pid_validation;
     
         case VAL_PID_RIGHT_BACKWARD:
             right_pid_validation.stage = CAL_VALIDATE_STAGE;
             right_pid_validation.state = CAL_INIT_STATE;
-            ((CALVAL_PID_PARAMS *) right_pid_validation.params)->direction = DIR_BACKWARD;
+            p_pid_params = right_pid_validation.params;
+            p_pid_params->direction = DIR_BACKWARD;
             return &right_pid_validation;
 
         default:

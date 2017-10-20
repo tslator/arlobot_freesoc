@@ -112,11 +112,11 @@ static int32         cal_cps_avg[CAL_NUM_SAMPLES];
 static CAL_DATA_TYPE cal_data;
 
 /* Provides an implementation of the Calibration interface */
-static uint8 Init(CAL_STAGE_TYPE stage, void *params);
-static uint8 Start(CAL_STAGE_TYPE stage, void *params);
-static uint8 Update(CAL_STAGE_TYPE stage, void *params);
-static uint8 Stop(CAL_STAGE_TYPE stage, void *params);
-static uint8 Results(CAL_STAGE_TYPE stage, void *params);
+static uint8 Init();
+static uint8 Start();
+static uint8 Update();
+static uint8 Stop();
+static uint8 Results();
 
 static CALVAL_INTERFACE_TYPE motor_calibration = { CAL_INIT_STATE, 
                                               CAL_CALIBRATE_STAGE,
@@ -576,15 +576,12 @@ static uint8 PerformMotorCalibration(CAL_MOTOR_PARAMS *cal_params)
  * Name: Init
  * Description: Calibration/Validation interface Init function.  Performs initialization for Linear 
  *              Validation.
- * Parameters: stage - the calibration/validation stage 
- *             params - PID calibration/validation parameters, e.g. direction, run time, etc. 
+ * Parameters: None 
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Init(CAL_STAGE_TYPE stage, void *params)
+static uint8 Init()
 {
-    params = params;
-
     Ser_PutString("\r\nInitialize motor calibration\r\n");
     motor_cal_index = 0;
     Cal_ClearCalibrationStatusBit(CAL_MOTOR_BIT);
@@ -595,15 +592,12 @@ static uint8 Init(CAL_STAGE_TYPE stage, void *params)
 /*---------------------------------------------------------------------------------------------------
  * Name: Start
  * Description: Calibration/Validation interface Start function.  Start Linear Validation.
- * Parameters: stage - the calibration/validation stage 
- *             params - motor validation parameters, e.g. direction, run time, etc. 
+ * Parameters: None 
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Start(CAL_STAGE_TYPE stage, void *params)
+static uint8 Start()
 {
-    params = params;
-    
     Ser_PutString("\r\nPerforming motor calibration\r\n");
     Debug_Store();
     Pid_Enable(FALSE, FALSE, FALSE);
@@ -621,10 +615,8 @@ static uint8 Start(CAL_STAGE_TYPE stage, void *params)
  * Return: uint8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Update(CAL_STAGE_TYPE stage, void *params)
+static uint8 Update()
 {
-    params = params;
-    
     CAL_MOTOR_PARAMS *cal_params = (CAL_MOTOR_PARAMS *) &motor_cal_params[motor_cal_index];
     
     uint8 result = PerformMotorCalibration(cal_params);
@@ -649,10 +641,8 @@ static uint8 Update(CAL_STAGE_TYPE stage, void *params)
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
+static uint8 Stop()
 {
-    params = params;
-    
     Ser_PutString("Motor calibration complete\r\n");
     Cal_SetCalibrationStatusBit(CAL_MOTOR_BIT);
     Debug_Restore();
@@ -669,10 +659,8 @@ static uint8 Stop(CAL_STAGE_TYPE stage, void *params)
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Results(CAL_STAGE_TYPE stage, void *params)
+static uint8 Results()
 {
-    params = params;
-    
     Ser_PutString("\r\nPrinting motor calibration results\r\n");
     Cal_PrintAllMotorParams();
         

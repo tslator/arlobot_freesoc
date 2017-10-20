@@ -176,7 +176,6 @@ void AngPid_Process()
 {
     float target;
     float input;
-    float delta;
     float linear_cmd;
     float angular_cmd;
     
