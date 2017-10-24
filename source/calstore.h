@@ -82,7 +82,7 @@ typedef struct _eeprom_tag
     float angular_bias;             /*   44 */
     CAL_PID_TYPE linear_gains;      /*   48 */
     CAL_PID_TYPE angular_gains;     /*   64 */
-    uint8 reversed[1136];           /*   80 */
+    uint8 reserved[1136];           /*   80 */
     CAL_DATA_TYPE left_motor_fwd;   /* 1216 */
     CAL_DATA_TYPE left_motor_bwd;   /* 1424 */
     CAL_DATA_TYPE right_motor_fwd;  /* 1632 */

@@ -305,7 +305,7 @@ static uint8 Results()
 
     Ser_PutStringFormat("New Angular Bias: %.6f\r\n", bias);
     
-    Nvstore_WriteFloat(bias, (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias));
+    Cal_SetAngularBias(bias);
     Cal_SetCalibrationStatusBit(CAL_ANGULAR_BIT);
             
     return CAL_OK;

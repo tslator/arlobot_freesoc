@@ -106,6 +106,24 @@ SOFTWARE.
 #define CMD_SETTINGS (3)
 
 /*---------------------------------------------------------------------------------------------------
+ * Macros
+ *-------------------------------------------------------------------------------------------------*/
+#define LEFT_PID_KP_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.kp)
+#define LEFT_PID_KI_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.ki)
+#define LEFT_PID_KD_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.kd)
+#define LEFT_PID_KF_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.kf)
+
+#define RIGHT_PID_KP_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.kp)
+#define RIGHT_PID_KI_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.ki)
+#define RIGHT_PID_KD_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.kd)
+#define RIGHT_PID_KF_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.kf)
+
+#define STATUS_OFFSET NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status)
+
+#define ANGULAR_BIAS_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias)
+#define LINEAR_BIAS_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->linear_bias)
+
+/*---------------------------------------------------------------------------------------------------
  * Types
  *-------------------------------------------------------------------------------------------------*/
 typedef enum {UI_STATE_INIT, UI_STATE_CALIBRATION, UI_STATE_VALIDATION, UI_STATE_SETTINGS, UI_STATE_EXIT} UI_STATE_ENUM;
@@ -123,6 +141,9 @@ static CALVAL_INTERFACE_TYPE *active_calval;
 
 static float left_cmd_velocity;
 static float right_cmd_velocity;
+
+static volatile CAL_EEPROM_TYPE *p_cal_eeprom;
+
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -143,10 +164,10 @@ static float right_cmd_velocity;
  *-------------------------------------------------------------------------------------------------*/
  void Cal_PrintAllMotorParams()
 {
-    Cal_PrintSamples("Left-Backward", (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd);
-    Cal_PrintSamples("Left-Forward", (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_fwd);
-    Cal_PrintSamples("Right-Backward", (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd);
-    Cal_PrintSamples("Right-Forward", (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd);
+    Cal_PrintSamples("Left-Backward", WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD]);
+    Cal_PrintSamples("Left-Forward", WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD]);
+    Cal_PrintSamples("Right-Backward", WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD]);
+    Cal_PrintSamples("Right-Forward", WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD]);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -227,17 +248,17 @@ void Cal_PrintBias()
   * Return: None
   * 
   *-------------------------------------------------------------------------------------------------*/
- void Cal_ClearCalibrationStatusBit(uint16 bit)
- {
+void Cal_ClearCalibrationStatusBit(uint16 bit)
+{
      uint16 status = p_cal_eeprom->status &= ~bit;
-     Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
+     Nvstore_WriteUint16(status, STATUS_OFFSET);
      Control_ClearCalibrationStatusBit(bit);
- }
+}
  
  void Cal_SetCalibrationStatusBit(uint16 bit)
  {
      uint16 status = p_cal_eeprom->status | bit;
-     Nvstore_WriteUint16(status, NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status));
+     Nvstore_WriteUint16(status, STATUS_OFFSET);
      Control_SetCalibrationStatusBit(bit);   
  }
  
@@ -368,8 +389,8 @@ static void ProcessSettingsCmd(uint8 cmd)
     {
         case DISP_MOTOR_LEFT_CMD:
             Ser_PutString("\r\nDisplaying left motor calibration: count/sec, pwm mapping\r\n");
-            Cal_PrintSamples("Left-Backward", (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd);
-            Cal_PrintSamples("Left-Forward", (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_fwd);
+            Cal_PrintSamples("Left-Backward", WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD]);
+            Cal_PrintSamples("Left-Forward", WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD]);
             Ser_PutString("\r\n");
             
             DisplaySettingsMenu();
@@ -377,8 +398,8 @@ static void ProcessSettingsCmd(uint8 cmd)
             
         case DISP_MOTOR_RIGHT_CMD:
             Ser_PutString("\r\nDisplaying right motor calibration: count/sec, pwm mapping\r\n");
-            Cal_PrintSamples("Right-Backward", (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd);
-            Cal_PrintSamples("Right-Forward", (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd);
+            Cal_PrintSamples("Right-Backward", WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD]);
+            Cal_PrintSamples("Right-Forward", WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD]);
             Ser_PutString("\r\n");
             
             DisplaySettingsMenu();
@@ -788,7 +809,8 @@ void Cal_Init()
     WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->left_motor_bwd;
     WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_fwd;
     WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD] = (CAL_DATA_TYPE *) &p_cal_eeprom->right_motor_bwd;
-    
+
+
     Cal_LeftTarget = LeftTarget;
     Cal_RightTarget = RightTarget;
     
@@ -854,7 +876,7 @@ void Cal_Update()
         STATE_EXIT - display exit menu and transitions to STATE_INIT
  */
 {
-    uint8 cmd;
+    uint8 cmd = NULL_CMD;
     
     switch (ui_state)
     {
@@ -956,37 +978,33 @@ float Cal_ReadResponse()
 }
 
 /*---------------------------------------------------------------------------------------------------
- * Name: Cal_LeftGetPidGains/Cal_RightGetPidGains
- * Description: Returns the left/right PID gains from EEPROM. 
+ * Name: Cal_GetPidGains
+ * Description: Returns the specified PID gains from EEPROM. 
  * Parameters: None
  * Return: pointer to CAL_PID_TYPE
  * 
  *-------------------------------------------------------------------------------------------------*/
-CAL_PID_TYPE * Cal_LeftGetPidGains()
+CAL_PID_TYPE* Cal_GetPidGains(PID_ENUM_TYPE pid)
 {
-    return (CAL_PID_TYPE *) &p_cal_eeprom->left_gains;
-}
+    switch (pid)
+    {
+        case PID_TYPE_LEFT:
+            return (CAL_PID_TYPE *) &p_cal_eeprom->left_gains;
 
-CAL_PID_TYPE * Cal_RightGetPidGains()
-{
-    return (CAL_PID_TYPE *) &p_cal_eeprom->right_gains;    
-}
+        case PID_TYPE_RIGHT:
+            return (CAL_PID_TYPE *) &p_cal_eeprom->right_gains;        
 
-/*---------------------------------------------------------------------------------------------------
- * Name: Cal_LinearGetPidGains/Cal_AngularGetPidGains
- * Description: Returns the linear/angular PID gains from EEPROM. 
- * Parameters: None
- * Return: pointer to CAL_PID_TYPE
- * 
- *-------------------------------------------------------------------------------------------------*/
-CAL_PID_TYPE * Cal_LinearGetPidGains()
-{
-    return (CAL_PID_TYPE *) &p_cal_eeprom->linear_gains;
-}
+        case PID_TYPE_LINEAR:
+            return (CAL_PID_TYPE *) &p_cal_eeprom->linear_gains;        
 
-CAL_PID_TYPE * Cal_AngularGetPidGains()
-{
-    return (CAL_PID_TYPE *) &p_cal_eeprom->angular_gains;
+        case PID_TYPE_ANGULAR:
+            return (CAL_PID_TYPE *) &p_cal_eeprom->angular_gains;
+            
+        default:
+            return (CAL_PID_TYPE *) NULL;
+    }
+    
+    return (CAL_PID_TYPE *) NULL;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -1059,13 +1077,19 @@ void Cal_CalcForwardOperatingRange(float low_percent, float high_percent, float 
 {        
     float tmp_start;
     float tmp_stop;
+    int16 left_forward_cps_max;
+    int16 right_forward_cps_max;
+    int16 forward_cps_max;
+
+    Cal_PrintAllMotorParams();
     
+        
     /* Get the min/max forward values for each motor */
-    int16 left_forward_cps_max = p_cal_eeprom->left_motor_fwd.cps_max;
-    int16 right_forward_cps_max = p_cal_eeprom->right_motor_fwd.cps_max;
+    left_forward_cps_max = WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD]->cps_max;
+    right_forward_cps_max = WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD]->cps_max;
 
     /* Select the max of the max */
-    int16 forward_cps_max = min(left_forward_cps_max, right_forward_cps_max);
+    forward_cps_max = min(left_forward_cps_max, right_forward_cps_max);
 
     tmp_start = low_percent * (float) forward_cps_max;
     tmp_stop = high_percent * (float) forward_cps_max;
@@ -1079,14 +1103,34 @@ void Cal_CalcBackwardOperatingRange(float low_percent, float high_percent, float
 {
     float tmp_start;
     float tmp_stop;
+
+    int ii;
+
+    Ser_PutStringFormat("left backward - min %d, max %d\r\n", p_cal_eeprom->left_motor_bwd.cps_min, p_cal_eeprom->left_motor_bwd.cps_max);
+    for (ii = 0; ii < CAL_DATA_SIZE; ++ii)
+    {
+        Ser_PutStringFormat("%d ", p_cal_eeprom->left_motor_bwd.cps_data[ii]);
+    }
+    Ser_PutString("\r\n");
+   
+    Ser_PutStringFormat("right backward - min %d, max %d\r\n", p_cal_eeprom->right_motor_bwd.cps_min, p_cal_eeprom->right_motor_bwd.cps_max);
+    for (ii = 0; ii < CAL_DATA_SIZE; ++ii)
+    {
+        Ser_PutStringFormat("%d ", p_cal_eeprom->right_motor_bwd.cps_data[ii]);
+    }
+    Ser_PutString("\r\n");
     
     /* Get the min/max forward values for each motor */
     int16 left_backward_cps_max = p_cal_eeprom->left_motor_bwd.cps_max;
     int16 right_backward_cps_max = p_cal_eeprom->right_motor_bwd.cps_max;
 
+    Ser_PutStringFormat("left %f, right %f", left_backward_cps_max, right_backward_cps_max);
+
     /* Select the min of the max */
     int16 backward_cps_max = max(left_backward_cps_max, right_backward_cps_max);
 
+    Ser_PutStringFormat("max cps %f", backward_cps_max);
+    
     tmp_start = low_percent * (float) backward_cps_max;
     tmp_stop = high_percent * (float) backward_cps_max;
 
@@ -1114,9 +1158,13 @@ void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_
 {
     float start;
     float stop;
+    int ii;
 
-    memset(forward_profile, 0, num_points * sizeof(float));
-    memset(backward_profile, 0, num_points * sizeof(float));
+    for (ii = 0; ii < num_points; ++ii)
+    {
+        forward_profile[ii] = 0.0;
+        backward_profile[ii] = 0.0;
+    }
 
     /* There must be an odd number of points */
     if( num_points % 2 == 0 )
@@ -1131,7 +1179,7 @@ void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_
 
         Cal_CalcForwardOperatingRange(lower_limit, upper_limit, &start, &stop);
         CalcTriangularProfile(num_points, start, stop, forward_profile);
-
+        
         Cal_CalcBackwardOperatingRange(lower_limit, upper_limit, &start, &stop);
         CalcTriangularProfile(num_points, start, stop, backward_profile);
         
@@ -1184,6 +1232,47 @@ float Cal_GetAngularBias()
     }
     return angular_bias;
 }
+
+void Cal_SetAngularBias(float bias)
+{
+    Nvstore_WriteFloat(bias, ANGULAR_BIAS_OFFSET);
+}
+
+void Cal_SetLinearBias(float bias)
+{
+    Nvstore_WriteFloat(bias, LINEAR_BIAS_OFFSET);
+}
+
+uint16 Cal_GetStatus()
+{
+    return p_cal_eeprom->status;
+}
+
+void Cal_SetGains(PID_ENUM_TYPE pid, float* gains)
+{
+    switch (pid)
+    {
+        case PID_TYPE_LEFT:
+            Nvstore_WriteFloat(gains[0], LEFT_PID_KP_OFFSET);
+            Nvstore_WriteFloat(gains[1], LEFT_PID_KI_OFFSET);
+            Nvstore_WriteFloat(gains[2], LEFT_PID_KD_OFFSET);
+            Nvstore_WriteFloat(gains[3], LEFT_PID_KF_OFFSET);
+            break;
+
+        case PID_TYPE_RIGHT:
+            Nvstore_WriteFloat(gains[0], RIGHT_PID_KP_OFFSET);
+            Nvstore_WriteFloat(gains[1], RIGHT_PID_KI_OFFSET);
+            Nvstore_WriteFloat(gains[2], RIGHT_PID_KD_OFFSET);
+            Nvstore_WriteFloat(gains[3], RIGHT_PID_KF_OFFSET);
+            break;
+            
+        case PID_TYPE_LINEAR:
+        case PID_TYPE_ANGULAR:
+        default:
+            break;
+    }
+}
+
 
 /*-------------------------------------------------------------------------------*/
 /* [] END OF FILE */

@@ -158,7 +158,7 @@ void LeftPid_Init()
  *-------------------------------------------------------------------------------------------------*/
 void LeftPid_Start()
 {
-    pid_enabled = Pid_SetGains(&pid.pid, Cal_LeftGetPidGains());
+    pid_enabled = Pid_SetGains(&pid.pid, Cal_GetPidGains(PID_TYPE_LEFT));
     pid_enabled = TRUE;
 }
 

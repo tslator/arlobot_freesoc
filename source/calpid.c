@@ -48,7 +48,7 @@ SOFTWARE.
 #include "odom.h"
 
 /*---------------------------------------------------------------------------------------------------
- * Includes
+ * Constants
  *-------------------------------------------------------------------------------------------------*/
 #define STEP_VELOCITY_PERCENT  (0.8)    // 80% of maximum velocity
 
@@ -100,18 +100,12 @@ static CALVAL_PID_PARAMS *p_pid_params;
  *-------------------------------------------------------------------------------------------------*/
 static void StoreLeftGains(float *gains)
 {
-    Nvstore_WriteFloat(gains[0], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.kp));
-    Nvstore_WriteFloat(gains[1], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.ki));
-    Nvstore_WriteFloat(gains[2], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.kd));
-    Nvstore_WriteFloat(gains[3], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.kf));
+    Cal_SetGains(PID_TYPE_LEFT, gains);
 }
 
 static void StoreRightGains(float *gains)
 {
-    Nvstore_WriteFloat(gains[0], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.kp));
-    Nvstore_WriteFloat(gains[1], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.ki));
-    Nvstore_WriteFloat(gains[2], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.kd));
-    Nvstore_WriteFloat(gains[3], (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.kf));
+    Cal_SetGains(PID_TYPE_RIGHT, gains);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -138,10 +132,10 @@ static void CalcMaxCps()
     int16 max_leftright_cps;
     int16 max_leftright_pid;
 
-    left_fwd_max = abs(p_cal_eeprom->left_motor_fwd.cps_max);
-    left_bwd_max = abs(p_cal_eeprom->left_motor_bwd.cps_min);
-    right_fwd_max = abs(p_cal_eeprom->right_motor_fwd.cps_max);
-    right_bwd_max = abs(p_cal_eeprom->right_motor_bwd.cps_min);
+    left_fwd_max = abs(WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD]->cps_max);
+    left_bwd_max = abs(WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD]->cps_min);
+    right_fwd_max = abs(WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD]->cps_max);
+    right_bwd_max = abs(WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD]->cps_min);
     
     left_max = min(left_fwd_max, left_bwd_max);
     right_max = min(right_fwd_max, right_bwd_max);
@@ -170,7 +164,7 @@ static uint8 Init()
 {
     if (!Cal_GetCalibrationStatusBit(CAL_MOTOR_BIT))
     {
-        Ser_PutStringFormat("Motor calibration not performed (%02x)\r\n", p_cal_eeprom->status);
+        Ser_PutStringFormat("Motor calibration not performed (%02x)\r\n", Cal_GetStatus());
         return CAL_COMPLETE;
     }
 
@@ -191,6 +185,10 @@ static uint8 Init()
         case PID_TYPE_RIGHT:
             Debug_Enable(DEBUG_RIGHT_PID_ENABLE_BIT);
             break;
+            
+        default:
+            Ser_PutString("Unknown PID type\r\n");
+            return CAL_COMPLETE;
     }        
 
     return CAL_OK;
@@ -235,7 +233,11 @@ static uint8 Start()
         case PID_TYPE_RIGHT:
             RightPid_SetGains(gains[0], gains[1], gains[2], gains[3]);
             Cal_SetLeftRightVelocity(0, step_velocity);
-            break;                    
+            break;
+            
+        default:
+            Ser_PutString("Unknown PID type\r\n");
+            return CAL_COMPLETE;
     }
             
     Ser_PutString("\r\nCalibrating\r\n");
@@ -288,6 +290,10 @@ static uint8 Stop()
             RightPid_GetGains(&gains[0], &gains[1], &gains[2], &gains[3]);
             StoreRightGains(gains);
             break;
+
+        default:
+            Ser_PutString("Unknown PID type\r\n");
+            return CAL_COMPLETE;
     }
     Cal_SetCalibrationStatusBit(CAL_PID_BIT);
 
@@ -324,6 +330,10 @@ static uint8 Results()
             RightPid_GetGains(&gains[0], &gains[1], &gains[2], &gains[3]);
             Cal_PrintGains("Right PID", gains);
             break;
+            
+        default:
+            Ser_PutString("Unknown PID type\r\n");
+            return CAL_COMPLETE;            
     }
 
     return CAL_OK;

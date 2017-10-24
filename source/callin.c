@@ -267,7 +267,7 @@ static uint8 Results()
     Ser_PutStringFormat("X: %.6f\r\nY: %.6f\r\nDistance: %.6f\r\nLC: %d RC: %d\r\n", x, y, p_lin_params->distance, left_count, right_count);
     Ser_PutStringFormat("Heading: %.6f\r\n", heading);
     Ser_PutStringFormat("Elapsed Time: %ld\r\n", end_time - start_time);
-    Ser_PutStringFormat("Linear Bias: %.6f\r\n", p_cal_eeprom->linear_bias);
+    Ser_PutStringFormat("Linear Bias: %.6f\r\n", Cal_GetLinearBias());
     
     Ser_PutString("\r\nMeasure the distance traveled by the robot.");
     Ser_PutString("\r\nEnter the distance (0.5 to 1.5): ");
@@ -277,11 +277,11 @@ static uint8 Results()
     if (distance < CAL_LINEAR_BIAS_MIN || distance > CAL_LINEAR_BIAS_MAX)
     {
         Ser_PutStringFormat("The distance entered %.2f is out of the allowed range.  No change will be made.\r\n", distance);
-        distance = p_cal_eeprom->linear_bias;
+        distance = Cal_GetLinearBias();
     }
     distance = constrain(distance, CAL_LINEAR_BIAS_MIN, CAL_LINEAR_BIAS_MAX);
 
-    Nvstore_WriteFloat(distance, (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->linear_bias));
+    Cal_SetLinearBias(distance);
     Cal_SetCalibrationStatusBit(CAL_LINEAR_BIT);
         
     return CAL_OK;

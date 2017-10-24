@@ -116,8 +116,6 @@ typedef struct calval_interface_type_tag
 extern char* cal_stage_to_string[];
 extern char* cal_state_to_string[];
 
-volatile CAL_EEPROM_TYPE *p_cal_eeprom;
-
 GET_TARGET_FUNC_TYPE Cal_LeftTarget;
 GET_TARGET_FUNC_TYPE Cal_RightTarget;
 
@@ -133,11 +131,10 @@ GET_TARGET_FUNC_TYPE Cal_RightTarget;
  */     
 #define PWM_CALC_OFFSET(direction, index)  (direction == DIR_BACKWARD ? CAL_NUM_SAMPLES - 1 - index : index)
  
-
 /*---------------------------------------------------------------------------------------------------
  * Types
  *-------------------------------------------------------------------------------------------------*/
-typedef enum {PID_TYPE_LEFT, PID_TYPE_RIGHT} PID_ENUM_TYPE;
+typedef enum {PID_TYPE_LEFT, PID_TYPE_RIGHT, PID_TYPE_LINEAR, PID_TYPE_ANGULAR} PID_ENUM_TYPE;
  
 typedef struct calval_pid_params_tag
 {
@@ -171,6 +168,10 @@ typedef struct _angular_params
  * Variables
  *-------------------------------------------------------------------------------------------------*/
 CAL_DATA_TYPE * WHEEL_DIR_TO_CAL_DATA[2][2];
+
+#define GetCalData(wheel, dir) WHEEL_DIR_TO_CAL_DATA[wheel][dir]
+#define GetStatus()
+#define GetPidGains(pid)  
  
 
 /*---------------------------------------------------------------------------------------------------
@@ -180,10 +181,6 @@ void Cal_Init();
 void Cal_Start();
 void Cal_Update();
 float Cal_ReadResponse();
-CAL_PID_TYPE* Cal_LeftGetPidGains();
-CAL_PID_TYPE* Cal_RightGetPidGains();
-CAL_PID_TYPE* Cal_LinearGetPidGains();
-CAL_PID_TYPE* Cal_AngularGetPidGains();
 void Cal_SetLeftRightVelocity(float left, float right);
 PWM_TYPE Cal_CpsToPwm(WHEEL_TYPE wheel, float cps);
 void Cal_Clear();
@@ -196,12 +193,17 @@ void Cal_PrintSamples(char *label, CAL_DATA_TYPE *cal_data);
 void Cal_PrintGains(char *label, float *gains);
 void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_limit, float *forward_output, float *backward_output);
 
-float Cal_GetLinearBias();
-float Cal_GetAngularBias();
-
 void Cal_CalcOperatingRange(float low_percent, float high_percent, float domain, float *start, float *stop);
 void Cal_CalcForwardOperatingRange(float low_percent, float high_percent, float *start, float *stop);
 void Cal_CalcBackwardOperatingRange(float low_percent, float high_percent, float *start, float *stop);
+
+float Cal_GetLinearBias();
+float Cal_GetAngularBias();
+CAL_PID_TYPE* Cal_GetPidGains(PID_ENUM_TYPE pid);
+uint16 Cal_GetStatus();
+
+void Cal_SetAngularBias(float bias);
+void Cal_SetLinearBias(float bias);
 
 #endif
 

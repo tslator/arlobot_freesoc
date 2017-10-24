@@ -117,13 +117,13 @@ static void CalcValidationProfile(float low_percent, float high_percent, float *
 
     if (p_pid_params->direction == DIR_FORWARD)
     {
-        start = (float) min(p_cal_eeprom->left_motor_fwd.cps_min, p_cal_eeprom->right_motor_fwd.cps_min);
-        stop = (float) min(p_cal_eeprom->left_motor_fwd.cps_max, p_cal_eeprom->right_motor_fwd.cps_max);
+        start = (float) min(WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD]->cps_min, WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD]->cps_min);
+        stop = (float) min(WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD]->cps_max, WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD]->cps_max);
     }
     else if (p_pid_params->direction == DIR_BACKWARD)
     {
-        start = (float) min(p_cal_eeprom->left_motor_bwd.cps_min, p_cal_eeprom->right_motor_bwd.cps_min);
-        stop = (float) min(p_cal_eeprom->left_motor_bwd.cps_max, p_cal_eeprom->right_motor_bwd.cps_max);
+        start = (float) min(WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD]->cps_min, WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD]->cps_min);
+        stop = (float) min(WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD]->cps_max, WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD]->cps_max);
     }
 
     stop = min(stop, (float) min(LEFTPID_MAX, RIGHTPID_MAX));
@@ -200,6 +200,11 @@ static uint8 SetNextValidationVelocity()
         case PID_TYPE_RIGHT:
             Cal_SetLeftRightVelocity(0, velocity);
             break;
+            
+        default:
+            Ser_PutString("Unknown PID type\r\n");
+            return CAL_COMPLETE;
+            
     }
     
     Ser_PutStringFormat("Speed: %.2f\r\n", velocity);
@@ -241,6 +246,11 @@ static uint8 Init()
         case PID_TYPE_RIGHT:
             Debug_Enable(DEBUG_RIGHT_PID_ENABLE_BIT);
             break;
+            
+        default:
+            Ser_PutString("Unknown PID type\r\n");
+            return CAL_COMPLETE;
+            
     }
 
     return CAL_OK;
