@@ -646,6 +646,11 @@ static CALVAL_INTERFACE_TYPE* GetValidation(uint8 cmd)
         case VAL_MOTOR_CMD:
             Ser_PutString("\r\nPerforming Motor Validation by operating the motors at varying velocities.\r\n");
             return ValMotor_Start();
+
+        case VAL_PID_CMD:
+            Ser_PutString("\r\nCommand not supported\r\n");
+            DisplayMenu(CAL_VALIDATE_STAGE);            
+            break;
             
         case VAL_PID_LEFT_FWD_CMD:
             Ser_PutString("\r\nPerforming Left PID validation in the forward direction.\r\n");
@@ -923,7 +928,7 @@ void Cal_Update()
                 {
                     Control_OverrideDebug(TRUE);
                     Process();
-                }                        
+                }
                 
                 if (cmd == EXIT_CMD)
                 {
@@ -1210,18 +1215,20 @@ float Cal_GetAngularBias()
     angular_bias = CAL_ANGULAR_BIAS_DEFAULT;
     if (CAL_ANGULAR_BIT & p_cal_eeprom->status)
     {
-        angular_bias = constrain(p_cal_eeprom->angular_bias, CAL_ANGULAR_BIAS_MIN, CAL_ANGULAR_BIAS_MAX);
+        angular_bias = p_cal_eeprom->angular_bias;
     }
     return angular_bias;
 }
 
 void Cal_SetAngularBias(float bias)
 {
+    bias = constrain(bias, CAL_ANGULAR_BIAS_MIN, CAL_ANGULAR_BIAS_MAX);
     Nvstore_WriteFloat(bias, ANGULAR_BIAS_OFFSET);
 }
 
 void Cal_SetLinearBias(float bias)
 {
+    bias = constrain(bias, CAL_LINEAR_BIAS_MIN, CAL_LINEAR_BIAS_MAX);
     Nvstore_WriteFloat(bias, LINEAR_BIAS_OFFSET);
 }
 
