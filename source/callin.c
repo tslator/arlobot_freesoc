@@ -64,9 +64,6 @@ SOFTWARE.
 static uint32 start_time;
 static uint32 end_time;
 
-static float linear_cmd_velocity;
-static float angular_cmd_velocity;
-
 static CALVAL_LIN_PARAMS linear_params = {DIR_FORWARD, 
                                        LINEAR_MAX_TIME, 
                                        LINEAR_DISTANCE,
@@ -93,12 +90,12 @@ static CALVAL_LIN_PARAMS *p_lin_params;
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
- static void GetCommandVelocity(float *linear, float *angular, uint32 *timeout)
- {
-     *linear = linear_cmd_velocity;
-     *angular = angular_cmd_velocity;
-     *timeout = 0;
- }
+static void GetCommandVelocity(float *linear, float *angular, uint32 *timeout)
+{
+    *linear = p_lin_params->linear;
+    *angular = p_lin_params->angular;
+    *timeout = 0;
+}
  
  
 static uint8 IsMoveFinished(float * distance)
@@ -136,7 +133,10 @@ static uint8 Init()
     p_lin_params->linear = p_lin_params->direction == DIR_FORWARD ? LINEAR_VELOCITY : -LINEAR_VELOCITY;
     p_lin_params->angular = 0.0;
     Control_SetCommandVelocityFunc(GetCommandVelocity);
-    
+
+    /* Clear the calibration bit before starting calibration so that we use the default value */
+    Cal_ClearCalibrationStatusBit(CAL_ANGULAR_BIT);
+        
     /* This should look just like the validation except after moving forward, we need to prompt the user to 
         enter the actual distance moved.
         Also, we need to add a linear scaler to nvram storage, initialize the scaler on startup and apply the
@@ -176,20 +176,11 @@ static uint8 Start()
     Ser_PutString("Linear Calibration Start\r\n");         
     Ser_PutString("\r\nCalibrating\r\n");
     
-    /* Note: The linear bit is used to by the Encoder module to select the default linear bias or the value
-        stored in EEPROM.  Therefore, because linear calibration can be an iterative process, we need to clear 
-        the bit after we've reset the Encoder; otherwise, we'll pick up the default and never see the results.
-        */
-    Cal_ClearCalibrationStatusBit(CAL_LINEAR_BIT);
-
     left_count = Encoder_LeftGetCount();
     right_count = Encoder_RightGetCount();
     Odom_GetXYPosition(&x_pos, &y_pos);
     Ser_PutStringFormat("LC: %d RC: %d XP: %.3f YP: %.3f\r\n", left_count, right_count, x_pos, y_pos);
 
-    /* Because the encoder is reset above, the left/right distances will be 0.0 and the target is just the distance */
-    linear_cmd_velocity = p_lin_params->linear;
-    angular_cmd_velocity = p_lin_params->angular;
     start_time = millis();
 
     return CAL_OK;
@@ -210,9 +201,9 @@ static uint8 Update()
         if( IsMoveFinished(&p_lin_params->distance) )
         {
             end_time = millis();
-            linear_cmd_velocity = 0.0;
-            angular_cmd_velocity = 0.0;
             Motor_SetPwm(PWM_STOP, PWM_STOP);
+            p_lin_params->linear = 0.0;
+            p_lin_params->angular = 0.0;
             return CAL_COMPLETE;
         }
         return CAL_OK;
@@ -267,7 +258,7 @@ static uint8 Results()
     Ser_PutStringFormat("X: %.6f\r\nY: %.6f\r\nDistance: %.6f\r\nLC: %d RC: %d\r\n", x, y, p_lin_params->distance, left_count, right_count);
     Ser_PutStringFormat("Heading: %.6f\r\n", heading);
     Ser_PutStringFormat("Elapsed Time: %ld\r\n", end_time - start_time);
-    Ser_PutStringFormat("Linear Bias: %.6f\r\n", Cal_GetLinearBias());
+    Ser_PutStringFormat("Linear Bias: %.6f\r\n", linear_bias);
     
     Ser_PutString("\r\nMeasure the distance traveled by the robot.");
     Ser_PutString("\r\nEnter the distance (0.5 to 1.5): ");
@@ -277,10 +268,10 @@ static uint8 Results()
     if (distance < CAL_LINEAR_BIAS_MIN || distance > CAL_LINEAR_BIAS_MAX)
     {
         Ser_PutStringFormat("The distance entered %.2f is out of the allowed range.  No change will be made.\r\n", distance);
-        distance = Cal_GetLinearBias();
+        distance = linear_bias;
     }
-    distance = constrain(distance, CAL_LINEAR_BIAS_MIN, CAL_LINEAR_BIAS_MAX);
 
+    Cal_ClearCalibrationStatusBit(CAL_LINEAR_BIT);    
     Cal_SetLinearBias(distance);
     Cal_SetCalibrationStatusBit(CAL_LINEAR_BIT);
         
@@ -296,8 +287,6 @@ static uint8 Results()
  *-------------------------------------------------------------------------------------------------*/
 void CalLin_Init()
 {
-    linear_cmd_velocity = 0.0;
-    angular_cmd_velocity = 0.0;        
 }
 
 CALVAL_INTERFACE_TYPE* CalLin_Start()
