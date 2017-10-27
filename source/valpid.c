@@ -117,13 +117,13 @@ static void CalcValidationProfile(float low_percent, float high_percent, float *
 
     if (p_pid_params->direction == DIR_FORWARD)
     {
-        start = (float) min(WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD]->cps_min, WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD]->cps_min);
-        stop = (float) min(WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD]->cps_max, WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD]->cps_max);
+        start = (float) min(Cal_GetMotorData(WHEEL_LEFT, DIR_FORWARD)->cps_min, Cal_GetMotorData(WHEEL_RIGHT, DIR_FORWARD)->cps_min);
+        stop = (float) min(Cal_GetMotorData(WHEEL_LEFT, DIR_FORWARD)->cps_max, Cal_GetMotorData(WHEEL_RIGHT, DIR_FORWARD)->cps_max);
     }
     else if (p_pid_params->direction == DIR_BACKWARD)
     {
-        start = (float) min(WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD]->cps_min, WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD]->cps_min);
-        stop = (float) min(WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD]->cps_max, WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD]->cps_max);
+        start = (float) min(Cal_GetMotorData(WHEEL_LEFT, DIR_BACKWARD)->cps_min, Cal_GetMotorData(WHEEL_RIGHT, DIR_BACKWARD)->cps_min);
+        stop = (float) min(Cal_GetMotorData(WHEEL_LEFT, DIR_BACKWARD)->cps_max, Cal_GetMotorData(WHEEL_RIGHT, DIR_BACKWARD)->cps_max);
     }
 
     stop = min(stop, (float) min(LEFTPID_MAX, RIGHTPID_MAX));

@@ -104,7 +104,7 @@ static float GetCmdVelocity()
     Motor_RightSetPwm(Cal_CpsToPwm(WHEEL_RIGHT, cps));
     
     pid.sign = cps >= 0.0 ? 1.0 : -1.0;
-    return abs(cps);
+    return cps;
 }
 
 static float EncoderInput()
@@ -116,7 +116,7 @@ static float PidUpdate(float target, float input)
 {
     PWM_TYPE pwm;
     
-    PIDSetpointSet(&pid.pid, target);
+    PIDSetpointSet(&pid.pid, abs(target));
     PIDInputSet(&pid.pid, input);
     
     /* Note: PIDCompute returns TRUE when in AUTOMATIC mode and FALSE when in MANUAL mode */

@@ -85,6 +85,9 @@ void Control_ClearCalibrationStatusBit(uint16 bit);
 void Control_WriteOdom(float linear, float angular, float left_dist, float right_dist, float heading);
 void Control_UpdateHeartbeat(uint32 heartbeat);
 
+void Control_SetLeftRightVelocityOverride(uint8 enable);
+void Control_SetLeftRightVelocity(float left, float right);
+
 #endif
 
 /* [] END OF FILE */

@@ -167,12 +167,6 @@ typedef struct _angular_params
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/
-CAL_DATA_TYPE * WHEEL_DIR_TO_CAL_DATA[2][2];
-
-#define GetCalData(wheel, dir) WHEEL_DIR_TO_CAL_DATA[wheel][dir]
-#define GetStatus()
-#define GetPidGains(pid)  
- 
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -201,9 +195,11 @@ float Cal_GetLinearBias();
 float Cal_GetAngularBias();
 CAL_PID_TYPE* Cal_GetPidGains(PID_ENUM_TYPE pid);
 uint16 Cal_GetStatus();
+CAL_DATA_TYPE* Cal_GetMotorData(WHEEL_TYPE wheel, DIR_TYPE dir);
 
 void Cal_SetAngularBias(float bias);
 void Cal_SetLinearBias(float bias);
+void Cal_SetMotorData(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *data);
 
 #endif
 

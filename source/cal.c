@@ -123,6 +123,8 @@ SOFTWARE.
 #define ANGULAR_BIAS_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias)
 #define LINEAR_BIAS_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->linear_bias)
 
+#define MOTOR_DATA_OFFSET(wheel, dir) (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(WHEEL_DIR_TO_CAL_DATA[wheel][dir])
+
 /*---------------------------------------------------------------------------------------------------
  * Types
  *-------------------------------------------------------------------------------------------------*/
@@ -144,6 +146,7 @@ static float right_cmd_velocity;
 
 static volatile CAL_EEPROM_TYPE *p_cal_eeprom;
 
+static CAL_DATA_TYPE * WHEEL_DIR_TO_CAL_DATA[2][2];
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -1081,9 +1084,6 @@ void Cal_CalcForwardOperatingRange(float low_percent, float high_percent, float 
     int16 right_forward_cps_max;
     int16 forward_cps_max;
 
-    Cal_PrintAllMotorParams();
-    
-        
     /* Get the min/max forward values for each motor */
     left_forward_cps_max = WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD]->cps_max;
     right_forward_cps_max = WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD]->cps_max;
@@ -1103,34 +1103,18 @@ void Cal_CalcBackwardOperatingRange(float low_percent, float high_percent, float
 {
     float tmp_start;
     float tmp_stop;
-
+    int16 left_backward_cps_max;
+    int16 right_backward_cps_max;
+    int16 backward_cps_max;
     int ii;
 
-    Ser_PutStringFormat("left backward - min %d, max %d\r\n", p_cal_eeprom->left_motor_bwd.cps_min, p_cal_eeprom->left_motor_bwd.cps_max);
-    for (ii = 0; ii < CAL_DATA_SIZE; ++ii)
-    {
-        Ser_PutStringFormat("%d ", p_cal_eeprom->left_motor_bwd.cps_data[ii]);
-    }
-    Ser_PutString("\r\n");
-   
-    Ser_PutStringFormat("right backward - min %d, max %d\r\n", p_cal_eeprom->right_motor_bwd.cps_min, p_cal_eeprom->right_motor_bwd.cps_max);
-    for (ii = 0; ii < CAL_DATA_SIZE; ++ii)
-    {
-        Ser_PutStringFormat("%d ", p_cal_eeprom->right_motor_bwd.cps_data[ii]);
-    }
-    Ser_PutString("\r\n");
-    
     /* Get the min/max forward values for each motor */
-    int16 left_backward_cps_max = p_cal_eeprom->left_motor_bwd.cps_max;
-    int16 right_backward_cps_max = p_cal_eeprom->right_motor_bwd.cps_max;
-
-    Ser_PutStringFormat("left %f, right %f", left_backward_cps_max, right_backward_cps_max);
+    left_backward_cps_max = p_cal_eeprom->left_motor_bwd.cps_min;
+    right_backward_cps_max = p_cal_eeprom->right_motor_bwd.cps_min;
 
     /* Select the min of the max */
-    int16 backward_cps_max = max(left_backward_cps_max, right_backward_cps_max);
+    backward_cps_max = min(left_backward_cps_max, right_backward_cps_max);
 
-    Ser_PutStringFormat("max cps %f", backward_cps_max);
-    
     tmp_start = low_percent * (float) backward_cps_max;
     tmp_stop = high_percent * (float) backward_cps_max;
 
@@ -1176,13 +1160,11 @@ void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_
     
     if (p_cal_eeprom->status & CAL_MOTOR_BIT)
     {    
-
         Cal_CalcForwardOperatingRange(lower_limit, upper_limit, &start, &stop);
         CalcTriangularProfile(num_points, start, stop, forward_profile);
         
         Cal_CalcBackwardOperatingRange(lower_limit, upper_limit, &start, &stop);
-        CalcTriangularProfile(num_points, start, stop, backward_profile);
-        
+        CalcTriangularProfile(num_points, start, stop, backward_profile);        
     }
     else
     {
@@ -1273,6 +1255,16 @@ void Cal_SetGains(PID_ENUM_TYPE pid, float* gains)
     }
 }
 
+void Cal_SetMotorData(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *data)
+{
+    /* Write the calibration to non-volatile storage */
+    Nvstore_WriteBytes((uint8 *) data, sizeof(*data), MOTOR_DATA_OFFSET(wheel, dir));
+}
+
+CAL_DATA_TYPE* Cal_GetMotorData(WHEEL_TYPE wheel, DIR_TYPE dir)
+{
+    return WHEEL_DIR_TO_CAL_DATA[wheel][dir];
+}
 
 /*-------------------------------------------------------------------------------*/
 /* [] END OF FILE */

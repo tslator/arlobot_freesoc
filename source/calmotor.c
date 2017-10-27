@@ -530,11 +530,7 @@ static void StoreMotorCalibration(CAL_MOTOR_PARAMS *params)
         cal_data.cps_data[ii] = (int16) params->p_cps_avg[ii];       
     }
 
-    /* Retrieve the non-volatile storage offset for the specified wheel and direction */
-    uint16 offset = NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(WHEEL_DIR_TO_CAL_DATA[params->wheel][params->direction]);
-    
-    /* Write the calibration to non-volatile storage */
-    Nvstore_WriteBytes((uint8 *) &cal_data, sizeof(cal_data), offset);
+    Cal_SetMotorData(params->wheel, params->direction, &cal_data);
 }
   
 static uint8 PerformMotorCalibration(CAL_MOTOR_PARAMS *cal_params)

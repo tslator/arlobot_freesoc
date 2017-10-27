@@ -132,10 +132,10 @@ static void CalcMaxCps()
     int16 max_leftright_cps;
     int16 max_leftright_pid;
 
-    left_fwd_max = abs(WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD]->cps_max);
-    left_bwd_max = abs(WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD]->cps_min);
-    right_fwd_max = abs(WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD]->cps_max);
-    right_bwd_max = abs(WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD]->cps_min);
+    left_fwd_max = abs(Cal_GetMotorData(WHEEL_LEFT, DIR_FORWARD)->cps_max);
+    left_bwd_max = abs(Cal_GetMotorData(WHEEL_LEFT, DIR_BACKWARD)->cps_min);
+    right_fwd_max = abs(Cal_GetMotorData(WHEEL_RIGHT, DIR_FORWARD)->cps_max);
+    right_bwd_max = abs(Cal_GetMotorData(WHEEL_RIGHT, DIR_BACKWARD)->cps_min);
     
     left_max = min(left_fwd_max, left_bwd_max);
     right_max = min(right_fwd_max, right_bwd_max);

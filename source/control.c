@@ -68,19 +68,18 @@ SOFTWARE.
  * Variables
  *-------------------------------------------------------------------------------------------------*/
 static COMMAND_FUNC_TYPE control_cmd_velocity;
-static float left_cmd_velocity;     // rad/s
-static float right_cmd_velocity;    // rad/s
-static float linear_cmd_velocity;   // m/s
-static float angular_cmd_velocity;  // rad/s
-
-static float max_robot_forward_linear_velocity;     // m/s
-static float max_robot_backward_linear_velocity;    // m/s
+static float linear_velocity_mps;
+static float angular_velocity_rps;
+static float left_velocity_cps;
+static float right_velocity_cps;
+static float max_robot_forward_linear_velocity_mps;     // m/s
+static float max_robot_backward_linear_velocity_mps;    // m/s
 
 float max_linear;                   // m/s
 float max_angular;                  // r/s
 
 static uint8 debug_override;
-
+static uint8 left_right_cmd_velocity_override;
 
 
 static float linear_bias;
@@ -245,6 +244,7 @@ void Control_Init()
     control_cmd_velocity = ReadCmdVelocity;
     linear_bias = 1.0;
     linear_trim = 0.0;
+    left_right_cmd_velocity_override = FALSE;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -265,8 +265,8 @@ void Control_Start()
     
     UniToDiff(MAX_WHEEL_FORWARD_LINEAR_VELOCITY, 0, &max_robot_linear_velocity, &dont_care);
     
-    max_robot_forward_linear_velocity = max_robot_linear_velocity;
-    max_robot_backward_linear_velocity = -max_robot_linear_velocity;
+    max_robot_forward_linear_velocity_mps = max_robot_linear_velocity;
+    max_robot_backward_linear_velocity_mps = -max_robot_linear_velocity;
 
     //linear_bias = Cal_GetLinearBias();
     //angular_bias = Cal_GetAngularBias();   
@@ -308,7 +308,9 @@ void Control_Update()
     uint32 timeout;
     uint16 device_control;
     uint16 debug_control;
-    
+    float left_velocity_rps;
+    float right_velocity_rps;
+        
     
     CONTROL_UPDATE_START();
     
@@ -347,21 +349,21 @@ void Control_Update()
         Cal_Clear();
     }
     
-    control_cmd_velocity(&linear_cmd_velocity, &angular_cmd_velocity, &timeout);
+    control_cmd_velocity(&linear_velocity_mps, &angular_velocity_rps, &timeout);
     
     //Debug_Enable(DEBUG_ODOM_ENABLE_BIT);//DEBUG_ANGPID_ENABLE_BIT);
 #ifdef ENABLE_VELOCITY_REPEAT
-    RepeatVelocity(&linear_cmd_velocity, &angular_cmd_velocity, &timeout);
+    RepeatVelocity(&linear_velocity_mps, &angular_cmd_velocity_rps, &timeout);
 #endif
 #ifdef OVERRIDE_VELOCITY
-    linear_cmd_velocity = 0.0;
-    angular_cmd_velocity = 0.0;
+    linear_velocity_mps = 0.0;
+    angular_velocity_rps = 0.0;
     timeout = 0;
 #endif
 
 #ifdef ENABLE_ACCEL_LIMIT
-    linear_cmd_velocity = LimitLinearAccel(linear_cmd_velocity);
-    angular_cmd_velocity = LimitAngularAccel(angular_cmd_velocity);
+    linear_velocity_mps = LimitLinearAccel(linear_velocity_mps);
+    angular_velocity_rps = LimitAngularAccel(angular_velocity_rps);
 #endif    
 
     //EnsureAngularVelocity(&linear_cmd_velocity, &angular_cmd_velocity);    
@@ -391,22 +393,26 @@ void Control_Update()
     
     */    
 
-    UniToDiff(linear_cmd_velocity, angular_cmd_velocity, &left_cmd_velocity, &right_cmd_velocity);
-    
-    //Ser_PutStringFormat("LCV: %.3f, RCV: %.3f\r\n", left_cmd_velocity, right_cmd_velocity);
-    
-    /* The motors have physical limits.  Do not allow the robot to be command beyond reasonable those limits.
-       Configuration limits can be found in config.h.
-     */
-    //linear_cmd_velocity = constrain(max_robot_backward_linear_velocity, linear_cmd_velocity, max_robot_forward_linear_velocity);
-    //angular_cmd_velocity = constrain(MAX_ROBOT_CCW_RADIAN_PER_SECOND, angular_cmd_velocity, MAX_ROBOT_CW_RADIAN_PER_SECOND);
-    
-    if (timeout > MAX_CMD_VELOCITY_TIMEOUT)
+    if (!left_right_cmd_velocity_override)
     {
-        linear_cmd_velocity = 0;
-        angular_cmd_velocity = 0;
-        left_cmd_velocity = 0;
-        right_cmd_velocity = 0;
+        UniToDiff(linear_velocity_mps, angular_velocity_rps, &left_velocity_rps, &right_velocity_rps);
+        
+        left_velocity_cps = left_velocity_rps * WHEEL_COUNT_PER_RADIAN;
+        right_velocity_cps = left_velocity_rps * WHEEL_COUNT_PER_RADIAN;
+    
+        //Ser_PutStringFormat("LCV: %.3f, RCV: %.3f\r\n", left_cmd_velocity, right_cmd_velocity);
+        
+        /* The motors have physical limits.  Do not allow the robot to be command beyond reasonable those limits.
+           Configuration limits can be found in config.h.
+         */
+        //linear_cmd_velocity = constrain(max_robot_backward_linear_velocity, linear_cmd_velocity, max_robot_forward_linear_velocity);
+        //angular_cmd_velocity = constrain(MAX_ROBOT_CCW_RADIAN_PER_SECOND, angular_cmd_velocity, MAX_ROBOT_CW_RADIAN_PER_SECOND);
+        
+        if (timeout > MAX_CMD_VELOCITY_TIMEOUT)
+        {
+            left_velocity_cps = 0;
+            right_velocity_cps = 0;
+        }
     }
     
     CONTROL_UPDATE_END();
@@ -439,6 +445,38 @@ void Control_RestoreCommandVelocityFunc()
     control_cmd_velocity = ReadCmdVelocity;
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Control_SetLeftRightVelocityOverride
+ * Description: Sets override flag to isolate control of left/right_velocity_cps.
+ * Parameters: (in) enable
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/ 
+void Control_SetLeftRightVelocityOverride(uint8 enable)
+{
+    left_right_cmd_velocity_override = enable;
+    /* Clear out the linear/angular velocities so they don't interfere */
+    linear_velocity_mps = 0.0;
+    angular_velocity_rps = 0.0;
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: Control_SetLeftRightVelocity
+ * Description: Directly sets the left/right velocity (in count/sec).  Note: has affect only if
+ *              override is enabled.
+ * Parameters: (in) left - left velocity (cps)
+ *             (in) right - right velocity (cps)
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/ 
+void Control_SetLeftRightVelocity(float left, float right)
+{
+    if (left_right_cmd_velocity_override)
+    {
+        left_velocity_cps = left;
+        right_velocity_cps = right;
+    }
+}
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Control_LeftGetCmdVelocity
@@ -451,9 +489,9 @@ float Control_LeftGetCmdVelocity()
 {    
     float velocity = 0.0;
 
-    velocity = (linear_bias - linear_trim) * left_cmd_velocity * WHEEL_COUNT_PER_RADIAN;
-
-    //Ser_PutStringFormat("Control_LeftGetCmdVelocity: %.3f %.3f\r\n", left_cmd_velocity, velocity);
+    velocity = (linear_bias - linear_trim) * left_velocity_cps;
+    
+    //Ser_PutStringFormat("Control_LeftGetCmdVelocity: %.3f %.3f\r\n", left_velocity_cps, velocity);
     return velocity;
 }
 
@@ -468,9 +506,9 @@ float Control_RightGetCmdVelocity()
 {
     float velocity = 0.0;
 
-    velocity = (linear_bias + linear_trim) * right_cmd_velocity * WHEEL_COUNT_PER_RADIAN;
+    velocity = (linear_bias + linear_trim) * right_velocity_cps;
     
-    //Ser_PutStringFormat("Control_RightGetCmdVelocity: %.3f %.3f\r\n", right_cmd_velocity, velocity);
+    //Ser_PutStringFormat("Control_RightGetCmdVelocity: %.3f %.3f\r\n", right_velocity_cps, velocity);
     return velocity;
 }
 
@@ -483,7 +521,7 @@ float Control_RightGetCmdVelocity()
  *-------------------------------------------------------------------------------------------------*/ 
 float Control_LinearGetCmdVelocity()
 {
-    return linear_cmd_velocity;
+    return linear_velocity_mps;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -495,7 +533,7 @@ float Control_LinearGetCmdVelocity()
  *-------------------------------------------------------------------------------------------------*/ 
 float Control_AngularGetCmdVelocity()
 {
-    return angular_cmd_velocity;
+    return angular_velocity_rps;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -508,8 +546,8 @@ float Control_AngularGetCmdVelocity()
  *-------------------------------------------------------------------------------------------------*/ 
  void Control_GetCmdVelocity(float *linear, float *angular)
 {
-    *linear = linear_cmd_velocity;
-    *angular = angular_cmd_velocity;
+    *linear = linear_velocity_mps;
+    *angular = angular_velocity_rps;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -522,14 +560,23 @@ float Control_AngularGetCmdVelocity()
  *-------------------------------------------------------------------------------------------------*/ 
  void Control_SetCmdVelocity(float linear, float angular)
 {
-    /* Note: This function is called from the unipid to track angular velocity.  Basically, we are taking the adjustment
-       to linear/angular velocity and converting to left/right velocity (in rad/s).  The left/right pids will pick
-       up left/right velocity (converted to count/s) and track linear velocity.
-    */
-    UniToDiff(linear, angular, &left_cmd_velocity, &right_cmd_velocity);
+    float left_velocity_rps;
+    float right_velocity_rps;
     
-    //left_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, left_cmd_velocity, MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
-    //right_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, right_cmd_velocity,MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
+    if (!left_right_cmd_velocity_override)
+    {    
+        /* Note: This function is called from the unipid to track angular velocity.  Basically, we are taking the adjustment
+           to linear/angular velocity and converting to left/right velocity (in rad/s).  The left/right pids will pick
+           up left/right velocity (converted to count/s) and track linear velocity.
+        */
+        UniToDiff(linear, angular, &left_velocity_rps, &right_velocity_rps);
+        
+        left_velocity_cps = left_velocity_rps * WHEEL_COUNT_PER_RADIAN;
+        right_velocity_cps = right_velocity_rps * WHEEL_COUNT_PER_RADIAN;
+        
+        //left_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, left_cmd_velocity, MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
+        //right_cmd_velocity = constrain(MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, right_cmd_velocity,MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
+    }
 }
 
 /*---------------------------------------------------------------------------------------------------

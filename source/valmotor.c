@@ -30,14 +30,14 @@ SOFTWARE.
 /* 
     Explanation of Motor Calibration using Count/Sec to PWM mapping:
 
-    Calibration involves mapping count/sec values to PWM values.  Each motor is run (forward and backward) collecting
-    an average count/sec for each PWM sample.  The results are stored in an structure (CAL_DATA_TYPE) that holds the
-    count/sec averages, PWM samples, min/max count/sec and a scale factor.  There are four CAL_DATA_TYPE instances: one
-    for left motor forward, left motor backward, right motor forward and right motor backward.  The calibration data is
-    stored in NVRAM on the Psoc and pointers to the calibration data are passed to the motor module.
+    Calibration involves mapping count/sec values to PWM values.  Each motor is run (forward and 
+    backward) collecting an average count/sec for each PWM sample.  The results are stored in a 
+    structure (CAL_DATA_TYPE) that holds the count/sec averages, PWM samples, min/max count/sec.  
+    There are four CAL_DATA_TYPE instances: one for left motor forward, left motor backward, right 
+    motor forward and right motor backward.  The calibration data is stored in NVRAM on the Psoc.
     
-    Upon startup, the calibration data is made available to the motors via pointers to NVRAM (Note: the EEPROM component
-    maps NVRAM to memory so there is no appreciable overhead in reading from NVRAM (or so I believe until proven otherwise)
+    Upon startup, the calibration data is made available to the motors (Note: the EEPROM component 
+    maps NVRAM to memory so there is no appreciable overhead in reading from NVRAM.
 
  */
 
@@ -46,6 +46,7 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/
 #include <stdio.h>
 #include <limits.h>
+#include "control.h"
 #include "valmotor.h"
 #include "motor.h"
 #include "pwm.h"
@@ -68,7 +69,7 @@ SOFTWARE.
 #define VAL_NUM_PROFILE_DATA_POINTS (11)
 #define VALIDATION_INTERATION_DONE (255)
 #define MAX_CPS_ARRAY (51)
-#define NUM_MOTOR_VAL_PARAMS (1)
+#define NUM_MOTOR_VAL_PARAMS (4)
 
 
 /*---------------------------------------------------------------------------------------------------
@@ -92,7 +93,7 @@ typedef struct
     GET_ENCODER_FUNC_TYPE   get_mps;
     GET_ENCODER_FUNC_TYPE   get_cps;
     SET_LEFT_RIGHT_VELOCITY_TYPE set_velocity;
-}VAL_MOTOR_PARAMS;
+} VAL_MOTOR_PARAMS;
 
 /*---------------------------------------------------------------------------------------------------
  * Variables
@@ -180,7 +181,7 @@ VAL_MOTOR_PARAMS motor_val_params[4] =
             Motor_LeftRampDown,
             Encoder_LeftGetMeterPerSec,
             Encoder_LeftGetCntsPerSec,
-            Cal_SetLeftRightVelocity,
+            Control_SetLeftRightVelocity
         }, 
         {
             "right-forward",
@@ -193,7 +194,7 @@ VAL_MOTOR_PARAMS motor_val_params[4] =
             Motor_RightRampDown,
             Encoder_RightGetMeterPerSec,
             Encoder_RightGetCntsPerSec, 
-            Cal_SetLeftRightVelocity
+            Control_SetLeftRightVelocity,
         },
         {
             "left-backward",
@@ -206,7 +207,7 @@ VAL_MOTOR_PARAMS motor_val_params[4] =
             Motor_LeftRampDown,
             Encoder_LeftGetMeterPerSec,
             Encoder_LeftGetCntsPerSec,
-            Cal_SetLeftRightVelocity,
+            Control_SetLeftRightVelocity
         }, 
         {
             "right-backward",
@@ -219,7 +220,7 @@ VAL_MOTOR_PARAMS motor_val_params[4] =
             Motor_RightRampDown,
             Encoder_RightGetMeterPerSec,
             Encoder_RightGetCntsPerSec,
-            Cal_SetLeftRightVelocity
+            Control_SetLeftRightVelocity
         }
     };
 
@@ -236,7 +237,8 @@ static uint8 motor_val_index;
 
 void PrintWheelVelocity(VAL_MOTOR_PARAMS *val_params, float cps)
 {
-    Ser_PutStringFormat("CPS: %.3f %.3f\r\n", cps, val_params->get_cps());
+    Ser_PutStringFormat("CCPS: %.3f MCPS: %.3f DIFF: %.3f PDIFF: %.3f\r\n", 
+        cps, val_params->get_cps(), cps - val_params->get_cps(), (cps - val_params->get_cps())/cps);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -287,16 +289,13 @@ static uint8 GetNextCps(VAL_MOTOR_PARAMS *params, float *cps)
 
 static void SetNextVelocity(VAL_MOTOR_PARAMS *params, float cps)
 {
-    float mps = cps * WHEEL_METER_PER_COUNT;
-    Ser_PutStringFormat("SetNextVelocity: cps: %.3f, mps: %.3f\r\n", cps, mps);
-    
     if (params->wheel == WHEEL_LEFT)
     {
-        params->set_velocity(mps, 0);
+        params->set_velocity(cps, 0);
     }
     if (params->wheel == WHEEL_RIGHT)
     {
-        params->set_velocity(0, mps);
+        params->set_velocity(0, cps);
     }
 }
 
@@ -316,7 +315,6 @@ static uint8 PerformMotorValidation(VAL_MOTOR_PARAMS *val_params)
             val_params->set_pwm(PWM_STOP);
             return CAL_COMPLETE;
         }
-        Ser_PutStringFormat("Setting velocity: %.3f\r\n", cps);
         SetNextVelocity(val_params, cps);
         start_time = millis();
         running = TRUE;
@@ -366,18 +364,20 @@ static uint8 PerformMotorValidation(VAL_MOTOR_PARAMS *val_params)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Init()
 {
+    int ii;
     Ser_PutString("\r\nInitialize motor validation\r\n");
 
     Cal_CalcTriangularProfile(VAL_NUM_PROFILE_DATA_POINTS, 
                               VAL_LOWER_BOUND_PERCENTAGE, 
                               VAL_UPPER_BOUND_PERCENTAGE, 
-                              val_fwd_cps, 
+                              val_fwd_cps,
                               val_bwd_cps);
 
-    /* Left/Right wheel validation uses the main loop so the PID must be enabled */
-    Pid_Enable(TRUE, TRUE, TRUE);
-    Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
-    
+    /* Setup the PIDs to be bypassed, i.e., they pass the target unchanged to the output. */
+    Pid_Bypass(TRUE, TRUE, TRUE);
+    Control_SetLeftRightVelocityOverride(TRUE);
+    motor_val_index = 0;
+
     return CAL_OK;
 }
 
@@ -392,9 +392,9 @@ static uint8 Init()
 static uint8 Start()
 {
     Ser_PutString("\r\nPerforming motor validation\r\n");
-    Cal_SetLeftRightVelocity(0, 0);            
+    Control_SetLeftRightVelocity(0, 0);
     Debug_Store();
-    Debug_Enable(DEBUG_LEFT_ENCODER_ENABLE_BIT);// | DEBUG_LEFT_MOTOR_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT);
+    //Debug_Enable(DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT);
         
     return CAL_OK;
 }
@@ -411,6 +411,12 @@ static uint8 Start()
 static uint8 Update()
 {
     VAL_MOTOR_PARAMS *val_params = &motor_val_params[motor_val_index];
+    
+    /* Here is where we can decide what validation to do.  The validation menu has one option for
+       motor validation.  I think that is find, but it should run both motors forwards and backwards.
+    
+       Why isn't that happening?
+    */
 
     uint8 result = PerformMotorValidation(val_params);
     if( result == VALIDATION_INTERATION_DONE )
@@ -418,7 +424,7 @@ static uint8 Update()
         motor_val_index++;
         if( motor_val_index == NUM_MOTOR_VAL_PARAMS )
         {
-            val_params->set_velocity(0, 0);            
+            val_params->set_velocity(0, 0);
             return CAL_COMPLETE;
         }
     }
@@ -437,9 +443,10 @@ static uint8 Update()
 static uint8 Stop()
 {
     Ser_PutString("Motor validation complete\r\n");
-    Cal_SetLeftRightVelocity(0, 0);
-    Pid_RestoreLeftRightTarget();
+    Control_SetLeftRightVelocity(0, 0);
+    Pid_Bypass(FALSE, FALSE, TRUE);    
     Debug_Restore();
+    Control_SetLeftRightVelocityOverride(FALSE);
     
     return CAL_OK;
 }
@@ -465,6 +472,7 @@ static uint8 Results()
  *---------------------------------------------------------------------------------------------------------------------*/
 void ValMotor_Init()
 {    
+    motor_val_index = 0;
 }
 
 CALVAL_INTERFACE_TYPE * ValMotor_Start()

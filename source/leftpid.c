@@ -102,7 +102,7 @@ static float GetCmdVelocity()
 {
     float cps = target_source();
     pid.sign = cps >= 0.0 ? 1.0 : -1.0;
-    return abs(cps);
+    return cps;
 }
 
 static float EncoderInput()
@@ -114,7 +114,7 @@ static float PidUpdate(float target, float input)
 {
     PWM_TYPE pwm;
     
-    PIDSetpointSet(&pid.pid, target);
+    PIDSetpointSet(&pid.pid, abs(target));
     PIDInputSet(&pid.pid, input);
     
     /* Note: PIDCompute returns TRUE when in AUTOMATIC mode and FALSE when in MANUAL mode */
