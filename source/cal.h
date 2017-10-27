@@ -195,6 +195,7 @@ float Cal_GetLinearBias();
 float Cal_GetAngularBias();
 CAL_PID_TYPE* Cal_GetPidGains(PID_ENUM_TYPE pid);
 uint16 Cal_GetStatus();
+void Cal_SetGains(PID_ENUM_TYPE pid, float* gains);
 CAL_DATA_TYPE* Cal_GetMotorData(WHEEL_TYPE wheel, DIR_TYPE dir);
 
 void Cal_SetAngularBias(float bias);
