@@ -58,7 +58,7 @@ SOFTWARE.
 #define MAX_CMD_VELOCITY_TIMEOUT (2000)
 
 #define LINEAR_RESPONSE_TIME (0.1)
-#define ANGULAR_RESPONSE_TIME (0.2)
+#define ANGULAR_RESPONSE_TIME (0.1)
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -82,9 +82,8 @@ static uint8 debug_override;
 static uint8 left_right_cmd_velocity_override;
 
 
-static float linear_bias;
+static float linear_gain;
 static float linear_trim;
-static float angular_bias;
 
 /*---------------------------------------------------------------------------------------------------
  * Name: AdjustVelocity
@@ -147,7 +146,11 @@ static float LimitLinearAccel(float linear_velocity)
     static float last_velocity = 0.0;
     static uint32 last_time = 0;
 
-    last_velocity = AdjustVelocity(last_velocity, linear_velocity, max_linear, LINEAR_RESPONSE_TIME, &last_time);
+    last_velocity = AdjustVelocity(last_velocity, 
+                                   linear_velocity, 
+                                   max_linear, 
+                                   LINEAR_RESPONSE_TIME, 
+                                   &last_time);
 
     return last_velocity;
 }
@@ -164,7 +167,11 @@ static float LimitAngularAccel(float angular_velocity)
     static float last_velocity = 0.0;
     static uint32 last_time = 0;
 
-    last_velocity = AdjustVelocity(last_velocity, angular_velocity, max_angular, ANGULAR_RESPONSE_TIME, &last_time);
+    last_velocity = AdjustVelocity(last_velocity, 
+                                   angular_velocity, 
+                                   max_angular, 
+                                   ANGULAR_RESPONSE_TIME, 
+                                   &last_time);
 
     return last_velocity;    
 }
@@ -242,7 +249,7 @@ void Update_Debug(uint16 bits)
 void Control_Init()
 {
     control_cmd_velocity = ReadCmdVelocity;
-    linear_bias = 1.0;
+    linear_gain = 1.0;
     linear_trim = 0.0;
     left_right_cmd_velocity_override = FALSE;
 }
@@ -268,9 +275,6 @@ void Control_Start()
     max_robot_forward_linear_velocity_mps = max_robot_linear_velocity;
     max_robot_backward_linear_velocity_mps = -max_robot_linear_velocity;
 
-    //linear_bias = Cal_GetLinearBias();
-    //angular_bias = Cal_GetAngularBias();   
-    
 }
 
 #ifdef ENABLE_VELOCITY_REPEAT
@@ -489,7 +493,7 @@ float Control_LeftGetCmdVelocity()
 {    
     float velocity = 0.0;
 
-    velocity = (linear_bias - linear_trim) * left_velocity_cps;
+    velocity = (linear_gain - linear_trim) * left_velocity_cps;
     
     //Ser_PutStringFormat("Control_LeftGetCmdVelocity: %.3f %.3f\r\n", left_velocity_cps, velocity);
     return velocity;
@@ -506,7 +510,7 @@ float Control_RightGetCmdVelocity()
 {
     float velocity = 0.0;
 
-    velocity = (linear_bias + linear_trim) * right_velocity_cps;
+    velocity = (linear_gain + linear_trim) * right_velocity_cps;
     
     //Ser_PutStringFormat("Control_RightGetCmdVelocity: %.3f %.3f\r\n", right_velocity_cps, velocity);
     return velocity;
