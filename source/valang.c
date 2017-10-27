@@ -31,6 +31,7 @@ SOFTWARE.
  * Includes
  *-------------------------------------------------------------------------------------------------*/
 #include <math.h>
+#include "control.h"
 #include "valang.h"
 #include "odom.h"
 #include "motor.h"
@@ -88,18 +89,22 @@ static CALVAL_ANG_PARAMS *p_ang_params;
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
+static void GetCommandVelocity(float *linear, float *angular, uint32 *timeout)
+{
+    *linear = p_ang_params->linear;
+    *angular = p_ang_params->angular;
+    *timeout = 0;
+}
 
 /*---------------------------------------------------------------------------------------------------
  * Name: IsMoveFinished
  * Description: Determines if the move is finished
- * Parameters: distance - the target distance for the move. 
- *             direction - the direction of the move, i.e., CW or CCW 
+ * Parameters: direction - the direction of the move, i.e., CW or CCW 
  * Return: uint8 - TRUE if the move is complete; otherwise, FALSE
  *-------------------------------------------------------------------------------------------------*/
-static uint8 IsMoveFinished(DIR_TYPE direction, float heading, float distance)
+static uint8 IsMoveFinished(DIR_TYPE direction)
 {
     #define TOLERANCE (0.01)
-    uint8 result;
 
     /* Note: We are taking advantage of the fact that heading starts at zero due to Odometry reset
        prior to running the calibration.  Therefore, we only need to test when we get close to
@@ -157,19 +162,17 @@ static uint8 IsMoveFinished(DIR_TYPE direction, float heading, float distance)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Init()
 {
-    Cal_SetLeftRightVelocity(0, 0);
-    Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
-
     Debug_Store();
-    Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
-
-    /* We should support validating clockwise and counter clockwise */
+    
+    Control_SetCommandVelocityFunc(GetCommandVelocity);    
+    p_ang_params->distance = ANGULAR_BIAS_ANGLE;
+    p_ang_params->linear = 0.0;
+    p_ang_params->angular = p_ang_params->direction == DIR_CW ? -ANGULAR_BIAS_VELOCITY : ANGULAR_BIAS_VELOCITY;
 
     Ser_PutStringFormat("\r\n%s Angular validation\r\n", 
                         p_ang_params->direction == DIR_CW ? "Clockwise" : "Counter Clockwise");
     
-    p_ang_params->distance = ANGULAR_BIAS_ANGLE;
-    p_ang_params->angular = p_ang_params->direction == DIR_CW ? -ANGULAR_BIAS_VELOCITY : ANGULAR_BIAS_VELOCITY;
+    Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
 
     return CAL_OK;
 }
@@ -184,21 +187,14 @@ static uint8 Init()
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Start()
 {
-    float left;
-    float right;
-
     Pid_Enable(TRUE, TRUE, FALSE);            
     Encoder_Reset();
     Pid_Reset();
     Odom_Reset();
 
-    UniToDiff(p_ang_params->linear, p_ang_params->angular, &left, &right);    
-    p_ang_params->heading = Odom_GetHeading();
-
     Ser_PutString("Angular Validation Start\r\n");            
     Ser_PutString("\r\nValidating\r\n");
 
-    Cal_SetLeftRightVelocity(left * WHEEL_COUNT_PER_RADIAN, right * WHEEL_COUNT_PER_RADIAN);            
     start_time = millis();
 
     return CAL_OK;
@@ -215,25 +211,34 @@ static uint8 Start()
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Update()
 {
-    /* Note: Wait 1 second before testing, so that the heading gets a chance to change.
-        We're simplifying the angle calculation by taking advantage of the fact that the 
-        heading will start and end at 0.0
-    */
-    if (millis() - start_time < 1000)
-    {
-        return CAL_OK;
-    }
+    static uint8 delay_completed = FALSE;
     
-    else if (millis() - start_time < p_ang_params->run_time)
+    if (!delay_completed)
     {
-        if (IsMoveFinished(p_ang_params->direction, p_ang_params->heading, p_ang_params->distance))
+        /* Note: Wait 1 second before testing, so that the heading gets a chance to change; otherwise,
+           heading will still be 0.0.  We're simplifying the angle calculation by taking advantage of the 
+           fact that the heading will start and end at 0.0
+        */
+        if (millis() - start_time < 1000)
         {
-            end_time = millis();
-            return CAL_COMPLETE;
+            return CAL_OK;
         }
         
-        return CAL_OK;
-        
+        delay_completed = TRUE;
+        start_time = millis();
+    }
+    
+    if (millis() - start_time < p_ang_params->run_time)
+    {
+        if (IsMoveFinished(p_ang_params->direction))
+        {
+            end_time = millis();
+            Motor_SetPwm(PWM_STOP, PWM_STOP);
+            p_ang_params->linear = 0.0;
+            p_ang_params->angular = 0.0;            
+            return CAL_COMPLETE;
+        }        
+        return CAL_OK;        
     }
     end_time = millis();
     Ser_PutString("\r\nRun time expired\r\n");
@@ -251,12 +256,11 @@ static uint8 Update()
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Stop()
 {
-    Cal_SetLeftRightVelocity(0, 0);
-    Motor_SetPwm(PWM_STOP, PWM_STOP);
+    Control_RestoreCommandVelocityFunc();
+    Debug_Restore();    
 
     Ser_PutStringFormat("\r\n%s Angular Validation complete\r\n", 
                         p_ang_params->direction == DIR_CW ? "clockwise" : "counter clockwise");
-    Debug_Restore();    
 
     return CAL_OK;
 }
@@ -287,10 +291,6 @@ static uint8 Results()
     Ser_PutStringFormat("Angular Bias: %.6f\r\n", angular_bias);
         
     Ser_PutString("\r\nPrinting Angular validation results\r\n");
-    /* Get the left, right and average distance traveled
-        Need to capture the left, right delta distance at the start (probably 0 because odometry is reset)
-        We want to see how far each wheel went and compute the error
-        */
 
     return CAL_OK;
 }
@@ -309,7 +309,7 @@ void ValAng_Init()
 CALVAL_INTERFACE_TYPE *ValAng_Start(DIR_TYPE dir)
 {
     angular_validation.state = CAL_INIT_STATE;
-    angular_validation.stage = CAL_CALIBRATE_STAGE;
+    angular_validation.stage = CAL_VALIDATE_STAGE;
     p_ang_params = angular_validation.params;
     p_ang_params->direction = dir;
     return (CALVAL_INTERFACE_TYPE *) &angular_validation;
