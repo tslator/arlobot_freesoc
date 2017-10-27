@@ -32,6 +32,7 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/
 #include <stdio.h>
 #include "config.h"
+#include "control.h"
 #include "calpid.h"
 #include "cal.h"
 #include "serial.h"
@@ -142,6 +143,8 @@ static void CalcMaxCps()
     
     max_leftright_cps = min(left_max, right_max);
     max_leftright_pid = min(LEFTPID_MAX, RIGHTPID_MAX);
+
+    Ser_PutStringFormat("mlrcps: %d, mlrpid: %d\r\n", max_leftright_cps, max_leftright_pid);
     
     max_cps = min(max_leftright_cps, max_leftright_pid);
 
@@ -155,9 +158,8 @@ static void CalcMaxCps()
  * Name: Init
  * Description: Calibration/Validation interface Init function.  Performs initialization for Linear 
  *              Validation.
- * Parameters: stage - the calibration/validation stage 
- *             params - PID calibration/validation parameters, e.g. direction, run time, etc. 
- * Return: uint8 - CAL_OK
+ * Parameters: None
+ * Return: uint8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Init()
@@ -171,8 +173,8 @@ static uint8 Init()
     Ser_PutStringFormat("\r\n%s PID calibration\r\n", p_pid_params->name);
 
     Cal_ClearCalibrationStatusBit(CAL_PID_BIT);
-    Cal_SetLeftRightVelocity(0, 0);
-    Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
+    Control_SetLeftRightVelocityOverride(TRUE);
+    Control_SetLeftRightVelocity(0.0, 0.0);
 
     Debug_Store();
 
@@ -197,9 +199,8 @@ static uint8 Init()
 /*---------------------------------------------------------------------------------------------------
  * Name: Start
  * Description: Calibration/Validation interface Start function.  Starts PID Calibration/Validation.
- * Parameters: stage - the calibration/validation stage 
- *             params - PID validation parameters. 
- * Return: uint8 - CAL_OK
+ * Parameters: None 
+ * Return: uint8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Start()
@@ -222,17 +223,18 @@ static uint8 Start()
     Odom_Reset();
     
     float step_velocity = max_cps * STEP_VELOCITY_PERCENT;
-
+    Ser_PutStringFormat("Setting step velocity: %.3f\r\n", step_velocity);
+    
     switch (p_pid_params->pid_type)
     {
         case PID_TYPE_LEFT:
             LeftPid_SetGains(gains[0], gains[1], gains[2], gains[3]);
-            Cal_SetLeftRightVelocity(step_velocity, 0);
+            Control_SetLeftRightVelocity(step_velocity, 0);
             break;
             
         case PID_TYPE_RIGHT:
             RightPid_SetGains(gains[0], gains[1], gains[2], gains[3]);
-            Cal_SetLeftRightVelocity(0, step_velocity);
+            Control_SetLeftRightVelocity(0, step_velocity);
             break;
             
         default:
@@ -250,8 +252,7 @@ static uint8 Start()
  * Name: Update
  * Description: Calibration/Validation interface Update function.  Called periodically to evaluate 
  *              the termination condition.
- * Parameters: stage - the calibration/validation stage 
- *             params - PID calibration/validation parameters, e.g. direction, run time, etc. 
+ * Parameters: None 
  * Return: uint8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
@@ -268,16 +269,15 @@ static uint8 Update()
 /*---------------------------------------------------------------------------------------------------
  * Name: Stop
  * Description: Calibration/Validation interface Stop function.  Called to stop validation.
- * Parameters: stage - the calibration/validation stage 
- *             params - PID calibration/validation parameters, e.g. direction, run time, etc. 
- * Return: uint8 - CAL_OK
+ * Parameters: None 
+ * Return: uint8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Stop()
 {
     float gains[4];
 
-    Cal_SetLeftRightVelocity(0, 0);
+    Control_SetLeftRightVelocity(0, 0);
 
     switch (p_pid_params->pid_type)
     {
@@ -297,7 +297,7 @@ static uint8 Stop()
     }
     Cal_SetCalibrationStatusBit(CAL_PID_BIT);
 
-    Pid_RestoreLeftRightTarget();
+    Control_SetLeftRightVelocityOverride(FALSE);
     Ser_PutStringFormat("\r\n%s PID calibration complete\r\n", p_pid_params->name);
     Debug_Restore();    
             
@@ -308,8 +308,7 @@ static uint8 Stop()
  * Name: Results
  * Description: Calibration/Validation interface Results function.  Called to display calibration/ 
  *              validation results. 
- * Parameters: stage - the calibration/validation stage 
- *             params - PID calibration/validation parameters, e.g. direction, run time, etc. 
+ * Parameters: None 
  * Return: uint8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
@@ -353,11 +352,26 @@ static uint8 Results()
 void CalPid_Init()
 {
     max_cps = 0.0;
-    CalcMaxCps();    
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: CalPid_Start
+ * Description: Initializes the calibration structure for the calibration requested.
+ * Parameters: None 
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 CALVAL_INTERFACE_TYPE* CalPid_Start(WHEEL_TYPE wheel)
 {
+    /* Note: This calculation is required to determine the maximum count/sec value between left/right
+       motor calibration parameters and the maximum allowed PID range.  It cannot be done until
+       the NVRAM component is started, so we wait to do this in 'Start' instead of 'Init'.
+
+       Note: It is called each time a calibration is started but it's a minor calculation with not
+       much appreciable overhead.
+    */
+    CalcMaxCps();
+
     switch (wheel)
     {
         case WHEEL_LEFT:
