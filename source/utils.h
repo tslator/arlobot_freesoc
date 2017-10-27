@@ -93,6 +93,9 @@ SOFTWARE.
 
 #define IS_NAN_DEFAULT(x,d)   isnan(x) ? d : x
 
+#define MPS_TO_CPS(mps) (mps / WHEEL_METER_PER_COUNT)
+#define CPS_TO_MPS(cps) (cps * WHEEL_METER_PER_COUNT)
+
 /*---------------------------------------------------------------------------------------------------
  * Types
  *-------------------------------------------------------------------------------------------------*/    
