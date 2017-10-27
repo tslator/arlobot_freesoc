@@ -84,8 +84,7 @@ static CALVAL_INTERFACE_TYPE right_pid_validation = {CAL_INIT_STATE,
                                                  Stop,
                                                  Results};
 
-static float val_fwd_cps[MAX_NUM_VELOCITIES] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-static float val_bwd_cps[MAX_NUM_VELOCITIES] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+static float profile_cps[MAX_NUM_VELOCITIES] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 static uint8 vel_index = 0;
 
 
@@ -106,7 +105,12 @@ static CALVAL_PID_PARAMS *p_pid_params;
  * Return: float - velocity (count/second)
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void CalcValidationProfile(float low_percent, float high_percent, float *val_fwd_cps)
+static void CalcValidationProfile(float low_percent, float high_percent)
+/* Use the min/max count/sec values captured during motor calibration
+   Constrain the start and stop values to the lesser/greater of those values (depending on direction)
+   Further constrain start/stop based on maximum PID values which are derived from the motor specification
+   Further constrain to low/high range
+*/
 {
     float start;
     float stop;
@@ -119,21 +123,23 @@ static void CalcValidationProfile(float low_percent, float high_percent, float *
     {
         start = (float) min(Cal_GetMotorData(WHEEL_LEFT, DIR_FORWARD)->cps_min, Cal_GetMotorData(WHEEL_RIGHT, DIR_FORWARD)->cps_min);
         stop = (float) min(Cal_GetMotorData(WHEEL_LEFT, DIR_FORWARD)->cps_max, Cal_GetMotorData(WHEEL_RIGHT, DIR_FORWARD)->cps_max);
+        stop = min(stop, (float) min(LEFTPID_MAX, RIGHTPID_MAX));
     }
     else if (p_pid_params->direction == DIR_BACKWARD)
     {
-        start = (float) min(Cal_GetMotorData(WHEEL_LEFT, DIR_BACKWARD)->cps_min, Cal_GetMotorData(WHEEL_RIGHT, DIR_BACKWARD)->cps_min);
-        stop = (float) min(Cal_GetMotorData(WHEEL_LEFT, DIR_BACKWARD)->cps_max, Cal_GetMotorData(WHEEL_RIGHT, DIR_BACKWARD)->cps_max);
+        /* Note: backward count/sec values are negative, i.e., swap min/max and negative PID max */
+        start = (float) min(Cal_GetMotorData(WHEEL_LEFT, DIR_BACKWARD)->cps_max, Cal_GetMotorData(WHEEL_RIGHT, DIR_BACKWARD)->cps_max);
+        stop = (float) max(Cal_GetMotorData(WHEEL_LEFT, DIR_BACKWARD)->cps_min, Cal_GetMotorData(WHEEL_RIGHT, DIR_BACKWARD)->cps_min);
+        stop = max(stop, (float) max(-LEFTPID_MAX, -RIGHTPID_MAX));
     }
-
-    stop = min(stop, (float) min(LEFTPID_MAX, RIGHTPID_MAX));
+    
     start = low_percent * stop;
     stop = high_percent * stop;
-    
-    CalcTriangularProfile(MAX_NUM_VELOCITIES, start, stop, val_fwd_cps);
+
+    CalcTriangularProfile(MAX_NUM_VELOCITIES, start, stop, profile_cps);
     for (ii = 0; ii < MAX_NUM_VELOCITIES; ++ii)
     {
-        Ser_PutStringFormat("%f, ", val_fwd_cps[ii]);
+        Ser_PutStringFormat("%f, ", profile_cps[ii]);
     }
     Ser_PutString("\r\n");
 }
@@ -151,37 +157,6 @@ static void ResetPidValidationVelocity()
 }
 
 /*---------------------------------------------------------------------------------------------------
- * Name: GetNextValidationVelocity
- * Description: Returns the next validation velocity from the array. 
- * Parameters: dir - specifies whether the validation is in the forward or backward direction
- * Return: float - velocity (count/second)
- * 
- *-------------------------------------------------------------------------------------------------*/
-static float GetNextValidationVelocity(DIR_TYPE dir)
-{
-    float value;
-
-    switch( dir )
-    {
-        case DIR_FORWARD:
-            value = val_fwd_cps[vel_index];
-            break;
-    
-        case DIR_BACKWARD:
-            value = val_bwd_cps[vel_index];
-            break;
-
-        default:
-            value = 0;
-            break;
-    }
-
-    vel_index++;
-
-    return value;
-}
-
-/*---------------------------------------------------------------------------------------------------
  * Name: SetNextValidationVelocity
  * Description: Gets and sets the next validation velocity.
  * Parameters: p_pid_params - pointer to PID params
@@ -190,15 +165,19 @@ static float GetNextValidationVelocity(DIR_TYPE dir)
  *-------------------------------------------------------------------------------------------------*/
 static uint8 SetNextValidationVelocity()
 {
-    float velocity = GetNextValidationVelocity(p_pid_params->direction);
+    float velocity;
+    
+    velocity = profile_cps[vel_index];    
+    vel_index++;
+    
     switch (p_pid_params->pid_type)
     {
-        case PID_TYPE_LEFT:
-            Cal_SetLeftRightVelocity(velocity, 0);
+        case PID_TYPE_LEFT:        
+            Control_SetLeftRightVelocity(velocity, 0);
             break;
 
         case PID_TYPE_RIGHT:
-            Cal_SetLeftRightVelocity(0, velocity);
+            Control_SetLeftRightVelocity(0, velocity);
             break;
             
         default:
@@ -231,10 +210,8 @@ static uint8 Init()
     
     Debug_Store();
 
-    CalcValidationProfile(0.2, 0.8, &val_fwd_cps[0]);
-    
-    Cal_SetLeftRightVelocity(0, 0);
-    Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
+    Control_SetLeftRightVelocityOverride(TRUE);
+    Control_SetLeftRightVelocity(0, 0);
     ResetPidValidationVelocity();
 
     switch (p_pid_params->pid_type)
@@ -290,6 +267,8 @@ static uint8 Start()
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Update()
 {
+    uint8 result;
+    
     /* Assume an array of validation velocities that we want to run through.
         We use update to measure the time and advance through the array
         */
@@ -298,7 +277,7 @@ static uint8 Update()
         return CAL_OK;    
     }
     start_time = millis();
-    uint8 result = SetNextValidationVelocity();
+    result = SetNextValidationVelocity();
     if (!result)
     {
         return CAL_COMPLETE;
@@ -317,7 +296,8 @@ static uint8 Update()
  *-------------------------------------------------------------------------------------------------*/
 static uint8 Stop()
 {
-    Cal_SetLeftRightVelocity(0, 0);
+    Control_SetLeftRightVelocity(0.0, 0.0);
+    Control_SetLeftRightVelocityOverride(FALSE);
 
     Ser_PutStringFormat("\r\n%s PID validation complete\r\n", p_pid_params->name);
     Debug_Restore();    
@@ -366,6 +346,7 @@ CALVAL_INTERFACE_TYPE * ValPid_Start(VAL_PID_TYPE val_pid)
             left_pid_validation.state = CAL_INIT_STATE;
             p_pid_params = left_pid_validation.params;
             p_pid_params->direction = DIR_FORWARD;
+            CalcValidationProfile(0.2, 0.8);
             return &left_pid_validation;
 
         case VAL_PID_LEFT_BACKWARD:
@@ -373,6 +354,7 @@ CALVAL_INTERFACE_TYPE * ValPid_Start(VAL_PID_TYPE val_pid)
             left_pid_validation.state = CAL_INIT_STATE;
             p_pid_params = left_pid_validation.params;
             p_pid_params->direction = DIR_BACKWARD;
+            CalcValidationProfile(0.2, 0.8);        
             return &left_pid_validation;
 
         case VAL_PID_RIGHT_FORWARD:
@@ -380,6 +362,7 @@ CALVAL_INTERFACE_TYPE * ValPid_Start(VAL_PID_TYPE val_pid)
             right_pid_validation.state = CAL_INIT_STATE;
             p_pid_params = right_pid_validation.params;
             p_pid_params->direction = DIR_FORWARD;
+            CalcValidationProfile(0.2, 0.8);
             return &right_pid_validation;
     
         case VAL_PID_RIGHT_BACKWARD:
@@ -387,6 +370,7 @@ CALVAL_INTERFACE_TYPE * ValPid_Start(VAL_PID_TYPE val_pid)
             right_pid_validation.state = CAL_INIT_STATE;
             p_pid_params = right_pid_validation.params;
             p_pid_params->direction = DIR_BACKWARD;
+            CalcValidationProfile(0.2, 0.8);        
             return &right_pid_validation;
 
         default:
