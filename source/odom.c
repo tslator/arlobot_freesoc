@@ -71,6 +71,9 @@ static float theta;
 static float linear_meas_velocity;
 static float angular_meas_velocity;
 
+static float linear_bias;
+static float angular_bias;
+
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -129,6 +132,8 @@ void Odom_Init()
  *-------------------------------------------------------------------------------------------------*/
 void Odom_Start()
 {
+    linear_bias = Cal_GetLinearBias();
+    angular_bias = Cal_GetAngularBias();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -208,9 +213,9 @@ void Odom_Update()
 #else
         float left_delta_dist = left_mps * delta_time / 1000.0;
         float right_delta_dist = right_mps * delta_time / 1000.0;
-        float center_delta_dist = (left_delta_dist + right_delta_dist) / 2.0;
+        float center_delta_dist = linear_bias * (left_delta_dist + right_delta_dist) / 2.0;
         
-        theta += (right_delta_dist - left_delta_dist)/TRACK_WIDTH;
+        theta += angular_bias * (right_delta_dist - left_delta_dist)/TRACK_WIDTH;
         x_position += center_delta_dist * cos(theta);
         y_position += center_delta_dist * sin(theta);
         
