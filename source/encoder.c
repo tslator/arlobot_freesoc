@@ -39,7 +39,6 @@ SOFTWARE.
 #include "time.h"
 #include "diag.h"
 #include "debug.h"
-#include "cal.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
