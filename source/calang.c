@@ -160,6 +160,9 @@ static uint8 Init()
     Cal_SetLeftRightVelocity(0, 0);
     Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
 
+    /* Clear the calibration bit before starting calibration so that we use the default value */
+    Cal_ClearCalibrationStatusBit(CAL_ANGULAR_BIT);
+    
     Debug_Store();
     Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
 
@@ -201,13 +204,8 @@ static uint8 Start()
     Ser_PutStringFormat("Current Heading: %.6f\r\n", Odom_GetHeading());
     Ser_PutString("Angular Calibration Start\r\n");            
     Ser_PutString("\r\nCalibrating\r\n");
-
-    /* Note: The angular bit is used to by the Encoder module to select the default angular bias or the value
-        stored in EEPROM.  Therefore, because angular calibration can be an iterative process, we need to clear 
-        the bit after we've reset the Encoder; otherwise, we'll pick up the default and never see the results.
-        */
-    Cal_ClearCalibrationStatusBit(CAL_ANGULAR_BIT);
             
+    
     Cal_SetLeftRightVelocity(left * WHEEL_COUNT_PER_RADIAN, right * WHEEL_COUNT_PER_RADIAN);            
     start_time = millis();
 
@@ -292,6 +290,8 @@ static uint8 Results()
     Ser_PutStringFormat("Heading: %.6f\r\n", heading);
     Ser_PutStringFormat("Elapsed Time: %ld\r\n", end_time - start_time);
     Ser_PutStringFormat("Angular Bias: %.6f\r\n", angular_bias);
+
+    Ser_PutStringFormat("Degrees Travelled: %.6f\r\n", 360 + RADIANS_TO_DEGREES(abs(heading)));
         
     Ser_PutString("\r\nMeasure the rotate traveled by the robot.");
     Ser_PutString("\r\nEnter the rotation (in degrees): ");
