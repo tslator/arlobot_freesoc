@@ -65,6 +65,9 @@ SOFTWARE.
 #define MOTOR_DUMP_ENABLED
 #define ODOM_DUMP_ENABLED
 #define UNIPID_DUMP_ENABLED
+#define ANGPID_DUMP_ENABLED
+
+#define JSON_OUTPUT_ENABLE
 
 /* The following defines enable "cycle" logging for each feature */
 //#define ENC_UPDATE_DELTA_ENABLED
@@ -156,7 +159,7 @@ void Debug_Init();
 void Debug_Start();
 void Debug_Enable(uint16 flag);
 void Debug_Disable(uint16 flag);
-uint8 Debug_IsEnabled(uint16 flag);
+uint16 Debug_IsEnabled(uint16 flag);
 void Debug_EnableAll();
 void Debug_DisableAll();
 void Debug_Store();

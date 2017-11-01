@@ -43,7 +43,6 @@ SOFTWARE.
 #include "angpid.h"
 #include "pid_controller.h"
 #include "utils.h"
-#include "pidutil.h"
 #include "debug.h"
 #include "diag.h"
 
@@ -51,7 +50,7 @@ SOFTWARE.
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
 #ifdef ANGPID_DUMP_ENABLED
-#define ANGPID_DUMP() DUMP_PID(DEBUG_ANGPID_ENABLE_BIT, pid.name, &pid.pid)
+#define ANGPID_DUMP() DumpPid(pid.name, &pid.pid)
 #else
 #define ANGPID_DUMP()
 #endif
@@ -179,19 +178,17 @@ void AngPid_Process()
     float linear_cmd;
     float angular_cmd;
     
-    Control_GetCmdVelocity(&linear_cmd, &angular_cmd);
-    
     if (pid_enabled)
     {
+        Control_GetCmdVelocity(&linear_cmd, &angular_cmd);
         target = pid.get_target();
         input = pid.get_input();        
         angular_cmd += pid.update(target, input);
+        Control_SetCmdVelocity(linear_cmd, angular_cmd);
         
-        //ANGPID_DUMP();
-        //DumpPid(pid.name, &pid.pid);
+        ANGPID_DUMP();
     }
     
-    Control_SetCmdVelocity(linear_cmd, angular_cmd);
 }
 
 /*---------------------------------------------------------------------------------------------------

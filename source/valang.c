@@ -236,13 +236,15 @@ static uint8 Update()
             Motor_SetPwm(PWM_STOP, PWM_STOP);
             p_ang_params->linear = 0.0;
             p_ang_params->angular = 0.0;            
+            delay_completed = FALSE;
             return CAL_COMPLETE;
         }        
         return CAL_OK;        
     }
     end_time = millis();
+    delay_completed = FALSE;
     Ser_PutString("\r\nRun time expired\r\n");
-
+    
     return CAL_COMPLETE;
 }
 

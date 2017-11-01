@@ -182,9 +182,9 @@ void Cal_ClearCalibrationStatusBit(uint16 bit);
 void Cal_SetCalibrationStatusBit(uint16 bit);
 uint16 Cal_GetCalibrationStatusBit(uint16 bit);
 
-void Cal_PrintAllMotorParams();
-void Cal_PrintSamples(char *label, CAL_DATA_TYPE *cal_data);
-void Cal_PrintGains(char *label, float *gains);
+void Cal_PrintAllMotorParams(uint8 as_json);
+void Cal_PrintSamples(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *cal_data, uint8 as_json);
+void Cal_PrintPidGains(WHEEL_TYPE wheel, float *gains, uint8 as_json);
 void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_limit, float *forward_output, float *backward_output);
 
 void Cal_CalcOperatingRange(float low_percent, float high_percent, float domain, float *start, float *stop);

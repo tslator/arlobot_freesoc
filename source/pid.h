@@ -40,9 +40,6 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
-#define DUMP_PID(enable, name, p_pid)       do { \
-                                                if (Debug_IsEnabled(enable)) DumpPid(name, p_pid); \
-                                            } while (0)
         
 
 #define PID_SAMPLE_TIME_MS  SAMPLE_TIME_MS(PID_SAMPLE_RATE)
@@ -78,7 +75,10 @@ void Pid_RestoreLeftRightTarget();
 void Pid_Reset();
 void Pid_Enable(uint8 left, uint8 right, uint8 uni);
 void Pid_Bypass(uint8 left, uint8 right, uint8 uni);
+void Pid_BypassAll(uint8 bypass);
 uint8 Pid_SetGains(PIDControl *p_pid, CAL_PID_TYPE *p_gains);
+
+void DumpPid(char *name, PIDControl *pid);
 
 #endif
 

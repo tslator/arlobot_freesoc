@@ -43,7 +43,6 @@ SOFTWARE.
 #include "leftpid.h"
 #include "rightpid.h"
 #include "utils.h"
-#include "pidutil.h"
 #include "debug.h"
 #include "diag.h"
 
@@ -55,7 +54,6 @@ SOFTWARE.
 #else
 #define PID_DEBUG_DELTA(delta)
 #endif
-
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -73,6 +71,42 @@ SOFTWARE.
  * Functions
  *-------------------------------------------------------------------------------------------------*/    
 
+#if defined (LEFT_PID_DUMP_ENABLED) ||  \
+    defined (RIGHT_PID_DUMP_ENABLED) || \
+    defined (UNIPID_DUMP_ENABLED) ||    \
+    defined (ANGPID_DUMP_ENABLED)
+
+void DumpPid(char *name, PIDControl *pid)
+{
+    if ( Debug_IsEnabled(DEBUG_LEFT_PID_ENABLE_BIT|DEBUG_RIGHT_PID_ENABLE_BIT|DEBUG_UNIPID_ENABLE_BIT|DEBUG_ANGPID_ENABLE_BIT) )
+    {
+#ifdef JSON_OUTPUT_ENABLE
+        DEBUG_PRINT_ARG("{ \"%s pid\": {\"set_point\":%.3f, \"input\":%.3f, \"error\":%.3f, \"last_input\":%.3f, \"iterm\":%.3f, \"output\":%.3f }}\r\n",
+            name, 
+            IS_NAN_DEFAULT(pid->setpoint, 0), 
+            IS_NAN_DEFAULT(pid->input, 0), 
+            IS_NAN_DEFAULT(pid->setpoint - pid->input, 0), 
+            IS_NAN_DEFAULT(pid->lastInput, 0), 
+            IS_NAN_DEFAULT(pid->iTerm, 0), 
+            IS_NAN_DEFAULT(pid->output, 0)
+        );
+#else
+        DEBUG_PRINT_ARG("%s pid: %f %f %f %f %f %f\r\n", 
+            name, 
+            IS_NAN_DEFAULT(pid->setpoint, 0), 
+            IS_NAN_DEFAULT(pid->input, 0), 
+            IS_NAN_DEFAULT(pid->setpoint - pid->input, 0), 
+            IS_NAN_DEFAULT(pid->lastInput, 0), 
+            IS_NAN_DEFAULT(pid->iTerm, 0), 
+            IS_NAN_DEFAULT(pid->output, 0)
+        );
+#endif        
+    }
+}
+
+#endif
+
+
 /*---------------------------------------------------------------------------------------------------
  * Name: Pid_Init
  * Description: Starts the EEPROM component used for storing calibration information.
@@ -82,7 +116,7 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/
 void Pid_Init()
 {
-    AngPid_Init();
+    //AngPid_Init();
     LeftPid_Init();    
     RightPid_Init();
 }
@@ -96,7 +130,7 @@ void Pid_Init()
  *-------------------------------------------------------------------------------------------------*/
 void Pid_Start()
 {
-    AngPid_Start();
+    //AngPid_Start();
     LeftPid_Start();    
     RightPid_Start();
 }
@@ -122,7 +156,7 @@ void Pid_Update()
     {    
         last_update_time = millis();
         
-        AngPid_Process();
+        //AngPid_Process();
         LeftPid_Process();
         RightPid_Process();
     }
@@ -182,16 +216,23 @@ void Pid_Reset()
  *-------------------------------------------------------------------------------------------------*/
 void Pid_Enable(uint8 left, uint8 right, uint8 uni)
 {
-    AngPid_Enable(uni);
+    //AngPid_Enable(uni);
     LeftPid_Enable(left);
     RightPid_Enable(right);
 }
 
 void Pid_Bypass(uint8 left, uint8 right, uint8 uni)
 {
-    AngPid_Bypass(uni);
     LeftPid_Bypass(left);
     RightPid_Bypass(right);
+    //AngPid_Bypass(uni);
+}
+
+void Pid_BypassAll(uint8 bypass)
+{
+    //AngPid_Bypass(bypass);
+    LeftPid_Bypass(bypass);
+    RightPid_Bypass(bypass);
 }
 
 uint8 Pid_SetGains(PIDControl *p_pid, CAL_PID_TYPE *p_gains)

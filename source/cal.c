@@ -97,8 +97,9 @@ SOFTWARE.
 #define DISP_PID_CMD         3
 #define DISP_BIAS_CMD        4
 #define DISP_ALL_CMD         5
+#define DISP_ALL_JSON_CMD    6
 #define DISP_FIRST_CMD       DISP_MOTOR_LEFT_CMD
-#define DISP_LAST_CMD        DISP_ALL_CMD
+#define DISP_LAST_CMD        DISP_ALL_JSON_CMD
 
 #define CMD_TOP_LEVEL (0)
 #define CMD_CALIBRATION (1)
@@ -161,55 +162,123 @@ static CAL_DATA_TYPE * WHEEL_DIR_TO_CAL_DATA[2][2];
 /*---------------------------------------------------------------------------------------------------
  * Name: Cal_PrintAllMotorParams
  * Description: Prints the left/right, forward/backward count/sec and pwm calibration values
- * Parameters: None
+ * Parameters: as_json - if TRUE, output in json format; otherwise, plain text.
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
- void Cal_PrintAllMotorParams()
+ void Cal_PrintAllMotorParams(uint8 as_json)
 {
-    Cal_PrintSamples("Left-Backward", WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD]);
-    Cal_PrintSamples("Left-Forward", WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD]);
-    Cal_PrintSamples("Right-Backward", WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD]);
-    Cal_PrintSamples("Right-Forward", WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD]);
+    Cal_PrintSamples(WHEEL_LEFT, DIR_BACKWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD], as_json);
+    Cal_PrintSamples(WHEEL_LEFT, DIR_FORWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD], as_json);
+    Cal_PrintSamples(WHEEL_RIGHT, DIR_BACKWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD], as_json);
+    Cal_PrintSamples(WHEEL_RIGHT, DIR_FORWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD], as_json);
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Cal_PrintSamples
  * Description: Prints the count/sec and pwm samples.  Called from the CalMotor module.
- * Parameters: label - string containing the motor identifier, e.g., left or right 
+ * Parameters: wheel - either left or right
+ *             dir - either forward or backward 
  *             cal_data - pointer to structure containing motor calibration data
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Cal_PrintSamples(char *label, CAL_DATA_TYPE *cal_data)
+void Cal_PrintSamples(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *cal_data, uint8 as_json)
 {
-    uint8 ii;
-    
-    Ser_PutStringFormat("%s - min/max: %d/%d\r\n", label, cal_data->cps_min, cal_data->cps_max);
-    
-    for (ii = 0; ii < CAL_NUM_SAMPLES - 1; ++ii)
+    if (as_json)
     {
-        Ser_PutStringFormat("%ld:%d ", cal_data->cps_data[ii], cal_data->pwm_data[ii]);
+        /* Example json
+            { "wheel": "left", 
+            "direction": "backward", 
+            "min": -4328, 
+            "max": 0, 
+            "values": [
+                {"cps": -4328, "pwm": 1000},
+                {"cps": -4328, "pwm": 1000},
+                {"cps": -4318, "pwm": 1010},
+                ...
+                {"cps": -50, "pwm": 1470},
+                {"cps": 0, "pwm": 1480},
+                {"cps": 0, "pwm": 1490},
+                {"cps": 0, "pwm": 1500}
+            ]}
+        */
+        static char buffer[2000];
+        int offset;
+        int ii;
+
+        offset = 0;
+        memset(buffer, 0, sizeof(buffer));
+
+        offset += sprintf(buffer + offset, "{\"wheel\":\"%s\",", wheel == WHEEL_LEFT ? "left" : "right");
+        offset += sprintf(buffer + offset, "\"direction\":\"%s\",", dir == DIR_FORWARD ? "forward" : "backward");
+        offset += sprintf(buffer + offset, "\"min\":%d,", cal_data->cps_min);
+        offset += sprintf(buffer + offset, "\"max\":%d,", cal_data->cps_max);
+        offset += sprintf(buffer + offset, "\"values\":[");
+        for (ii = 0; ii < CAL_NUM_SAMPLES - 1; ++ii)
+        {
+            offset += sprintf(buffer + offset, "{\"cps\":%d,\"pwm\":%d},", cal_data->cps_data[ii], cal_data->pwm_data[ii]);
+        }
+        offset += sprintf(buffer + offset, "{\"cps\":%d,\"pwm\":%d}]}\r\n", cal_data->cps_data[ii], cal_data->pwm_data[ii]);
+
+        Ser_PutString(buffer);
     }
-    Ser_PutStringFormat("%ld:%d\r\n\r\n", cal_data->cps_data[ii], cal_data->pwm_data[ii]);
+    else
+    {
+        uint8 ii;
+        
+        Ser_PutStringFormat("%s-%s - min/max: %d/%d\r\n", 
+                            wheel == WHEEL_LEFT ? "Left" : "Right", 
+                            dir == DIR_FORWARD ? "Forward" : "Backward", 
+                            cal_data->cps_min, 
+                            cal_data->cps_max);
+        
+        for (ii = 0; ii < CAL_NUM_SAMPLES - 1; ++ii)
+        {
+            Ser_PutStringFormat("%ld:%d ", cal_data->cps_data[ii], cal_data->pwm_data[ii]);
+        }
+        Ser_PutStringFormat("%ld:%d\r\n\r\n", cal_data->cps_data[ii], cal_data->pwm_data[ii]);
+    }
 }
 
 /*---------------------------------------------------------------------------------------------------
- * Name: Cal_PrintGains
+ * Name: Cal_PrintPidGains
  * Description: Prints the PID gains.  Called from the CalPid and Cal modules.
- * Parameters: label - string containing the pid identifier, e.g., left pid or right pid. 
+ * Parameters: wheel - string containing the pid identifier, e.g., left pid or right pid. 
  *             gains - an array of float values corresponding to Kp, Ki, and Kd. 
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Cal_PrintGains(char *label, float *gains)
+void Cal_PrintPidGains(WHEEL_TYPE wheel, float *gains, uint8 as_json)
 {
-    Ser_PutStringFormat("%s - P: %.3f, I: %.3f, D: %.3f, F: %.3f\r\n", label, gains[0], gains[1], gains[2], gains[3]);
+    if (as_json)
+    {
+        /*
+            {"wheel":"left", "p":%.3f,"i":%.3f,"d":%.3f,"f":%.3f}
+        */
+        Ser_PutStringFormat("{\"wheel\":\"%s\",\"p\":%.3f,\"i\":%.3f,\"d\":%.3f,\"f\":%.3f}\r\n", 
+                            wheel == WHEEL_LEFT ? "left" : "right", 
+                            gains[0], gains[1], gains[2], gains[3]);
+    }
+    else
+    {
+        Ser_PutStringFormat("%s PID - P: %.3f, I: %.3f, D: %.3f, F: %.3f\r\n", 
+                            wheel == WHEEL_LEFT ? "Left" : "Right", 
+                            gains[0], gains[1], gains[2], gains[3]);
+    }
 }
 
-void Cal_PrintStatus(char *label, uint16 status)
+void Cal_PrintStatus(uint8 as_json)
 {
-    Ser_PutStringFormat("%s - %02x\r\n", label, status);
+    if (as_json)
+    {
+        /* TODO: Consider parsing out the bits of status into fields in the json */
+        Ser_PutStringFormat("{\"status\":%02x}\r\n", p_cal_eeprom->status);
+    }
+    else
+    {
+        Ser_PutStringFormat("Status - %02x\r\n", p_cal_eeprom->status);
+    }
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -218,9 +287,16 @@ void Cal_PrintStatus(char *label, uint16 status)
  * Parameters: None 
  * Return: None
  *-------------------------------------------------------------------------------------------------*/
-void Cal_PrintBias()
+void Cal_PrintBias(uint8 as_json)
 {
-    Ser_PutStringFormat("Linear Bias: %.2f, Angular Bias: %.2f\r\n", Cal_GetLinearBias(), Cal_GetAngularBias());
+    if (as_json)
+    {
+        Ser_PutStringFormat("{\"linear\":%.2f,\"angular\":%.2f}\r\n", Cal_GetLinearBias(), Cal_GetAngularBias());
+    }
+    else
+    {
+        Ser_PutStringFormat("Linear Bias: %.2f, Angular Bias: %.2f\r\n", Cal_GetLinearBias(), Cal_GetAngularBias());
+    }
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -338,6 +414,7 @@ static void DisplaySettingsMenu()
     Ser_PutStringFormat("    %d. PID Gains: left pid and right pid\r\n", DISP_PID_CMD);
     Ser_PutStringFormat("    %d. Linear/Angular Bias: linear and angular biases\r\n", DISP_BIAS_CMD);
     Ser_PutStringFormat("    %d. Display All\r\n", DISP_ALL_CMD);
+    Ser_PutStringFormat("    %d. Display All (json)\r\n", DISP_ALL_JSON_CMD);
     Ser_PutStringFormat("\r\n\r\nEnter %c/%c to exit validation\r\n", EXIT_CMD_CHR, EXIT_CMD_UCHR);
     Ser_PutStringFormat("\r\nMake an entry [%d-%d,%c/%c]: ", DISP_FIRST_CMD, DISP_LAST_CMD, EXIT_CMD_CHR, EXIT_CMD_UCHR);
 }
@@ -392,8 +469,8 @@ static void ProcessSettingsCmd(uint8 cmd)
     {
         case DISP_MOTOR_LEFT_CMD:
             Ser_PutString("\r\nDisplaying left motor calibration: count/sec, pwm mapping\r\n");
-            Cal_PrintSamples("Left-Backward", WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD]);
-            Cal_PrintSamples("Left-Forward", WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD]);
+            Cal_PrintSamples(WHEEL_LEFT, DIR_BACKWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD], FALSE);
+            Cal_PrintSamples(WHEEL_LEFT, DIR_FORWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD], FALSE);
             Ser_PutString("\r\n");
             
             DisplaySettingsMenu();
@@ -401,8 +478,8 @@ static void ProcessSettingsCmd(uint8 cmd)
             
         case DISP_MOTOR_RIGHT_CMD:
             Ser_PutString("\r\nDisplaying right motor calibration: count/sec, pwm mapping\r\n");
-            Cal_PrintSamples("Right-Backward", WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD]);
-            Cal_PrintSamples("Right-Forward", WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD]);
+            Cal_PrintSamples(WHEEL_RIGHT, DIR_BACKWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD], FALSE);
+            Cal_PrintSamples(WHEEL_RIGHT, DIR_FORWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD], FALSE);
             Ser_PutString("\r\n");
             
             DisplaySettingsMenu();
@@ -410,8 +487,8 @@ static void ProcessSettingsCmd(uint8 cmd)
             
         case DISP_PID_CMD:
             Ser_PutString("\r\nDisplaying all PID gains: left, right\r\n");
-            Cal_PrintGains("Left PID", (float *) &p_cal_eeprom->left_gains);
-            Cal_PrintGains("Right PID", (float *) &p_cal_eeprom->right_gains);
+            Cal_PrintPidGains(WHEEL_LEFT, (float *) &p_cal_eeprom->left_gains, FALSE);
+            Cal_PrintPidGains(WHEEL_RIGHT, (float *) &p_cal_eeprom->right_gains, FALSE);
             Ser_PutString("\r\n");
 
             DisplaySettingsMenu();
@@ -419,7 +496,7 @@ static void ProcessSettingsCmd(uint8 cmd)
             
         case DISP_BIAS_CMD:
             Ser_PutString("\r\nDisplaying linear/angular bias\r\n");
-            Cal_PrintBias();
+            Cal_PrintBias(FALSE);
             Ser_PutString("\r\n");
 
             DisplaySettingsMenu();
@@ -428,16 +505,29 @@ static void ProcessSettingsCmd(uint8 cmd)
         case DISP_ALL_CMD:
             Ser_PutString("\r\nDisplaying all calibration/settings\r\n");
 
-            Cal_PrintAllMotorParams();
+            Cal_PrintAllMotorParams(FALSE);
 
-            Cal_PrintGains("Left PID", (float *) &p_cal_eeprom->left_gains);
-            Cal_PrintGains("Right PID", (float *) &p_cal_eeprom->right_gains);
-            Cal_PrintStatus("Status", p_cal_eeprom->status);
-            Cal_PrintBias();
+            Cal_PrintPidGains(WHEEL_LEFT, (float *) &p_cal_eeprom->left_gains, FALSE);
+            Cal_PrintPidGains(WHEEL_RIGHT, (float *) &p_cal_eeprom->right_gains, FALSE);
+            Cal_PrintStatus(FALSE);
+            Cal_PrintBias(FALSE);
 
             DisplaySettingsMenu();
             break;
-            
+
+        case DISP_ALL_JSON_CMD:
+            Ser_PutString("\r\nDisplaying all calibration/settings\r\n");
+        
+            Cal_PrintAllMotorParams(TRUE);
+
+            Cal_PrintPidGains(WHEEL_LEFT, (float *) &p_cal_eeprom->left_gains, TRUE);
+            Cal_PrintPidGains(WHEEL_RIGHT, (float *) &p_cal_eeprom->right_gains, TRUE);
+            Cal_PrintStatus(TRUE);
+            Cal_PrintBias(TRUE);
+
+            DisplaySettingsMenu();
+            break;
+                    
         default:
             // Do nothing
             break;
@@ -587,6 +677,10 @@ static uint8 GetCommand(uint8 cmd_class)
             case CMD_SETTINGS:
                 cmd = GetSettingsCommand(value);
         }
+        
+        /* Reset value for next time */
+        value[0] = NULL_CMD;
+        value[1] = '\r';
     
         return cmd;
     }

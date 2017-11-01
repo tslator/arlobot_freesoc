@@ -90,8 +90,19 @@ static float angular_bias;
  *-------------------------------------------------------------------------------------------------*/
 static void DumpOdom()
 {
-    if (Debug_IsEnabled(DEBUG_ODOM_ENABLE_BIT))
-    {
+    if (Debug_IsEnabled(DEBUG_ODOM_ENABLE_BIT)) 
+    {    
+#ifdef JSON_OUTPUT_ENABLE
+        DEBUG_PRINT_ARG("{\"odom\":{\"left_mps\":%.3f,\"right_mps\":%.3f,\"x_pos\":%.3f,\"y_pos\":%.3f,\"theta\":%.3f,\"lin_vel\":%.3f,\"ang_vel\":%.3f,}}\r\n",
+                        left_mps, 
+                        right_mps, 
+                        x_position, 
+                        y_position, 
+                        theta,
+                        linear_meas_velocity,
+                        angular_meas_velocity
+        );
+#else    
         DEBUG_PRINT_ARG("ls: %.3f rs: %.3f x: %.3f y: %.3f th: %.3f lv: %.3f av: %.3f\r\n", 
                         left_mps, 
                         right_mps, 
@@ -100,7 +111,7 @@ static void DumpOdom()
                         theta,
                         linear_meas_velocity,
                         angular_meas_velocity);
-            
+#endif
     }
 }
 #endif

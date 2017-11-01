@@ -658,7 +658,7 @@ static uint8 Stop()
 static uint8 Results()
 {
     Ser_PutString("\r\nPrinting motor calibration results\r\n");
-    Cal_PrintAllMotorParams();
+    Cal_PrintAllMotorParams(FALSE);
         
     return CAL_OK;
 }

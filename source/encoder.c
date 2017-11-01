@@ -44,13 +44,13 @@ SOFTWARE.
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
 #ifdef  LEFT_ENC_DUMP_ENABLED     
-#define LEFT_DUMP_ENC(enc)  if (Debug_IsEnabled(DEBUG_LEFT_ENCODER_ENABLE_BIT)) DumpEncoder(enc)
+#define LEFT_DUMP_ENC(enc)  DumpEncoder(enc)
 #else
 #define LEFT_DUMP_ENC(enc)
 #endif    
 
 #ifdef RIGHT_ENC_DUMP_ENABLED
-#define RIGHT_DUMP_ENC(enc)  if (Debug_IsEnabled(DEBUG_RIGHT_ENCODER_ENABLE_BIT)) DumpEncoder(enc)
+#define RIGHT_DUMP_ENC(enc)  DumpEncoder(enc)
 #else
 #define RIGHT_DUMP_ENC(enc)
 #endif
@@ -126,13 +126,27 @@ static ENCODER_TYPE right_enc = {
  *-------------------------------------------------------------------------------------------------*/
  static void DumpEncoder(ENCODER_TYPE *enc)
 {
-    DEBUG_PRINT_ARG("%s enc: %.3f %.3f %.3f %ld %.3f\r\n", 
-                    enc->name, 
-                    enc->avg_cps, 
-                    enc->avg_mps, 
-                    enc->avg_delta_count, 
-                    enc->delta_count, 
-                    enc->delta_dist);
+    if (Debug_IsEnabled(DEBUG_LEFT_ENCODER_ENABLE_BIT|DEBUG_RIGHT_ENCODER_ENABLE_BIT)) 
+    {    
+#ifdef JSON_OUTPUT_ENABLE
+        DEBUG_PRINT_ARG("{ \"%s enc\": {\"avg_cps\":%.3f, \"avg_mps\":%.3f, \"avg_delta_count\":%.3f, \"delta_count\":%ld, \"delta_dist\":%.3f}}\r\n",
+                enc->name, 
+                enc->avg_cps, 
+                enc->avg_mps, 
+                enc->avg_delta_count, 
+                enc->delta_count, 
+                enc->delta_dist
+        );
+#else    
+        DEBUG_PRINT_ARG("%s enc: %.3f %.3f %.3f %ld %.3f\r\n", 
+                        enc->name, 
+                        enc->avg_cps, 
+                        enc->avg_mps, 
+                        enc->avg_delta_count, 
+                        enc->delta_count, 
+                        enc->delta_dist);
+#endif
+    }                    
 }
 #endif
 

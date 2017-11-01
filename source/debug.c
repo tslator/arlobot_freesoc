@@ -118,7 +118,7 @@ void Debug_Disable(uint16 flag)
 #endif
 }
 
-uint8 Debug_IsEnabled(uint16 flag)
+uint16 Debug_IsEnabled(uint16 flag)
 {
 #ifdef COMMS_DEBUG_ENABLED
     return debug_control_enabled & flag;

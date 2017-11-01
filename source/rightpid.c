@@ -40,7 +40,6 @@ SOFTWARE.
 #include "pid.h"
 #include "rightpid.h"
 #include "utils.h"
-#include "pidutil.h"
 #include "debug.h"
 #include "diag.h"
 
@@ -48,7 +47,7 @@ SOFTWARE.
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
 #ifdef RIGHT_PID_DUMP_ENABLED
-#define RIGHTPID_DUMP()  DUMP_PID(DEBUG_RIGHT_PID_ENABLE_BIT, pid.name, &pid.pid)
+#define RIGHTPID_DUMP()  DumpPid(pid.name, &pid.pid)
 #else
 #define RIGHTPID_DUMP()
 #endif

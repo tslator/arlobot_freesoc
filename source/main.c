@@ -28,6 +28,7 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/    
 #include <stdio.h>
 #include <project.h>
+#include "config.h"
 #include "debug.h"
 #include "diag.h"
 #include "control.h"
@@ -39,6 +40,7 @@ SOFTWARE.
 #include "odom.h"
 #include "cal.h"
 #include "nvstore.h"
+#include "utils.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Main Function
@@ -78,8 +80,10 @@ int main()
     //Ser_PutString("I am the microcontroller for Arlobot.\r\n");
     //Ser_PutString("I'm entering my main loop now!\r\n");
 
-    Pid_Bypass(0, 0, 0);
-    Pid_Enable(1, 1, 0);
+    Debug_DisableAll();
+    
+    //Pid_Bypass(FALSE, FALSE, FALSE);
+    //Pid_Enable(TRUE, TRUE, FALSE);
     
     for(;;)
     {

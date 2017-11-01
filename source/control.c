@@ -355,7 +355,12 @@ void Control_Update()
     
     control_cmd_velocity(&linear_velocity_mps, &angular_velocity_rps, &timeout);
     
-    //Debug_Enable(DEBUG_ODOM_ENABLE_BIT);//DEBUG_ANGPID_ENABLE_BIT);
+    //Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
+    //Debug_Enable(DEBUG_LEFT_ENCODER_ENABLE_BIT);
+    //Debug_Enable(DEBUG_RIGHT_ENCODER_ENABLE_BIT);
+    //Debug_Enable(DEBUG_LEFT_PID_ENABLE_BIT);
+    //Debug_Enable(DEBUG_RIGHT_PID_ENABLE_BIT);
+    
 #ifdef ENABLE_VELOCITY_REPEAT
     RepeatVelocity(&linear_velocity_mps, &angular_cmd_velocity_rps, &timeout);
 #endif
@@ -402,7 +407,7 @@ void Control_Update()
         UniToDiff(linear_velocity_mps, angular_velocity_rps, &left_velocity_rps, &right_velocity_rps);
         
         left_velocity_cps = left_velocity_rps * WHEEL_COUNT_PER_RADIAN;
-        right_velocity_cps = left_velocity_rps * WHEEL_COUNT_PER_RADIAN;
+        right_velocity_cps = right_velocity_rps * WHEEL_COUNT_PER_RADIAN;
     
         //Ser_PutStringFormat("LCV: %.3f, RCV: %.3f\r\n", left_cmd_velocity, right_cmd_velocity);
         
@@ -462,6 +467,8 @@ void Control_SetLeftRightVelocityOverride(uint8 enable)
     /* Clear out the linear/angular velocities so they don't interfere */
     linear_velocity_mps = 0.0;
     angular_velocity_rps = 0.0;
+    left_velocity_cps = 0.0;
+    right_velocity_cps = 0.0;    
 }
 
 /*---------------------------------------------------------------------------------------------------

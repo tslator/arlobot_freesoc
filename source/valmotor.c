@@ -236,9 +236,9 @@ static uint8 motor_val_index;
  *-------------------------------------------------------------------------------------------------*/
 
 void PrintWheelVelocity(VAL_MOTOR_PARAMS *val_params, float cps)
-{
-    Ser_PutStringFormat("CCPS: %.3f MCPS: %.3f DIFF: %.3f PDIFF: %.3f\r\n", 
-        cps, val_params->get_cps(), cps - val_params->get_cps(), (cps - val_params->get_cps())/cps);
+{    
+    Ser_PutStringFormat("{\"calc cps\":%.3f,\"meas cps\":%.3f,\"diff\":%.3f, \"%% diff\":%.3f}\r\n", 
+        cps, val_params->get_cps(), cps - val_params->get_cps(), 100.0 * (cps - val_params->get_cps())/cps);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -374,7 +374,7 @@ static uint8 Init()
                               val_bwd_cps);
 
     /* Setup the PIDs to be bypassed, i.e., they pass the target unchanged to the output. */
-    Pid_Bypass(TRUE, TRUE, TRUE);
+    Pid_BypassAll(TRUE);
     Control_SetLeftRightVelocityOverride(TRUE);
     motor_val_index = 0;
 
@@ -394,7 +394,8 @@ static uint8 Start()
     Ser_PutString("\r\nPerforming motor validation\r\n");
     Control_SetLeftRightVelocity(0, 0);
     Debug_Store();
-    //Debug_Enable(DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT);
+    Debug_DisableAll();
+    Debug_Enable(DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT);
         
     return CAL_OK;
 }
@@ -443,10 +444,9 @@ static uint8 Update()
 static uint8 Stop()
 {
     Ser_PutString("Motor validation complete\r\n");
-    Control_SetLeftRightVelocity(0, 0);
-    Pid_Bypass(FALSE, FALSE, TRUE);    
-    Debug_Restore();
     Control_SetLeftRightVelocityOverride(FALSE);
+    Pid_BypassAll(FALSE);
+    Debug_Restore();
     
     return CAL_OK;
 }

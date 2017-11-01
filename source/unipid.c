@@ -43,7 +43,6 @@ SOFTWARE.
 #include "unipid.h"
 #include "pid_controller.h"
 #include "utils.h"
-#include "pidutil.h"
 #include "debug.h"
 #include "diag.h"
 

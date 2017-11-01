@@ -144,8 +144,6 @@ static void CalcMaxCps()
     max_leftright_cps = min(left_max, right_max);
     max_leftright_pid = min(LEFTPID_MAX, RIGHTPID_MAX);
 
-    Ser_PutStringFormat("mlrcps: %d, mlrpid: %d\r\n", max_leftright_cps, max_leftright_pid);
-    
     max_cps = min(max_leftright_cps, max_leftright_pid);
 
 }
@@ -322,12 +320,12 @@ static uint8 Results()
     {
         case PID_TYPE_LEFT:
             LeftPid_GetGains(&gains[0], &gains[1], &gains[2], &gains[3]);
-            Cal_PrintGains("Left PID", gains);
+            Cal_PrintPidGains(WHEEL_LEFT, gains, FALSE);
             break;
         
         case PID_TYPE_RIGHT:
             RightPid_GetGains(&gains[0], &gains[1], &gains[2], &gains[3]);
-            Cal_PrintGains("Right PID", gains);
+            Cal_PrintPidGains(WHEEL_RIGHT, gains, FALSE);
             break;
             
         default:

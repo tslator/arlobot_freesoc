@@ -291,6 +291,7 @@ uint8 Ser_ReadLine(char *line, uint8 echo)
     else if (ch == '\n' || ch == '\r')
     {   
         length = ii;
+        line[ii] = '\0';
         ii = 0;
     }
     else

@@ -209,26 +209,12 @@ static uint8 Init()
     Ser_PutStringFormat("\r\n%s PID validation\r\n", p_pid_params->name);
     
     Debug_Store();
+    Debug_DisableAll();
 
     Control_SetLeftRightVelocityOverride(TRUE);
-    Control_SetLeftRightVelocity(0, 0);
     ResetPidValidationVelocity();
-
-    switch (p_pid_params->pid_type)
-    {
-        case PID_TYPE_LEFT:
-            Debug_Enable(DEBUG_LEFT_PID_ENABLE_BIT);
-            break;
-        
-        case PID_TYPE_RIGHT:
-            Debug_Enable(DEBUG_RIGHT_PID_ENABLE_BIT);
-            break;
-            
-        default:
-            Ser_PutString("Unknown PID type\r\n");
-            return CAL_COMPLETE;
-            
-    }
+    
+    Debug_Enable(DEBUG_LEFT_PID_ENABLE_BIT|DEBUG_RIGHT_PID_ENABLE_BIT);
 
     return CAL_OK;
 }

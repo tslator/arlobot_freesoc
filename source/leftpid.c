@@ -41,7 +41,6 @@ SOFTWARE.
 #include "pid.h"
 #include "leftpid.h"
 #include "utils.h"
-#include "pidutil.h"
 #include "debug.h"
 #include "diag.h"
 
@@ -49,7 +48,7 @@ SOFTWARE.
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
 #ifdef LEFT_PID_DUMP_ENABLED
-#define LEFTPID_DUMP()  DUMP_PID(DEBUG_LEFT_PID_ENABLE_BIT, pid.name, &pid.pid)
+#define LEFTPID_DUMP()  DumpPid(pid.name, &pid.pid)
 #else
 #define LEFTPID_DUMP()
 #endif

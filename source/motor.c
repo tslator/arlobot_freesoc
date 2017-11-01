@@ -117,7 +117,14 @@ static void DumpMotor(MOTOR_TYPE *motor)
 {
     if (Debug_IsEnabled(DEBUG_LEFT_MOTOR_ENABLE_BIT | DEBUG_RIGHT_MOTOR_ENABLE_BIT))
     {
+#ifdef JSON_OUTPUT_ENABLE
+        DEBUG_PRINT_ARG("{\"%s motor\": {\"pwm\":%d}}\r\n",
+                        motor->name, 
+                        motor->get_pwm()
+        );
+#else    
         DEBUG_PRINT_ARG("%s: %d \r\n", motor->name, motor->get_pwm());
+#endif
     }
 }
 #endif
