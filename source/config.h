@@ -23,41 +23,32 @@ SOFTWARE.
 */
 
 /*---------------------------------------------------------------------------------------------------
-   Description: This module provides the implementation of the angular velocity PID.
- *-------------------------------------------------------------------------------------------------*/    
-
-#ifndef ANGPID_H
-#define ANGPID_H
-    
-/*---------------------------------------------------------------------------------------------------
- * Includes
- *-------------------------------------------------------------------------------------------------*/    
-#include <project.h>
-#include "pid.h"
-    
-/*---------------------------------------------------------------------------------------------------
- * Macros
- *-------------------------------------------------------------------------------------------------*/    
-    
-
-/*---------------------------------------------------------------------------------------------------
- * Types
+   Description: This module contains configuration settings and global definitions.
  *-------------------------------------------------------------------------------------------------*/
 
 
+#ifndef HWCONFIG_H
+#define HWCONFIG_H
+    
 /*---------------------------------------------------------------------------------------------------
- * Functions
- *-------------------------------------------------------------------------------------------------*/    
-void AngPid_Init();
-void AngPid_Start();
-void AngPid_Process();
+ * Includes
+ *-------------------------------------------------------------------------------------------------*/
+#include "freesoc.h"
+    
+/* Enable this define and flash before running the i2c.py module test */    
+//#define TEST_I2C
 
-void AngPid_SetGains(float theta_kp, float theta_ki, float theta_kd, float theta_kf);
-void AngPid_GetGains(float *theta_kp, float *theta_ki, float *theta_kd, float *theta_kf);
+    
+/* Enable/Disable debug */
+#define COMMS_DEBUG_ENABLED
 
-void AngPid_Reset();
-void AngPid_Enable(uint8 enable);
-void AngPid_Bypass(uint8 bypass);
+/* Enabled acceleration limit calculations */
+#define ENABLE_ACCEL_LIMIT
+
+
+/* Select either I2C or CAN interfaces */
+#define ENABLE_I2CIF
+//#define ENABLE_CANIF
 
 
 #endif
