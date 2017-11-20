@@ -55,6 +55,8 @@ SOFTWARE.
 #define UNIPID_DUMP()
 #endif
 
+#define UNI_PID_SAMPLE_TIME_SEC SAMPLE_TIME_SEC(PID_SAMPLE_RATE)
+
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/    
@@ -72,10 +74,10 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Prototypes
  *-------------------------------------------------------------------------------------------------*/
-static float GetControlVelocity();
-static float GetOdomVelocity();
-static float ThetaPidUpdate(float target, float input);
-static float Calc_Angle_Error(float desired, float measured);
+static FLOAT GetControlVelocity();
+static FLOAT GetOdomVelocity();
+static FLOAT ThetaPidUpdate(FLOAT target, FLOAT input);
+static FLOAT Calc_Angle_Error(FLOAT desired, FLOAT measured);
 
 /*---------------------------------------------------------------------------------------------------
  * Variables
@@ -90,15 +92,13 @@ static PID_TYPE pid = {
     /* update */        ThetaPidUpdate,
 };
 
-static uint8 pid_enabled;
-float linear_input_velocity;
-float angular_input_velocity;
+static BOOL pid_enabled;
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/    
  
-static float Calc_Angle(float linear, float angular)
+static FLOAT Calc_Angle(FLOAT linear, FLOAT angular)
 {
     /* Calculate a theta between linear and angular.
       w
@@ -112,10 +112,10 @@ static float Calc_Angle(float linear, float angular)
         Tracking theta between the desired velocity, vd/wd, and the measured
         velocity, vo/wo, couples the wheels and improves straight line motion
     */
-    float pow_2_linear;
-    float pow_2_angular;
-    float hyp;
-    float asin_result;
+    FLOAT pow_2_linear;
+    FLOAT pow_2_angular;
+    FLOAT hyp;
+    FLOAT asin_result;
      
     pow_2_linear = linear * linear;
     pow_2_angular = angular * angular;
@@ -135,16 +135,16 @@ static float Calc_Angle(float linear, float angular)
     return asin_result;    
 }
  
-static float Calc_Angle_Error(float desired, float measured)
+static FLOAT Calc_Angle_Error(FLOAT desired, FLOAT measured)
 {
     return atan2(sin(desired - measured), cos(desired - measured));
 }
  
-static float GetControlVelocity()
+static FLOAT GetControlVelocity()
 {
-    float linear;
-    float angular;
-    float value;
+    FLOAT linear;
+    FLOAT angular;
+    FLOAT value;
 
     Control_GetCmdVelocity(&linear, &angular);
     value = Calc_Angle(linear, angular);
@@ -153,11 +153,11 @@ static float GetControlVelocity()
     return abs(value);
 }
 
-static float GetOdomVelocity()
+static FLOAT GetOdomVelocity()
 {
-    float linear;
-    float angular;
-    float value;
+    FLOAT linear;
+    FLOAT angular;
+    FLOAT value;
 
     Odom_GetMeasVelocity(&linear, &angular);
 
@@ -165,9 +165,9 @@ static float GetOdomVelocity()
     return abs(value);
 }
 
-static float ThetaPidUpdate(float target, float input)
+static FLOAT ThetaPidUpdate(FLOAT target, FLOAT input)
 {
-    float result;
+    FLOAT result;
     
     PIDSetpointSet(&pid.pid, target);
     PIDInputSet(&pid.pid, input);
@@ -194,8 +194,7 @@ static float ThetaPidUpdate(float target, float input)
 void UniPid_Init()
 {
     pid_enabled = FALSE;
-    
-    PIDInit(&pid.pid, 0, 0, 0, 0, PID_SAMPLE_TIME_SEC, THETAPID_MIN, THETAPID_MAX, AUTOMATIC, DIRECT, Calc_Angle_Error);
+    PIDInit(&pid.pid, 0, 0, 0, 0, UNI_PID_SAMPLE_TIME_SEC, THETAPID_MIN, THETAPID_MAX, AUTOMATIC, DIRECT, Calc_Angle_Error);
 }
     
 /*---------------------------------------------------------------------------------------------------
@@ -220,11 +219,11 @@ void UniPid_Start()
  *-------------------------------------------------------------------------------------------------*/
 void UniPid_Process()
 {
-    float target;
-    float input;
-    float delta;
-    float linear_cmd;
-    float angular_cmd;
+    FLOAT target;
+    FLOAT input;
+    FLOAT delta;
+    FLOAT linear_cmd;
+    FLOAT angular_cmd;
     
     Control_GetCmdVelocity(&linear_cmd, &angular_cmd);
     
@@ -266,7 +265,7 @@ void UniPid_Reset()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void UniPid_Enable(uint8 value)
+void UniPid_Enable(BOOL value)
 {
     pid_enabled = value;
     if (value)
@@ -284,7 +283,7 @@ void UniPid_Enable(uint8 value)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
- void UniPid_Bypass(uint8 value)
+ void UniPid_Bypass(BOOL value)
  {
      PIDMode mode = AUTOMATIC;
      
@@ -309,7 +308,7 @@ void UniPid_Enable(uint8 value)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void UniPid_SetGains(float kp, float ki, float kd, float kf)
+void UniPid_SetGains(FLOAT kp, FLOAT ki, FLOAT kd, FLOAT kf)
 {
     PIDTuningsSet(&pid.pid, kp, ki, kd, kf);
 }
@@ -324,7 +323,7 @@ void UniPid_SetGains(float kp, float ki, float kd, float kf)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void UniPid_GetGains(float *kp, float *ki, float *kd, float *kf)
+void UniPid_GetGains(FLOAT *kp, FLOAT *ki, FLOAT *kd, FLOAT *kf)
 {
     *kp = pid.pid.dispKp;
     *ki = pid.pid.dispKi;

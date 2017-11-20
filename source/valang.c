@@ -30,7 +30,6 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Includes
  *-------------------------------------------------------------------------------------------------*/
-#include <math.h>
 #include "control.h"
 #include "valang.h"
 #include "odom.h"
@@ -43,6 +42,7 @@ SOFTWARE.
 #include "nvstore.h"
 #include "debug.h"
 #include "pwm.h"
+#include "consts.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -56,8 +56,8 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/
-static uint32 start_time;
-static uint32 end_time;
+static UINT32 start_time;
+static UINT32 end_time;
 
 static CALVAL_ANG_PARAMS angular_params = {ANGULAR_BIAS_DIR,
                                         ANGULAR_MAX_TIME, 
@@ -67,11 +67,11 @@ static CALVAL_ANG_PARAMS angular_params = {ANGULAR_BIAS_DIR,
                                         0.0,                
                                         ANGULAR_BIAS_DIR == DIR_CW ? -ANGULAR_BIAS_VELOCITY : ANGULAR_BIAS_VELOCITY};
 
-static uint8 Init();
-static uint8 Start();
-static uint8 Update();
-static uint8 Stop();
-static uint8 Results();
+static UINT8 Init();
+static UINT8 Start();
+static UINT8 Update();
+static UINT8 Stop();
+static UINT8 Results();
 
 static CALVAL_INTERFACE_TYPE angular_validation = {CAL_INIT_STATE,
                                                CAL_VALIDATE_STAGE,
@@ -89,7 +89,7 @@ static CALVAL_ANG_PARAMS *p_ang_params;
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
-static void GetCommandVelocity(float *linear, float *angular, uint32 *timeout)
+static void GetCommandVelocity(FLOAT *linear, FLOAT *angular, UINT32 *timeout)
 {
     *linear = p_ang_params->linear;
     *angular = p_ang_params->angular;
@@ -100,9 +100,9 @@ static void GetCommandVelocity(float *linear, float *angular, uint32 *timeout)
  * Name: IsMoveFinished
  * Description: Determines if the move is finished
  * Parameters: direction - the direction of the move, i.e., CW or CCW 
- * Return: uint8 - TRUE if the move is complete; otherwise, FALSE
+ * Return: UINT8 - TRUE if the move is complete; otherwise, FALSE
  *-------------------------------------------------------------------------------------------------*/
-static uint8 IsMoveFinished(DIR_TYPE direction)
+static UINT8 IsMoveFinished(DIR_TYPE direction)
 {
     #define TOLERANCE (0.01)
 
@@ -111,7 +111,7 @@ static uint8 IsMoveFinished(DIR_TYPE direction)
        0 again.
     */
     
-    float curr_heading = Odom_GetHeading();
+    FLOAT curr_heading = Odom_GetHeading();
     
     if (direction == DIR_CCW)
     {
@@ -157,10 +157,10 @@ static uint8 IsMoveFinished(DIR_TYPE direction)
  *              Calibration/Validation.
  * Parameters: stage - the calibration/validation stage 
  *             params - angular validation parameters, e.g. direction, run time, etc. 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Init()
+static UINT8 Init()
 {
     Debug_Store();
     
@@ -182,10 +182,10 @@ static uint8 Init()
  * Description: Calibration/Validation interface Start function.  Start Angular Calibration/Validation.
  * Parameters: stage - the calibration/validation stage 
  *             params - angular validation parameters, e.g. direction, run time, etc. 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Start()
+static UINT8 Start()
 {
     Pid_Enable(TRUE, TRUE, FALSE);            
     Encoder_Reset();
@@ -206,12 +206,12 @@ static uint8 Start()
  *              the termination condition.
  * Parameters: stage - the calibration/validation stage 
  *             params - angular validation parameters, e.g. direction, run time, etc. 
- * Return: uint8 - CAL_OK, CAL_COMPLETE
+ * Return: UINT8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Update()
+static UINT8 Update()
 {
-    static uint8 delay_completed = FALSE;
+    static UINT8 delay_completed = FALSE;
     
     if (!delay_completed)
     {
@@ -253,10 +253,10 @@ static uint8 Update()
  * Description: Calibration/Validation interface Stop function.  Called to stop calibration/validation.
  * Parameters: stage - the calibration/validation stage 
  *             params - angular validation parameters, e.g. direction, run time, etc. 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Stop()
+static UINT8 Stop()
 {
     Control_RestoreCommandVelocityFunc();
     Debug_Restore();    
@@ -273,15 +273,15 @@ static uint8 Stop()
  *              results. 
  * Parameters: stage - the calibration/validation stage (validation only) 
  *             params - angular validation parameters, e.g. direction, run time, etc. 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Results()
+static UINT8 Results()
 {
-    float x;
-    float y;
-    float heading;
-    float angular_bias;
+    FLOAT x;
+    FLOAT y;
+    FLOAT heading;
+    FLOAT angular_bias;
 
     Odom_GetXYPosition(&x, &y);
     heading = Odom_GetHeading();

@@ -32,9 +32,10 @@ SOFTWARE.
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "time.h"
 #include "utils.h"
 #include "config.h"
-#include "pwm.h"
+#include "consts.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -54,7 +55,7 @@ SOFTWARE.
  * Return: average
  * 
  *-------------------------------------------------------------------------------------------------*/
-int32 MovingAverage(MOVING_AVERAGE_TYPE* ma, int32 value)
+INT32 MovingAverage(MOVING_AVERAGE_TYPE* ma, INT32 value)
 /*
 MA*[i]= MA*[i-1] +X[i] - MA*[i-1]/N
 
@@ -63,7 +64,7 @@ where MA* is the moving average*N.
 MA[i]= MA*[i]/N
 */
 {
-    int32 ma_curr;
+    INT32 ma_curr;
     
     ma_curr = ma->last + value - ma->last/ma->n;
     ma->last = ma_curr;
@@ -73,14 +74,14 @@ MA[i]= MA*[i]/N
 
 /*---------------------------------------------------------------------------------------------------
  * Name: MovingAverageFloat
- * Description: Calculates a floating point moving average.
+ * Description: Calculates a FLOATing point moving average.
  *  
- * Parameters: ma    - the floating point moving average structure
+ * Parameters: ma    - the FLOATing point moving average structure
  *             value - the new value to be averaged
  * Return: average
  * 
  *-------------------------------------------------------------------------------------------------*/
-float MovingAverageFloat(MOVING_AVERAGE_FLOAT_TYPE* ma, float value)
+FLOAT MovingAverageFloat(MOVING_AVERAGE_FLOAT_TYPE* ma, FLOAT value)
 /*
 MA*[i]= MA*[i-1] +X[i] - MA*[i-1]/N
 
@@ -89,7 +90,7 @@ where MA* is the moving average*N.
 MA[i]= MA*[i]/N
 */
 {
-    float ma_curr;
+    FLOAT ma_curr;
     
     ma_curr = ma->last + value - ma->last/ma->n;
     ma->last = ma_curr;
@@ -98,19 +99,19 @@ MA[i]= MA*[i]/N
 }
 
 /*---------------------------------------------------------------------------------------------------
- * Name: Uint16ToTwoBytes
- * Description: Converts uint16 to four bytes.  Note: endianess is preserved.
+ * Name: UINT16ToTwoBytes
+ * Description: Converts UINT16 to four bytes.  Note: endianess is preserved.
  *  
- * Parameters: value  - the uint16 value
+ * Parameters: value  - the UINT16 value
  *             *bytes - the resulting byte array
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Uint16ToTwoBytes(uint16 value, uint8* bytes)
+void Uint16ToTwoBytes(UINT16 value, UINT8* bytes)
 {
     /* Note: We are not changing the endianess, we're just getting a pointer to the first byte */
     
-    uint8 *p_bytes = (uint8 *) &value;
+    UINT8 *p_bytes = (UINT8 *) &value;
     
     bytes[0] = p_bytes[0];
     bytes[1] = p_bytes[1];
@@ -118,18 +119,18 @@ void Uint16ToTwoBytes(uint16 value, uint8* bytes)
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Uint32ToFourBytes
- * Description: Converts uint32 to four bytes.  Note: endianess is preserved.
+ * Description: Converts UINT32 to four bytes.  Note: endianess is preserved.
  *  
- * Parameters: value  - the uint32 value
+ * Parameters: value  - the UINT32 value
  *             *bytes - the resulting byte array
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Uint32ToFourBytes(uint32 value, uint8* bytes)
+void Uint32ToFourBytes(UINT32 value, UINT8* bytes)
 {
     /* Note: We are not changing the endianess, we're just getting a pointer to the first byte */
 
-    uint8 *p_bytes = (uint8 *) &value;
+    UINT8 *p_bytes = (UINT8 *) &value;
     
     bytes[0] = p_bytes[0];
     bytes[1] = p_bytes[1];
@@ -139,32 +140,32 @@ void Uint32ToFourBytes(uint32 value, uint8* bytes)
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Int32ToFourBytes
- * Description: Converts an int32 to four bytes.  Note: endianess is preserved.
+ * Description: Converts an INT32 to four bytes.  Note: endianess is preserved.
  *  
- * Parameters: value  - the int32 value
+ * Parameters: value  - the INT32 value
  *             *bytes - the resulting byte array
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Int32ToFourBytes(int32 value, uint8* bytes)
+void Int32ToFourBytes(INT32 value, UINT8* bytes)
 {
-    Uint32ToFourBytes((uint32)value, bytes);
+    Uint32ToFourBytes((UINT32)value, bytes);
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: FloatToFourBytes
- * Description: Converts a float 32 to four bytes.  Note: endianess is preserved.
+ * Description: Converts a FLOAT 32 to four bytes.  Note: endianess is preserved.
  *  
- * Parameters: value  - the float 32 value
+ * Parameters: value  - the FLOAT 32 value
  *             *bytes - the resulting byte array
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void FloatToFourBytes(float value, uint8* bytes)
+void FloatToFourBytes(FLOAT value, UINT8* bytes)
 {
     /* Note: We are not changing the endianess, we're just getting a pointer to the first byte */
 
-    uint8 *p_bytes = (uint8 *) &value;
+    UINT8 *p_bytes = (UINT8 *) &value;
     
     bytes[0] = p_bytes[0];
     bytes[1] = p_bytes[1];
@@ -174,69 +175,69 @@ void FloatToFourBytes(float value, uint8* bytes)
 
 /*---------------------------------------------------------------------------------------------------
  * Name: TwoBytesUint16
- * Description: Converts four bytes to uint16.  Note: endianess is preserved.
+ * Description: Converts four bytes to UINT16.  Note: endianess is preserved.
  *  
  * Parameters: *bytes - bytes to be converted
- * Return: uint16
+ * Return: UINT16
  * 
  *-------------------------------------------------------------------------------------------------*/
-uint16 TwoBytesToUint16(uint8* bytes)
+UINT16 TwoBytesToUint16(UINT8* bytes)
 {
-    uint16 value = *((uint16 *) bytes);
+    UINT16 value = *((UINT16 *) bytes);
     return value;
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: TwoBytesInt16
- * Description: Converts four bytes to int16.  Note: endianess is preserved.
+ * Description: Converts four bytes to INT16.  Note: endianess is preserved.
  *  
  * Parameters: *bytes - bytes to be converted
- * Return: int16
+ * Return: INT16
  * 
  *-------------------------------------------------------------------------------------------------*/
-int16 TwoBytesInt16(uint8* bytes)
+INT16 TwoBytesToInt16(UINT8* bytes)
 {
-    return (int16) TwoBytesToUint16(bytes);
+    return (INT16) TwoBytesToUint16(bytes);
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: FourBytesToUint32
- * Description: Converts four bytes to uint32.  Note: endianess is preserved.
+ * Description: Converts four bytes to UINT32.  Note: endianess is preserved.
  *  
  * Parameters: *bytes - bytes to be converted
- * Return: uint32
+ * Return: UINT32
  * 
  *-------------------------------------------------------------------------------------------------*/
-uint32 FourBytesToUint32(uint8* bytes)
+UINT32 FourBytesToUint32(UINT8* bytes)
 {
-    uint32 value = *((uint32 *) bytes);
+    UINT32 value = *((UINT32 *) bytes);
     return value;
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: FourBytesToInt32
- * Description: Converts four bytes to int32.  Note: endianess is preserved.
+ * Description: Converts four bytes to INT32.  Note: endianess is preserved.
  *  
  * Parameters: *bytes - bytes to be converted
- * Return: int32
+ * Return: INT32
  * 
  *-------------------------------------------------------------------------------------------------*/
-int32 FourBytesToInt32(uint8* bytes)
+INT32 FourBytesToInt32(UINT8* bytes)
 {
-    return (int32) FourBytesToUint32(bytes);
+    return (INT32) FourBytesToUint32(bytes);
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: FourBytesToFloat
- * Description: Converts four bytes to float 32.  Note: endianess is preserved.
+ * Description: Converts four bytes to FLOAT 32.  Note: endianess is preserved.
  *  
  * Parameters: *bytes - bytes to be converted
- * Return: floating point value
+ * Return: FLOATing point value
  * 
  *-------------------------------------------------------------------------------------------------*/
-float FourBytesToFloat(uint8 *bytes)
+FLOAT FourBytesToFloat(UINT8 *bytes)
 {   
-    float value = *((float *) bytes);    
+    FLOAT value = *((FLOAT *) bytes);    
     return value;
 }
 
@@ -253,7 +254,7 @@ float FourBytesToFloat(uint8 *bytes)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void BinaryRangeSearch(int16 search, int16 *data_points, uint8 num_points, uint8 *lower_index, uint8 *upper_index)
+void BinaryRangeSearch(INT16 search, INT16 *data_points, UINT8 num_points, UINT8 *lower_index, UINT8 *upper_index)
 /*
     This is a binary search modified to return a range, e.g., lower and upper, when searching for an element.
 
@@ -266,9 +267,9 @@ void BinaryRangeSearch(int16 search, int16 *data_points, uint8 num_points, uint8
 
 */
 {
-    uint8 first = 0;
-    uint8 last = num_points - 1;
-    uint8 middle = (first+last)/2;
+    UINT8 first = 0;
+    UINT8 last = num_points - 1;
+    UINT8 middle = (first+last)/2;
     
     *lower_index = 0;
     *upper_index = 0;
@@ -308,22 +309,22 @@ void BinaryRangeSearch(int16 search, int16 *data_points, uint8 num_points, uint8
  * Name: UniToDiff
  * Description: Converts unicycle linear/angular velocity to differential left/right velocity
  *  
- * Parameters: left     - the differential left velocity
- *             right    - the differential right velocity
- *             *linear  - the linear velocity
- *             *angular - the angular velocity
+ * Parameters: left     - the differential left velocity (rad/s)
+ *             right    - the differential right velocity (rad/s)
+ *             *linear  - the linear velocity (m/s)
+ *             *angular - the angular velocity (rad/s)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void UniToDiff(float linear, float angular, float *left, float *right)
+void UniToDiff(FLOAT linear, FLOAT angular, FLOAT *left, FLOAT *right)
 /*
     Vr = (2*V + W*L)/(2*R)
     Vl = (2*V - W*L)/(2*R)
     where 
         Vr - the velocity of the right wheel (rad/s)
         Vl - the velocity of the left wheel (rad/s)
-        V - the linear velocity
-        W - the angular velocity
+        V - the linear velocity (m/s)
+        W - the angular velocity (rad/s)
         L - the separation of the left and right wheels
         R - the radius of the wheel
 */
@@ -337,24 +338,24 @@ void UniToDiff(float linear, float angular, float *left, float *right)
  * Description: Converts differential left/right velocity to unicycle linear/angular 
  *              velocity
  *  
- * Parameters: left     - the differential left velocity (m/s)
- *             right    - the differential right velocity (m/s)
+ * Parameters: left     - the differential left velocity (rad/s)
+ *             right    - the differential right velocity (rad/s)
  *             *linear  - the linear velocity (m/s)
  *             *angular - the angular velocity (rad/s)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void DiffToUni(float left, float right, float *linear, float *angular)
+void DiffToUni(FLOAT left, FLOAT right, FLOAT *linear, FLOAT *angular)
 /*
     V = R/2 * (Vr + Vl)
     W = R/L * (Vr - Vl)
     where
-        V - the linear velocity
-        W - the angular velocity
+        V - the linear velocity (m/s)
+        W - the angular velocity (rad/s)
         L - the separation of the left and right wheels
         R - the radius of the wheel
-        Vr - the velocity of the right wheel
-        Vl - the velocity of the left wheel
+        Vr - the velocity of the right wheel (rad/s)
+        Vl - the velocity of the left wheel (rad/s)
 
 */
 {
@@ -374,14 +375,14 @@ void DiffToUni(float left, float right, float *linear, float *angular)
  * Return: interpolated output
  * 
  *-------------------------------------------------------------------------------------------------*/
-int16 Interpolate(int16 x, int16 x1, int16 x2, uint16 y1, uint16 y2)
+INT16 Interpolate(INT16 x, INT16 x1, INT16 x2, UINT16 y1, UINT16 y2)
 {
     /* Y = ( ( X - X1 )( Y2 - Y1) / ( X2 - X1) ) + Y1 */
 
     /* We are not guaranteed to not have duplicates in the array.
        
        Handle the cases where the values may be equal so we don't divide by zero and so we return a 
-       reasonble pwm value.
+       reasonable value.
      */
     if (x1 == x2)
     {
@@ -395,7 +396,7 @@ int16 Interpolate(int16 x, int16 x1, int16 x2, uint16 y1, uint16 y2)
         }
     }
     
-    return ((x - x1)*((int16) y2 - (int16) y1))/(x2 - x1) + (int16) y1;
+    return ((x - x1)*((INT16) y2 - (INT16) y1))/(x2 - x1) + (INT16) y1;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -412,43 +413,9 @@ int16 Interpolate(int16 x, int16 x1, int16 x2, uint16 y1, uint16 y2)
  * Return: heading
  * 
  *-------------------------------------------------------------------------------------------------*/
-float CalcHeading(float left_count, float right_count, float radius, float width, float count_per_rev, float bias)
+FLOAT CalcHeading(FLOAT left_count, FLOAT right_count, FLOAT radius, FLOAT width, FLOAT count_per_rev, FLOAT bias)
 {
     return (bias * (right_count - left_count) * PI * radius)/(count_per_rev * width);
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: CpsToPwm
- * Description: Converts count/sec to PWM 
- *              This routine searches the count/sec array (cps_data) to find values immediately less 
- *              than and greater than the specified count/sec value (cps) to obtain the corresponding
- *              indicies - upper/lower.  The indicies are then used to interpolate a PWM value.
- *  
- * Parameters: cps       - the specified count/sec
- *             cps_data  - an array of count/sec values to be searched
- *             pwm_data  - an array of pwm values for selection
- *             data_size - the number of values in each array
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-uint16 CpsToPwm(int16 cps, int16 *cps_data, uint16 *pwm_data, uint8 data_size)
-{   
-    PWM_TYPE pwm = PWM_STOP;
-    uint8 lower = 0;
-    uint8 upper = 0;
-
-    if (cps > 0 || cps < 0)
-    {
-        BinaryRangeSearch(cps, cps_data, data_size, &lower, &upper);
-        
-        pwm = Interpolate(cps, cps_data[lower], cps_data[upper], pwm_data[lower], pwm_data[upper]);
-
-        return constrain(pwm, MIN_PWM_VALUE, MAX_PWM_VALUE);
-    }
-
-    //Ser_PutStringFormat("CpsToPwm: %d -> %d\r\n", cps, pwm);
-
-    return pwm;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -460,13 +427,13 @@ uint16 CpsToPwm(int16 cps, int16 *cps_data, uint16 *pwm_data, uint8 data_size)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-float NormalizeHeading(float heading)
+FLOAT NormalizeHeading(FLOAT heading)
 {
-    float result = 0.0;
+    FLOAT result = 0.0;
 
     result = heading;
     
-    result -= (float)( (int)(result/TWOPI) ) * TWOPI;
+    result -= (FLOAT)( (int)(result/TWOPI) ) * TWOPI;
     if (result < -PI) 
     { 
         result += TWOPI;
@@ -479,17 +446,27 @@ float NormalizeHeading(float heading)
     return result;
 }
 
-void CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_limit, float *profile)
+/*---------------------------------------------------------------------------------------------------
+ * Name: CalcTriangularProfile
+ * Description: Returns a triangular profile of num_point values in the inclusive range of lower/upper
+ *              limit.
+ *  
+ * Parameters: num_points - the number of points in the profile
+ *             lower_limit - the starting value
+ *             upper_limit - the ending value
+ *             profile - pointer to array
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+void CalcTriangularProfile(UINT8 num_points, FLOAT lower_limit, FLOAT upper_limit, FLOAT *profile)
 {
-    uint8 mid_sample_offset;
-    float delta;
-    float value;
-    uint8 ii;
+    UINT8 mid_sample_offset;
+    FLOAT delta;
+    FLOAT value;
+    UINT8 ii;
 
-    if (num_points % 2 == 0)
-    {
-        assert("Profile requires odd number of points");
-    }
+    ASSERT(num_points % 2 != 0, "num_points is not odd");
+    ASSERT(lower_limit < upper_limit, "lower_limit >= upper_limit");
 
     /* Calculate the mid point */
     mid_sample_offset = num_points / 2;
@@ -518,7 +495,7 @@ void CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_limi
     
 }
 
-void EnsureAngularVelocity(float *v, float *w)
+void EnsureAngularVelocity(FLOAT *v, FLOAT *w)
 {
     /*
     Ensure specified angular velocity can be met by adjusting linear velocity
@@ -530,14 +507,14 @@ void EnsureAngularVelocity(float *v, float *w)
     :return: Linear/Angular velocity
     */
 
-    float l_v_d;
-    float r_v_d;
-    float max_rl_v;
-    float min_rl_v;
-    float temp_v;
-    float temp_w;
-    float l_v;
-    float r_v;
+    FLOAT l_v_d;
+    FLOAT r_v_d;
+    FLOAT max_rl_v;
+    FLOAT min_rl_v;
+    FLOAT temp_v;
+    FLOAT temp_w;
+    FLOAT l_v;
+    FLOAT r_v;
 
     temp_v = *v;
     temp_w = *w;
@@ -578,5 +555,101 @@ void EnsureAngularVelocity(float *v, float *w)
         *w = temp_w;
     }
 }
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: AdjustVelocity
+ * Description: Calculates a new velocity based on the last velocity, max velocity and specified
+ *              response time.
+ * Parameters: last_velocity - the last adjusted velocity
+ *             curr_velocity - the currently commanded velocity
+ *             max_velocity  - the maximum allowed velocity
+ *             response_time - the response time, i.e., how long to go from 0 to max velocity
+ *             last_time     - the last time (in milliseconds) 
+ * Return: limited velocity
+ * 
+ *-------------------------------------------------------------------------------------------------*/ 
+#ifdef ENABLE_ACCEL_LIMIT
+static FLOAT AdjustVelocity(FLOAT last_velocity, FLOAT curr_velocity, FLOAT max_velocity, FLOAT response_time, UINT32 *last_time)
+/*
+    Explanation: The approach here is to limit acceleration in terms of a response time, e.g., wheel should reach new 
+    speed within X seconds.  The worst case is 0 to max speed.  On each call delta time, delta velocity and percent
+    change are calculated.  The velocity adjustment is proportional to the worst case velocity change.  The velocity is
+    adjusted until the newly command velocity is reached.  The resulting response is an S curve due to the percent
+    change getting smaller and smaller as the target velocity is reached.    
+*/
+{
+    FLOAT delta_time;
+    FLOAT delta_velocity;
+    FLOAT percent_change;
+    FLOAT adjust;
+    FLOAT velocity;
+    
+    velocity = 0.0;
+    
+    delta_time = (FLOAT) (millis() - *last_time) / 1000.0;
+    *last_time = millis();
+    delta_velocity = curr_velocity - last_velocity;
+    
+    percent_change = abs(delta_velocity / max_velocity);
+    adjust = IS_NAN_DEFAULT(delta_velocity / (response_time * percent_change / delta_time), 0.0);
+    
+    if (last_velocity <= curr_velocity)
+    {
+        velocity = min(last_velocity + adjust, curr_velocity);
+    }
+    else if (last_velocity > curr_velocity)
+    {
+        velocity = max(last_velocity + adjust, curr_velocity);
+    }
+
+    return velocity;
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: LimitLinearAccel
+ * Description: Limits linear velocity based on the defined linear response time.
+ * Parameters: linear_velocity - the linear velocity to be limited.
+ *             max_linear      - maximum linear velocity.
+ *             response_time   - maximum time (in milliseconds) in which to acheive specified velocity.
+ * Return: updated velocity
+ * 
+ *-------------------------------------------------------------------------------------------------*/ 
+FLOAT LimitLinearAccel(FLOAT linear_velocity, FLOAT max_linear, FLOAT response_time)
+{
+    static FLOAT last_velocity = 0.0;
+    static UINT32 last_time = 0;
+
+    last_velocity = AdjustVelocity(last_velocity, 
+                                   linear_velocity, 
+                                   max_linear, 
+                                   response_time, 
+                                   &last_time);
+
+    return last_velocity;
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: LimitAngularAccel
+ * Description: Limits angular velocity based on the defined angular response time.
+ * Parameters: angular_velocity - the angular velocity to be limited.
+ *             max_angular      - maximum angular velocity.
+ *             response_time    - maximum time (in milliseconds) in which to acheive specified velocity.
+ * Return: updated velocity
+ * 
+ *-------------------------------------------------------------------------------------------------*/ 
+FLOAT LimitAngularAccel(FLOAT angular_velocity, FLOAT max_angular, FLOAT response_time)
+{
+    static FLOAT last_velocity = 0.0;
+    static UINT32 last_time = 0;
+
+    last_velocity = AdjustVelocity(last_velocity, 
+                                   angular_velocity, 
+                                   max_angular, 
+                                   response_time, 
+                                   &last_time);
+
+    return last_velocity;    
+}
+#endif
 
 /* [] END OF FILE */

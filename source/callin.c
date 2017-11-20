@@ -37,7 +37,6 @@ SOFTWARE.
  * Includes
  *-------------------------------------------------------------------------------------------------*/
 
-#include <math.h>
 #include "control.h"
 #include "callin.h"
 #include "odom.h"
@@ -50,6 +49,7 @@ SOFTWARE.
 #include "nvstore.h"
 #include "debug.h"
 #include "pwm.h"
+#include "consts.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -61,8 +61,8 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/
-static uint32 start_time;
-static uint32 end_time;
+static UINT32 start_time;
+static UINT32 end_time;
 
 static CALVAL_LIN_PARAMS linear_params = {DIR_FORWARD, 
                                        LINEAR_MAX_TIME, 
@@ -70,11 +70,11 @@ static CALVAL_LIN_PARAMS linear_params = {DIR_FORWARD,
                                        0.0,
                                        0.0};
 
-static uint8 Init();
-static uint8 Start();
-static uint8 Update();
-static uint8 Stop();
-static uint8 Results();
+static UINT8 Init();
+static UINT8 Start();
+static UINT8 Update();
+static UINT8 Stop();
+static UINT8 Results();
 
 static CALVAL_INTERFACE_TYPE linear_calibration = {CAL_INIT_STATE,
                                               CAL_CALIBRATE_STAGE,
@@ -90,7 +90,7 @@ static CALVAL_LIN_PARAMS *p_lin_params;
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
-static void GetCommandVelocity(float *linear, float *angular, uint32 *timeout)
+static void GetCommandVelocity(FLOAT *linear, FLOAT *angular, UINT32 *timeout)
 {
     *linear = p_lin_params->linear;
     *angular = p_lin_params->angular;
@@ -98,11 +98,11 @@ static void GetCommandVelocity(float *linear, float *angular, uint32 *timeout)
 }
  
  
-static uint8 IsMoveFinished(float * distance)
+static UINT8 IsMoveFinished(FLOAT * distance)
 {
-    float x;
-    float y;
-    float dist_so_far;
+    FLOAT x;
+    FLOAT y;
+    FLOAT dist_so_far;
 
     Odom_GetXYPosition(&x, &y);
 
@@ -122,10 +122,10 @@ static uint8 IsMoveFinished(float * distance)
  * Description: Calibration/Validation interface Init function.  Performs initialization for Linear 
  *              Calibration/Validation.
  * Parameters: None 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Init()
+static UINT8 Init()
 {
     Debug_Store();
         
@@ -158,15 +158,15 @@ static uint8 Init()
  * Name: Start
  * Description: Calibration/Validation interface Start function.  Start Linear Calibration/Validation.
  * Parameters: None 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Start()
+static UINT8 Start()
 {
-    int32 left_count;
-    int32 right_count;
-    float x_pos;
-    float y_pos;
+    INT32 left_count;
+    INT32 right_count;
+    FLOAT x_pos;
+    FLOAT y_pos;
 
     Pid_Enable(TRUE, TRUE, FALSE);            
     Encoder_Reset();
@@ -191,10 +191,10 @@ static uint8 Start()
  * Description: Calibration/Validation interface Update function.  Called periodically to evaluate 
  *              the termination condition.
  * Parameters: None 
- * Return: uint8 - CAL_OK, CAL_COMPLETE
+ * Return: UINT8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Update()
+static UINT8 Update()
 {
     if (millis() - start_time < p_lin_params->run_time)
     {
@@ -218,10 +218,10 @@ static uint8 Update()
  * Name: Stop
  * Description: Calibration/Validation interface Stop function.  Called to stop calibration/validation.
  * Parameters: None 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Stop()
+static UINT8 Stop()
 {
     Control_RestoreCommandVelocityFunc();
     Debug_Restore();    
@@ -236,18 +236,18 @@ static uint8 Stop()
  * Description: Calibration/Validation interface Results function.  Called to display validation 
  *              results. 
  * Parameters: None 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Results()
+static UINT8 Results()
 {
-    float heading;
-    float linear_bias;
-    float x;
-    float y;
-    float distance;
-    int32 left_count;
-    int32 right_count;
+    FLOAT heading;
+    FLOAT linear_bias;
+    FLOAT x;
+    FLOAT y;
+    FLOAT distance;
+    INT32 left_count;
+    INT32 right_count;
     
     Odom_GetXYPosition(&x, &y);    
     heading = Odom_GetHeading();

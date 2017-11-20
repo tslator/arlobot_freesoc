@@ -34,8 +34,7 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Includes
  *-------------------------------------------------------------------------------------------------*/    
-#include <project.h>
-
+#include "freesoc.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -54,7 +53,7 @@ SOFTWARE.
  */
         
 #define NVSTORE_CAL_EEPROM_BASE                 ((volatile CAL_EEPROM_TYPE *) CYDEV_EE_BASE);
-#define NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(addr) ((uint16)((uint8 *)addr - (uint8 *) CYDEV_EE_BASE))
+#define NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(addr) ((UINT16)((UINT8 *)addr - (UINT8 *) CYDEV_EE_BASE))
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -66,9 +65,9 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/    
 void Nvstore_Init();
 void Nvstore_Start();
-void Nvstore_WriteBytes(uint8 *bytes, uint16 num_bytes, uint16 offset);
-void Nvstore_WriteUint16(uint16 value, uint16 offset);
-void Nvstore_WriteFloat(float value, uint16 offset);
+void Nvstore_WriteBytes(UINT8 *bytes, UINT16 num_bytes, UINT16 offset);
+void Nvstore_WriteUint16(UINT16 value, UINT16 offset);
+void Nvstore_WriteFloat(FLOAT value, UINT16 offset);
 
     
 #endif

@@ -76,9 +76,9 @@ void Nvstore_Start()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Nvstore_WriteBytes(uint8 *bytes, uint16 num_bytes, uint16 offset)
+void Nvstore_WriteBytes(UINT8 *bytes, UINT16 num_bytes, UINT16 offset)
 {
-    uint16 ii;
+    UINT16 ii;
     
     // Need to calculate rowoffset from offset provided
     //
@@ -86,18 +86,18 @@ void Nvstore_WriteBytes(uint8 *bytes, uint16 num_bytes, uint16 offset)
     //   Use EEPROM_Write to a full row of bytes
     //   Use EEPROM_WriteByte to write remaining bytes that are less than a complete row
     
-    uint16 index = 0;
-    uint16 row_offset = offset / CYDEV_EEPROM_ROW_SIZE;
-    uint16 byte_offset = offset % CYDEV_EEPROM_ROW_SIZE;
+    UINT16 index = 0;
+    UINT16 row_offset = offset / CYDEV_EEPROM_ROW_SIZE;
+    UINT16 byte_offset = offset % CYDEV_EEPROM_ROW_SIZE;
     
-    uint16 first_partial_row_start = byte_offset;
+    UINT16 first_partial_row_start = byte_offset;
     
     if (first_partial_row_start)
     {
         // write all the bytes up to the next row using EEPROM_WriteByte
         
-        uint16 partial_row_num_bytes = CYDEV_EEPROM_ROW_SIZE - first_partial_row_start;
-        uint16 start = (row_offset * CYDEV_EEPROM_ROW_SIZE) + first_partial_row_start;
+        UINT16 partial_row_num_bytes = CYDEV_EEPROM_ROW_SIZE - first_partial_row_start;
+        UINT16 start = (row_offset * CYDEV_EEPROM_ROW_SIZE) + first_partial_row_start;
         for (ii = 0; ii < partial_row_num_bytes; ++ii)
         {
             EEPROM_WriteByte(bytes[index], start + ii);
@@ -107,7 +107,7 @@ void Nvstore_WriteBytes(uint8 *bytes, uint16 num_bytes, uint16 offset)
         row_offset++;
     }
 
-    uint16 num_full_rows = num_bytes / CYDEV_EEPROM_ROW_SIZE;
+    UINT16 num_full_rows = num_bytes / CYDEV_EEPROM_ROW_SIZE;
     
     if (num_full_rows)
     {
@@ -121,13 +121,13 @@ void Nvstore_WriteBytes(uint8 *bytes, uint16 num_bytes, uint16 offset)
         }        
     }
     
-    uint16 num_remaining = num_bytes;
+    UINT16 num_remaining = num_bytes;
     
     if (num_remaining)
     {
         // write all the bytes up to the next row using EEPROM_WriteByte
         
-        uint16 start = row_offset * CYDEV_EEPROM_ROW_SIZE;
+        UINT16 start = row_offset * CYDEV_EEPROM_ROW_SIZE;
         for (ii = 0; ii < num_remaining; ++ii)
         {
             EEPROM_WriteByte(bytes[index], start + ii);
@@ -140,20 +140,20 @@ void Nvstore_WriteBytes(uint8 *bytes, uint16 num_bytes, uint16 offset)
 }
 
 /*---------------------------------------------------------------------------------------------------
- * Name: Nvstore_WriteUint16
+ * Name: Nvstore_WriteUINT16
  * Description: Writes the specified 16-bit value to the location given in offset.
  * Parameters: value - a 16-bit value to be written
  *             offset - the offset from the base address of non-volatile storage
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Nvstore_WriteUint16(uint16 value, uint16 offset)
+void Nvstore_WriteUint16(UINT16 value, UINT16 offset)
 {
-    uint8 ii;
-    uint8 bytes[sizeof(uint16)];
+    UINT8 ii;
+    UINT8 bytes[sizeof(UINT16)];
     
     Uint16ToTwoBytes(value, bytes);
-    for (ii = 0; ii < sizeof(uint16); ++ii)
+    for (ii = 0; ii < sizeof(UINT16); ++ii)
     {
         EEPROM_WriteByte(bytes[ii], offset + ii);
     }
@@ -161,19 +161,19 @@ void Nvstore_WriteUint16(uint16 value, uint16 offset)
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Nvstore_WriteFloat
- * Description: Writes the specified float value to the location given in offset.
- * Parameters: value - a floating point value to be written
+ * Description: Writes the specified FLOAT value to the location given in offset.
+ * Parameters: value - a FLOATing point value to be written
  *             offset - the offset from the base address of non-volatile storage
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Nvstore_WriteFloat(float value, uint16 offset)
+void Nvstore_WriteFloat(FLOAT value, UINT16 offset)
 {
-    uint8 ii;
-    uint8 bytes[sizeof(float)];
+    UINT8 ii;
+    UINT8 bytes[sizeof(FLOAT)];
     
     FloatToFourBytes(value, bytes);
-    for (ii = 0; ii < sizeof(float); ++ii)
+    for (ii = 0; ii < sizeof(FLOAT); ++ii)
     {
         EEPROM_WriteByte(bytes[ii], offset + ii); 
     }

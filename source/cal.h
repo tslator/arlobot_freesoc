@@ -33,11 +33,11 @@ SOFTWARE.
  * Includes
  *-------------------------------------------------------------------------------------------------*/
 
-#include <project.h>
+#include "freesoc.h"
 #include "config.h"
 #include "calstore.h"
 #include "pwm.h"
-#include "pid.h"
+#include "pidtypes.h"
     
 /* The calibration module supports the following calibrations:
     
@@ -90,12 +90,12 @@ SOFTWARE.
 typedef enum {CAL_INIT_STATE, CAL_START_STATE, CAL_RUNNING_STATE, CAL_STOP_STATE, CAL_RESULTS_STATE, CAL_DONE_STATE} CAL_STATE_TYPE;
 typedef enum {CAL_CALIBRATE_STAGE, CAL_VALIDATE_STAGE } CAL_STAGE_TYPE;
 
-typedef uint8 (*INIT_FUNC_TYPE)();
-typedef uint8 (*START_FUNC_TYPE)();
-typedef uint8 (*UPDATE_FUNC_TYPE)();
-typedef uint8 (*STOP_FUNC_TYPE)();
-typedef uint8 (*RESULTS_FUNC_TYPE)();
-typedef void (*SET_LEFT_RIGHT_VELOCITY_TYPE)(float left, float right);
+typedef UINT8 (*INIT_FUNC_TYPE)();
+typedef UINT8 (*START_FUNC_TYPE)();
+typedef UINT8 (*UPDATE_FUNC_TYPE)();
+typedef UINT8 (*STOP_FUNC_TYPE)();
+typedef UINT8 (*RESULTS_FUNC_TYPE)();
+typedef void (*SET_LEFT_RIGHT_VELOCITY_TYPE)(FLOAT left, FLOAT right);
 
 
 typedef struct calval_interface_type_tag
@@ -134,33 +134,32 @@ GET_TARGET_FUNC_TYPE Cal_RightTarget;
 /*---------------------------------------------------------------------------------------------------
  * Types
  *-------------------------------------------------------------------------------------------------*/
-typedef enum {PID_TYPE_LEFT, PID_TYPE_RIGHT, PID_TYPE_LINEAR, PID_TYPE_ANGULAR} PID_ENUM_TYPE;
  
 typedef struct calval_pid_params_tag
 {
     char name[6];
     PID_ENUM_TYPE pid_type;
     DIR_TYPE direction;
-    uint32 run_time;
+    UINT32 run_time;
 } CALVAL_PID_PARAMS;
 
 typedef struct _linear_params
 {
     DIR_TYPE direction;
-    uint32   run_time;
-    float    distance;
-    float    linear;
-    float    angular;
+    UINT32   run_time;
+    FLOAT    distance;
+    FLOAT    linear;
+    FLOAT    angular;
 } CALVAL_LIN_PARAMS;
 
 typedef struct _angular_params
 {
     DIR_TYPE direction;
-    uint32   run_time;
-    float    heading;
-    float    distance;
-    float    linear;
-    float    angular;
+    UINT32   run_time;
+    FLOAT    heading;
+    FLOAT    distance;
+    FLOAT    linear;
+    FLOAT    angular;
 } CALVAL_ANG_PARAMS;
 
 
@@ -174,32 +173,32 @@ typedef struct _angular_params
 void Cal_Init();
 void Cal_Start();
 void Cal_Update();
-float Cal_ReadResponse();
-void Cal_SetLeftRightVelocity(float left, float right);
-PWM_TYPE Cal_CpsToPwm(WHEEL_TYPE wheel, float cps);
+FLOAT Cal_ReadResponse();
+void Cal_SetLeftRightVelocity(FLOAT left, FLOAT right);
+PWM_TYPE Cal_CpsToPwm(WHEEL_TYPE wheel, FLOAT cps);
 void Cal_Clear();
-void Cal_ClearCalibrationStatusBit(uint16 bit);
-void Cal_SetCalibrationStatusBit(uint16 bit);
-uint16 Cal_GetCalibrationStatusBit(uint16 bit);
+void Cal_ClearCalibrationStatusBit(UINT16 bit);
+void Cal_SetCalibrationStatusBit(UINT16 bit);
+UINT16 Cal_GetCalibrationStatusBit(UINT16 bit);
 
-void Cal_PrintAllMotorParams(uint8 as_json);
-void Cal_PrintSamples(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *cal_data, uint8 as_json);
-void Cal_PrintPidGains(WHEEL_TYPE wheel, float *gains, uint8 as_json);
-void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_limit, float *forward_output, float *backward_output);
+void Cal_PrintAllMotorParams(BOOL as_json);
+void Cal_PrintSamples(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *cal_data, UINT8 as_json);
+void Cal_PrintPidGains(WHEEL_TYPE wheel, FLOAT *gains, UINT8 as_json);
+void Cal_CalcTriangularProfile(UINT8 num_points, FLOAT lower_limit, FLOAT upper_limit, FLOAT *forward_output, FLOAT *backward_output);
 
-void Cal_CalcOperatingRange(float low_percent, float high_percent, float domain, float *start, float *stop);
-void Cal_CalcForwardOperatingRange(float low_percent, float high_percent, float *start, float *stop);
-void Cal_CalcBackwardOperatingRange(float low_percent, float high_percent, float *start, float *stop);
+void Cal_CalcOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT domain, FLOAT *start, FLOAT *stop);
+void Cal_CalcForwardOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT *start, FLOAT *stop);
+void Cal_CalcBackwardOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT *start, FLOAT *stop);
 
-float Cal_GetLinearBias();
-float Cal_GetAngularBias();
+FLOAT Cal_GetLinearBias();
+FLOAT Cal_GetAngularBias();
 CAL_PID_TYPE* Cal_GetPidGains(PID_ENUM_TYPE pid);
-uint16 Cal_GetStatus();
-void Cal_SetGains(PID_ENUM_TYPE pid, float* gains);
+UINT16 Cal_GetStatus();
+void Cal_SetGains(PID_ENUM_TYPE pid, FLOAT* gains);
 CAL_DATA_TYPE* Cal_GetMotorData(WHEEL_TYPE wheel, DIR_TYPE dir);
 
-void Cal_SetAngularBias(float bias);
-void Cal_SetLinearBias(float bias);
+void Cal_SetAngularBias(FLOAT bias);
+void Cal_SetLinearBias(FLOAT bias);
 void Cal_SetMotorData(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *data);
 
 #endif

@@ -35,7 +35,7 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Includes
  *-------------------------------------------------------------------------------------------------*/
-#include <project.h>
+#include "freesoc.h"
     
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -57,7 +57,7 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Types
  *-------------------------------------------------------------------------------------------------*/
-typedef void (*COMMAND_FUNC_TYPE)(float *linear, float *angular, uint32 *timeout);
+typedef void (*COMMAND_FUNC_TYPE)(FLOAT *linear, FLOAT *angular, UINT32 *timeout);
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -67,26 +67,26 @@ void Control_Start();
 void Control_Update();
 void Control_SetCommandVelocityFunc(COMMAND_FUNC_TYPE cmd);
 void Control_RestoreCommandVelocityFunc();
-float Control_LeftGetCmdVelocity();
-float Control_RightGetCmdVelocity();
-float Control_LinearGetCmdVelocity();
-float Control_AngularGetCmdVelocity();
-void Control_GetCmdVelocity(float *linear, float *angular);
-void Control_SetCmdVelocity(float linear, float angular);
-void Control_OverrideDebug(uint8 override);
+FLOAT Control_LeftGetCmdVelocity();
+FLOAT Control_RightGetCmdVelocity();
+FLOAT Control_LinearGetCmdVelocity();
+FLOAT Control_AngularGetCmdVelocity();
+void Control_GetCmdVelocity(FLOAT *linear, FLOAT *angular);
+void Control_SetCmdVelocity(FLOAT linear, FLOAT angular);
+void Control_OverrideDebug(BOOL override);
 
-void Control_SetDeviceStatusBit(uint16 bit);
-void Control_ClearDeviceStatusBit(uint16 bit);
+void Control_SetDeviceStatusBit(UINT16 bit);
+void Control_ClearDeviceStatusBit(UINT16 bit);
 
-void Control_SetCalibrationStatus(uint16 status);
-void Control_SetCalibrationStatusBit(uint16 bit);
-void Control_ClearCalibrationStatusBit(uint16 bit);
+void Control_SetCalibrationStatus(UINT16 status);
+void Control_SetCalibrationStatusBit(UINT16 bit);
+void Control_ClearCalibrationStatusBit(UINT16 bit);
 
-void Control_WriteOdom(float linear, float angular, float left_dist, float right_dist, float heading);
-void Control_UpdateHeartbeat(uint32 heartbeat);
+void Control_WriteOdom(FLOAT linear, FLOAT angular, FLOAT left_dist, FLOAT right_dist, FLOAT heading);
+void Control_UpdateHeartbeat(UINT32 heartbeat);
 
-void Control_SetLeftRightVelocityOverride(uint8 enable);
-void Control_SetLeftRightVelocity(float left, float right);
+void Control_SetLeftRightVelocityOverride(BOOL enable);
+void Control_SetLeftRightVelocity(FLOAT left, FLOAT right);
 
 #endif
 

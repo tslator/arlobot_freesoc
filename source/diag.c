@@ -35,6 +35,7 @@ SOFTWARE.
 #include "control.h"
 #include "utils.h"
 #include "config.h"
+#include "consts.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -45,9 +46,9 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/    
-static uint32 last_heartbeat_time;
-static uint32 heartbeat;
-static uint32 last_led_time;
+static UINT32 last_heartbeat_time;
+static UINT32 heartbeat;
+static UINT32 last_led_time;
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Diag_Init
@@ -85,8 +86,8 @@ void Diag_Start()
  *-------------------------------------------------------------------------------------------------*/
  void Diag_Update()
 {
-    static uint32 delta_time = 0;
-    uint32 now;
+    static UINT32 delta_time = 0;
+    UINT32 now;
     
     now = millis();
     delta_time = now - last_heartbeat_time;    

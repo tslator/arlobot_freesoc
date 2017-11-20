@@ -30,7 +30,7 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Includes
  *-------------------------------------------------------------------------------------------------*/
-#include <math.h>
+//#include <math.h>
 #include "calang.h"
 #include "odom.h"
 #include "motor.h"
@@ -42,6 +42,7 @@ SOFTWARE.
 #include "nvstore.h"
 #include "debug.h"
 #include "pwm.h"
+#include "consts.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -54,18 +55,18 @@ SOFTWARE.
 #define TOLERANCE (0.01)
 
 /* Calibration/Validation Interface routines */ 
-static uint8 Init();
-static uint8 Start();
-static uint8 Update();
-static uint8 Stop();
-static uint8 Results();
+static UINT8 Init();
+static UINT8 Start();
+static UINT8 Update();
+static UINT8 Stop();
+static UINT8 Results();
 
 
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/
-static uint32 start_time;
-static uint32 end_time;
+static UINT32 start_time;
+static UINT32 end_time;
 
 static CALVAL_ANG_PARAMS angular_params = {ANGULAR_BIAS_DIR,
                                            ANGULAR_MAX_TIME, 
@@ -96,18 +97,22 @@ static CALVAL_ANG_PARAMS *p_ang_params;
  * Description: Determines if the move is finished
  * Parameters: distance - the target distance for the move. 
  *             direction - the direction of the move, i.e., CW or CCW 
- * Return: uint8 - TRUE if the move is complete; otherwise, FALSE
+ * Return: BOOL - TRUE if the move is complete; otherwise, FALSE
  *-------------------------------------------------------------------------------------------------*/
-static uint8 IsMoveFinished(DIR_TYPE direction, float heading, float distance)
+static BOOL IsMoveFinished(DIR_TYPE direction, FLOAT heading, FLOAT distance)
 {
-    uint8 result;
-
     /* Note: We are taking advantage of the fact that heading starts at zero due to Odometry reset
        prior to running the calibration.  Therefore, we only need to test when we get close to
        0 again.
     */
     
-    float curr_heading = Odom_GetHeading();
+    FLOAT curr_heading;
+    
+    /* Unused */
+    heading = heading;
+    distance = distance;
+    
+    curr_heading = Odom_GetHeading();
     
     if (direction == DIR_CCW)
     {
@@ -152,10 +157,10 @@ static uint8 IsMoveFinished(DIR_TYPE direction, float heading, float distance)
  * Description: Calibration/Validation interface Init function.  Performs initialization for Angular 
  *              Calibration/Validation.
  * Parameters: None 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Init()
+static UINT8 Init()
 {
     Cal_SetLeftRightVelocity(0, 0);
     Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
@@ -185,13 +190,13 @@ static uint8 Init()
  * Name: Start
  * Description: Calibration/Validation interface Start function.  Start Angular Calibration/Validation.
  * Parameters: None 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Start()
+static UINT8 Start()
 {
-    float left;
-    float right;
+    FLOAT left;
+    FLOAT right;
 
     Pid_Enable(TRUE, TRUE, FALSE);            
     Encoder_Reset();
@@ -217,10 +222,10 @@ static uint8 Start()
  * Description: Calibration/Validation interface Update function.  Called periodically to evaluate 
  *              the termination condition.
  * Parameters: None 
- * Return: uint8 - CAL_OK, CAL_COMPLETE
+ * Return: UINT8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Update()
+static UINT8 Update()
 {
     /* Note: Wait 1 second before testing, so that the heading gets a chance to change.
         We're simplifying the angle calculation by taking advantage of the fact that the 
@@ -252,10 +257,10 @@ static uint8 Update()
  * Name: Stop
  * Description: Calibration/Validation interface Stop function.  Called to stop calibration/validation.
  * Parameters: None 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Stop()
+static UINT8 Stop()
 {
     Cal_SetLeftRightVelocity(0, 0);
     Motor_SetPwm(PWM_STOP, PWM_STOP);
@@ -272,15 +277,15 @@ static uint8 Stop()
  * Description: Calibration/Validation interface Results function.  Called to display calibration/validation 
  *              results. 
  * Parameters: None 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Results()
+static UINT8 Results()
 {
-    float x;
-    float y;
-    float heading;
-    float angular_bias;
+    FLOAT x;
+    FLOAT y;
+    FLOAT heading;
+    FLOAT angular_bias;
 
     Odom_GetXYPosition(&x, &y);
     heading = Odom_GetHeading();
@@ -295,13 +300,13 @@ static uint8 Results()
         
     Ser_PutString("\r\nMeasure the rotate traveled by the robot.");
     Ser_PutString("\r\nEnter the rotation (in degrees): ");
-    float rot_in_degrees = Cal_ReadResponse();
+    FLOAT rot_in_degrees = Cal_ReadResponse();
     Ser_PutString("\r\n");
     
     /* If the actual rotation is less than 360.0 then each delta is too small, i.e., lengthen delta by 360/rotation
         If the actual rotation is greater than 360.0 then each delta is too big, i.e., shorten delta by rotation/360
         */
-    float bias = rot_in_degrees >= 360.0 ? 360.0 / rot_in_degrees : rot_in_degrees / 360.0;
+    FLOAT bias = rot_in_degrees >= 360.0 ? 360.0 / rot_in_degrees : rot_in_degrees / 360.0;
 
     Ser_PutStringFormat("New Angular Bias: %.6f\r\n", bias);
     

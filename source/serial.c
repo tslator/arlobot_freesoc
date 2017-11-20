@@ -53,12 +53,12 @@ SOFTWARE.
 #define CDC_IS_READY_TIMEOUT (10000000)
 
 
-static uint8 global_disable;
+static UINT8 global_disable;
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
-static void WaitForCDCIsReady(uint32 timeout)
+static void WaitForCDCIsReady(UINT32 timeout)
 {
     /* The purpose of this routine is to check if CDC is ready in a non-blocking manner.
        If a serial port is connected to the USB then CDC is ready should return immediately; however
@@ -66,7 +66,7 @@ static void WaitForCDCIsReady(uint32 timeout)
        so we don't want the main loop to be blocked by calls to check the CDC.
     */
 #ifdef CDC_TIMEOUT       
-    uint32 tick;
+    UINT32 tick;
 
     if (timeout > 0)
     {
@@ -110,7 +110,7 @@ void Ser_Init()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Ser_Start(uint8 disable)
+void Ser_Start(UINT8 disable)
 {
     global_disable = disable;
     
@@ -211,10 +211,10 @@ void Ser_PutStringFormat(const char *fmt, ...)
  * Return: Number of bytes read.
  * 
  *-------------------------------------------------------------------------------------------------*/
-uint8 Ser_ReadData(uint8_t *data)
+UINT8 Ser_ReadData(UINT8 *data)
 {
-    uint8 count = 0;
-    uint8 buffer[64];
+    UINT8 count = 0;
+    UINT8 buffer[64];
     
     if (global_disable)
     {
@@ -247,7 +247,7 @@ uint8 Ser_ReadData(uint8_t *data)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-uint8 Ser_ReadByte()
+UINT8 Ser_ReadByte()
 {
     if (global_disable)
     {
@@ -276,11 +276,11 @@ uint8 Ser_ReadByte()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-uint8 Ser_ReadLine(char *line, uint8 echo)
+UINT8 Ser_ReadLine(char *line, UINT8 echo)
 {
     char ch;
-    static uint8 ii = 0;
-    uint8 length;
+    static UINT8 ii = 0;
+    UINT8 length;
     
     length = 0;
     ch = Ser_ReadByte();
@@ -314,7 +314,7 @@ uint8 Ser_ReadLine(char *line, uint8 echo)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Ser_WriteByte(uint8 value)
+void Ser_WriteByte(UINT8 value)
 {
     if (global_disable)
     {

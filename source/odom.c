@@ -40,6 +40,7 @@ SOFTWARE.
 #include "debug.h"
 #include "cal.h"
 #include "control.h"
+#include "consts.h"
 
 
 /*---------------------------------------------------------------------------------------------------
@@ -63,16 +64,16 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/    
-static float left_mps;
-static float right_mps;
-static float x_position;
-static float y_position;
-static float theta;
-static float linear_meas_velocity;
-static float angular_meas_velocity;
+static FLOAT left_mps;
+static FLOAT right_mps;
+static FLOAT x_position;
+static FLOAT y_position;
+static FLOAT theta;
+static FLOAT linear_meas_velocity;
+static FLOAT angular_meas_velocity;
 
-static float linear_bias;
-static float angular_bias;
+static FLOAT linear_bias;
+static FLOAT angular_bias;
 
 
 /*---------------------------------------------------------------------------------------------------
@@ -157,13 +158,13 @@ void Odom_Start()
 
 void Odom_Update()
 {
-    static uint32 last_update_time = ODOM_SCHED_OFFSET;
-    static uint32 delta_time;
+    static UINT32 last_update_time = ODOM_SCHED_OFFSET;
+    static UINT32 delta_time;
     
-    float left_cps;
-    float right_cps;
-    float left_rps;
-    float right_rps;
+    FLOAT left_cps;
+    FLOAT right_cps;
+    FLOAT left_rps;
+    FLOAT right_rps;
     
     ODOM_UPDATE_START();
     
@@ -192,25 +193,25 @@ void Odom_Update()
             See rungekutta.py
             Ref: https://www.cs.cmu.edu/afs/cs.cmu.edu/academic/class/16311/www/s07/labs/NXTLabs/Lab%203.html
         */
-        float dt_sec = (float) (delta_time / 1000.0);
-        float dt_2_sec = dt_sec / 2.0;
-        float dt_6_sec = dt_sec / 6.0;
+        FLOAT dt_sec = (FLOAT) (delta_time / 1000.0);
+        FLOAT dt_2_sec = dt_sec / 2.0;
+        FLOAT dt_6_sec = dt_sec / 6.0;
         
-        float k00 = linear * cos(theta);
-        float k01 = linear * sin(theta);
-        float k02 = angular;
+        FLOAT k00 = linear * cos(theta);
+        FLOAT k01 = linear * sin(theta);
+        FLOAT k02 = angular;
     
-        float k10 = linear * cos(theta + dt_2_sec * k02);
-        float k11 = linear * sin(theta + dt_2_sec * k02);
-        float k12 = angular;
+        FLOAT k10 = linear * cos(theta + dt_2_sec * k02);
+        FLOAT k11 = linear * sin(theta + dt_2_sec * k02);
+        FLOAT k12 = angular;
     
-        float k20 = linear * cos(theta + dt_2_sec * k12);
-        float k21 = linear * sin(theta + dt_2_sec * k12);
-        float k22 = angular;
+        FLOAT k20 = linear * cos(theta + dt_2_sec * k12);
+        FLOAT k21 = linear * sin(theta + dt_2_sec * k12);
+        FLOAT k22 = angular;
     
-        float k30 = linear * cos(theta + dt_sec * k22);
-        float k31 = linear * sin(theta + dt_sec * k22);
-        //float k32 = angular;
+        FLOAT k30 = linear * cos(theta + dt_sec * k22);
+        FLOAT k31 = linear * sin(theta + dt_sec * k22);
+        //FLOAT k32 = angular;
 
         x_position += dt_6_sec * (k00 + 2*(k10 + k20) + k30);
         y_position += dt_6_sec * (k01 + 2*(k11 + k21) + k31);
@@ -222,9 +223,9 @@ void Odom_Update()
         */
         theta += dt_sec * angular;
 #else
-        float left_delta_dist = left_mps * delta_time / 1000.0;
-        float right_delta_dist = right_mps * delta_time / 1000.0;
-        float center_delta_dist = linear_bias * (left_delta_dist + right_delta_dist) / 2.0;
+        FLOAT left_delta_dist = left_mps * delta_time / 1000.0;
+        FLOAT right_delta_dist = right_mps * delta_time / 1000.0;
+        FLOAT center_delta_dist = linear_bias * (left_delta_dist + right_delta_dist) / 2.0;
         
         theta += angular_bias * (right_delta_dist - left_delta_dist)/TRACK_WIDTH;
         x_position += center_delta_dist * cos(theta);
@@ -266,10 +267,10 @@ void Odom_Reset()
  * Name: Odom_GetHeading
  * Description: Returns the heading based on the odometry calculations.
  * Parameters: None
- * Return: float (rad)
+ * Return: FLOAT (rad)
  * 
  *-------------------------------------------------------------------------------------------------*/
- float Odom_GetHeading()
+ FLOAT Odom_GetHeading()
 {
     return theta;
 }
@@ -278,10 +279,10 @@ void Odom_Reset()
  * Name: Odom_GetMeasVelocity
  * Description: Returns the linear and angular velocity based on the odometry calculations.
  * Parameters: None
- * Return: float
+ * Return: FLOAT
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Odom_GetMeasVelocity(float *linear, float *angular)
+void Odom_GetMeasVelocity(FLOAT *linear, FLOAT *angular)
 {
    *linear = linear_meas_velocity;
    *angular = angular_meas_velocity;     
@@ -292,10 +293,10 @@ void Odom_GetMeasVelocity(float *linear, float *angular)
  * Description: Returns the x/y position based on the odometry calculations.
  * Parameters: (out) x - x travel offset
  *             (out) y - y travel offset
- * Return: float
+ * Return: FLOAT
  * 
  *-------------------------------------------------------------------------------------------------*/
- void Odom_GetXYPosition(float * x, float * y)
+ void Odom_GetXYPosition(FLOAT * x, FLOAT * y)
 {
     *x = x_position;
     *y = y_position;

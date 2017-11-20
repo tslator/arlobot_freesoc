@@ -56,9 +56,8 @@ SOFTWARE.
 #include "utils.h"
 #include "debug.h"
 #include "pid.h"
-
-#include "leftpid.h"
-#include "rightpid.h"
+#include "pidleft.h"
+#include "pidright.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -83,14 +82,14 @@ typedef struct _cal_motor_params
     char        label[30]; 
     WHEEL_TYPE  wheel;
     DIR_TYPE    direction;
-    uint8       iterations;
-    uint32      pwm_time;
-    uint8       pwm_index;
+    UINT8       iterations;
+    UINT32      pwm_time;
+    UINT8       pwm_index;
     PWM_TYPE    *p_pwm_samples;
-    uint32      sample_time;
-    uint8       cps_index;
-    int32       *p_cps_samples;
-    int32       *p_cps_avg;
+    UINT32      sample_time;
+    UINT8       cps_index;
+    INT32       *p_cps_samples;
+    INT32       *p_cps_avg;
     SET_MOTOR_PWM_FUNC_TYPE set_pwm;
     RAMP_DOWN_PWM_FUNC_TYPE ramp_down;
     GET_RAW_COUNT_FUNC_TYPE get_count;
@@ -102,21 +101,21 @@ typedef struct _cal_motor_params
  * Variables
  *-------------------------------------------------------------------------------------------------*/
 /* Note: Calibration performs several iterations over the full range of the motor speed in order gather 
-   enough data to determine an average count/sec.  While the final count/sec value stored is int16
+   enough data to determine an average count/sec.  While the final count/sec value stored is INT16
    (in order to save space) the arrays that sum and average the count/sec values must be int32 to 
    avoid overflow.
 */
-static int32         cal_cps_samples[CAL_NUM_SAMPLES];
-static uint16        cal_pwm_samples[CAL_NUM_SAMPLES];
-static int32         cal_cps_avg[CAL_NUM_SAMPLES];
+static INT32         cal_cps_samples[CAL_NUM_SAMPLES];
+static UINT16        cal_pwm_samples[CAL_NUM_SAMPLES];
+static INT32         cal_cps_avg[CAL_NUM_SAMPLES];
 static CAL_DATA_TYPE cal_data;
 
 /* Provides an implementation of the Calibration interface */
-static uint8 Init();
-static uint8 Start();
-static uint8 Update();
-static uint8 Stop();
-static uint8 Results();
+static UINT8 Init();
+static UINT8 Start();
+static UINT8 Update();
+static UINT8 Stop();
+static UINT8 Results();
 
 static CALVAL_INTERFACE_TYPE motor_calibration = { CAL_INIT_STATE, 
                                               CAL_CALIBRATE_STAGE,
@@ -250,7 +249,7 @@ static CAL_MOTOR_PARAMS motor_cal_params[NUM_MOTOR_CAL_PARAMS] =
     }
 };
 
-static uint8 motor_cal_index;
+static UINT8 motor_cal_index;
 
 static char *wheel_str[2] = {"left", "right"};
 static char *direction_str[2] = {"forward", "backward"};
@@ -274,14 +273,14 @@ static char *direction_str[2] = {"forward", "backward"};
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void CalculateMinMaxCpsSample(int32 *samples, int32 *min, int32 *max)
+static void CalculateMinMaxCpsSample(INT32 *samples, INT32 *min, INT32 *max)
 {
-    uint8 ii;
+    UINT8 ii;
     /* Note: it was necessary to introduce local variables.  Accessing min/max parameters had 
        unexpected results.
     */
-    int32 tmp_min = INT_MAX;
-    int32 tmp_max = INT_MIN;
+    INT32 tmp_min = INT_MAX;
+    INT32 tmp_max = INT_MIN;
 
     for (ii = 0; ii < CAL_NUM_SAMPLES; ++ii)
     {
@@ -313,10 +312,10 @@ static void CalculateMinMaxCpsSample(int32 *samples, int32 *min, int32 *max)
  *-------------------------------------------------------------------------------------------------*/
 static void InitCalibrationParams(CAL_MOTOR_PARAMS *params)
 {
-    uint8 ii;
-    uint16 pwm;
-    uint16 pwm_start;
-    int16 pwm_step;
+    UINT8 ii;
+    UINT16 pwm;
+    UINT16 pwm_start;
+    INT16 pwm_step;
     WHEEL_TYPE wheel;
     DIR_TYPE dir;
      
@@ -344,9 +343,9 @@ static void InitCalibrationParams(CAL_MOTOR_PARAMS *params)
     params->iterations = MAX_MOTOR_CAL_ITERATION;
  }
   
-static uint8 GetNextPwm(CAL_MOTOR_PARAMS *params, PWM_TYPE *pwm)
+static UINT8 GetNextPwm(CAL_MOTOR_PARAMS *params, PWM_TYPE *pwm)
 {
-    uint8 index;
+    UINT8 index;
 
     if (params->pwm_index < CAL_NUM_SAMPLES)
     {
@@ -365,22 +364,22 @@ static uint8 GetNextPwm(CAL_MOTOR_PARAMS *params, PWM_TYPE *pwm)
     return 1;        
 }
 
-static uint8 PerformMotorCalibrationIteration(CAL_MOTOR_PARAMS *params)
+static UINT8 PerformMotorCalibrationIteration(CAL_MOTOR_PARAMS *params)
 {
-    static uint8 pwm_running = FALSE;
-    static uint32 pwm_start_time = 0;
-    static uint32 sample_start_time = 0;
-    static int32 last_count = 0;
-    static uint8 num_cps_samples_collected;
+    static UINT8 pwm_running = FALSE;
+    static UINT32 pwm_start_time = 0;
+    static UINT32 sample_start_time = 0;
+    static INT32 last_count = 0;
+    static UINT8 num_cps_samples_collected;
     
-    uint32 now;
-    uint32 pwm_delta;
+    UINT32 now;
+    UINT32 pwm_delta;
     PWM_TYPE pwm;
-    uint32 sample;
-    uint8 result;
-    int32 count;
-    int32 total_sample_time;
-    int32 total_counts;
+    UINT32 sample;
+    UINT8 result;
+    INT32 count;
+    INT32 total_sample_time;
+    INT32 total_counts;
 
     if (!pwm_running)
     {        
@@ -448,10 +447,10 @@ static uint8 PerformMotorCalibrationIteration(CAL_MOTOR_PARAMS *params)
     return CAL_OK;
 }
 
-static uint8 PerformMotorCalibrateAverage(CAL_MOTOR_PARAMS *params)
+static UINT8 PerformMotorCalibrateAverage(CAL_MOTOR_PARAMS *params)
 {
-    uint8 ii;
-    uint8 result;
+    UINT8 ii;
+    UINT8 result;
     
     if (params->iterations > 0)
     {
@@ -492,7 +491,7 @@ static uint8 PerformMotorCalibrateAverage(CAL_MOTOR_PARAMS *params)
  *-------------------------------------------------------------------------------------------------*/
 static void StoreMotorCalibration(CAL_MOTOR_PARAMS *params)
 {
-    uint8 ii;
+    UINT8 ii;
 
     /* Note: It was intended to add a pointer to the CAL_MOTOR_PARAMS structure that pointed to
     the cal_data variable similar to p_pwm_samples and p_cps_avg samples; however, when doing that
@@ -521,22 +520,22 @@ static void StoreMotorCalibration(CAL_MOTOR_PARAMS *params)
         }
     }
 
-    CalculateMinMaxCpsSample(params->p_cps_avg, (int32 *) &cal_data.cps_min, (int32 *) &cal_data.cps_max);
+    CalculateMinMaxCpsSample(params->p_cps_avg, (INT32 *) &cal_data.cps_min, (INT32 *) &cal_data.cps_max);
     
     for (ii = 0; ii < CAL_NUM_SAMPLES; ++ii)
     {
-        /* Note: Just a reminder, count/sec storage is int16 */
-        cal_data.pwm_data[ii] = (int16) params->p_pwm_samples[ii];
-        cal_data.cps_data[ii] = (int16) params->p_cps_avg[ii];       
+        /* Note: Just a reminder, count/sec storage is INT16 */
+        cal_data.pwm_data[ii] = (INT16) params->p_pwm_samples[ii];
+        cal_data.cps_data[ii] = (INT16) params->p_cps_avg[ii];       
     }
 
     Cal_SetMotorData(params->wheel, params->direction, &cal_data);
 }
   
-static uint8 PerformMotorCalibration(CAL_MOTOR_PARAMS *cal_params)
+static UINT8 PerformMotorCalibration(CAL_MOTOR_PARAMS *cal_params)
 {
-    static uint8 running = FALSE;
-    uint8 result;
+    static UINT8 running = FALSE;
+    UINT8 result;
     
     if ( !running )
     {
@@ -573,10 +572,10 @@ static uint8 PerformMotorCalibration(CAL_MOTOR_PARAMS *cal_params)
  * Description: Calibration/Validation interface Init function.  Performs initialization for Linear 
  *              Validation.
  * Parameters: None 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Init()
+static UINT8 Init()
 {
     Ser_PutString("\r\nInitialize motor calibration\r\n");
     motor_cal_index = 0;
@@ -589,10 +588,10 @@ static uint8 Init()
  * Name: Start
  * Description: Calibration/Validation interface Start function.  Start Linear Validation.
  * Parameters: None 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Start()
+static UINT8 Start()
 {
     Ser_PutString("\r\nPerforming motor calibration\r\n");
     Debug_Store();
@@ -608,14 +607,14 @@ static uint8 Start()
  *              the termination condition.
  * Parameters: stage - the calibration/validation stage 
  *             params - motor validation parameters, e.g. direction, run time, etc. 
- * Return: uint8 - CAL_OK, CAL_COMPLETE
+ * Return: UINT8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Update()
+static UINT8 Update()
 {
     CAL_MOTOR_PARAMS *cal_params = (CAL_MOTOR_PARAMS *) &motor_cal_params[motor_cal_index];
     
-    uint8 result = PerformMotorCalibration(cal_params);
+    UINT8 result = PerformMotorCalibration(cal_params);
     if ( result == CALIBRATION_ITERATION_DONE )
     {
         motor_cal_index++;
@@ -634,10 +633,10 @@ static uint8 Update()
  * Description: Calibration/Validation interface Stop function.  Called to stop validation.
  * Parameters: stage - the calibration/validation stage
  *             params - motor validation parameters 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Stop()
+static UINT8 Stop()
 {
     Ser_PutString("Motor calibration complete\r\n");
     Cal_SetCalibrationStatusBit(CAL_MOTOR_BIT);
@@ -652,10 +651,10 @@ static uint8 Stop()
  *              validation results. 
  * Parameters: stage - the calibration/validation stage 
  *             params - motor calibration/validation parameters 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Results()
+static UINT8 Results()
 {
     Ser_PutString("\r\nPrinting motor calibration results\r\n");
     Cal_PrintAllMotorParams(FALSE);

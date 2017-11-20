@@ -50,28 +50,28 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/
 typedef union _cmd_vel_tag
 {
-    uint8 bytes[8];
+    UINT8 bytes[8];
     struct
     {
-        float linear;
-        float angular;
+        FLOAT linear;
+        FLOAT angular;
     };
 } __attribute__ ((packed)) CMD_VELOCITY_TYPE;
 
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/
-static uint32 last_cmd_velocity_time;
-static uint32 cmd_velocity_timeout;
+static UINT32 last_cmd_velocity_time;
+static UINT32 cmd_velocity_timeout;
 
-static uint16 device_control;
-static uint16 debug_control;
+static UINT16 device_control;
+static UINT16 debug_control;
 
-static uint8 write_occurred;
+static UINT8 write_occurred;
 static CMD_VELOCITY_TYPE cmd_velocity;
 
-static uint16 device_status;
-static uint16 calibration_status;
+static UINT16 device_status;
+static UINT16 calibration_status;
 
 /*--------------------------------------------------------------------------------------------------
  * Functions
@@ -95,8 +95,8 @@ static void DisableInterrupt()
 void CAN_Rx_RX_Control_Callback()
 {
     /* Read the control message and parse */
-    uint8 hi;
-    uint8 lo;
+    UINT8 hi;
+    UINT8 lo;
     
     hi = CAN_RX_DATA_BYTE1(CAN_RX_MAILBOX_Control);
     lo = CAN_RX_DATA_BYTE2(CAN_RX_MAILBOX_Control);
@@ -148,9 +148,9 @@ void CANIF_Start()
 }
 
 
-uint16 CANIF_ReadDeviceControl()
+UINT16 CANIF_ReadDeviceControl()
 {
-    uint16 control;
+    UINT16 control;
     
     DisableInterrupt();
     control = device_control;    
@@ -159,9 +159,9 @@ uint16 CANIF_ReadDeviceControl()
     return control;
 }
 
-uint16 CANIF_ReadDebugControl()
+UINT16 CANIF_ReadDebugControl()
 {
-    uint16 control;
+    UINT16 control;
     
     DisableInterrupt();
     control = debug_control;    
@@ -170,7 +170,7 @@ uint16 CANIF_ReadDebugControl()
     return control;
 }
 
-void CANIF_ReadCmdVelocity(float *linear, float *angular, uint32 *timeout)
+void CANIF_ReadCmdVelocity(FLOAT *linear, FLOAT *angular, UINT32 *timeout)
 {
     DisableInterrupt();
     if (write_occurred)
@@ -200,113 +200,113 @@ static void WriteStatusMsg()
     CAN_TX_DATA_BYTE4(CAN_TX_MAILBOX_Status) = calibration_status & 0x0F;
 }
 
-static void WriteSpeedMsg(float linear, float angular)
+static void WriteSpeedMsg(FLOAT linear, FLOAT angular)
 {
-    uint8 *p_bytes;
+    UINT8 *p_bytes;
     
-    p_bytes = (uint8 *) &linear;
+    p_bytes = (UINT8 *) &linear;
     CAN_TX_DATA_BYTE1(CAN_TX_MAILBOX_LeftRightSpeed) = p_bytes[0];
     CAN_TX_DATA_BYTE2(CAN_TX_MAILBOX_LeftRightSpeed) = p_bytes[1];
     CAN_TX_DATA_BYTE3(CAN_TX_MAILBOX_LeftRightSpeed) = p_bytes[2];
     CAN_TX_DATA_BYTE4(CAN_TX_MAILBOX_LeftRightSpeed) = p_bytes[3];
     
-    p_bytes = (uint8 *) &angular;
+    p_bytes = (UINT8 *) &angular;
     CAN_TX_DATA_BYTE1(CAN_TX_MAILBOX_LeftRightSpeed) = p_bytes[0];
     CAN_TX_DATA_BYTE2(CAN_TX_MAILBOX_LeftRightSpeed) = p_bytes[1];
     CAN_TX_DATA_BYTE3(CAN_TX_MAILBOX_LeftRightSpeed) = p_bytes[2];
     CAN_TX_DATA_BYTE4(CAN_TX_MAILBOX_LeftRightSpeed) = p_bytes[3];
 }
 
-static void WritePositionMsg(float left, float right)
+static void WritePositionMsg(FLOAT left, FLOAT right)
 {
-    uint8 *p_bytes;
+    UINT8 *p_bytes;
     
-    p_bytes = (uint8 *) &left;
+    p_bytes = (UINT8 *) &left;
     CAN_TX_DATA_BYTE1(CAN_TX_MAILBOX_LeftRightDistance) = p_bytes[0];
     CAN_TX_DATA_BYTE2(CAN_TX_MAILBOX_LeftRightDistance) = p_bytes[1];
     CAN_TX_DATA_BYTE3(CAN_TX_MAILBOX_LeftRightDistance) = p_bytes[2];
     CAN_TX_DATA_BYTE4(CAN_TX_MAILBOX_LeftRightDistance) = p_bytes[3];
     
-    p_bytes = (uint8 *) &right;
+    p_bytes = (UINT8 *) &right;
     CAN_TX_DATA_BYTE1(CAN_TX_MAILBOX_LeftRightDistance) = p_bytes[0];
     CAN_TX_DATA_BYTE2(CAN_TX_MAILBOX_LeftRightDistance) = p_bytes[1];
     CAN_TX_DATA_BYTE3(CAN_TX_MAILBOX_LeftRightDistance) = p_bytes[2];
     CAN_TX_DATA_BYTE4(CAN_TX_MAILBOX_LeftRightDistance) = p_bytes[3];
 }
 
-static void WriteHeadingMsg(float heading)
+static void WriteHeadingMsg(FLOAT heading)
 {
-    uint8 *p_bytes;
+    UINT8 *p_bytes;
     
-    p_bytes = (uint8 *) &heading;
+    p_bytes = (UINT8 *) &heading;
     CAN_TX_DATA_BYTE1(CAN_TX_MAILBOX_Heading) = p_bytes[0];
     CAN_TX_DATA_BYTE2(CAN_TX_MAILBOX_Heading) = p_bytes[1];
     CAN_TX_DATA_BYTE3(CAN_TX_MAILBOX_Heading) = p_bytes[2];
     CAN_TX_DATA_BYTE4(CAN_TX_MAILBOX_Heading) = p_bytes[3];
 }
 
-static void WriteHeartbeatMsg(uint32 heartbeat)
+static void WriteHeartbeatMsg(UINT32 heartbeat)
 {
-    uint8 *p_bytes;
+    UINT8 *p_bytes;
     
-    p_bytes = (uint8 *) &heartbeat;
+    p_bytes = (UINT8 *) &heartbeat;
     CAN_TX_DATA_BYTE1(CAN_TX_MAILBOX_Heartbeat) = p_bytes[0];
     CAN_TX_DATA_BYTE2(CAN_TX_MAILBOX_Heartbeat) = p_bytes[1];
     CAN_TX_DATA_BYTE3(CAN_TX_MAILBOX_Heartbeat) = p_bytes[2];
     CAN_TX_DATA_BYTE4(CAN_TX_MAILBOX_Heartbeat) = p_bytes[3];
 }
 
-void CANIF_SetDeviceStatusBit(uint16 bit)
+void CANIF_SetDeviceStatusBit(UINT16 bit)
 {
     /* Update the device status bit */
     device_status |= bit;
     WriteStatusMsg();
 }
 
-void CANIF_ClearDeviceStatusBit(uint16 bit)
+void CANIF_ClearDeviceStatusBit(UINT16 bit)
 {
     /* Update the device status bit */
     device_status &= ~bit;
     WriteStatusMsg();
 }
 
-void CANIF_SetCalibrationStatus(uint16 status)
+void CANIF_SetCalibrationStatus(UINT16 status)
 {
     /* Update calibration status */
     calibration_status = status;
     WriteStatusMsg();
 }
 
-void CANIF_SetCalibrationStatusBit(uint16 bit)
+void CANIF_SetCalibrationStatusBit(UINT16 bit)
 {
     /* Update calibration status bit */
     calibration_status |= bit;
     WriteStatusMsg();
 }
 
-void CANIF_ClearCalibrationStatusBit(uint16 bit)
+void CANIF_ClearCalibrationStatusBit(UINT16 bit)
 {
     /* Update calibration status bit */
     calibration_status &= ~bit;
     WriteStatusMsg();
 }
 
-void CANIF_WriteSpeed(float linear, float angular)
+void CANIF_WriteSpeed(FLOAT linear, FLOAT angular)
 {
     WriteSpeedMsg(linear, angular);
 }
 
-void CANIF_WritePosition(float x_position, float y_position)
+void CANIF_WritePosition(FLOAT x_position, FLOAT y_position)
 {
     WritePositionMsg(x_position, y_position);
 }
 
-void CANIF_WriteHeading(float heading)
+void CANIF_WriteHeading(FLOAT heading)
 {
     WriteHeadingMsg(heading);
 }
 
-void CANIF_UpdateHeartbeat(uint32 heartbeat)
+void CANIF_UpdateHeartbeat(UINT32 heartbeat)
 {
     WriteHeartbeatMsg(heartbeat);
 }

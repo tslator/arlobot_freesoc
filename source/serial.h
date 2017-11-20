@@ -34,21 +34,21 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Includes
  *-------------------------------------------------------------------------------------------------*/    
-#include <project.h>
+#include "freesoc.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/    
 void Ser_Init();
-void Ser_Start(uint8 disable);
+void Ser_Start(UINT8 disable);
 void Ser_Update();
 
 void Ser_PutString(char *str);
 void Ser_PutStringFormat(const char *fmt, ...);
-uint8 Ser_ReadData(uint8 *data);
-uint8 Ser_ReadByte();
-uint8 Ser_ReadLine(char *line, uint8 echo);
-void Ser_WriteByte(uint8 value);
+UINT8 Ser_ReadData(UINT8 *data);
+UINT8 Ser_ReadByte();
+UINT8 Ser_ReadLine(char *line, UINT8 echo);
+void Ser_WriteByte(UINT8 value);
 
 #endif
 

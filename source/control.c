@@ -41,16 +41,15 @@ SOFTWARE.
 #include "utils.h"
 #include "odom.h"
 #include "debug.h"
-#include "config.h"
 #include "ccif.h"
 #include "diag.h"
+#include "consts.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Defines
  *-------------------------------------------------------------------------------------------------*/
 //#define ENABLE_VELOCITY_REPEAT    
 //#define OVERRIDE_VELOCITY
-#define ENABLE_ACCEL_LIMIT
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -68,114 +67,22 @@ SOFTWARE.
  * Variables
  *-------------------------------------------------------------------------------------------------*/
 static COMMAND_FUNC_TYPE control_cmd_velocity;
-static float linear_velocity_mps;
-static float angular_velocity_rps;
-static float left_velocity_cps;
-static float right_velocity_cps;
-static float max_robot_forward_linear_velocity_mps;     // m/s
-static float max_robot_backward_linear_velocity_mps;    // m/s
+static FLOAT linear_velocity_mps;
+static FLOAT angular_velocity_rps;
+static FLOAT left_velocity_cps;
+static FLOAT right_velocity_cps;
+static FLOAT max_robot_forward_linear_velocity_mps;     // m/s
+static FLOAT max_robot_backward_linear_velocity_mps;    // m/s
 
-float max_linear;                   // m/s
-float max_angular;                  // r/s
+static FLOAT max_linear;  // m/s
+static FLOAT max_angular; // r/s
 
-static uint8 debug_override;
-static uint8 left_right_cmd_velocity_override;
+static BOOL debug_override;
+static UINT8 left_right_cmd_velocity_override;
 
+static FLOAT linear_gain;
+static FLOAT linear_trim;
 
-static float linear_gain;
-static float linear_trim;
-
-/*---------------------------------------------------------------------------------------------------
- * Name: AdjustVelocity
- * Description: Calculates a new velocity based on the last velocity, max velocity and specified
- *              response time.
- * Parameters: last_velocity - the last adjusted velocity
- *             curr_velocity - the currently commanded velocity
- *             max_velocity  - the maximum allowed velocity
- *             response_time - the response time, i.e., how long to go from 0 to max velocity
- *             last_time     - the last time (in milliseconds) 
- * Return: limited velocity
- * 
- *-------------------------------------------------------------------------------------------------*/ 
-#ifdef ENABLE_ACCEL_LIMIT
-static float AdjustVelocity(float last_velocity, float curr_velocity, float max_velocity, float response_time, uint32 *last_time)
-/*
-    Explanation: The approach here is to limit acceleration in terms of a response time, e.g., wheel should reach new 
-    speed within X seconds.  The worst case is 0 to max speed.  On each call delta time, delta velocity and percent
-    change are calculated.  The velocity adjustment is proportional to the worst case velocity change.  The velocity is
-    adjusted until the newly command velocity is reached.  The resulting response is an S curve due to the percent
-    change getting smaller and smaller as the target velocity is reached.    
-*/
-{
-    float delta_time;
-    float delta_velocity;
-    float percent_change;
-    float adjust;
-    float velocity;
-    
-    velocity = 0.0;
-    
-    delta_time = (float) (millis() - *last_time) / 1000.0;
-    *last_time = millis();
-    delta_velocity = curr_velocity - last_velocity;
-    
-    percent_change = abs(delta_velocity / max_velocity);
-    adjust = IS_NAN_DEFAULT(delta_velocity / (response_time * percent_change / delta_time), 0.0);
-    
-    if (last_velocity <= curr_velocity)
-    {
-        velocity = min(last_velocity + adjust, curr_velocity);
-    }
-    else if (last_velocity > curr_velocity)
-    {
-        velocity = max(last_velocity + adjust, curr_velocity);
-    }
-
-    return velocity;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: LimitLinearAccel
- * Description: Limits linear velocity based on the defined linear response time.
- * Parameters: linear_velocity - the linear velocity to be limited
- * Return: updated velocity
- * 
- *-------------------------------------------------------------------------------------------------*/ 
-static float LimitLinearAccel(float linear_velocity)
-{
-    static float last_velocity = 0.0;
-    static uint32 last_time = 0;
-
-    last_velocity = AdjustVelocity(last_velocity, 
-                                   linear_velocity, 
-                                   max_linear, 
-                                   LINEAR_RESPONSE_TIME, 
-                                   &last_time);
-
-    return last_velocity;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: LimitAngularAccel
- * Description: Limits angular velocity based on the defined angular response time.
- * Parameters: angular_velocity - the angular velocity to be limited
- * Return: updated velocity
- * 
- *-------------------------------------------------------------------------------------------------*/ 
-static float LimitAngularAccel(float angular_velocity)
-{
-    static float last_velocity = 0.0;
-    static uint32 last_time = 0;
-
-    last_velocity = AdjustVelocity(last_velocity, 
-                                   angular_velocity, 
-                                   max_angular, 
-                                   ANGULAR_RESPONSE_TIME, 
-                                   &last_time);
-
-    return last_velocity;    
-}
-#endif
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Update_Debug
@@ -185,7 +92,7 @@ static float LimitAngularAccel(float angular_velocity)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/ 
-void Update_Debug(uint16 bits)
+void Update_Debug(UINT16 bits)
 {
     if (bits & ENCODER_DEBUG_BIT)
     {
@@ -263,8 +170,8 @@ void Control_Init()
  *-------------------------------------------------------------------------------------------------*/ 
 void Control_Start()
 {   
-    float max_robot_linear_velocity;
-    float dont_care;
+    FLOAT max_robot_linear_velocity;
+    FLOAT dont_care;
     
     /* Calculate the min/max forward/backward differential velocities */
     DiffToUni(MAX_WHEEL_METER_PER_SECOND, MAX_WHEEL_METER_PER_SECOND, &max_linear, &dont_care);
@@ -278,10 +185,10 @@ void Control_Start()
 }
 
 #ifdef ENABLE_VELOCITY_REPEAT
-static void RepeatVelocity(float *linear, float *angular, uint32 *timeout)
+static void RepeatVelocity(FLOAT *linear, FLOAT *angular, UINT32 *timeout)
 {
-    static uint8 select = 0;
-    static uint32 last_time = 0;
+    static UINT8 select = 0;
+    static UINT32 last_time = 0;
     
     *timeout = 0;
     if (millis() - last_time < 5000)
@@ -309,11 +216,11 @@ static void RepeatVelocity(float *linear, float *angular, uint32 *timeout)
  *-------------------------------------------------------------------------------------------------*/ 
 void Control_Update()
 {
-    uint32 timeout;
-    uint16 device_control;
-    uint16 debug_control;
-    float left_velocity_rps;
-    float right_velocity_rps;
+    UINT32 timeout;
+    UINT16 device_control;
+    UINT16 debug_control;
+    FLOAT left_velocity_rps;
+    FLOAT right_velocity_rps;
         
     
     CONTROL_UPDATE_START();
@@ -354,6 +261,8 @@ void Control_Update()
     }
     
     control_cmd_velocity(&linear_velocity_mps, &angular_velocity_rps, &timeout);
+
+    //EnsureAngularVelocity(&linear_cmd_velocity, &angular_cmd_velocity);    
     
     //Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
     //Debug_Enable(DEBUG_LEFT_ENCODER_ENABLE_BIT);
@@ -371,11 +280,9 @@ void Control_Update()
 #endif
 
 #ifdef ENABLE_ACCEL_LIMIT
-    linear_velocity_mps = LimitLinearAccel(linear_velocity_mps);
-    angular_velocity_rps = LimitAngularAccel(angular_velocity_rps);
+    linear_velocity_mps = LimitLinearAccel(linear_velocity_mps, max_linear, LINEAR_RESPONSE_TIME);
+    angular_velocity_rps = LimitAngularAccel(angular_velocity_rps, max_angular, ANGULAR_RESPONSE_TIME);
 #endif    
-
-    //EnsureAngularVelocity(&linear_cmd_velocity, &angular_cmd_velocity);    
 
     /* Here seems like a reasonable place to evaluate safety, e.g., can we execute the requested speed change safely
        without running into something or falling into a hole (or down stairs).
@@ -461,7 +368,7 @@ void Control_RestoreCommandVelocityFunc()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/ 
-void Control_SetLeftRightVelocityOverride(uint8 enable)
+void Control_SetLeftRightVelocityOverride(BOOL enable)
 {
     left_right_cmd_velocity_override = enable;
     /* Clear out the linear/angular velocities so they don't interfere */
@@ -480,7 +387,7 @@ void Control_SetLeftRightVelocityOverride(uint8 enable)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/ 
-void Control_SetLeftRightVelocity(float left, float right)
+void Control_SetLeftRightVelocity(FLOAT left, FLOAT right)
 {
     if (left_right_cmd_velocity_override)
     {
@@ -493,12 +400,12 @@ void Control_SetLeftRightVelocity(float left, float right)
  * Name: Control_LeftGetCmdVelocity
  * Description: Accessor function used to return the left commanded velocity (in count/sec).  
  * Parameters: None
- * Return: float
+ * Return: FLOAT
  * 
  *-------------------------------------------------------------------------------------------------*/ 
-float Control_LeftGetCmdVelocity()
+FLOAT Control_LeftGetCmdVelocity()
 {    
-    float velocity = 0.0;
+    FLOAT velocity = 0.0;
 
     velocity = (linear_gain - linear_trim) * left_velocity_cps;
     
@@ -510,12 +417,12 @@ float Control_LeftGetCmdVelocity()
  * Name: Control_RightGetCmdVelocity
  * Description: Accessor function used to return the right commanded velocity (in count/sec).  
  * Parameters: None
- * Return: float
+ * Return: FLOAT
  * 
  *-------------------------------------------------------------------------------------------------*/ 
-float Control_RightGetCmdVelocity()
+FLOAT Control_RightGetCmdVelocity()
 {
-    float velocity = 0.0;
+    FLOAT velocity = 0.0;
 
     velocity = (linear_gain + linear_trim) * right_velocity_cps;
     
@@ -527,10 +434,10 @@ float Control_RightGetCmdVelocity()
  * Name: Control_LinearGetCmdVelocity
  * Description: Accessor function used to return the linear commanded velocity.  
  * Parameters: None
- * Return: float (meter/sec)
+ * Return: FLOAT (meter/sec)
  * 
  *-------------------------------------------------------------------------------------------------*/ 
-float Control_LinearGetCmdVelocity()
+FLOAT Control_LinearGetCmdVelocity()
 {
     return linear_velocity_mps;
 }
@@ -539,10 +446,10 @@ float Control_LinearGetCmdVelocity()
  * Name: Control_AngularGetCmdVelocity
  * Description: Accessor function used to return the angular commanded velocity.  
  * Parameters: None
- * Return: float (rad/sec)
+ * Return: FLOAT (rad/sec)
  * 
  *-------------------------------------------------------------------------------------------------*/ 
-float Control_AngularGetCmdVelocity()
+FLOAT Control_AngularGetCmdVelocity()
 {
     return angular_velocity_rps;
 }
@@ -555,7 +462,7 @@ float Control_AngularGetCmdVelocity()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/ 
- void Control_GetCmdVelocity(float *linear, float *angular)
+ void Control_GetCmdVelocity(FLOAT *linear, FLOAT *angular)
 {
     *linear = linear_velocity_mps;
     *angular = angular_velocity_rps;
@@ -569,10 +476,10 @@ float Control_AngularGetCmdVelocity()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/ 
- void Control_SetCmdVelocity(float linear, float angular)
+ void Control_SetCmdVelocity(FLOAT linear, FLOAT angular)
 {
-    float left_velocity_rps;
-    float right_velocity_rps;
+    FLOAT left_velocity_rps;
+    FLOAT right_velocity_rps;
     
     if (!left_right_cmd_velocity_override)
     {    
@@ -594,51 +501,51 @@ float Control_AngularGetCmdVelocity()
  * Name: Control_OverrideDebug
  * Description: Function used to override the debug mask.  Used primarily during calibration.
  * Parameters: override : boolean - used to disable the debug mask settings specified via I2C.
- * Return: float
+ * Return: FLOAT
  * 
  *-------------------------------------------------------------------------------------------------*/ 
-void Control_OverrideDebug(uint8 override)
+void Control_OverrideDebug(BOOL override)
 {
     debug_override = override;
 }
 
-void Control_SetDeviceStatusBit(uint16 bit)
+void Control_SetDeviceStatusBit(UINT16 bit)
 {
     SetDeviceStatusBit(bit);
 }
 
-void Control_ClearDeviceStatusBit(uint16 bit)
+void Control_ClearDeviceStatusBit(UINT16 bit)
 {
     ClearDeviceStatusBit(bit);
 }
 
-void Control_SetCalibrationStatus(uint16 status)
+void Control_SetCalibrationStatus(UINT16 status)
 {
     SetCalibrationStatus(status);
 }
 
-void Control_SetCalibrationStatusBit(uint16 bit)
+void Control_SetCalibrationStatusBit(UINT16 bit)
 {
     SetCalibrationStatusBit(bit);
 }
 
-void Control_ClearCalibrationStatusBit(uint16 bit)
+void Control_ClearCalibrationStatusBit(UINT16 bit)
 {
     ClearCalibrationStatusBit(bit);
 }
 
-void Control_WriteOdom(float linear, 
-                       float angular, 
-                       float x_position, 
-                       float y_position, 
-                       float heading)
+void Control_WriteOdom(FLOAT linear, 
+                       FLOAT angular, 
+                       FLOAT x_position, 
+                       FLOAT y_position, 
+                       FLOAT heading)
 {
     WriteSpeed(linear, angular);
     WritePosition(x_position, y_position);
     WriteHeading(heading);
 }
 
-void Control_UpdateHeartbeat(uint32 heartbeat)
+void Control_UpdateHeartbeat(UINT32 heartbeat)
 {
     UpdateHeartbeat(heartbeat);
 }

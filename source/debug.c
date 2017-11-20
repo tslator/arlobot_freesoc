@@ -36,8 +36,8 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/    
-static uint16 debug_control_enabled;
-static uint16 saved_debug_control_enabled;
+static UINT16 debug_control_enabled;
+static UINT16 saved_debug_control_enabled;
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -104,21 +104,21 @@ void Debug_Start()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/ 
-void Debug_Enable(uint16 flag)
+void Debug_Enable(UINT16 flag)
 {
 #ifdef COMMS_DEBUG_ENABLED
     debug_control_enabled |= flag;
 #endif
 }
 
-void Debug_Disable(uint16 flag)
+void Debug_Disable(UINT16 flag)
 {
 #ifdef COMMS_DEBUG_ENABLED
     debug_control_enabled &= ~flag;
 #endif
 }
 
-uint16 Debug_IsEnabled(uint16 flag)
+UINT16 Debug_IsEnabled(UINT16 flag)
 {
 #ifdef COMMS_DEBUG_ENABLED
     return debug_control_enabled & flag;

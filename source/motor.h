@@ -34,8 +34,7 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Includes
  *-------------------------------------------------------------------------------------------------*/    
-#include <project.h>
-#include "config.h"
+#include "freesoc.h"
 #include "cal.h"
 
 /*---------------------------------------------------------------------------------------------------
@@ -43,7 +42,7 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/    
 typedef void (*SET_MOTOR_PWM_FUNC_TYPE)(PWM_TYPE pwm);
 typedef PWM_TYPE (*GET_MOTOR_PWM_FUNC_TYPE)();
-typedef void (*RAMP_DOWN_PWM_FUNC_TYPE)(uint32 millis);
+typedef void (*RAMP_DOWN_PWM_FUNC_TYPE)(UINT32 millis);
 
     
 /*---------------------------------------------------------------------------------------------------
@@ -61,10 +60,10 @@ PWM_TYPE Motor_LeftGetPwm();
 PWM_TYPE Motor_RightGetPwm();
 void Motor_GetPwm(PWM_TYPE *left, PWM_TYPE *right);
 
-void Motor_LeftRamp(uint32 time, PWM_TYPE target);
-void Motor_RightRamp(uint32 time, PWM_TYPE target);
-void Motor_LeftRampDown(uint32 time);
-void Motor_RightRampDown(uint32 time);
+void Motor_LeftRamp(UINT32 time, PWM_TYPE target);
+void Motor_RightRamp(UINT32 time, PWM_TYPE target);
+void Motor_LeftRampDown(UINT32 time);
+void Motor_RightRampDown(UINT32 time);
 
 #endif
 

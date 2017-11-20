@@ -33,7 +33,7 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Includes
  *-------------------------------------------------------------------------------------------------*/    
-#include <project.h>
+#include "freesoc.h"
     
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -55,22 +55,22 @@ SOFTWARE.
 void I2CIF_Init();
 void I2CIF_Start();
 
-uint16 I2CIF_ReadDeviceControl();
-uint16 I2CIF_ReadDebugControl();
-void I2CIF_ReadCmdVelocity(float *linear, float *angular, uint32 *timeout);
+UINT16 I2CIF_ReadDeviceControl();
+UINT16 I2CIF_ReadDebugControl();
+void I2CIF_ReadCmdVelocity(FLOAT *linear, FLOAT *angular, UINT32 *timeout);
 
-void I2CIF_SetDeviceStatusBit(uint16 bit);
-void I2CIF_ClearDeviceStatusBit(uint16 bit);
+void I2CIF_SetDeviceStatusBit(UINT16 bit);
+void I2CIF_ClearDeviceStatusBit(UINT16 bit);
 
-void I2CIF_SetCalibrationStatus(uint16 status);
-void I2CIF_SetCalibrationStatusBit(uint16 bit);
-void I2CIF_ClearCalibrationStatusBit(uint16 bit);
+void I2CIF_SetCalibrationStatus(UINT16 status);
+void I2CIF_SetCalibrationStatusBit(UINT16 bit);
+void I2CIF_ClearCalibrationStatusBit(UINT16 bit);
 
 
-void I2CIF_WriteSpeed(float linear, float angular);
-void I2CIF_WritePosition(float x_position, float y_position);
-void I2CIF_WriteHeading(float heading);
-void I2CIF_UpdateHeartbeat(uint32 heartbeat);
+void I2CIF_WriteSpeed(FLOAT linear, FLOAT angular);
+void I2CIF_WritePosition(FLOAT x_position, FLOAT y_position);
+void I2CIF_WriteHeading(FLOAT heading);
+void I2CIF_UpdateHeartbeat(UINT32 heartbeat);
 
 #ifdef TEST_I2C
 void I2CIF_Test();

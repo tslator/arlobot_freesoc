@@ -33,7 +33,7 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Includes
  *-------------------------------------------------------------------------------------------------*/
-#include <project.h>
+#include "freesoc.h"
     
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -48,19 +48,19 @@ SOFTWARE.
 
  typedef struct _CAL_DATA_TYPE
 {
-    int16  cps_min;
-    int16  cps_max;
-    int16  cps_data[CAL_DATA_SIZE];
-    uint16 pwm_data[CAL_DATA_SIZE];
+    INT16  cps_min;
+    INT16  cps_max;
+    INT16  cps_data[CAL_DATA_SIZE];
+    UINT16 pwm_data[CAL_DATA_SIZE];
     // Note: Total size is 208 bytes, at 16 bytes per row, 13 rows
 } __attribute__ ((packed)) CAL_DATA_TYPE;
 
 typedef struct _cal_pid_tag
 {
-    float kp;
-    float ki;
-    float kd;
-    float kf;
+    FLOAT kp;
+    FLOAT ki;
+    FLOAT kd;
+    FLOAT kf;
     // Note: Total size is 16 bytes, 1 row
 } __attribute__ ((packed)) CAL_PID_TYPE;
 
@@ -73,16 +73,16 @@ typedef struct _eeprom_tag
        bit 3: Linear Bias calibrated
        bit 4: Angular Bias calibrated
     */    
-    uint16 status;                  /*    0 */
-    uint16 checksum;                /*    2 */
-    uint8 reserved_4[4];            /*    4 */
+    UINT16 status;                  /*    0 */
+    UINT16 checksum;                /*    2 */
+    UINT8 reserved_4[4];            /*    4 */
     CAL_PID_TYPE left_gains;        /*    8 */
     CAL_PID_TYPE right_gains;       /*   24 */
-    float linear_bias;              /*   40 */
-    float angular_bias;             /*   44 */
+    FLOAT linear_bias;              /*   40 */
+    FLOAT angular_bias;             /*   44 */
     CAL_PID_TYPE linear_gains;      /*   48 */
     CAL_PID_TYPE angular_gains;     /*   64 */
-    uint8 reserved[1136];           /*   80 */
+    UINT8 reserved[1136];           /*   80 */
     CAL_DATA_TYPE left_motor_fwd;   /* 1216 */
     CAL_DATA_TYPE left_motor_bwd;   /* 1424 */
     CAL_DATA_TYPE right_motor_fwd;  /* 1632 */

@@ -27,7 +27,7 @@ SOFTWARE.
  * Includes
  *-------------------------------------------------------------------------------------------------*/    
 #include <stdio.h>
-#include <project.h>
+#include "freesoc.h"
 #include "config.h"
 #include "debug.h"
 #include "diag.h"

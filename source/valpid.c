@@ -37,8 +37,8 @@ SOFTWARE.
 #include "serial.h"
 #include "nvstore.h"
 #include "pid.h"
-#include "leftpid.h"
-#include "rightpid.h"
+#include "pidleft.h"
+#include "pidright.h"
 #include "utils.h"
 #include "encoder.h"
 #include "motor.h"
@@ -55,16 +55,16 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/
-static uint32 start_time;
+static UINT32 start_time;
 
 static CALVAL_PID_PARAMS left_pid_params = {"left", PID_TYPE_LEFT, DIR_FORWARD, 3000};
 static CALVAL_PID_PARAMS right_pid_params = {"right", PID_TYPE_RIGHT, DIR_FORWARD, 3000};
 
-static uint8 Init();
-static uint8 Start();
-static uint8 Update();
-static uint8 Stop();
-static uint8 Results();
+static UINT8 Init();
+static UINT8 Start();
+static UINT8 Update();
+static UINT8 Stop();
+static UINT8 Results();
 
 static CALVAL_INTERFACE_TYPE left_pid_validation = {CAL_INIT_STATE,
                                                CAL_VALIDATE_STAGE,
@@ -84,11 +84,11 @@ static CALVAL_INTERFACE_TYPE right_pid_validation = {CAL_INIT_STATE,
                                                  Stop,
                                                  Results};
 
-static float profile_cps[MAX_NUM_VELOCITIES] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-static uint8 vel_index = 0;
+static FLOAT profile_cps[MAX_NUM_VELOCITIES] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+static UINT8 vel_index = 0;
 
 
-static float max_cps;
+static FLOAT max_cps;
 static CALVAL_PID_PARAMS *p_pid_params;
 
 /*---------------------------------------------------------------------------------------------------
@@ -102,18 +102,18 @@ static CALVAL_PID_PARAMS *p_pid_params;
  *             low_percent - the lowest value in the profile
  *             high_percent - the highest value in the profile
  *             val_fwd_cps - the resulting profile
- * Return: float - velocity (count/second)
+ * Return: FLOAT - velocity (count/second)
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void CalcValidationProfile(float low_percent, float high_percent)
+static void CalcValidationProfile(FLOAT low_percent, FLOAT high_percent)
 /* Use the min/max count/sec values captured during motor calibration
    Constrain the start and stop values to the lesser/greater of those values (depending on direction)
    Further constrain start/stop based on maximum PID values which are derived from the motor specification
    Further constrain to low/high range
 */
 {
-    float start;
-    float stop;
+    FLOAT start;
+    FLOAT stop;
     int ii;
     
     start = 0;
@@ -121,16 +121,16 @@ static void CalcValidationProfile(float low_percent, float high_percent)
 
     if (p_pid_params->direction == DIR_FORWARD)
     {
-        start = (float) min(Cal_GetMotorData(WHEEL_LEFT, DIR_FORWARD)->cps_min, Cal_GetMotorData(WHEEL_RIGHT, DIR_FORWARD)->cps_min);
-        stop = (float) min(Cal_GetMotorData(WHEEL_LEFT, DIR_FORWARD)->cps_max, Cal_GetMotorData(WHEEL_RIGHT, DIR_FORWARD)->cps_max);
-        stop = min(stop, (float) min(LEFTPID_MAX, RIGHTPID_MAX));
+        start = (FLOAT) min(Cal_GetMotorData(WHEEL_LEFT, DIR_FORWARD)->cps_min, Cal_GetMotorData(WHEEL_RIGHT, DIR_FORWARD)->cps_min);
+        stop = (FLOAT) min(Cal_GetMotorData(WHEEL_LEFT, DIR_FORWARD)->cps_max, Cal_GetMotorData(WHEEL_RIGHT, DIR_FORWARD)->cps_max);
+        stop = min(stop, (FLOAT) min(LEFTPID_MAX, RIGHTPID_MAX));
     }
     else if (p_pid_params->direction == DIR_BACKWARD)
     {
         /* Note: backward count/sec values are negative, i.e., swap min/max and negative PID max */
-        start = (float) min(Cal_GetMotorData(WHEEL_LEFT, DIR_BACKWARD)->cps_max, Cal_GetMotorData(WHEEL_RIGHT, DIR_BACKWARD)->cps_max);
-        stop = (float) max(Cal_GetMotorData(WHEEL_LEFT, DIR_BACKWARD)->cps_min, Cal_GetMotorData(WHEEL_RIGHT, DIR_BACKWARD)->cps_min);
-        stop = max(stop, (float) max(-LEFTPID_MAX, -RIGHTPID_MAX));
+        start = (FLOAT) min(Cal_GetMotorData(WHEEL_LEFT, DIR_BACKWARD)->cps_max, Cal_GetMotorData(WHEEL_RIGHT, DIR_BACKWARD)->cps_max);
+        stop = (FLOAT) max(Cal_GetMotorData(WHEEL_LEFT, DIR_BACKWARD)->cps_min, Cal_GetMotorData(WHEEL_RIGHT, DIR_BACKWARD)->cps_min);
+        stop = max(stop, (FLOAT) max(-LEFTPID_MAX, -RIGHTPID_MAX));
     }
     
     start = low_percent * stop;
@@ -148,7 +148,7 @@ static void CalcValidationProfile(float low_percent, float high_percent)
  * Name: ResetPidValidationVelocity
  * Description: Resets the index for the validation velocities. 
  * Parameters: None
- * Return: float - velocity (meter/second)
+ * Return: FLOAT - velocity (meter/second)
  * 
  *-------------------------------------------------------------------------------------------------*/
 static void ResetPidValidationVelocity()
@@ -163,9 +163,9 @@ static void ResetPidValidationVelocity()
  * Return: 0 if all the velocities have been used; otherwise 1.
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 SetNextValidationVelocity()
+static UINT8 SetNextValidationVelocity()
 {
-    float velocity;
+    FLOAT velocity;
     
     velocity = profile_cps[vel_index];    
     vel_index++;
@@ -201,10 +201,10 @@ static uint8 SetNextValidationVelocity()
  *              Validation.
  * Parameters: stage - the calibration/validation stage 
  *             params - PID calibration/validation parameters, e.g. direction, run time, etc. 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Init()
+static UINT8 Init()
 {
     Ser_PutStringFormat("\r\n%s PID validation\r\n", p_pid_params->name);
     
@@ -224,10 +224,10 @@ static uint8 Init()
  * Description: Calibration/Validation interface Start function.  Starts PID Calibration/Validation.
  * Parameters: stage - the calibration/validation stage 
  *             params - PID validation parameters. 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Start()
+static UINT8 Start()
 {
     Pid_Enable(TRUE, TRUE, FALSE);            
     Encoder_Reset();
@@ -248,12 +248,12 @@ static uint8 Start()
  *              the termination condition.
  * Parameters: stage - the calibration/validation stage 
  *             params - PID calibration/validation parameters, e.g. direction, run time, etc. 
- * Return: uint8 - CAL_OK, CAL_COMPLETE
+ * Return: UINT8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Update()
+static UINT8 Update()
 {
-    uint8 result;
+    UINT8 result;
     
     /* Assume an array of validation velocities that we want to run through.
         We use update to measure the time and advance through the array
@@ -277,10 +277,10 @@ static uint8 Update()
  * Description: Calibration/Validation interface Stop function.  Called to stop validation.
  * Parameters: stage - the calibration/validation stage 
  *             params - PID calibration/validation parameters, e.g. direction, run time, etc. 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Stop()
+static UINT8 Stop()
 {
     Control_SetLeftRightVelocity(0.0, 0.0);
     Control_SetLeftRightVelocityOverride(FALSE);
@@ -297,10 +297,10 @@ static uint8 Stop()
  *              validation results. 
  * Parameters: stage - the calibration/validation stage 
  *             params - PID calibration/validation parameters, e.g. direction, run time, etc. 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Results()
+static UINT8 Results()
 {
     Ser_PutString("\r\nPrinting PID validation results\r\n");
         

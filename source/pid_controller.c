@@ -46,13 +46,13 @@
 //*********************************************************************************
 // Functions
 //*********************************************************************************
-static float CalcError(float setpoint, float input)
+static FLOAT CalcError(FLOAT setpoint, FLOAT input)
 {
     return setpoint - input;
 }
 
-void PIDInit(PIDControl *pid, float kp, float ki, float kd, float kf,
-             float sampleTimeSeconds, float minOutput, float maxOutput, 
+void PIDInit(PIDControl *pid, FLOAT kp, FLOAT ki, FLOAT kd, FLOAT kf,
+             FLOAT sampleTimeSeconds, FLOAT minOutput, FLOAT maxOutput, 
              PIDMode mode, PIDDirection controllerDirection, PIDCalcError calcError)     	
 {
     pid->controllerDirection = controllerDirection;
@@ -78,9 +78,9 @@ void PIDInit(PIDControl *pid, float kp, float ki, float kd, float kf,
     PIDTuningsSet(pid, kp, ki, kd, kf);
 }
 
-bool PIDCompute(PIDControl *pid) 
+BOOL PIDCompute(PIDControl *pid) 
 {
-    float error, dInput;
+    FLOAT error, dInput;
 
     if(pid->mode == MANUAL)
     {
@@ -128,7 +128,7 @@ void PIDModeSet(PIDControl *pid, PIDMode mode)
     pid->mode = mode;
 }
 
-void PIDOutputLimitsSet(PIDControl *pid, float min, float max) 							  							  
+void PIDOutputLimitsSet(PIDControl *pid, FLOAT min, FLOAT max) 							  							  
 {
     // Check if the parameters are valid
     if(min >= max)
@@ -148,7 +148,7 @@ void PIDOutputLimitsSet(PIDControl *pid, float min, float max)
     }
 }
 
-void PIDTuningsSet(PIDControl *pid, float kp, float ki, float kd, float kf)         	                                         
+void PIDTuningsSet(PIDControl *pid, FLOAT kp, FLOAT ki, FLOAT kd, FLOAT kf)         	                                         
 {
     // Check if the parameters are valid
     if(kp < 0.0f || ki < 0.0f || kd < 0.0f || kf < 0.0f)
@@ -178,22 +178,22 @@ void PIDTuningsSet(PIDControl *pid, float kp, float ki, float kd, float kf)
     }
 }
 
-void PIDTuningKpSet(PIDControl *pid, float kp)
+void PIDTuningKpSet(PIDControl *pid, FLOAT kp)
 {
     PIDTuningsSet(pid, kp, pid->dispKi, pid->dispKd, pid->dispKf);
 }
 
-void PIDTuningKiSet(PIDControl *pid, float ki)
+void PIDTuningKiSet(PIDControl *pid, FLOAT ki)
 {
     PIDTuningsSet(pid, pid->dispKp, ki, pid->dispKd, pid->dispKf);
 }
 
-void PIDTuningKdSet(PIDControl *pid, float kd)
+void PIDTuningKdSet(PIDControl *pid, FLOAT kd)
 {
     PIDTuningsSet(pid, pid->dispKp, pid->dispKi, kd, pid->dispKf);
 }
 
-void PIDTunningKfSet(PIDControl *pid, float kf)
+void PIDTunningKfSet(PIDControl *pid, FLOAT kf)
 {
     PIDTuningsSet(pid, pid->dispKp, pid->dispKi, pid->dispKd, kf);
 }
@@ -213,9 +213,9 @@ void PIDControllerDirectionSet(PIDControl *pid, PIDDirection controllerDirection
     pid->controllerDirection = controllerDirection;
 }
 
-void PIDSampleTimeSet(PIDControl *pid, float sampleTimeSeconds)                                                       									  									  									   
+void PIDSampleTimeSet(PIDControl *pid, FLOAT sampleTimeSeconds)                                                       									  									  									   
 {
-    float ratio;
+    FLOAT ratio;
 
     if(sampleTimeSeconds > 0.0f)
     {
@@ -229,19 +229,19 @@ void PIDSampleTimeSet(PIDControl *pid, float sampleTimeSeconds)
     }
 }
 
-void PIDSetpointSet(PIDControl *pid, float setpoint) { pid->setpoint = setpoint; }
+void PIDSetpointSet(PIDControl *pid, FLOAT setpoint) { pid->setpoint = setpoint; }
 
-void PIDInputSet(PIDControl *pid, float input) { pid->input = input; }
+void PIDInputSet(PIDControl *pid, FLOAT input) { pid->input = input; }
 
-float PIDOutputGet(PIDControl *pid) { return pid->output; }
+FLOAT PIDOutputGet(PIDControl *pid) { return pid->output; }
 
-float PIDKpGet(PIDControl *pid) { return pid->dispKp; }						  
+FLOAT PIDKpGet(PIDControl *pid) { return pid->dispKp; }						  
 
-float PIDKiGet(PIDControl *pid) { return pid->dispKi; }						  
+FLOAT PIDKiGet(PIDControl *pid) { return pid->dispKi; }						  
 
-float PIDKdGet(PIDControl *pid) { return pid->dispKd; }	
+FLOAT PIDKdGet(PIDControl *pid) { return pid->dispKd; }	
 
-float PIDKfGet(PIDControl *pid) { return pid->dispKf; }
+FLOAT PIDKfGet(PIDControl *pid) { return pid->dispKf; }
 
 PIDMode PIDModeGet(PIDControl *pid) { return pid->mode; }						  
 

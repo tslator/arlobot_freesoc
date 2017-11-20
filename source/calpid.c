@@ -38,8 +38,8 @@ SOFTWARE.
 #include "serial.h"
 #include "nvstore.h"
 #include "pid.h"
-#include "leftpid.h"
-#include "rightpid.h"
+#include "pidleft.h"
+#include "pidright.h"
 #include "utils.h"
 #include "encoder.h"
 #include "time.h"
@@ -56,16 +56,16 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/
-static uint32 start_time;
+static UINT32 start_time;
 
 static CALVAL_PID_PARAMS left_pid_params = {"left", PID_TYPE_LEFT, DIR_FORWARD, 3000};
 static CALVAL_PID_PARAMS right_pid_params = {"right", PID_TYPE_RIGHT, DIR_FORWARD, 3000};
 
-static uint8 Init();
-static uint8 Start();
-static uint8 Update();
-static uint8 Stop();
-static uint8 Results();
+static UINT8 Init();
+static UINT8 Start();
+static UINT8 Update();
+static UINT8 Stop();
+static UINT8 Results();
 
 static CALVAL_INTERFACE_TYPE left_pid_calibration = {CAL_INIT_STATE,
                                                 CAL_CALIBRATE_STAGE,
@@ -85,7 +85,7 @@ static CALVAL_INTERFACE_TYPE right_pid_calibration = {CAL_INIT_STATE,
                                                  Stop,
                                                  Results};
 
-static float max_cps;
+static FLOAT max_cps;
 static CALVAL_PID_PARAMS *p_pid_params;
 
 /*---------------------------------------------------------------------------------------------------
@@ -95,16 +95,16 @@ static CALVAL_PID_PARAMS *p_pid_params;
 /*---------------------------------------------------------------------------------------------------
  * Name: StoreLeftGains/StoreRightGains
  * Description: Stores the specified gain values into the EEPROM for the left PID. 
- * Parameters: gains - array of float values corresponding to Kp, Ki, Kd.
+ * Parameters: gains - array of FLOAT values corresponding to Kp, Ki, Kd.
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void StoreLeftGains(float *gains)
+static void StoreLeftGains(FLOAT *gains)
 {
     Cal_SetGains(PID_TYPE_LEFT, gains);
 }
 
-static void StoreRightGains(float *gains)
+static void StoreRightGains(FLOAT *gains)
 {
     Cal_SetGains(PID_TYPE_RIGHT, gains);
 }
@@ -113,7 +113,7 @@ static void StoreRightGains(float *gains)
  * Name: GetStepVelocity
  * Description: Calculates a step velocity at the percent based on the calibration motor values. 
  * Parameters: None
- * Return: float - velocity (meter/second)
+ * Return: FLOAT - velocity (meter/second)
  * 
  *-------------------------------------------------------------------------------------------------*/
 static void CalcMaxCps()
@@ -124,14 +124,14 @@ static void CalcMaxCps()
    The minimum value of the above is the basis for determining the step input velocity.
  */
 {
-    int16 left_fwd_max;
-    int16 left_bwd_max;
-    int16 right_fwd_max;
-    int16 right_bwd_max;
-    int16 left_max;
-    int16 right_max;
-    int16 max_leftright_cps;
-    int16 max_leftright_pid;
+    INT16 left_fwd_max;
+    INT16 left_bwd_max;
+    INT16 right_fwd_max;
+    INT16 right_bwd_max;
+    INT16 left_max;
+    INT16 right_max;
+    INT16 max_leftright_cps;
+    INT16 max_leftright_pid;
 
     left_fwd_max = abs(Cal_GetMotorData(WHEEL_LEFT, DIR_FORWARD)->cps_max);
     left_bwd_max = abs(Cal_GetMotorData(WHEEL_LEFT, DIR_BACKWARD)->cps_min);
@@ -157,10 +157,10 @@ static void CalcMaxCps()
  * Description: Calibration/Validation interface Init function.  Performs initialization for Linear 
  *              Validation.
  * Parameters: None
- * Return: uint8 - CAL_OK, CAL_COMPLETE
+ * Return: UINT8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Init()
+static UINT8 Init()
 {
     if (!Cal_GetCalibrationStatusBit(CAL_MOTOR_BIT))
     {
@@ -198,12 +198,12 @@ static uint8 Init()
  * Name: Start
  * Description: Calibration/Validation interface Start function.  Starts PID Calibration/Validation.
  * Parameters: None 
- * Return: uint8 - CAL_OK, CAL_COMPLETE
+ * Return: UINT8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Start()
+static UINT8 Start()
 {
-    float gains[4];
+    FLOAT gains[4];
     
     Ser_PutString("\r\nEnter proportional gain: ");
     gains[0] = Cal_ReadResponse();
@@ -220,7 +220,7 @@ static uint8 Start()
     Pid_Reset();
     Odom_Reset();
     
-    float step_velocity = max_cps * STEP_VELOCITY_PERCENT;
+    FLOAT step_velocity = max_cps * STEP_VELOCITY_PERCENT;
     Ser_PutStringFormat("Setting step velocity: %.3f\r\n", step_velocity);
     
     switch (p_pid_params->pid_type)
@@ -251,10 +251,10 @@ static uint8 Start()
  * Description: Calibration/Validation interface Update function.  Called periodically to evaluate 
  *              the termination condition.
  * Parameters: None 
- * Return: uint8 - CAL_OK, CAL_COMPLETE
+ * Return: UINT8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Update()
+static UINT8 Update()
 {
     if (millis() - start_time < p_pid_params->run_time)
     {
@@ -268,12 +268,12 @@ static uint8 Update()
  * Name: Stop
  * Description: Calibration/Validation interface Stop function.  Called to stop validation.
  * Parameters: None 
- * Return: uint8 - CAL_OK, CAL_COMPLETE
+ * Return: UINT8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Stop()
+static UINT8 Stop()
 {
-    float gains[4];
+    FLOAT gains[4];
 
     Control_SetLeftRightVelocity(0, 0);
 
@@ -307,12 +307,12 @@ static uint8 Stop()
  * Description: Calibration/Validation interface Results function.  Called to display calibration/ 
  *              validation results. 
  * Parameters: None 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Results()
+static UINT8 Results()
 {
-    float gains[4];
+    FLOAT gains[4];
     
     Ser_PutString("\r\nPrinting PID calibration results\r\n");
 

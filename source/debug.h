@@ -33,8 +33,7 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Includes
  *-------------------------------------------------------------------------------------------------*/
-#include <project.h>
-#include <stdio.h>
+#include "freesoc.h"
 #include "config.h"
 #include "serial.h"
 
@@ -157,9 +156,9 @@ char formatted_string[256];
  *-------------------------------------------------------------------------------------------------*/    
 void Debug_Init();
 void Debug_Start();
-void Debug_Enable(uint16 flag);
-void Debug_Disable(uint16 flag);
-uint16 Debug_IsEnabled(uint16 flag);
+void Debug_Enable(UINT16 flag);
+void Debug_Disable(UINT16 flag);
+UINT16 Debug_IsEnabled(UINT16 flag);
 void Debug_EnableAll();
 void Debug_DisableAll();
 void Debug_Store();

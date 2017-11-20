@@ -33,37 +33,11 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Includes
  *-------------------------------------------------------------------------------------------------*/    
-#include <project.h>
-#include "config.h"
+#include "freesoc.h"
+#include "pidtypes.h"
+#include "calstore.h"
 #include "pid_controller.h"
     
-/*---------------------------------------------------------------------------------------------------
- * Macros
- *-------------------------------------------------------------------------------------------------*/    
-        
-
-#define PID_SAMPLE_TIME_MS  SAMPLE_TIME_MS(PID_SAMPLE_RATE)
-#define PID_SAMPLE_TIME_SEC SAMPLE_TIME_SEC(PID_SAMPLE_RATE)
-
-    
-/*---------------------------------------------------------------------------------------------------
- * Types
- *-------------------------------------------------------------------------------------------------*/
-typedef float (*GET_TARGET_FUNC_TYPE)();
-typedef float (*GET_INPUT_FUNC_TYPE)();
-typedef float (*PID_UPDATE_TYPE)(float target, float input);
-
-typedef struct _pid_tag
-{
-    char name[8];
-    PIDControl pid;
-    int sign;
-    GET_TARGET_FUNC_TYPE get_target;
-    GET_INPUT_FUNC_TYPE get_input;
-    PID_UPDATE_TYPE update;
-} PID_TYPE;
-
-
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/    
@@ -73,10 +47,10 @@ void Pid_Update();
 void Pid_SetLeftRightTarget(GET_TARGET_FUNC_TYPE left_target, GET_TARGET_FUNC_TYPE right_target);
 void Pid_RestoreLeftRightTarget();
 void Pid_Reset();
-void Pid_Enable(uint8 left, uint8 right, uint8 uni);
-void Pid_Bypass(uint8 left, uint8 right, uint8 uni);
-void Pid_BypassAll(uint8 bypass);
-uint8 Pid_SetGains(PIDControl *p_pid, CAL_PID_TYPE *p_gains);
+void Pid_Enable(BOOL left, BOOL right, BOOL uni);
+void Pid_Bypass(BOOL left, BOOL right, BOOL uni);
+void Pid_BypassAll(BOOL bypass);
+BOOL Pid_SetGains(PIDControl *p_pid, CAL_PID_TYPE *p_gains);
 
 void DumpPid(char *name, PIDControl *pid);
 

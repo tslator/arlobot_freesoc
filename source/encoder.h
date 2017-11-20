@@ -34,13 +34,13 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Includes
  *-------------------------------------------------------------------------------------------------*/    
-#include <project.h>
-
+#include "freesoc.h"
+    
 /*---------------------------------------------------------------------------------------------------
  * Types
  *-------------------------------------------------------------------------------------------------*/    
-typedef float (*GET_ENCODER_FUNC_TYPE)();
-typedef int32 (*GET_RAW_COUNT_FUNC_TYPE)();
+typedef FLOAT (*GET_ENCODER_FUNC_TYPE)();
+typedef INT32 (*GET_RAW_COUNT_FUNC_TYPE)();
 typedef void (*RESET_COUNT_FUNC_TYPE)();
 
 /*---------------------------------------------------------------------------------------------------
@@ -53,28 +53,28 @@ void Encoder_Update();
 void Encoder_LeftReset();
 void Encoder_RightReset();
 
-int32 Encoder_LeftGetRawCount();
-int32 Encoder_RightGetRawCount();
+INT32 Encoder_LeftGetRawCount();
+INT32 Encoder_RightGetRawCount();
 
-float Encoder_LeftGetCntsPerSec();
-float Encoder_RightGetCntsPerSec();
+FLOAT Encoder_LeftGetCntsPerSec();
+FLOAT Encoder_RightGetCntsPerSec();
 
-float Encoder_LeftGetMeterPerSec();
-float Encoder_RightGetMeterPerSec();
+FLOAT Encoder_LeftGetMeterPerSec();
+FLOAT Encoder_RightGetMeterPerSec();
 
-int32 Encoder_LeftGetCount();
-int32 Encoder_RightGetCount();
+INT32 Encoder_LeftGetCount();
+INT32 Encoder_RightGetCount();
 
-float Encoder_LeftGetDeltaCount();
-float Encoder_RightGetDeltaCount();
+FLOAT Encoder_LeftGetDeltaCount();
+FLOAT Encoder_RightGetDeltaCount();
 
-float Encoder_LeftGetDeltaDist();
-float Encoder_RightGetDeltaDist();
+FLOAT Encoder_LeftGetDeltaDist();
+FLOAT Encoder_RightGetDeltaDist();
 
-float Encoder_GetCenterDist();
+FLOAT Encoder_GetCenterDist();
 
-float Encoder_LinearGetVelocity();
-float Encoder_AngularGetVelocity();
+FLOAT Encoder_LinearGetVelocity();
+FLOAT Encoder_AngularGetVelocity();
 
 
 void Encoder_Reset();

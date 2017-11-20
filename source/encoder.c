@@ -39,6 +39,7 @@ SOFTWARE.
 #include "time.h"
 #include "diag.h"
 #include "debug.h"
+#include "consts.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -73,20 +74,20 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Types
  *-------------------------------------------------------------------------------------------------*/    
-typedef int32 (*READ_ENCODER_COUNTER_TYPE)();
-typedef void (*WRITE_ENCODER_COUNTER_TYPE)(int32);
-typedef void (*WRITE_OUTPUT_TYPE)(int16 mmps);
+typedef INT32 (*READ_ENCODER_COUNTER_TYPE)();
+typedef void (*WRITE_ENCODER_COUNTER_TYPE)(INT32);
+typedef void (*WRITE_OUTPUT_TYPE)(INT16 mmps);
 
 typedef struct _encoder_tag
 {
     char name[6];
-    int32 count;
-    int32 last_count;
-    int32 delta_count;
-    float avg_delta_count;
-    float avg_cps;
-    float avg_mps;
-    float delta_dist;
+    INT32 count;
+    INT32 last_count;
+    INT32 delta_count;
+    FLOAT avg_delta_count;
+    FLOAT avg_cps;
+    FLOAT avg_mps;
+    FLOAT delta_dist;
     MOVING_AVERAGE_FLOAT_TYPE delta_count_ma;
     MOVING_AVERAGE_FLOAT_TYPE avg_cps_ma;
     READ_ENCODER_COUNTER_TYPE read_counter;
@@ -159,15 +160,15 @@ static ENCODER_TYPE right_enc = {
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void Encoder_Sample(ENCODER_TYPE *enc, uint32 delta_time)
+static void Encoder_Sample(ENCODER_TYPE *enc, UINT32 delta_time)
 {
-    enc->count = (int32) enc->read_counter();
+    enc->count = (INT32) enc->read_counter();
     enc->delta_count = enc->count - enc->last_count;
     enc->last_count = enc->count;
     
     enc->avg_delta_count = MovingAverageFloat(&enc->delta_count_ma, enc->delta_count);
     
-    float cps = ((enc->avg_delta_count * MS_IN_SEC) / (float) delta_time);
+    FLOAT cps = ((enc->avg_delta_count * MS_IN_SEC) / (FLOAT) delta_time);
     
     enc->avg_cps = MovingAverageFloat(&enc->avg_cps_ma, cps);
     
@@ -236,8 +237,8 @@ void Encoder_Start()
  *-------------------------------------------------------------------------------------------------*/
 void Encoder_Update()
 {
-    static uint32 last_update_time = ENC_SCHED_OFFSET;
-    static uint32 delta_time;
+    static UINT32 last_update_time = ENC_SCHED_OFFSET;
+    static UINT32 delta_time;
     
     ENCODER_UPDATE_START();
     
@@ -266,12 +267,12 @@ void Encoder_RightReset()
     Right_QuadDec_SetCounter(0);
 }
 
-int32 Encoder_LeftGetRawCount()
+INT32 Encoder_LeftGetRawCount()
 {
     return Left_QuadDec_GetCounter();
 }
 
-int32 Encoder_RightGetRawCount()
+INT32 Encoder_RightGetRawCount()
 {
     return Right_QuadDec_GetCounter();
 }
@@ -280,10 +281,10 @@ int32 Encoder_RightGetRawCount()
  * Name: Encoder_LeftGetCntsPerSec
  * Description: Returns the average left encoder count/second
  * Parameters: None
- * Return: float
+ * Return: FLOAT
  * 
  *-------------------------------------------------------------------------------------------------*/
-float Encoder_LeftGetCntsPerSec()
+FLOAT Encoder_LeftGetCntsPerSec()
 {
     return left_enc.avg_cps;
 }
@@ -292,10 +293,10 @@ float Encoder_LeftGetCntsPerSec()
  * Name: Encoder_RightGetCntsPerSec
  * Description: Returns the average right encoder count/second
  * Parameters: None
- * Return: float
+ * Return: FLOAT
  * 
  *-------------------------------------------------------------------------------------------------*/
-float Encoder_RightGetCntsPerSec()
+FLOAT Encoder_RightGetCntsPerSec()
 {
     return right_enc.avg_cps;
 }
@@ -305,10 +306,10 @@ float Encoder_RightGetCntsPerSec()
  * Description: Returns the average center count/second.  Note, this is the count/second as viewed
  *              from the center point of the robot between the left and right wheels.
  * Parameters: None
- * Return: float
+ * Return: FLOAT
  * 
  *-------------------------------------------------------------------------------------------------*/
-float Encoder_GetCntsPerSec()
+FLOAT Encoder_GetCntsPerSec()
 {
     return (left_enc.avg_cps + right_enc.avg_cps) / 2;
 }
@@ -317,10 +318,10 @@ float Encoder_GetCntsPerSec()
  * Name: Encoder_LeftGetMeterPerSec
  * Description: Returns the average left meter/second.
  * Parameters: None
- * Return: float
+ * Return: FLOAT
  * 
  *-------------------------------------------------------------------------------------------------*/
-float Encoder_LeftGetMeterPerSec()
+FLOAT Encoder_LeftGetMeterPerSec()
 {
     return left_enc.avg_mps;
 }
@@ -329,10 +330,10 @@ float Encoder_LeftGetMeterPerSec()
  * Name: Encoder_RightGetMeterPerSec
  * Description: Returns the average right meter/second.
  * Parameters: None
- * Return: float
+ * Return: FLOAT
  * 
  *-------------------------------------------------------------------------------------------------*/
-float Encoder_RightGetMeterPerSec()
+FLOAT Encoder_RightGetMeterPerSec()
 {
     return right_enc.avg_mps;
 }
@@ -342,10 +343,10 @@ float Encoder_RightGetMeterPerSec()
  * Description: Returns the average center meter/second.  Note, this is the meter/second as viewed
  *              from the center point of the robot between the left and right wheels.
  * Parameters: None
- * Return: float
+ * Return: FLOAT
  * 
  *-------------------------------------------------------------------------------------------------*/
-float Encoder_GetMeterPerSec()
+FLOAT Encoder_GetMeterPerSec()
 {
     return (left_enc.avg_mps + right_enc.avg_mps) / 2;
 }
@@ -354,10 +355,10 @@ float Encoder_GetMeterPerSec()
  * Name: Encoder_LeftGetCount
  * Description: Returns the the left encoder count.
  * Parameters: None
- * Return: int32
+ * Return: INT32
  * 
  *-------------------------------------------------------------------------------------------------*/
-int32 Encoder_LeftGetCount()
+INT32 Encoder_LeftGetCount()
 {
     return left_enc.read_counter();
 }
@@ -366,10 +367,10 @@ int32 Encoder_LeftGetCount()
  * Name: Encoder_RightGetCount
  * Description: Returns the right encoder count.
  * Parameters: None
- * Return: int32
+ * Return: INT32
  * 
  *-------------------------------------------------------------------------------------------------*/
-int32 Encoder_RightGetCount()
+INT32 Encoder_RightGetCount()
 {
     return right_enc.read_counter();
 }
@@ -378,10 +379,10 @@ int32 Encoder_RightGetCount()
  * Name: Encoder_LeftGetDeltaCount
  * Description: Returns the left encoder average delta count.
  * Parameters: None
- * Return: float
+ * Return: FLOAT
  * 
  *-------------------------------------------------------------------------------------------------*/
-float Encoder_LeftGetDeltaCount()
+FLOAT Encoder_LeftGetDeltaCount()
 {
     return left_enc.avg_delta_count;
 }
@@ -390,10 +391,10 @@ float Encoder_LeftGetDeltaCount()
  * Name: Encoder_RightGetDeltaCount
  * Description: Returns the right encoder average delta count.
  * Parameters: None
- * Return: float
+ * Return: FLOAT
  * 
  *-------------------------------------------------------------------------------------------------*/
-float Encoder_RightGetDeltaCount()
+FLOAT Encoder_RightGetDeltaCount()
 {
     return right_enc.avg_delta_count;
 }
@@ -402,10 +403,10 @@ float Encoder_RightGetDeltaCount()
  * Name: Encoder_LeftGetDeltaDist
  * Description: Returns the left wheel distance (in meters).
  * Parameters: None
- * Return: float
+ * Return: FLOAT
  * 
  *-------------------------------------------------------------------------------------------------*/
-float Encoder_LeftGetDeltaDist()
+FLOAT Encoder_LeftGetDeltaDist()
 {
     return left_enc.delta_dist;
 }
@@ -414,10 +415,10 @@ float Encoder_LeftGetDeltaDist()
  * Name: Encoder_RightGetDeltaDist
  * Description: Returns the right wheel distance (in meters).
  * Parameters: None
- * Return: float
+ * Return: FLOAT
  * 
  *-------------------------------------------------------------------------------------------------*/
-float Encoder_RightGetDeltaDist()
+FLOAT Encoder_RightGetDeltaDist()
 {
     return right_enc.delta_dist;
 }
@@ -426,10 +427,10 @@ float Encoder_RightGetDeltaDist()
  * Name: Encoder_GetCenterDist
  * Description: Returns the distance (in meters) traveled by the center of the robot.
  * Parameters: None
- * Return: float
+ * Return: FLOAT
  * 
  *-------------------------------------------------------------------------------------------------*/
-float Encoder_GetCenterDist()
+FLOAT Encoder_GetCenterDist()
 {
     return (left_enc.delta_dist + right_enc.delta_dist) / 2;
 }

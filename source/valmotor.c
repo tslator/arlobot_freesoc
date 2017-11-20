@@ -58,8 +58,8 @@ SOFTWARE.
 #include "debug.h"
 #include "pid.h"
 
-#include "leftpid.h"
-#include "rightpid.h"
+#include "pidleft.h"
+#include "pidright.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -85,8 +85,8 @@ typedef struct
     char label[30]; 
     DIR_TYPE direction;
     WHEEL_TYPE wheel;
-    uint16 run_time;
-    float *p_cps;
+    UINT16 run_time;
+    FLOAT *p_cps;
     SET_MOTOR_PWM_FUNC_TYPE set_pwm;
     GET_MOTOR_PWM_FUNC_TYPE get_pwm;
     RAMP_DOWN_PWM_FUNC_TYPE ramp_down;
@@ -99,15 +99,15 @@ typedef struct
  * Variables
  *-------------------------------------------------------------------------------------------------*/
 
-static float val_fwd_cps[VAL_NUM_PROFILE_DATA_POINTS] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-static float val_bwd_cps[VAL_NUM_PROFILE_DATA_POINTS] = {-0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0};
+static FLOAT val_fwd_cps[VAL_NUM_PROFILE_DATA_POINTS] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+static FLOAT val_bwd_cps[VAL_NUM_PROFILE_DATA_POINTS] = {-0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0};
 
 /* Provides an implementation of the Calibration interface */
-static uint8 Init();
-static uint8 Start();
-static uint8 Update();
-static uint8 Stop();
-static uint8 Results();
+static UINT8 Init();
+static UINT8 Start();
+static UINT8 Update();
+static UINT8 Stop();
+static UINT8 Results();
 
 static CALVAL_INTERFACE_TYPE motor_validation = {CAL_INIT_STATE, 
                                             CAL_VALIDATE_STAGE,
@@ -224,7 +224,7 @@ VAL_MOTOR_PARAMS motor_val_params[4] =
         }
     };
 
-static uint8 motor_val_index;
+static UINT8 motor_val_index;
 
 
 /*---------------------------------------------------------------------------------------------------
@@ -235,7 +235,7 @@ static uint8 motor_val_index;
  * Print Functions
  *-------------------------------------------------------------------------------------------------*/
 
-void PrintWheelVelocity(VAL_MOTOR_PARAMS *val_params, float cps)
+void PrintWheelVelocity(VAL_MOTOR_PARAMS *val_params, FLOAT cps)
 {    
     Ser_PutStringFormat("{\"calc cps\":%.3f,\"meas cps\":%.3f,\"diff\":%.3f, \"%% diff\":%.3f}\r\n", 
         cps, val_params->get_cps(), cps - val_params->get_cps(), 100.0 * (cps - val_params->get_cps())/cps);
@@ -252,14 +252,14 @@ static void PrintMotorValidationResults()
 {
 }
 
-static uint8 GetNextCps(VAL_MOTOR_PARAMS *params, float *cps)
+static UINT8 GetNextCps(VAL_MOTOR_PARAMS *params, FLOAT *cps)
 /* Return the next value in the array and increment the index
    Return 0 if the index is in range 0 to N-1
    Return 1 if the index rolls over
    Note: Allow rollover so that the index auto-initializes
  */
 {
-    static uint8 index = 0;
+    static UINT8 index = 0;
     
     if (index == VAL_NUM_PROFILE_DATA_POINTS)
     {
@@ -287,7 +287,7 @@ static uint8 GetNextCps(VAL_MOTOR_PARAMS *params, float *cps)
     return 0;
 }
 
-static void SetNextVelocity(VAL_MOTOR_PARAMS *params, float cps)
+static void SetNextVelocity(VAL_MOTOR_PARAMS *params, FLOAT cps)
 {
     if (params->wheel == WHEEL_LEFT)
     {
@@ -299,12 +299,12 @@ static void SetNextVelocity(VAL_MOTOR_PARAMS *params, float cps)
     }
 }
 
-static uint8 PerformMotorValidation(VAL_MOTOR_PARAMS *val_params)
+static UINT8 PerformMotorValidation(VAL_MOTOR_PARAMS *val_params)
 {
-    static uint8 running = FALSE;
-    static uint32 start_time = 0;
-    static float cps;
-    uint8 result;
+    static UINT8 running = FALSE;
+    static UINT32 start_time = 0;
+    static FLOAT cps;
+    UINT8 result;
 
     if( !running )
     {
@@ -359,12 +359,11 @@ static uint8 PerformMotorValidation(VAL_MOTOR_PARAMS *val_params)
  *              Validation.
  * Parameters: stage - the calibration/validation stage 
  *             params - PID calibration/validation parameters, e.g. direction, run time, etc. 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Init()
+static UINT8 Init()
 {
-    int ii;
     Ser_PutString("\r\nInitialize motor validation\r\n");
 
     Cal_CalcTriangularProfile(VAL_NUM_PROFILE_DATA_POINTS, 
@@ -386,10 +385,10 @@ static uint8 Init()
  * Description: Calibration/Validation interface Start function.  Start Linear Validation.
  * Parameters: stage - the calibration/validation stage 
  *             params - motor validation parameters, e.g. direction, run time, etc. 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Start()
+static UINT8 Start()
 {
     Ser_PutString("\r\nPerforming motor validation\r\n");
     Control_SetLeftRightVelocity(0, 0);
@@ -406,10 +405,10 @@ static uint8 Start()
  *              the termination condition.
  * Parameters: stage - the calibration/validation stage 
  *             params - motor validation parameters, e.g. direction, run time, etc. 
- * Return: uint8 - CAL_OK, CAL_COMPLETE
+ * Return: UINT8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Update()
+static UINT8 Update()
 {
     VAL_MOTOR_PARAMS *val_params = &motor_val_params[motor_val_index];
     
@@ -419,7 +418,7 @@ static uint8 Update()
        Why isn't that happening?
     */
 
-    uint8 result = PerformMotorValidation(val_params);
+    UINT8 result = PerformMotorValidation(val_params);
     if( result == VALIDATION_INTERATION_DONE )
     {
         motor_val_index++;
@@ -438,10 +437,10 @@ static uint8 Update()
  * Description: Calibration/Validation interface Stop function.  Called to stop validation.
  * Parameters: stage - the calibration/validation stage
  *             params - motor validation parameters 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Stop()
+static UINT8 Stop()
 {
     Ser_PutString("Motor validation complete\r\n");
     Control_SetLeftRightVelocityOverride(FALSE);
@@ -457,10 +456,10 @@ static uint8 Stop()
  *              validation results. 
  * Parameters: stage - the calibration/validation stage 
  *             params - motor calibration/validation parameters 
- * Return: uint8 - CAL_OK
+ * Return: UINT8 - CAL_OK
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 Results()
+static UINT8 Results()
 {
     Ser_PutString("\r\nPrinting motor validation results\r\n");
 

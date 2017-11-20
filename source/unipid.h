@@ -32,8 +32,7 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Includes
  *-------------------------------------------------------------------------------------------------*/    
-#include <project.h>
-#include "pid.h"
+#include "freesoc.h"
     
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -52,12 +51,12 @@ void UniPid_Init();
 void UniPid_Start();
 void UniPid_Process();
 
-void UniPid_SetGains(float theta_kp, float theta_ki, float theta_kd, float theta_kf);
-void UniPid_GetGains(float *theta_kp, float *theta_ki, float *theta_kd, float *theta_kf);
+void UniPid_SetGains(FLOAT theta_kp, FLOAT theta_ki, FLOAT theta_kd, FLOAT theta_kf);
+void UniPid_GetGains(FLOAT *theta_kp, FLOAT *theta_ki, FLOAT *theta_kd, FLOAT *theta_kf);
 
 void UniPid_Reset();
-void UniPid_Enable(uint8 enable);
-void UniPid_Bypass(uint8 bypass);
+void UniPid_Enable(BOOL enable);
+void UniPid_Bypass(BOOL bypass);
 
 
 #endif

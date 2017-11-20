@@ -69,7 +69,7 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Types
  *-------------------------------------------------------------------------------------------------*/    
-typedef void (*HB25_ENABLE_FUNC_TYPE)(uint8);
+typedef void (*HB25_ENABLE_FUNC_TYPE)(UINT8);
 typedef void (*START_PWM_FUNC_TYPE)();
 typedef void (*STOP_PWM_FUNC_TYPE)();
 
@@ -213,7 +213,7 @@ void Motor_SetPwm(PWM_TYPE left_pwm, PWM_TYPE right_pwm)
  * Name: Motor_LeftGetPwm
  * Description: Gets the left motor PWM value
  * Parameters: None
- * Return: uint16
+ * Return: UINT16
  * 
  *-------------------------------------------------------------------------------------------------*/
 PWM_TYPE Motor_LeftGetPwm()
@@ -225,7 +225,7 @@ PWM_TYPE Motor_LeftGetPwm()
  * Name: Motor_RightGetPwm
  * Description: Gets the right motor PWM value
  * Parameters: None
- * Return: uint16
+ * Return: UINT16
  * 
  *-------------------------------------------------------------------------------------------------*/
 PWM_TYPE Motor_RightGetPwm()
@@ -278,18 +278,18 @@ void Motor_Stop()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
- static void CalcRampParams(MOTOR_TYPE *motor, uint32 time_ms, PWM_TYPE target, int16 *step, uint32 *time_delay)
+ static void CalcRampParams(MOTOR_TYPE *motor, UINT32 time_ms, PWM_TYPE target, INT16 *step, UINT32 *time_delay)
 {
     #define MIN_PWM_STEP (1)
     #define MAX_PWM_STEP (10)
 
     PWM_TYPE curr_pwm;
-    int16 delta_pwm;
+    INT16 delta_pwm;
     int8 dir_factor;
 
     /* Calculate delta pwm and time_delay */
     curr_pwm = motor->get_pwm();    
-    delta_pwm = ((int16) target) - ((int16) curr_pwm);
+    delta_pwm = ((INT16) target) - ((INT16) curr_pwm);
 
     dir_factor = delta_pwm > 0 ? 1 : -1;
 
@@ -301,7 +301,7 @@ void Motor_Stop()
     else
     {
         *step = constrain(*step, MIN_PWM_STEP, min(abs(delta_pwm), MAX_PWM_STEP));
-        *time_delay = (time_ms * (uint32) *step) /(uint32) abs(delta_pwm);
+        *time_delay = (time_ms * (UINT32) *step) /(UINT32) abs(delta_pwm);
         *step *= dir_factor;
     }
 }
@@ -316,11 +316,11 @@ void Motor_Stop()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
- static void Ramp(MOTOR_TYPE *motor, uint32 time_ms, PWM_TYPE target, PWM_TYPE step)
+ static void Ramp(MOTOR_TYPE *motor, UINT32 time_ms, PWM_TYPE target, PWM_TYPE step)
 {
-    int16 pwm_step;
+    INT16 pwm_step;
     PWM_TYPE pwm;
-    uint32 time_delay;
+    UINT32 time_delay;
 
     pwm_step = step;
     CalcRampParams(motor, time_ms, target, &pwm_step, &time_delay);
@@ -342,7 +342,7 @@ void Motor_Stop()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
- void Motor_LeftRamp(uint32 time, PWM_TYPE target)
+ void Motor_LeftRamp(UINT32 time, PWM_TYPE target)
 {
     Ramp(&left_motor, time, target, 10);
 }
@@ -354,7 +354,7 @@ void Motor_Stop()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
- void Motor_RightRamp(uint32 time, PWM_TYPE target)
+ void Motor_RightRamp(UINT32 time, PWM_TYPE target)
 {
     Ramp(&right_motor, time, target, 10);
 }
@@ -366,7 +366,7 @@ void Motor_Stop()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Motor_LeftRampDown(uint32 time)
+void Motor_LeftRampDown(UINT32 time)
 {
     Ramp(&left_motor, time, PWM_STOP, 10);
 }
@@ -378,7 +378,7 @@ void Motor_LeftRampDown(uint32 time)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Motor_RightRampDown(uint32 time)
+void Motor_RightRampDown(UINT32 time)
 {
     Ramp(&right_motor, time, PWM_STOP, 10);
 }

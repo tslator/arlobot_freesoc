@@ -33,8 +33,8 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Includes
  *-------------------------------------------------------------------------------------------------*/    
-#include <project.h>
-
+#include "freesoc.h"
+    
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/    
@@ -42,9 +42,9 @@ void Odom_Init();
 void Odom_Start();
 void Odom_Update();
 void Odom_Reset();
-float Odom_GetHeading();
-void Odom_GetMeasVelocity(float *linear, float *angular);
-void Odom_GetXYPosition(float * x, float * y);
+FLOAT Odom_GetHeading();
+void Odom_GetMeasVelocity(FLOAT *linear, FLOAT *angular);
+void Odom_GetXYPosition(FLOAT * x, FLOAT * y);
 
 #endif
 

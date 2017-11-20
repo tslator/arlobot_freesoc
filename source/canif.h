@@ -33,7 +33,7 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Includes
  *-------------------------------------------------------------------------------------------------*/    
-#include <project.h>
+#include "freesoc.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -49,21 +49,21 @@ SOFTWARE.
 void CANIF_Init();
 void CANIF_Start();
 
-uint16 CANIF_ReadDeviceControl();
-uint16 CANIF_ReadDebugControl();
-void CANIF_ReadCmdVelocity(float *linear, float *angular, uint32 *timeout);
+UINT16 CANIF_ReadDeviceControl();
+UINT16 CANIF_ReadDebugControl();
+void CANIF_ReadCmdVelocity(FLOAT *linear, FLOAT *angular, UINT32 *timeout);
 
-void CANIF_SetDeviceStatusBit(uint16 bit);
-void CANIF_ClearDeviceStatusBit(uint16 bit);
+void CANIF_SetDeviceStatusBit(UINT16 bit);
+void CANIF_ClearDeviceStatusBit(UINT16 bit);
 
-void CANIF_SetCalibrationStatus(uint16 status);
-void CANIF_SetCalibrationStatusBit(uint16 bit);
-void CANIF_ClearCalibrationStatusBit(uint16 bit);
+void CANIF_SetCalibrationStatus(UINT16 status);
+void CANIF_SetCalibrationStatusBit(UINT16 bit);
+void CANIF_ClearCalibrationStatusBit(UINT16 bit);
 
-void CANIF_WriteSpeed(float linear, float angular);
-void CANIF_WritePosition(float x_position, float y_position);
-void CANIF_WriteHeading(float heading);
-void CANIF_UpdateHeartbeat(uint32 heartbeat);
+void CANIF_WriteSpeed(FLOAT linear, FLOAT angular);
+void CANIF_WritePosition(FLOAT x_position, FLOAT y_position);
+void CANIF_WriteHeading(FLOAT heading);
+void CANIF_UpdateHeartbeat(UINT32 heartbeat);
 
 #endif
 

@@ -30,12 +30,12 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Includes
  *-------------------------------------------------------------------------------------------------*/
-#include <stdio.h>
 #include <stdlib.h>
 #include "cal.h"
 #include "motor.h"
 #include "pwm.h"
 #include "encoder.h"
+#include "control.h"
 #include "utils.h"
 #include "serial.h"
 #include "pid.h"
@@ -49,7 +49,7 @@ SOFTWARE.
 #include "calang.h"
 #include "valang.h"
 #include "debug.h"
-#include "control.h"
+#include "consts.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -109,22 +109,22 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/
-#define LEFT_PID_KP_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.kp)
-#define LEFT_PID_KI_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.ki)
-#define LEFT_PID_KD_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.kd)
-#define LEFT_PID_KF_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.kf)
+#define LEFT_PID_KP_OFFSET (UINT16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.kp)
+#define LEFT_PID_KI_OFFSET (UINT16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.ki)
+#define LEFT_PID_KD_OFFSET (UINT16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.kd)
+#define LEFT_PID_KF_OFFSET (UINT16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->left_gains.kf)
 
-#define RIGHT_PID_KP_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.kp)
-#define RIGHT_PID_KI_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.ki)
-#define RIGHT_PID_KD_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.kd)
-#define RIGHT_PID_KF_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.kf)
+#define RIGHT_PID_KP_OFFSET (UINT16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.kp)
+#define RIGHT_PID_KI_OFFSET (UINT16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.ki)
+#define RIGHT_PID_KD_OFFSET (UINT16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.kd)
+#define RIGHT_PID_KF_OFFSET (UINT16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->right_gains.kf)
 
 #define STATUS_OFFSET NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->status)
 
-#define ANGULAR_BIAS_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias)
-#define LINEAR_BIAS_OFFSET (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->linear_bias)
+#define ANGULAR_BIAS_OFFSET (UINT16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->angular_bias)
+#define LINEAR_BIAS_OFFSET (UINT16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(&p_cal_eeprom->linear_bias)
 
-#define MOTOR_DATA_OFFSET(wheel, dir) (uint16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(WHEEL_DIR_TO_CAL_DATA[wheel][dir])
+#define MOTOR_DATA_OFFSET(wheel, dir) (UINT16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(WHEEL_DIR_TO_CAL_DATA[wheel][dir])
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -142,8 +142,8 @@ static UI_STATE_ENUM ui_state;
 
 static CALVAL_INTERFACE_TYPE *active_calval;
 
-static float left_cmd_velocity;
-static float right_cmd_velocity;
+static FLOAT left_cmd_velocity;
+static FLOAT right_cmd_velocity;
 
 static volatile CAL_EEPROM_TYPE *p_cal_eeprom;
 
@@ -152,6 +152,42 @@ static CAL_DATA_TYPE * WHEEL_DIR_TO_CAL_DATA[2][2];
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------
+ * Name: CpsToPwm
+ * Description: Converts count/sec to PWM 
+ *              This routine searches the count/sec array (cps_data) to find values immediately less 
+ *              than and greater than the specified count/sec value (cps) to obtain the corresponding
+ *              indicies - upper/lower.  The indicies are then used to interpolate a PWM value.
+ *  
+ * Parameters: cps       - the specified count/sec
+ *             cps_data  - an array of count/sec values to be searched
+ *             pwm_data  - an array of pwm values for selection
+ *             data_size - the number of values in each array
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+static PWM_TYPE CpsToPwm(INT16 cps, INT16 *cps_data, UINT16 *pwm_data, UINT8 data_size)
+{   
+    INT16 pwm = (INT16) PWM_STOP;
+    UINT8 lower = 0;
+    UINT8 upper = 0;
+
+    if (cps > 0 || cps < 0)
+    {
+        BinaryRangeSearch(cps, cps_data, data_size, &lower, &upper);
+        
+        pwm = Interpolate(cps, cps_data[lower], cps_data[upper], pwm_data[lower], pwm_data[upper]);
+
+        return (PWM_TYPE) constrain(pwm, MIN_PWM_VALUE, MAX_PWM_VALUE);
+    }
+
+    //Ser_PutStringFormat("CpsToPwm: %d -> %u\r\n", cps, pwm);
+
+    return (PWM_TYPE) pwm;
+}
+
+
+
 
 /*---------------------------------------------------------------------------------------------------
  * Calibration Print Routines 
@@ -166,7 +202,7 @@ static CAL_DATA_TYPE * WHEEL_DIR_TO_CAL_DATA[2][2];
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
- void Cal_PrintAllMotorParams(uint8 as_json)
+ void Cal_PrintAllMotorParams(BOOL as_json)
 {
     Cal_PrintSamples(WHEEL_LEFT, DIR_BACKWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD], as_json);
     Cal_PrintSamples(WHEEL_LEFT, DIR_FORWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD], as_json);
@@ -183,7 +219,7 @@ static CAL_DATA_TYPE * WHEEL_DIR_TO_CAL_DATA[2][2];
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Cal_PrintSamples(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *cal_data, uint8 as_json)
+void Cal_PrintSamples(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *cal_data, UINT8 as_json)
 {
     if (as_json)
     {
@@ -225,7 +261,7 @@ void Cal_PrintSamples(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *cal_data, u
     }
     else
     {
-        uint8 ii;
+        UINT8 ii;
         
         Ser_PutStringFormat("%s-%s - min/max: %d/%d\r\n", 
                             wheel == WHEEL_LEFT ? "Left" : "Right", 
@@ -245,11 +281,11 @@ void Cal_PrintSamples(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *cal_data, u
  * Name: Cal_PrintPidGains
  * Description: Prints the PID gains.  Called from the CalPid and Cal modules.
  * Parameters: wheel - string containing the pid identifier, e.g., left pid or right pid. 
- *             gains - an array of float values corresponding to Kp, Ki, and Kd. 
+ *             gains - an array of FLOAT values corresponding to Kp, Ki, and Kd. 
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Cal_PrintPidGains(WHEEL_TYPE wheel, float *gains, uint8 as_json)
+void Cal_PrintPidGains(WHEEL_TYPE wheel, FLOAT *gains, UINT8 as_json)
 {
     if (as_json)
     {
@@ -268,7 +304,7 @@ void Cal_PrintPidGains(WHEEL_TYPE wheel, float *gains, uint8 as_json)
     }
 }
 
-void Cal_PrintStatus(uint8 as_json)
+void Cal_PrintStatus(UINT8 as_json)
 {
     if (as_json)
     {
@@ -287,7 +323,7 @@ void Cal_PrintStatus(uint8 as_json)
  * Parameters: None 
  * Return: None
  *-------------------------------------------------------------------------------------------------*/
-void Cal_PrintBias(uint8 as_json)
+void Cal_PrintBias(UINT8 as_json)
 {
     if (as_json)
     {
@@ -309,12 +345,12 @@ void Cal_PrintBias(uint8 as_json)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
- static float LeftTarget()
+ static FLOAT LeftTarget()
  {
      return left_cmd_velocity;
  }
  
- static float RightTarget()
+ static FLOAT RightTarget()
  {
      return right_cmd_velocity;
  }
@@ -327,21 +363,21 @@ void Cal_PrintBias(uint8 as_json)
   * Return: None
   * 
   *-------------------------------------------------------------------------------------------------*/
-void Cal_ClearCalibrationStatusBit(uint16 bit)
+void Cal_ClearCalibrationStatusBit(UINT16 bit)
 {
-     uint16 status = p_cal_eeprom->status &= ~bit;
+     UINT16 status = p_cal_eeprom->status &= ~bit;
      Nvstore_WriteUint16(status, STATUS_OFFSET);
      Control_ClearCalibrationStatusBit(bit);
 }
  
- void Cal_SetCalibrationStatusBit(uint16 bit)
+ void Cal_SetCalibrationStatusBit(UINT16 bit)
  {
-     uint16 status = p_cal_eeprom->status | bit;
+     UINT16 status = p_cal_eeprom->status | bit;
      Nvstore_WriteUint16(status, STATUS_OFFSET);
      Control_SetCalibrationStatusBit(bit);   
  }
  
- uint16 Cal_GetCalibrationStatusBit(uint16 bit)
+ UINT16 Cal_GetCalibrationStatusBit(UINT16 bit)
  {
      return p_cal_eeprom->status & bit;
  }
@@ -463,7 +499,7 @@ static void DisplayMenu(CAL_STAGE_TYPE stage)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void ProcessSettingsCmd(uint8 cmd)
+static void ProcessSettingsCmd(UINT8 cmd)
 {
     switch (cmd)
     {
@@ -487,8 +523,8 @@ static void ProcessSettingsCmd(uint8 cmd)
             
         case DISP_PID_CMD:
             Ser_PutString("\r\nDisplaying all PID gains: left, right\r\n");
-            Cal_PrintPidGains(WHEEL_LEFT, (float *) &p_cal_eeprom->left_gains, FALSE);
-            Cal_PrintPidGains(WHEEL_RIGHT, (float *) &p_cal_eeprom->right_gains, FALSE);
+            Cal_PrintPidGains(WHEEL_LEFT, (FLOAT *) &p_cal_eeprom->left_gains, FALSE);
+            Cal_PrintPidGains(WHEEL_RIGHT, (FLOAT *) &p_cal_eeprom->right_gains, FALSE);
             Ser_PutString("\r\n");
 
             DisplaySettingsMenu();
@@ -507,8 +543,8 @@ static void ProcessSettingsCmd(uint8 cmd)
 
             Cal_PrintAllMotorParams(FALSE);
 
-            Cal_PrintPidGains(WHEEL_LEFT, (float *) &p_cal_eeprom->left_gains, FALSE);
-            Cal_PrintPidGains(WHEEL_RIGHT, (float *) &p_cal_eeprom->right_gains, FALSE);
+            Cal_PrintPidGains(WHEEL_LEFT, (FLOAT *) &p_cal_eeprom->left_gains, FALSE);
+            Cal_PrintPidGains(WHEEL_RIGHT, (FLOAT *) &p_cal_eeprom->right_gains, FALSE);
             Cal_PrintStatus(FALSE);
             Cal_PrintBias(FALSE);
 
@@ -520,8 +556,8 @@ static void ProcessSettingsCmd(uint8 cmd)
         
             Cal_PrintAllMotorParams(TRUE);
 
-            Cal_PrintPidGains(WHEEL_LEFT, (float *) &p_cal_eeprom->left_gains, TRUE);
-            Cal_PrintPidGains(WHEEL_RIGHT, (float *) &p_cal_eeprom->right_gains, TRUE);
+            Cal_PrintPidGains(WHEEL_LEFT, (FLOAT *) &p_cal_eeprom->left_gains, TRUE);
+            Cal_PrintPidGains(WHEEL_RIGHT, (FLOAT *) &p_cal_eeprom->right_gains, TRUE);
             Cal_PrintStatus(TRUE);
             Cal_PrintBias(TRUE);
 
@@ -541,7 +577,7 @@ static void ProcessSettingsCmd(uint8 cmd)
  * Return: numeric command
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 GetTopLevelCommand(char* cmd)
+static UINT8 GetTopLevelCommand(char* cmd)
 {
     switch (cmd[0])
     {
@@ -572,9 +608,9 @@ static uint8 GetTopLevelCommand(char* cmd)
  * Return: numeric command
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 GetCalibrationCommand(char* cmd)
+static UINT8 GetCalibrationCommand(char* cmd)
 {
-    uint8 num_cmd;
+    UINT8 num_cmd;
 
     if (cmd[0] == EXIT_CMD_CHR || cmd[0] == EXIT_CMD_UCHR)
     {
@@ -598,9 +634,9 @@ static uint8 GetCalibrationCommand(char* cmd)
  * Return: numeric command
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 GetValidationCommand(char* cmd)
+static UINT8 GetValidationCommand(char* cmd)
 {
-    uint8 num_cmd;
+    UINT8 num_cmd;
 
     if (cmd[0] == EXIT_CMD_CHR || cmd[0] == EXIT_CMD_UCHR)
     {
@@ -624,9 +660,9 @@ static uint8 GetValidationCommand(char* cmd)
  * Return: numeric command
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 GetSettingsCommand(char* cmd)
+static UINT8 GetSettingsCommand(char* cmd)
 {
-    uint8 num_cmd;
+    UINT8 num_cmd;
 
     if (cmd[0] == EXIT_CMD_CHR || cmd[0] == EXIT_CMD_UCHR)
     {
@@ -650,11 +686,11 @@ static uint8 GetSettingsCommand(char* cmd)
  * Return: the command entered on the serial port.
  * 
  *-------------------------------------------------------------------------------------------------*/
-static uint8 GetCommand(uint8 cmd_class)
+static UINT8 GetCommand(UINT8 cmd_class)
 {
     static char value[2] = {NULL_CMD, '\r'};
     int result;
-    uint8 cmd = NULL_CMD;
+    UINT8 cmd = NULL_CMD;
 
     result = Ser_ReadLine(value, true);
     if (result != 0)
@@ -699,7 +735,7 @@ static uint8 GetCommand(uint8 cmd_class)
  * Return: the specified calibration type; otherwise, NULL.
  * 
  *-------------------------------------------------------------------------------------------------*/
-static CALVAL_INTERFACE_TYPE* GetCalibration(uint8 cmd)
+static CALVAL_INTERFACE_TYPE* GetCalibration(UINT8 cmd)
 {
     switch (cmd)
     {
@@ -733,7 +769,7 @@ static CALVAL_INTERFACE_TYPE* GetCalibration(uint8 cmd)
  * Return: the specified validation type; otherwise, NULL.
  * 
  *-------------------------------------------------------------------------------------------------*/
-static CALVAL_INTERFACE_TYPE* GetValidation(uint8 cmd)
+static CALVAL_INTERFACE_TYPE* GetValidation(UINT8 cmd)
 {
     switch (cmd)
     {
@@ -812,7 +848,7 @@ static void HandleError()
  *-------------------------------------------------------------------------------------------------*/
 static void Process()
 {
-    uint8 result;
+    UINT8 result;
     
     switch (active_calval->state)
     {
@@ -934,7 +970,7 @@ void Cal_Init()
  *-------------------------------------------------------------------------------------------------*/
 void Cal_Start()
 {
-    uint16 status = p_cal_eeprom->status;
+    UINT16 status = p_cal_eeprom->status;
     /* Uncomment for debugging
     Cal_Clear();
     */
@@ -978,7 +1014,7 @@ void Cal_Update()
         STATE_EXIT - display exit menu and transitions to STATE_INIT
  */
 {
-    uint8 cmd = NULL_CMD;
+    UINT8 cmd = NULL_CMD;
     
     switch (ui_state)
     {
@@ -1012,7 +1048,7 @@ void Cal_Update()
             {
                 if (!active_calval)
                 {
-                    uint8 cal_val = (ui_state == UI_STATE_CALIBRATION) ? CMD_CALIBRATION : CMD_VALIDATION;
+                    UINT8 cal_val = (ui_state == UI_STATE_CALIBRATION) ? CMD_CALIBRATION : CMD_VALIDATION;
                     cmd = GetCommand(cal_val);
     
                     active_calval = (ui_state == UI_STATE_CALIBRATION) ? GetCalibration(cmd) : GetValidation(cmd);
@@ -1056,12 +1092,12 @@ void Cal_Update()
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Cal_ReadResponse
- * Description: Read a floating point value from the serial port. 
+ * Description: Read a FLOATing point value from the serial port. 
  * Parameters: None
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-float Cal_ReadResponse()
+FLOAT Cal_ReadResponse()
 {
     static char digits[10] = {'0'};
     int result;
@@ -1118,7 +1154,7 @@ CAL_PID_TYPE* Cal_GetPidGains(PID_ENUM_TYPE pid)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Cal_SetLeftRightVelocity(float left, float right)
+void Cal_SetLeftRightVelocity(FLOAT left, FLOAT right)
 {
     left_cmd_velocity = left;
     right_cmd_velocity = right;
@@ -1132,9 +1168,9 @@ void Cal_SetLeftRightVelocity(float left, float right)
  * Return: PWM_TYPE - PWM
  * 
  *-------------------------------------------------------------------------------------------------*/
-PWM_TYPE Cal_CpsToPwm(WHEEL_TYPE wheel, float cps)
+PWM_TYPE Cal_CpsToPwm(WHEEL_TYPE wheel, FLOAT cps)
 {
-    static uint8 send_once = 0;
+    static UINT8 send_once = 0;
     PWM_TYPE pwm;
     
     
@@ -1147,8 +1183,8 @@ PWM_TYPE Cal_CpsToPwm(WHEEL_TYPE wheel, float cps)
     
         CAL_DATA_TYPE *p_cal_data = WHEEL_DIR_TO_CAL_DATA[wheel][cps >= 0 ? 0 : 1];
         
-        cps = constrain((int16) cps, p_cal_data->cps_min, p_cal_data->cps_max);
-        pwm = CpsToPwm((int16) cps, &p_cal_data->cps_data[0], &p_cal_data->pwm_data[0], CAL_DATA_SIZE);
+        cps = constrain((INT16) cps, p_cal_data->cps_min, p_cal_data->cps_max);
+        pwm = CpsToPwm((INT16) cps, &p_cal_data->cps_data[0], &p_cal_data->pwm_data[0], CAL_DATA_SIZE);
     }
     else
     {
@@ -1175,13 +1211,13 @@ void Cal_Clear()
     Cal_ClearCalibrationStatusBit(CAL_PID_BIT);
 }
 
-void Cal_CalcForwardOperatingRange(float low_percent, float high_percent, float *start, float *stop)
+void Cal_CalcForwardOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT *start, FLOAT *stop)
 {        
-    float tmp_start;
-    float tmp_stop;
-    int16 left_forward_cps_max;
-    int16 right_forward_cps_max;
-    int16 forward_cps_max;
+    FLOAT tmp_start;
+    FLOAT tmp_stop;
+    INT16 left_forward_cps_max;
+    INT16 right_forward_cps_max;
+    INT16 forward_cps_max;
 
     /* Get the min/max forward values for each motor */
     left_forward_cps_max = WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD]->cps_max;
@@ -1190,22 +1226,21 @@ void Cal_CalcForwardOperatingRange(float low_percent, float high_percent, float 
     /* Select the max of the max */
     forward_cps_max = min(left_forward_cps_max, right_forward_cps_max);
 
-    tmp_start = low_percent * (float) forward_cps_max;
-    tmp_stop = high_percent * (float) forward_cps_max;
+    tmp_start = low_percent * (FLOAT) forward_cps_max;
+    tmp_stop = high_percent * (FLOAT) forward_cps_max;
 
     *start = tmp_start;
     *stop = tmp_stop;
 
 }
 
-void Cal_CalcBackwardOperatingRange(float low_percent, float high_percent, float *start, float *stop)
+void Cal_CalcBackwardOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT *start, FLOAT *stop)
 {
-    float tmp_start;
-    float tmp_stop;
-    int16 left_backward_cps_max;
-    int16 right_backward_cps_max;
-    int16 backward_cps_max;
-    int ii;
+    FLOAT tmp_start;
+    FLOAT tmp_stop;
+    INT16 left_backward_cps_max;
+    INT16 right_backward_cps_max;
+    INT16 backward_cps_max;
 
     /* Get the min/max forward values for each motor */
     left_backward_cps_max = p_cal_eeprom->left_motor_bwd.cps_min;
@@ -1214,8 +1249,8 @@ void Cal_CalcBackwardOperatingRange(float low_percent, float high_percent, float
     /* Select the min of the max */
     backward_cps_max = min(left_backward_cps_max, right_backward_cps_max);
 
-    tmp_start = low_percent * (float) backward_cps_max;
-    tmp_stop = high_percent * (float) backward_cps_max;
+    tmp_start = low_percent * (FLOAT) backward_cps_max;
+    tmp_stop = high_percent * (FLOAT) backward_cps_max;
 
     *start = tmp_start;
     *stop = tmp_stop;
@@ -1233,14 +1268,14 @@ void Cal_CalcBackwardOperatingRange(float low_percent, float high_percent, float
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_limit, float *forward_profile, float *backward_profile)
+void Cal_CalcTriangularProfile(UINT8 num_points, FLOAT lower_limit, FLOAT upper_limit, FLOAT *forward_profile, FLOAT *backward_profile)
 /* This routine calculates a series of count/second values in a triangle profile (slow, fast, slow).  It uses the motor
    calibration data to determine a range of forward and reverse values for each wheel.  The routine is called from
    motor validation to confirm that motor calibration conversion from count/second to pwm is reasonably accurate.
  */
 {
-    float start;
-    float stop;
+    FLOAT start;
+    FLOAT stop;
     int ii;
 
     for (ii = 0; ii < num_points; ++ii)
@@ -1279,9 +1314,9 @@ void Cal_CalcTriangularProfile(uint8 num_points, float lower_limit, float upper_
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-float Cal_GetLinearBias()
+FLOAT Cal_GetLinearBias()
 {
-    float linear_bias;
+    FLOAT linear_bias;
     
     /* Set the default to 1.0, in case, linear bias has not been calibrated
      */
@@ -1302,9 +1337,9 @@ float Cal_GetLinearBias()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-float Cal_GetAngularBias()
+FLOAT Cal_GetAngularBias()
 {
-    float angular_bias;
+    FLOAT angular_bias;
     
     angular_bias = CAL_ANGULAR_BIAS_DEFAULT;
     if (CAL_ANGULAR_BIT & p_cal_eeprom->status)
@@ -1314,24 +1349,24 @@ float Cal_GetAngularBias()
     return angular_bias;
 }
 
-void Cal_SetAngularBias(float bias)
+void Cal_SetAngularBias(FLOAT bias)
 {
     bias = constrain(bias, CAL_ANGULAR_BIAS_MIN, CAL_ANGULAR_BIAS_MAX);
     Nvstore_WriteFloat(bias, ANGULAR_BIAS_OFFSET);
 }
 
-void Cal_SetLinearBias(float bias)
+void Cal_SetLinearBias(FLOAT bias)
 {
     bias = constrain(bias, CAL_LINEAR_BIAS_MIN, CAL_LINEAR_BIAS_MAX);
     Nvstore_WriteFloat(bias, LINEAR_BIAS_OFFSET);
 }
 
-uint16 Cal_GetStatus()
+UINT16 Cal_GetStatus()
 {
     return p_cal_eeprom->status;
 }
 
-void Cal_SetGains(PID_ENUM_TYPE pid, float* gains)
+void Cal_SetGains(PID_ENUM_TYPE pid, FLOAT* gains)
 {
     switch (pid)
     {
@@ -1359,7 +1394,7 @@ void Cal_SetGains(PID_ENUM_TYPE pid, float* gains)
 void Cal_SetMotorData(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *data)
 {
     /* Write the calibration to non-volatile storage */
-    Nvstore_WriteBytes((uint8 *) data, sizeof(*data), MOTOR_DATA_OFFSET(wheel, dir));
+    Nvstore_WriteBytes((UINT8 *) data, sizeof(*data), MOTOR_DATA_OFFSET(wheel, dir));
 }
 
 CAL_DATA_TYPE* Cal_GetMotorData(WHEEL_TYPE wheel, DIR_TYPE dir)

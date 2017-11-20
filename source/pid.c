@@ -39,12 +39,13 @@ SOFTWARE.
 #include "motor.h"
 #include "odom.h"
 #include "pid.h"
-#include "angpid.h"
-#include "leftpid.h"
-#include "rightpid.h"
+#include "pidang.h"
+#include "pidleft.h"
+#include "pidright.h"
 #include "utils.h"
 #include "debug.h"
 #include "diag.h"
+#include "consts.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -58,6 +59,7 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/    
+#define PID_SAMPLE_TIME_MS  SAMPLE_TIME_MS(PID_SAMPLE_RATE)
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -145,8 +147,8 @@ void Pid_Start()
  *-------------------------------------------------------------------------------------------------*/
 void Pid_Update()
 {
-    static uint32 last_update_time = PID_SCHED_OFFSET;
-    uint32 delta_time;
+    static UINT32 last_update_time = PID_SCHED_OFFSET;
+    UINT32 delta_time;
     
     PID_UPDATE_START();
 
@@ -214,30 +216,30 @@ void Pid_Reset()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Pid_Enable(uint8 left, uint8 right, uint8 uni)
+void Pid_Enable(BOOL left, BOOL right, BOOL uni)
 {
     //AngPid_Enable(uni);
     LeftPid_Enable(left);
     RightPid_Enable(right);
 }
 
-void Pid_Bypass(uint8 left, uint8 right, uint8 uni)
+void Pid_Bypass(BOOL left, BOOL right, BOOL uni)
 {
     LeftPid_Bypass(left);
     RightPid_Bypass(right);
     //AngPid_Bypass(uni);
 }
 
-void Pid_BypassAll(uint8 bypass)
+void Pid_BypassAll(BOOL bypass)
 {
     //AngPid_Bypass(bypass);
     LeftPid_Bypass(bypass);
     RightPid_Bypass(bypass);
 }
 
-uint8 Pid_SetGains(PIDControl *p_pid, CAL_PID_TYPE *p_gains)
+BOOL Pid_SetGains(PIDControl *p_pid, CAL_PID_TYPE *p_gains)
 {
-    uint8 result = FALSE;
+    BOOL result = FALSE;
 
     // Note: the PID gains are stored in EEPROM.  The EEPROM cannot be accessed until the EEPROM
     // component is started which is handled in the Nvstore module.  

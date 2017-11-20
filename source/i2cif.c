@@ -97,30 +97,30 @@ SOFTWARE.
 /* Define the portion of the I2C Slave that Read/Write */
 typedef struct
 {
-    uint16 device_control;
-    uint16 debug_control;
-    float  linear_cmd_velocity;
-    float  angular_cmd_velocity;
+    UINT16 device_control;
+    UINT16 debug_control;
+    FLOAT  linear_cmd_velocity;
+    FLOAT  angular_cmd_velocity;
 } __attribute__ ((packed)) READWRITE_TYPE;
 
 /* Define the odometry structure for communicating the position, heading and velocity of the wheel 
  */
 typedef struct
 {
-    float linear_velocity;
-    float angular_velocity;
-    float x_position;
-    float y_position;
-    float heading;
+    FLOAT linear_velocity;
+    FLOAT angular_velocity;
+    FLOAT x_position;
+    FLOAT y_position;
+    FLOAT heading;
 } __attribute__ ((packed)) ODOMETRY;
 
 /* Define the I2C Slave that Read Only */
 typedef struct
 {
-    uint16     device_status;
-    uint16     calibration_status;
+    UINT16     device_status;
+    UINT16     calibration_status;
     ODOMETRY   odom;
-    uint32     heartbeat;
+    UINT32     heartbeat;
 } __attribute__ ((packed)) READONLY_TYPE;
 
 /* Define the I2C Slave data interface */
@@ -136,21 +136,21 @@ typedef struct _read_write
 {
     union 
     {
-        uint8 bytes[8];
-        uint16 words[4];
-        uint32 longs[2];
-        float floats[2];
+        UINT8 bytes[8];
+        UINT16 words[4];
+        UINT32 longs[2];
+        FLOAT FLOATs[2];
     };
 } __attribute__ ((packed)) I2C_TEST_READ_WRITE;
 
 typedef struct _read_only
 {
-    uint32 rd1_busy;
-    uint32 busy;
-    uint32 err;
-    uint32 read1;
-    uint32 wr1_busy;
-    uint32 write1;
+    UINT32 rd1_busy;
+    UINT32 busy;
+    UINT32 err;
+    UINT32 read1;
+    UINT32 wr1_busy;
+    UINT32 write1;
 } __attribute__ ((packed)) I2C_TEST_READ_ONLY;
 
 typedef struct
@@ -165,12 +165,12 @@ static volatile I2C_TEST i2c_test;
 /* Define the I2C Slave buffer (as seen by the slave on this Psoc) */
 static volatile I2C_DATASTRUCT i2c_buf;
 
-static uint32 last_cmd_velocity_time;
-static uint32 cmd_velocity_timeout;
+static UINT32 last_cmd_velocity_time;
+static UINT32 cmd_velocity_timeout;
 
-static uint16 i2c_debug;
-static uint16 calibration_status;
-static uint16 device_status;
+static UINT16 i2c_debug;
+static UINT16 calibration_status;
+static UINT16 device_status;
 
 
 /*--------------------------------------------------------------------------------------------------
@@ -210,9 +210,9 @@ void I2CIF_Start()
      */
     EZI2C_Slave_Start();
 #ifdef TEST_I2C    
-    EZI2C_Slave_SetBuffer1(sizeof(i2c_test), sizeof(i2c_test.read_write), (volatile uint8 *) &i2c_test);
+    EZI2C_Slave_SetBuffer1(sizeof(i2c_test), sizeof(i2c_test.read_write), (volatile UINT8 *) &i2c_test);
 #else
-    EZI2C_Slave_SetBuffer1(sizeof(i2c_buf), sizeof(i2c_buf.read_write), (volatile uint8 *) &i2c_buf);
+    EZI2C_Slave_SetBuffer1(sizeof(i2c_buf), sizeof(i2c_buf.read_write), (volatile UINT8 *) &i2c_buf);
 #endif
 }
 
@@ -223,9 +223,9 @@ void I2CIF_Start()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-uint16 I2CIF_ReadDeviceControl()
+UINT16 I2CIF_ReadDeviceControl()
 {
-    uint16 value;
+    UINT16 value;
 
     value = i2c_buf.read_write.device_control;
     i2c_buf.read_write.device_control = 0;
@@ -240,7 +240,7 @@ uint16 I2CIF_ReadDeviceControl()
  * Return: Control value
  * 
  *-------------------------------------------------------------------------------------------------*/
-uint16 I2CIF_ReadDebugControl()
+UINT16 I2CIF_ReadDebugControl()
 {
     return i2c_buf.read_write.debug_control;
 }
@@ -252,7 +252,7 @@ uint16 I2CIF_ReadDebugControl()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void I2CIF_ReadCmdVelocity(float *linear, float *angular, uint32 *timeout)
+void I2CIF_ReadCmdVelocity(FLOAT *linear, FLOAT *angular, UINT32 *timeout)
 {
     /* GetActivity() returns the status of the I2C activity: write, read, busy, or error
        Wrt to I2C writes, only the first 12 bytes can be written to.  Of those 12 bytes, 2 are for the control register,
@@ -267,7 +267,7 @@ void I2CIF_ReadCmdVelocity(float *linear, float *angular, uint32 *timeout)
        the timeout exceeded the maximum timeout, we set the commanded velocity to 0.
        
      */
-    uint8 i2c_write_occurred = EZI2C_Slave_GetActivity();
+    UINT8 i2c_write_occurred = EZI2C_Slave_GetActivity();
     
     if (i2c_write_occurred & EZI2C_Slave_STATUS_WRITE1)
     {
@@ -292,7 +292,7 @@ void I2CIF_ReadCmdVelocity(float *linear, float *angular, uint32 *timeout)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void I2CIF_SetDeviceStatusBit(uint16 bit)
+void I2CIF_SetDeviceStatusBit(UINT16 bit)
 {
     device_status |= bit;
     i2c_buf.read_only.device_status = device_status;
@@ -305,7 +305,7 @@ void I2CIF_SetDeviceStatusBit(uint16 bit)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void I2CIF_ClearDeviceStatusBit(uint16 bit)
+void I2CIF_ClearDeviceStatusBit(UINT16 bit)
 {
     device_status &= ~bit;
     i2c_buf.read_only.device_status = device_status;
@@ -319,7 +319,7 @@ void I2CIF_ClearDeviceStatusBit(uint16 bit)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void I2CIF_SetCalibrationStatus(uint16 status)
+void I2CIF_SetCalibrationStatus(UINT16 status)
 {
     calibration_status = status;
     i2c_buf.read_only.calibration_status = calibration_status;
@@ -332,7 +332,7 @@ void I2CIF_SetCalibrationStatus(uint16 status)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void I2CIF_SetCalibrationStatusBit(uint16 bit)
+void I2CIF_SetCalibrationStatusBit(UINT16 bit)
 {
     calibration_status |= bit;
     i2c_buf.read_only.calibration_status = calibration_status;
@@ -345,25 +345,25 @@ void I2CIF_SetCalibrationStatusBit(uint16 bit)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void I2CIF_ClearCalibrationStatusBit(uint16 bit)
+void I2CIF_ClearCalibrationStatusBit(UINT16 bit)
 {
     calibration_status &= ~bit;
     i2c_buf.read_only.calibration_status = calibration_status;
 }
 
-void I2CIF_WriteSpeed(float linear, float angular)
+void I2CIF_WriteSpeed(FLOAT linear, FLOAT angular)
 {
     i2c_buf.read_only.odom.linear_velocity = linear;
     i2c_buf.read_only.odom.angular_velocity = angular;
 }
 
-void I2CIF_WritePosition(float x_position, float y_position)
+void I2CIF_WritePosition(FLOAT x_position, FLOAT y_position)
 {
     i2c_buf.read_only.odom.x_position = x_position;
     i2c_buf.read_only.odom.y_position = y_position;
 }
 
-void I2CIF_WriteHeading(float heading)
+void I2CIF_WriteHeading(FLOAT heading)
 {
     i2c_buf.read_only.odom.heading = heading;
 }
@@ -375,7 +375,7 @@ void I2CIF_WriteHeading(float heading)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void I2CIF_UpdateHeartbeat(uint32 heartbeat)
+void I2CIF_UpdateHeartbeat(UINT32 heartbeat)
 {
     i2c_buf.read_only.heartbeat = heartbeat;
 }
@@ -383,7 +383,7 @@ void I2CIF_UpdateHeartbeat(uint32 heartbeat)
 #ifdef TEST_I2C
 void I2CIF_Test()
 {
-    uint32 activity = EZI2C_Slave_GetActivity();
+    UINT32 activity = EZI2C_Slave_GetActivity();
     
     if (activity & EZI2C_Slave_STATUS_RD1BUSY)
     {
