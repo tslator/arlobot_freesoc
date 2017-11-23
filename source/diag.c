@@ -90,7 +90,7 @@ void Diag_Start()
     UINT32 now;
     
     now = millis();
-    delta_time = now - last_heartbeat_time;    
+    delta_time = now - last_heartbeat_time;
     // Increment a counter that can be read over I2C
     if (delta_time > DIAG_HEARTBEAT_MS)
     {

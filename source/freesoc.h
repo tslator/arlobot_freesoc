@@ -16,11 +16,9 @@
 #include <assert.h>
 #endif
 
-#ifndef FREESOC_TEST
 #ifndef PROJECT_INCLUDE
 #define PROJECT_INCLUDE
 #include <project.h>
-#endif
 #endif
 
 #ifndef TYPES_INCLUDE
@@ -32,21 +30,5 @@
 #define CONFIG_INCLUDE
 #include "config.h"
 #endif
-
-#ifdef FREESOC_TEST
-#include <stdlib.h>
-#define ASSERT(test, msg)   do \
-                            { \
-                                if (test == 0) \
-                                { \
-                                    printf("ASSERT MSG: %s\r\n", msg); \
-                                } \
-                            } while (0)
-
-#else    
-#define ASSERT(test, msg)   assert(test);
-#endif    
-
-
 
 #endif

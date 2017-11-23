@@ -157,12 +157,12 @@ void Motor_Start()
        All that is necessary in software is to enable power to the HB-25 motor controller and start the PWM.  
        The PWM will be enabled on to the HB-25 signal pin when the HB-25 indicates initialization is complete.
      */
-    left_motor.enable(HB25_ENABLE);    
+    left_motor.enable(HB25_ENABLE);
     left_motor.start();
     left_motor.set_pwm(PWM_STOP);
     right_motor.enable(HB25_ENABLE);
     right_motor.start();
-    right_motor.set_pwm(PWM_STOP);    
+    right_motor.set_pwm(PWM_STOP);
     
     Control_SetDeviceStatusBit(STATUS_HB25_CNTRL_INIT_BIT);
 }
@@ -285,10 +285,10 @@ void Motor_Stop()
 
     PWM_TYPE curr_pwm;
     INT16 delta_pwm;
-    int8 dir_factor;
+    INT8 dir_factor;
 
     /* Calculate delta pwm and time_delay */
-    curr_pwm = motor->get_pwm();    
+    curr_pwm = motor->get_pwm();
     delta_pwm = ((INT16) target) - ((INT16) curr_pwm);
 
     dir_factor = delta_pwm > 0 ? 1 : -1;

@@ -30,10 +30,10 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Includes
  *-------------------------------------------------------------------------------------------------*/    
+#include <math.h>
 #include "odom.h"
 #include "config.h"
 #include "encoder.h"
-#include "math.h"
 #include "time.h"
 #include "utils.h"
 #include "diag.h"
