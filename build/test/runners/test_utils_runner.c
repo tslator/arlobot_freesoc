@@ -28,6 +28,7 @@
 #include <setjmp.h>
 #include <stdio.h>
 #include "mock_time.h"
+#include "mock_assertion.h"
 
 int GlobalExpectCount;
 int GlobalVerifyOrder;
@@ -36,17 +37,25 @@ char* GlobalOrderError;
 /*=======External Functions This Runner Calls=====*/
 extern void setUp(void);
 extern void tearDown(void);
-extern void test_WhenTwoBytesValue_ThenUint16Value(void);
-extern void test_WhenTwoBytesValue_ThenInt16Value(void);
-extern void test_WhenFourBytesValue_ThenUint32Value(void);
-extern void test_WhenFourBytesValue_ThenInt32Value(void);
-extern void test_WhenUint32Value_ThenFourBytesValue(void);
-extern void test_WhenInt32Value_ThenFourBytesValue(void);
-extern void test_WhenFloatValue_ThenFourBytesValue(void);
+extern void test_WhenTwoBytePatternValue_ThenValidUint16Value(void);
+extern void test_WhenTwoBytePatternValue_ThenValidInt16Value(void);
+extern void test_WhenFourBytePatternValue_ThenValidUint32Value(void);
+extern void test_WhenFourBytePatternValue_ThenValidInt32Value(void);
+extern void test_WhenUint32Value_ThenValidFourBytePatternValue(void);
+extern void test_WhenInt32Value_ThenValidFourBytesValue(void);
+extern void test_WhenFloatValue_ThenValidFourBytesValue(void);
+extern void test_WhenDataPointsIsNull_ThenAssertion(void);
+extern void test_WhenLowerLimitIsNull_ThenAssertion(void);
+extern void test_WhenUpperIndexIsNull_ThenAssertion(void);
+extern void test_WhenLowerIndexIsNull_ThenAssertion(void);
+extern void test_WhenNumPointsEquals2SearchEquals0_ThenLLIs0AndULIs0(void);
+extern void test_WhenNumPointsEquals3SearchEquals1_ThenLLIs1AndULIs1(void);
+extern void test_WhenNumPointsEquals3SearchEquals3_ThenLLIs0AndULIs1(void);
+extern void test_WhenNumPointsEquals3SearchEquals7_ThenLLIs1AndULIs2(void);
 extern void test_WhenX1EqualsX2AndY1EqualsY2_ThenReturnY1(void);
-extern void test_WhenX1EqualsX2AndY1NotEqualY2_ThenReturnY1PlusAvgDiffY(void);
+extern void test_WhenX1EqualsX2AndY1NotEqualY2_ThenReturnY1PlusAvgDiffY2Y1(void);
 extern void test_WhenAllZeros_ThenReturnZero(void);
-extern void test_WhenGivenX_ThenReturnY(void);
+extern void test_WhenGivenX_ThenReturnYEqualsMxPlusb(void);
 extern void test_WhenLRCountEqual_ThenReturnZero(void);
 extern void test_WhenLRCountDiffEqualsOne_ThenReturnPi(void);
 extern void test_WhenLRCountDiffEqualsMinusOne_ThenReturnPi(void);
@@ -81,6 +90,8 @@ extern void test_WhenVBackwardMaxAndMatchingW_ThenEnsureVIsZeroWUnchanged(void);
 extern void test_WhenForwardVZeroCWWMatch_ThenEnsureVIs0WUnchanged(void);
 extern void test_WhenForwardVGreaterThanZeroCWWMatch_ThenEnsureVIs0WUnchanged(void);
 extern void test_WhenBackwardVGreaterThanZeroCWWMatch_ThenEnsureVIs0WUnchanged(void);
+extern void test_WhenNVGreaterThanLVAndNVLessThanMV_ThenNewVelocityAchieved(void);
+extern void test_WhenNVLessThanLVAndNVLessThanMV_ThenNewVelocityAchieved(void);
 
 
 /*=======Mock Management=====*/
@@ -90,14 +101,17 @@ static void CMock_Init(void)
   GlobalVerifyOrder = 0;
   GlobalOrderError = NULL;
   mock_time_Init();
+  mock_assertion_Init();
 }
 static void CMock_Verify(void)
 {
   mock_time_Verify();
+  mock_assertion_Verify();
 }
 static void CMock_Destroy(void)
 {
   mock_time_Destroy();
+  mock_assertion_Destroy();
 }
 
 /*=======Test Reset Option=====*/
@@ -116,51 +130,61 @@ void resetTest(void)
 int main(void)
 {
   UnityBegin("test_utils.c");
-  RUN_TEST(test_WhenTwoBytesValue_ThenUint16Value, 25);
-  RUN_TEST(test_WhenTwoBytesValue_ThenInt16Value, 43);
-  RUN_TEST(test_WhenFourBytesValue_ThenUint32Value, 61);
-  RUN_TEST(test_WhenFourBytesValue_ThenInt32Value, 82);
-  RUN_TEST(test_WhenUint32Value_ThenFourBytesValue, 103);
-  RUN_TEST(test_WhenInt32Value_ThenFourBytesValue, 124);
-  RUN_TEST(test_WhenFloatValue_ThenFourBytesValue, 145);
-  RUN_TEST(test_WhenX1EqualsX2AndY1EqualsY2_ThenReturnY1, 170);
-  RUN_TEST(test_WhenX1EqualsX2AndY1NotEqualY2_ThenReturnY1PlusAvgDiffY, 184);
-  RUN_TEST(test_WhenAllZeros_ThenReturnZero, 199);
-  RUN_TEST(test_WhenGivenX_ThenReturnY, 217);
-  RUN_TEST(test_WhenLRCountEqual_ThenReturnZero, 238);
-  RUN_TEST(test_WhenLRCountDiffEqualsOne_ThenReturnPi, 248);
-  RUN_TEST(test_WhenLRCountDiffEqualsMinusOne_ThenReturnPi, 259);
-  RUN_TEST(test_WhenHeadingEqualZero_ThenReturnZero, 274);
-  RUN_TEST(test_WhenHeadingEqualPI_ThenReturnPI, 285);
-  RUN_TEST(test_WhenHeadingEqualMinusPI_ThenReturnMinusPI, 296);
-  RUN_TEST(test_WhenHeadingGreaterThanPI_ThenReturnMinusPIToPI, 307);
-  RUN_TEST(test_WhenHeadingLessThanMinusPI_ThenReturnMinusPIToPI, 318);
-  RUN_TEST(test_WhenHeadingMultipleOfPI_ThenReturnMinusPIToPI, 329);
-  RUN_TEST(test_WhenHeadingNegMultipleOfPI_ThenReturnMinusPIToPI, 340);
-  RUN_TEST(test_WhenNumPointEven_ThenAssert, 355);
-  RUN_TEST(test_WhenLowerEqualsUpper_ThenAssert, 374);
-  RUN_TEST(test_WhenLowerGreaterThanUpper_ThenAssert, 388);
-  RUN_TEST(test_WhenNumPoints7AndRange1To10_ThenAssert, 402);
-  RUN_TEST(test_WhenNumPoints21AndRangeMinus10To10_ThenAssert, 417);
-  RUN_TEST(test_WhenLinearAngularZero_ThenLeftRightZero, 436);
-  RUN_TEST(test_WhenLinearForwardMaxAngularZero_ThenLeftRightMax, 451);
-  RUN_TEST(test_WhenLinearBackwardMaxAngularZero_ThenLeftRightMax, 467);
-  RUN_TEST(test_WhenAngularCWMaxLinearZero_ThenLeftRightMax, 483);
-  RUN_TEST(test_WhenLeftRightZero_ThenLinearAngularZero, 504);
-  RUN_TEST(test_WhenLeftRightForwardEqualsOne_ThenLinearForwardWheelRadiusAngularZero, 520);
-  RUN_TEST(test_WhenLeftRightBackwardEqualsOne_ThenLinearBackwardWheelRadiusAngularZero, 535);
-  RUN_TEST(test_WhenLeftRightForwardEqual_ThenLinearForwardNWheelRadiusAngularZero, 550);
-  RUN_TEST(test_WhenLeftRightBackwardEqual_ThenLinearBackwardNWheelRadiusAngularZero, 566);
-  RUN_TEST(test_WhenLeftZeroRightTwo_ThenLinearWheelRadiusAngular2WheelRadiusOverTrackWidth, 582);
-  RUN_TEST(test_WhenLeftMinusTwoRightZero_ThenLinearWheelRadiusAngularMinus2WheelRadiusOverTrackWidth, 599);
-  RUN_TEST(test_WhenVWEqualZero_ThenEnsureVWEqualZero, 620);
-  RUN_TEST(test_WhenMaxForwardVZeroW_ThenEnsureMaxForwardV, 632);
-  RUN_TEST(test_WhenMaxBackwardVZeroW_ThenEnsureMaxBackwardV, 645);
-  RUN_TEST(test_WhenVForwardMaxAndMatchingW_ThenEnsureVIsZeroWUnchanged, 658);
-  RUN_TEST(test_WhenVBackwardMaxAndMatchingW_ThenEnsureVIsZeroWUnchanged, 673);
-  RUN_TEST(test_WhenForwardVZeroCWWMatch_ThenEnsureVIs0WUnchanged, 689);
-  RUN_TEST(test_WhenForwardVGreaterThanZeroCWWMatch_ThenEnsureVIs0WUnchanged, 703);
-  RUN_TEST(test_WhenBackwardVGreaterThanZeroCWWMatch_ThenEnsureVIs0WUnchanged, 717);
+  RUN_TEST(test_WhenTwoBytePatternValue_ThenValidUint16Value, 26);
+  RUN_TEST(test_WhenTwoBytePatternValue_ThenValidInt16Value, 48);
+  RUN_TEST(test_WhenFourBytePatternValue_ThenValidUint32Value, 70);
+  RUN_TEST(test_WhenFourBytePatternValue_ThenValidInt32Value, 95);
+  RUN_TEST(test_WhenUint32Value_ThenValidFourBytePatternValue, 120);
+  RUN_TEST(test_WhenInt32Value_ThenValidFourBytesValue, 145);
+  RUN_TEST(test_WhenFloatValue_ThenValidFourBytesValue, 170);
+  RUN_TEST(test_WhenDataPointsIsNull_ThenAssertion, 199);
+  RUN_TEST(test_WhenLowerLimitIsNull_ThenAssertion, 216);
+  RUN_TEST(test_WhenUpperIndexIsNull_ThenAssertion, 233);
+  RUN_TEST(test_WhenLowerIndexIsNull_ThenAssertion, 250);
+  RUN_TEST(test_WhenNumPointsEquals2SearchEquals0_ThenLLIs0AndULIs0, 268);
+  RUN_TEST(test_WhenNumPointsEquals3SearchEquals1_ThenLLIs1AndULIs1, 287);
+  RUN_TEST(test_WhenNumPointsEquals3SearchEquals3_ThenLLIs0AndULIs1, 306);
+  RUN_TEST(test_WhenNumPointsEquals3SearchEquals7_ThenLLIs1AndULIs2, 325);
+  RUN_TEST(test_WhenX1EqualsX2AndY1EqualsY2_ThenReturnY1, 348);
+  RUN_TEST(test_WhenX1EqualsX2AndY1NotEqualY2_ThenReturnY1PlusAvgDiffY2Y1, 362);
+  RUN_TEST(test_WhenAllZeros_ThenReturnZero, 377);
+  RUN_TEST(test_WhenGivenX_ThenReturnYEqualsMxPlusb, 395);
+  RUN_TEST(test_WhenLRCountEqual_ThenReturnZero, 416);
+  RUN_TEST(test_WhenLRCountDiffEqualsOne_ThenReturnPi, 432);
+  RUN_TEST(test_WhenLRCountDiffEqualsMinusOne_ThenReturnPi, 449);
+  RUN_TEST(test_WhenHeadingEqualZero_ThenReturnZero, 470);
+  RUN_TEST(test_WhenHeadingEqualPI_ThenReturnPI, 481);
+  RUN_TEST(test_WhenHeadingEqualMinusPI_ThenReturnMinusPI, 494);
+  RUN_TEST(test_WhenHeadingGreaterThanPI_ThenReturnMinusPIToPI, 507);
+  RUN_TEST(test_WhenHeadingLessThanMinusPI_ThenReturnMinusPIToPI, 518);
+  RUN_TEST(test_WhenHeadingMultipleOfPI_ThenReturnMinusPIToPI, 529);
+  RUN_TEST(test_WhenHeadingNegMultipleOfPI_ThenReturnMinusPIToPI, 540);
+  RUN_TEST(test_WhenNumPointEven_ThenAssert, 555);
+  RUN_TEST(test_WhenLowerEqualsUpper_ThenAssert, 573);
+  RUN_TEST(test_WhenLowerGreaterThanUpper_ThenAssert, 590);
+  RUN_TEST(test_WhenNumPoints7AndRange1To10_ThenAssert, 607);
+  RUN_TEST(test_WhenNumPoints21AndRangeMinus10To10_ThenAssert, 625);
+  RUN_TEST(test_WhenLinearAngularZero_ThenLeftRightZero, 647);
+  RUN_TEST(test_WhenLinearForwardMaxAngularZero_ThenLeftRightMax, 665);
+  RUN_TEST(test_WhenLinearBackwardMaxAngularZero_ThenLeftRightMax, 684);
+  RUN_TEST(test_WhenAngularCWMaxLinearZero_ThenLeftRightMax, 703);
+  RUN_TEST(test_WhenLeftRightZero_ThenLinearAngularZero, 727);
+  RUN_TEST(test_WhenLeftRightForwardEqualsOne_ThenLinearForwardWheelRadiusAngularZero, 746);
+  RUN_TEST(test_WhenLeftRightBackwardEqualsOne_ThenLinearBackwardWheelRadiusAngularZero, 764);
+  RUN_TEST(test_WhenLeftRightForwardEqual_ThenLinearForwardNWheelRadiusAngularZero, 782);
+  RUN_TEST(test_WhenLeftRightBackwardEqual_ThenLinearBackwardNWheelRadiusAngularZero, 801);
+  RUN_TEST(test_WhenLeftZeroRightTwo_ThenLinearWheelRadiusAngular2WheelRadiusOverTrackWidth, 820);
+  RUN_TEST(test_WhenLeftMinusTwoRightZero_ThenLinearWheelRadiusAngularMinus2WheelRadiusOverTrackWidth, 840);
+  RUN_TEST(test_WhenVWEqualZero_ThenEnsureVWEqualZero, 864);
+  RUN_TEST(test_WhenMaxForwardVZeroW_ThenEnsureMaxForwardV, 881);
+  RUN_TEST(test_WhenMaxBackwardVZeroW_ThenEnsureMaxBackwardV, 899);
+  RUN_TEST(test_WhenVForwardMaxAndMatchingW_ThenEnsureVIsZeroWUnchanged, 917);
+  RUN_TEST(test_WhenVBackwardMaxAndMatchingW_ThenEnsureVIsZeroWUnchanged, 939);
+  RUN_TEST(test_WhenForwardVZeroCWWMatch_ThenEnsureVIs0WUnchanged, 962);
+  RUN_TEST(test_WhenForwardVGreaterThanZeroCWWMatch_ThenEnsureVIs0WUnchanged, 981);
+  RUN_TEST(test_WhenBackwardVGreaterThanZeroCWWMatch_ThenEnsureVIs0WUnchanged, 1002);
+  RUN_TEST(test_WhenNVGreaterThanLVAndNVLessThanMV_ThenNewVelocityAchieved, 1027);
+  RUN_TEST(test_WhenNVLessThanLVAndNVLessThanMV_ThenNewVelocityAchieved, 1047);
 
   CMock_Guts_MemFreeFinal();
   return (UnityEnd());

@@ -16,6 +16,7 @@
 #include <stdbool.h>
 #endif
 
+typedef int8_t INT8;
 typedef uint8_t UINT8;
 typedef uint16_t UINT16;
 typedef uint32_t UINT32;
