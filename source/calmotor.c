@@ -577,10 +577,11 @@ static UINT8 PerformMotorCalibration(CAL_MOTOR_PARAMS *cal_params)
  *-------------------------------------------------------------------------------------------------*/
 static UINT8 Init()
 {
+    Control_OverrideDebug(TRUE);
     Ser_PutString("\r\nInitialize motor calibration\r\n");
     motor_cal_index = 0;
     Cal_ClearCalibrationStatusBit(CAL_MOTOR_BIT);
-    
+
     return CAL_OK;    
 }
 

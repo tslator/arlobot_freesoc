@@ -162,6 +162,8 @@ static BOOL IsMoveFinished(DIR_TYPE direction, FLOAT heading, FLOAT distance)
  *-------------------------------------------------------------------------------------------------*/
 static UINT8 Init()
 {
+    Control_OverrideDebug(TRUE);
+    
     Cal_SetLeftRightVelocity(0, 0);
     Pid_SetLeftRightTarget(Cal_LeftTarget, Cal_RightTarget);
 

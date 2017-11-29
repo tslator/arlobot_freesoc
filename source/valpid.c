@@ -206,6 +206,7 @@ static UINT8 SetNextValidationVelocity()
  *-------------------------------------------------------------------------------------------------*/
 static UINT8 Init()
 {
+    Control_OverrideDebug(TRUE);
     Ser_PutStringFormat("\r\n%s PID validation\r\n", p_pid_params->name);
     
     Debug_Store();

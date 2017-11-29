@@ -41,6 +41,7 @@ SOFTWARE.
 #include "cal.h"
 #include "nvstore.h"
 #include "utils.h"
+#include "consts.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Main Function
@@ -65,7 +66,7 @@ int main()
     Cal_Init();
     
     Nvstore_Start();
-    Ser_Start(0);
+    Ser_Start();
     I2CIF_Start();
     Control_Start();
     Time_Start();

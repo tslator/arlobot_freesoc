@@ -364,6 +364,7 @@ static UINT8 PerformMotorValidation(VAL_MOTOR_PARAMS *val_params)
  *-------------------------------------------------------------------------------------------------*/
 static UINT8 Init()
 {
+    Control_OverrideDebug(TRUE);
     Ser_PutString("\r\nInitialize motor validation\r\n");
 
     Cal_CalcTriangularProfile(VAL_NUM_PROFILE_DATA_POINTS, 

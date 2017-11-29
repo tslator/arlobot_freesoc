@@ -129,6 +129,7 @@ static UINT8 IsMoveFinished(FLOAT * distance)
  *-------------------------------------------------------------------------------------------------*/
 static UINT8 Init()
 {
+    Control_OverrideDebug(TRUE);
     Debug_Store();
         
     Control_SetCommandVelocityFunc(GetCommandVelocity);

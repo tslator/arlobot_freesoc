@@ -127,6 +127,8 @@ static UINT8 IsMoveFinished(FLOAT * distance)
  *-------------------------------------------------------------------------------------------------*/
 static UINT8 Init()
 {
+    Control_OverrideDebug(TRUE);
+    
     Debug_Store();
         
     p_lin_params->distance = p_lin_params->direction == DIR_FORWARD ? LINEAR_DISTANCE : -LINEAR_DISTANCE;

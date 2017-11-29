@@ -36,6 +36,7 @@ SOFTWARE.
 #include <stdio.h>
 #include <stdarg.h>
 #include "serial.h"
+#include "consts.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -50,46 +51,77 @@ SOFTWARE.
 
 #define MAX_STRING_LENGTH (255)
 
-#define CDC_IS_READY_TIMEOUT (10000000)
+#define CDC_IS_READY_TIMEOUT (10)
 
 
-static UINT8 global_disable;
+static BOOL is_connected;
+
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
-static void WaitForCDCIsReady(UINT32 timeout)
+static BOOL WaitForCDCIsReady(UINT32 timeout)
 {
     /* The purpose of this routine is to check if CDC is ready in a non-blocking manner.
        If a serial port is connected to the USB then CDC is ready should return immediately; however
        if nothing is connected to the USB then obviously we're not interested in the output and
        so we don't want the main loop to be blocked by calls to check the CDC.
     */
-#ifdef CDC_TIMEOUT       
     UINT32 tick;
-
-    if (timeout > 0)
-    {
-        tick = timeout;
-
-        while (tick > 0)
-        {
-            if (USBUART_CDCIsReady())
-            {
-                break;
-            }
-            tick--;
-        }
-    }    
-#else
-    timeout = timeout;
     
-    while (0 == USBUART_CDCIsReady())
-    {
+    tick = timeout;
+
+    while (tick > 0)
+    {    
+        if (0u != USBUART_GetConfiguration())
+        {
+            while (0 == USBUART_CDCIsReady())
+            {
+            }
+            is_connected = TRUE;
+            return is_connected;
+        }
+        tick--;
+        CyDelayUs(1);
     }
-#endif
+    
+    is_connected = FALSE;
+    return is_connected;    
 }
 
+static void Initialize(void)
+{
+    UINT32 timeout = 10;
+    
+    /* During startup or any time there is a configuration change detected via Ser_Update,
+       wait for a configuration to set and then initialize the CDC and set as connected.
+    
+       If no configuration is detected then consider the USBUART unconnected.
+    
+     */
+        
+    /* Initialize IN endpoints when device is configured. */
+    while (0u == USBUART_GetConfiguration() && timeout > 0)
+    {
+        timeout--;
+        CyDelayUs(1);
+    }
+    
+    if (timeout > 0)
+    {        
+        /* Note: This path occurs when the USB cable is attached (at any time).
+           Cable insertion registers as a configuration change.
+         */
+        (void) USBUART_CDC_Init();
+        is_connected = TRUE;
+    }
+    else
+    {
+        /* Note: This path occurs when the USB cable is not attached at Psoc startup */
+        is_connected = FALSE;
+    }
+    
+}
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Ser_Init
@@ -100,7 +132,7 @@ static void WaitForCDCIsReady(UINT32 timeout)
  *-------------------------------------------------------------------------------------------------*/
 void Ser_Init()
 {
-    global_disable = 0;
+    is_connected = FALSE;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -110,35 +142,12 @@ void Ser_Init()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Ser_Start(UINT8 disable)
+void Ser_Start()
 {
-    global_disable = disable;
-    
-    if (global_disable)
-    {
-        return;
-    }
-    
     /* Start USBFS operation with 5-V operation. */
     USBUART_Start(USBFS_DEVICE, USBUART_5V_OPERATION);
 
-    /* Host can send double SET_INTERFACE request. */
-    if (0u != USBUART_IsConfigurationChanged())
-    {
-        /* Initialize IN endpoints when device is configured. */
-        if (0u != USBUART_GetConfiguration())
-        {
-            /* Enumeration is done, enable OUT endpoint to receive data 
-             * from host. */
-            USBUART_CDC_Init();
-        }
-    }
-
-    /* Service USB CDC when device is configured. */
-    if (0u != USBUART_GetConfiguration())
-    {
-        USBUART_PutString("USB UART is configured!\r\n");
-    }
+    Initialize();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -150,47 +159,47 @@ void Ser_Start(UINT8 disable)
  *-------------------------------------------------------------------------------------------------*/
 void Ser_Update()
 {
-    if (global_disable)
-    {
-        return;
-    }
+    /* Only check if there has been a configuration change.
+       This occurs when a USB cable is plugged into the device.
+       Note: No events are signaled when the plug is removed.
     
-    /* Host can send double SET_INTERFACE request. */
+       The USB interface must be 'pumped' which is done by the routines that read and write.  
+       The purpose of this routine is to dynamically discover changes to the USB interface.
+     */
     if (0u != USBUART_IsConfigurationChanged())
     {
-        /* Initialize IN endpoints when device is configured. */
-        if (0u != USBUART_GetConfiguration())
-        {
-            /* Enumeration is done, enable OUT endpoint to receive data 
-             * from host. */
-            USBUART_CDC_Init();
-        }
-    }
-    
+        Initialize();
+    }    
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Ser_PutString
  * Description: Sends a string to the serial port
- * Parameters: None
+ * Parameters: str - the string to be output
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
 void Ser_PutString(char *str)
 {
-    if (global_disable)
+    if (WaitForCDCIsReady(CDC_IS_READY_TIMEOUT))
     {
-        return;
-    }
-    
-    if (0u != USBUART_GetConfiguration())
-    {
-        WaitForCDCIsReady(CDC_IS_READY_TIMEOUT);
+        /* Note: I have discovered that if the USB cable is removed after entering this function
+           it can get stuck in an internal while loop and remain there until the cable is plugged
+           in again.  This is an annoyance and can be resolved by plugging in the cable.
+           Just be aware.
+         */
         USBUART_PutString(str);
-    }
-    
+    }    
 }
 
+/*---------------------------------------------------------------------------------------------------
+ * Name: Ser_PutStringFormat
+ * Description: Sends a string containing format specifiers to the serial port
+ * Parameters: fmt - the string to be output
+ *             ... - variable argument list
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
 void Ser_PutStringFormat(const char *fmt, ...)
 {    
     char str[MAX_STRING_LENGTH];
@@ -215,20 +224,14 @@ UINT8 Ser_ReadData(UINT8 *data)
 {
     UINT8 count = 0;
     UINT8 buffer[64];
-    
-    if (global_disable)
-    {
-        return 0;
-    }
-    
+
+    /* Service USB CDC when device is configured. */
     if (0u != USBUART_GetConfiguration())
     {
         /* Check for input data from host. */
         if (0u != USBUART_DataIsReady())
         {
-            /* Read received data and re-enable OUT endpoint. */
             count = USBUART_GetAll(buffer);
-
             if (0u != count)
             {
                 memset(data, 0, 64);
@@ -249,11 +252,6 @@ UINT8 Ser_ReadData(UINT8 *data)
  *-------------------------------------------------------------------------------------------------*/
 UINT8 Ser_ReadByte()
 {
-    if (global_disable)
-    {
-        return 0;
-    }
-    
     /* Service USB CDC when device is configured. */
     if (0u != USBUART_GetConfiguration())
     {
@@ -264,7 +262,7 @@ UINT8 Ser_ReadByte()
             return USBUART_GetChar();
         }
     }
-    
+
     return 0;
 }
 
@@ -276,10 +274,11 @@ UINT8 Ser_ReadByte()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-UINT8 Ser_ReadLine(char *line, UINT8 echo)
+UINT8 Ser_ReadLine(CHAR *line, UINT8 echo)
 {
-    char ch;
-    static UINT8 ii = 0;
+    static CHAR line_data[64];
+    static UINT8 line_offset = 0;
+    CHAR ch;
     UINT8 length;
     
     length = 0;
@@ -290,17 +289,23 @@ UINT8 Ser_ReadLine(char *line, UINT8 echo)
     }
     else if (ch == '\n' || ch == '\r')
     {   
-        length = ii;
-        line[ii] = '\0';
-        ii = 0;
+        length = line_offset;
+        line_data[line_offset] = '\0';
+        memcpy(line, line_data, length);
+        memset(line_data, 0, 64);
+        line_offset = 0;
     }
     else
     {
-        line[ii] = ch;
-        ii++;
+        line_data[line_offset] = ch;
         if (echo)
         {
             Ser_WriteByte(ch);
+        }
+        line_offset++;
+        if (line_offset == 64)
+        {
+            line_offset--;
         }
     }
     
@@ -316,17 +321,22 @@ UINT8 Ser_ReadLine(char *line, UINT8 echo)
  *-------------------------------------------------------------------------------------------------*/
 void Ser_WriteByte(UINT8 value)
 {
-    if (global_disable)
+    if (WaitForCDCIsReady(CDC_IS_READY_TIMEOUT))
     {
-        return;
-    }
-    
-    if (0u != USBUART_GetConfiguration())
-    {
-        WaitForCDCIsReady(CDC_IS_READY_TIMEOUT);        
         USBUART_PutChar(value);
     }
-    
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: Ser_GetConnectState
+ * Description: Returns the connection state of the serial interface.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+UINT8 Ser_GetConnectState(void)
+{
+    return is_connected;
 }
 
 /* [] END OF FILE */

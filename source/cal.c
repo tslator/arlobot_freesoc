@@ -50,6 +50,7 @@ SOFTWARE.
 #include "valang.h"
 #include "debug.h"
 #include "consts.h"
+#include "assertion.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -688,35 +689,35 @@ static UINT8 GetSettingsCommand(char* cmd)
  *-------------------------------------------------------------------------------------------------*/
 static UINT8 GetCommand(UINT8 cmd_class)
 {
-    static char value[2] = {NULL_CMD, '\r'};
+    char line[2] = {NULL_CMD, '\r'};
     int result;
     UINT8 cmd = NULL_CMD;
 
-    result = Ser_ReadLine(value, true);
+    result = Ser_ReadLine(line, TRUE);
     if (result != 0)
     {
 
         switch (cmd_class)
         {
             case CMD_TOP_LEVEL:
-                cmd = GetTopLevelCommand(value);
+                cmd = GetTopLevelCommand(line);
                 break;
 
             case CMD_CALIBRATION:
-                cmd = GetCalibrationCommand(value);
+                cmd = GetCalibrationCommand(line);
                 break;
 
             case CMD_VALIDATION:
-                cmd = GetValidationCommand(value);
+                cmd = GetValidationCommand(line);
                 break;
 
             case CMD_SETTINGS:
-                cmd = GetSettingsCommand(value);
+                cmd = GetSettingsCommand(line);
         }
         
         /* Reset value for next time */
-        value[0] = NULL_CMD;
-        value[1] = '\r';
+        line[0] = NULL_CMD;
+        line[1] = '\r';
     
         return cmd;
     }
@@ -849,7 +850,7 @@ static void HandleError()
 static void Process()
 {
     UINT8 result;
-    
+
     switch (active_calval->state)
     {
         case CAL_INIT_STATE:
@@ -974,7 +975,7 @@ void Cal_Start()
     /* Uncomment for debugging
     Cal_Clear();
     */
-    Control_SetCalibrationStatus(status); 
+    Control_SetCalibrationStatus(status);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -985,34 +986,6 @@ void Cal_Start()
  * 
  *-------------------------------------------------------------------------------------------------*/
 void Cal_Update()
-/* 
-    The following options are available in this modules:
-        1. Calibration
-        2. Validation
-        3. Settings Display
-    Only one can be active at a time
-
-    State Machine:
-        STATE_INIT - waiting for command to engage one of the above functionalities.  
-            If command is 'c'|'C', then enter STATE_CALIBRATION
-            If command is 'v'|'V', then enter STATE_VALIDATION
-            If command is 'd'|'D', then enter STATE_SETTINGS
-            If command is 'x'|'X', then return to STATE_INIT
-
-        STATE_CALIBRATION - waiting for calibration commands (as shown in calibration menu)
-            ...
-            If command is 'x'|'X', then return to STATE_INIT
-
-        STATE_VALIDATION - waiting for validation commands (as shown in validation menu)
-            ...
-            If command is 'x'|'X', then return to STATE_INIT
-        
-        STATE_SETTINGS - waiting for setting commands (as shown in the settings menu)
-            ...
-            If command is 'x'|'X', then return to STATE_INIT
-
-        STATE_EXIT - display exit menu and transitions to STATE_INIT
- */
 {
     UINT8 cmd = NULL_CMD;
     
@@ -1038,6 +1011,11 @@ void Cal_Update()
                         DisplaySettingsMenu();
                         ui_state = UI_STATE_SETTINGS;
                         break;
+
+                    /* Handles error case for serial input failure or invalid input for specified menu */
+                    default:
+                        ui_state = UI_STATE_INIT;
+                        break;
                 }
                 break;
             }
@@ -1046,37 +1024,67 @@ void Cal_Update()
         case UI_STATE_CALIBRATION:
         case UI_STATE_VALIDATION:
             {
+                /* Don't get a command unless there is no activate calibration/validation */
                 if (!active_calval)
                 {
                     UINT8 cal_val = (ui_state == UI_STATE_CALIBRATION) ? CMD_CALIBRATION : CMD_VALIDATION;
                     cmd = GetCommand(cal_val);
-    
-                    active_calval = (ui_state == UI_STATE_CALIBRATION) ? GetCalibration(cmd) : GetValidation(cmd);
-                }            
                     
+                    switch (cmd)
+                    {
+                        case NULL_CMD:
+                            /* If cmd is NULL_CMD then
+                                we are waiting for an entry or there is a serial problem
+                                either way, don't process null commands
+                            */
+                            break;
+                        
+                        case EXIT_CMD:
+                            ui_state = UI_STATE_EXIT;
+                            break;
+                        
+                        default:
+                            active_calval = (ui_state == UI_STATE_CALIBRATION) ? GetCalibration(cmd) : GetValidation(cmd);
+                            break;
+                    }
+                }
+
+                /* Always process an activate calibration/validation */   
                 if (active_calval)
                 {
-                    Control_OverrideDebug(TRUE);
                     Process();
-                }
-                
-                if (cmd == EXIT_CMD)
-                {
-                    ui_state = UI_STATE_EXIT;
-                }
+                    
+                    /* Process will set active_calval to NULL upon completion and redisplay the menu */
+                }    
             }
             break;
         
         case UI_STATE_SETTINGS:
             cmd = GetCommand(CMD_SETTINGS);
-            ProcessSettingsCmd(cmd);
             
-            if (cmd == EXIT_CMD)
+            switch (cmd)
             {
-                ui_state = UI_STATE_EXIT;
+                case NULL_CMD:
+                    /* If cmd is NULL_CMD then
+                        we are waiting for an entry or there is a serial problem
+                        either way, don't process null commands
+                    */
+                    break;
+
+                case EXIT_CMD:
+                    ui_state = UI_STATE_EXIT;
+                    break;
+                
+                
+                /* Perform processing 
+                      Note: Display menu is handled within ProcessSettingsCmd
+                 */
+                default:
+                    ProcessSettingsCmd(cmd);
+                    break;
             }
             break;
-
+                
         case UI_STATE_EXIT:
             DisplayExit();
             Control_OverrideDebug(FALSE);
@@ -1101,13 +1109,16 @@ FLOAT Cal_ReadResponse()
 {
     static char digits[10] = {'0'};
     int result;
+    int num_digits;
+
     do
     {
         Ser_Update();
     
         result = Ser_ReadLine(digits, true);
-        if (result > 0)
+        if (result > 0 && num_digits < 10)
         {
+            num_digits++;
             return atof((char *) digits);
         }
     } while (result == 0);
@@ -1278,16 +1289,12 @@ void Cal_CalcTriangularProfile(UINT8 num_points, FLOAT lower_limit, FLOAT upper_
     FLOAT stop;
     int ii;
 
+    assertion(num_points % 2 != 0, "num_points is even");
+
     for (ii = 0; ii < num_points; ++ii)
     {
         forward_profile[ii] = 0.0;
         backward_profile[ii] = 0.0;
-    }
-
-    /* There must be an odd number of points */
-    if( num_points % 2 == 0 )
-    {
-        return;
     }
     
     /* Only calculate the profile if the motors are calibrated */
@@ -1307,8 +1314,8 @@ void Cal_CalcTriangularProfile(UINT8 num_points, FLOAT lower_limit, FLOAT upper_
 }
 
 /*---------------------------------------------------------------------------------------------------
- * Name: Cal_GetLinearBias
- * Description: Returns the linear bias value either default or calibrated.  Includes constaint
+ * Name: Cal_GetLinearBias/Cal_GetAngularBias
+ * Description: Returns the linear/angular bias value either default or calibrated.  Includes constaint
  *              checking to ensure the value is in the expected range.
  * Parameters: None
  * Return: None
@@ -1329,14 +1336,6 @@ FLOAT Cal_GetLinearBias()
     return linear_bias;
 }
 
-/*---------------------------------------------------------------------------------------------------
- * Name: Cal_GetAngularBias
- * Description: Returns the angular bias value either default or calibrated.  Includes constaint
- *              checking to ensure the value is in the expected range.
- * Parameters: None
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
 FLOAT Cal_GetAngularBias()
 {
     FLOAT angular_bias;
@@ -1344,9 +1343,23 @@ FLOAT Cal_GetAngularBias()
     angular_bias = CAL_ANGULAR_BIAS_DEFAULT;
     if (CAL_ANGULAR_BIT & p_cal_eeprom->status)
     {
-        angular_bias = p_cal_eeprom->angular_bias;
+        angular_bias = constrain(p_cal_eeprom->angular_bias, CAL_ANGULAR_BIAS_MIN, CAL_ANGULAR_BIAS_MAX);
     }
     return angular_bias;
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: Cal_SetAngularBias/Cal_SetLinearBias
+ * Description: Sets the linear/angular bias value either default or calibrated.  Includes constaint
+ *              checking to ensure the value is in the expected range.
+ * Parameters: None
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+void Cal_SetLinearBias(FLOAT bias)
+{
+    bias = constrain(bias, CAL_LINEAR_BIAS_MIN, CAL_LINEAR_BIAS_MAX);
+    Nvstore_WriteFloat(bias, LINEAR_BIAS_OFFSET);
 }
 
 void Cal_SetAngularBias(FLOAT bias)
@@ -1355,11 +1368,6 @@ void Cal_SetAngularBias(FLOAT bias)
     Nvstore_WriteFloat(bias, ANGULAR_BIAS_OFFSET);
 }
 
-void Cal_SetLinearBias(FLOAT bias)
-{
-    bias = constrain(bias, CAL_LINEAR_BIAS_MIN, CAL_LINEAR_BIAS_MAX);
-    Nvstore_WriteFloat(bias, LINEAR_BIAS_OFFSET);
-}
 
 UINT16 Cal_GetStatus()
 {

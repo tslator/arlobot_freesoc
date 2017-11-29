@@ -40,7 +40,7 @@ SOFTWARE.
  * Functions
  *-------------------------------------------------------------------------------------------------*/    
 void Ser_Init();
-void Ser_Start(UINT8 disable);
+void Ser_Start();
 void Ser_Update();
 
 void Ser_PutString(char *str);
@@ -50,6 +50,7 @@ UINT8 Ser_ReadByte();
 UINT8 Ser_ReadLine(char *line, UINT8 echo);
 void Ser_WriteByte(UINT8 value);
 
+UINT8 Ser_GetConnectState(void);
 #endif
 
 /* [] END OF FILE */

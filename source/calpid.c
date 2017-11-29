@@ -162,6 +162,8 @@ static void CalcMaxCps()
  *-------------------------------------------------------------------------------------------------*/
 static UINT8 Init()
 {
+    Control_OverrideDebug(TRUE);
+    
     if (!Cal_GetCalibrationStatusBit(CAL_MOTOR_BIT))
     {
         Ser_PutStringFormat("Motor calibration not performed (%02x)\r\n", Cal_GetStatus());

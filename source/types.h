@@ -24,6 +24,7 @@ typedef int16_t INT16;
 typedef int32_t INT32;
 typedef float FLOAT;
 typedef bool BOOL;
+typedef char CHAR;
 
 
 typedef enum {WHEEL_LEFT, WHEEL_RIGHT, WHEEL_BOTH} WHEEL_TYPE;

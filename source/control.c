@@ -264,7 +264,7 @@ void Control_Update()
 
     //EnsureAngularVelocity(&linear_cmd_velocity, &angular_cmd_velocity);    
     
-    //Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
+    Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
     //Debug_Enable(DEBUG_LEFT_ENCODER_ENABLE_BIT);
     //Debug_Enable(DEBUG_RIGHT_ENCODER_ENABLE_BIT);
     //Debug_Enable(DEBUG_LEFT_PID_ENABLE_BIT);
