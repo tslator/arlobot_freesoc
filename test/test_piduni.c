@@ -11,5 +11,5 @@ void tearDown(void)
 
 void test_NeedImplementation(void)
 {
-    TEST_IGNORE_MESSAGE("Need to Implement CAN Interface Tests");
+    TEST_IGNORE_MESSAGE("Need to Implement Unicycle PID Tests");
 }

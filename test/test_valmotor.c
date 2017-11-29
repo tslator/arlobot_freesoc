@@ -11,5 +11,5 @@ void tearDown(void)
 
 void test_NeedImplementation(void)
 {
-    TEST_IGNORE_MESSAGE("Need to Implement I2C Interface Tests");
+    TEST_IGNORE_MESSAGE("Need to Implement Motor Validation Tests");
 }
