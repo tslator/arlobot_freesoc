@@ -1109,7 +1109,7 @@ FLOAT Cal_ReadResponse()
 {
     static char digits[10] = {'0'};
     int result;
-    int num_digits;
+    int num_digits = 0;
 
     do
     {

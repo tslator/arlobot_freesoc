@@ -58,6 +58,7 @@ SOFTWARE.
 #include "pid.h"
 #include "pidleft.h"
 #include "pidright.h"
+#include "control.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
