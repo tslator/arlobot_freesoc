@@ -143,17 +143,17 @@ UINT8 EnterExitReadLineReturn(char c, char *line, int call_count)
     return return_value;
 }
 
-UINT8 CalibrationEnterExit_Ser_ReadLine(char *line, UINT8 echo, int call_count)
+UINT8 CalibrationEnterExit_Ser_ReadLine(char *line, UINT8 echo, UINT8 max_length, int call_count)
 {
     EnterExitReadLineReturn('c', line, call_count);
 }
 
-UINT8 ValidationEnterExit_Ser_ReadLine(char *line, UINT8 echo, int call_count)
+UINT8 ValidationEnterExit_Ser_ReadLine(char *line, UINT8 echo, UINT8 max_length, int call_count)
 {
     EnterExitReadLineReturn('v', line, call_count);
 }
 
-UINT8 SettingsEnterExit_Ser_ReadLine(char *line, UINT8 echo, int call_count)
+UINT8 SettingsEnterExit_Ser_ReadLine(char *line, UINT8 echo, UINT8 max_length, int call_count)
 {
     EnterExitReadLineReturn('d', line, call_count);
 }
@@ -182,7 +182,7 @@ void tearDown(void)
 
 DEFINE_START_TEST(WhenAnyMenuRequestAndZeroSerialReadLineResult_ThenNoMenuDisplayed, TRUE)
 {
-    UINT8 mock_Ser_ReadLine(char *line, UINT8 echo, int call_count)
+    UINT8 mock_Ser_ReadLine(char *line, UINT8 echo, UINT8 max_length, int call_count)
     {
         printf("Failing call to Ser_ReadLine\n");
         return 0;
@@ -246,7 +246,7 @@ DEFINE_END_TEST(WhenRequestSettingsMenu_ThenSettingsMenuDisplayed)
 
 DEFINE_START_TEST(WhenRequestExitMenu_ThenNoMenuDisplayed, TRUE)
 {
-    UINT8 mock_Ser_ReadLine(char *line, UINT8 echo, int call_count)
+    UINT8 mock_Ser_ReadLine(CHAR *line, UINT8 echo, UINT8 max_length, int call_count)
     {
         EnterExitReadLineReturn('x', line, call_count);
     }
@@ -268,7 +268,7 @@ DEFINE_END_TEST(WhenRequestExitMenu_ThenNoMenuDisplayed)
 
 DEFINE_START_TEST(WhenRequestCalibrationAndFailedSerialReadLineOnCalibrationCommandMenu_ThenNoChange, TRUE)
 {
-    UINT8 EnterFailExitCalibration(char *line, UINT8 echo, int call_count)
+    UINT8 EnterFailExitCalibration(CHAR *line, UINT8 echo, UINT8 max_length, int call_count)
     {
         if (call_count == 0)
         {
@@ -305,7 +305,7 @@ DEFINE_END_TEST(WhenRequestCalibrationAndFailedSerialReadLineOnCalibrationComman
 
 DEFINE_START_TEST(WhenRequestOutOfRangeCalibrationCommand_ThenNullCmdReturned, TRUE)
 {
-    UINT8 EnterFailExitCalibration(char *line, UINT8 echo, int call_count)
+    UINT8 EnterFailExitCalibration(CHAR *line, UINT8 echo, UINT8 max_length, int call_count)
     {
         if (call_count == 0)
         {
@@ -344,7 +344,7 @@ DEFINE_END_TEST(WhenRequestOutOfRangeCalibrationCommand_ThenNullCmdReturned)
 
 DEFINE_START_TEST(WhenRequestInRangeCalibrationCommandButFailedReturn_ThenNullCmdReturned, TRUE)
 {
-    UINT8 EnterFailExitCalibration(char *line, UINT8 echo, int call_count)
+    UINT8 EnterFailExitCalibration(CHAR *line, UINT8 echo, UINT8 max_length, int call_count)
     {
         if (call_count == 0)
         {
@@ -384,7 +384,7 @@ DEFINE_END_TEST(WhenRequestCalibrationCalibrationCommandOutOfRange_ThenNullCmdRe
 
 DEFINE_START_TEST(WhenRequestInRangeCalibrationCommand_ThenCalibrationProcessed, TRUE)
 {
-    UINT8 EnterFailExitCalibration(char *line, UINT8 echo, int call_count)
+    UINT8 EnterFailExitCalibration(CHAR *line, UINT8 echo, UINT8 max_length, int call_count)
     {
         if (call_count == 0)
         {
@@ -461,16 +461,42 @@ DEFINE_START_TEST(WhenRequestInRangeCalibrationCommand_ThenCalibrationProcessed,
 
     // Note: There is no macro assert because there is no return value to check
 }
-DEFINE_END_TEST(WhenRequestCalibrationCalibrationCommandOutOfRange_ThenNullCmdReturned)
+DEFINE_END_TEST(WhenRequestInRangeCalibrationCommand_ThenCalibrationProcessed)
 
+DEFINE_START_TEST(WhenReadingSingleCharResponse_ThenCorrectResponseReturned, TRUE)
+{
+    UINT8 EnterFailExitCalibration(CHAR *line, UINT8 echo, UINT8 max_length, int call_count)
+    {
+        line[0] = '1';
+        line[1] = '\r';
+        return 1;
+    }
+
+    FLOAT result;
+
+    Ser_ReadLine_StubWithCallback(EnterFailExitCalibration);
+    Ser_Update_Expect();
+
+
+    // When
+    result = Cal_ReadResponse();
+
+    // Then
+    TEST_ASSERT_EQUAL_FLOAT(1, result);
+}
+DEFINE_END_TEST(WhenReadingSingleCharResponse_ThenCorrectResponseReturned)
 
 /* Tests Remaining
 
 Cal_ReadResponse
+    - Test returning 1 digit
+    - Test returning 10 digits
+    - Test returning 20 digits
+    - Test returning length > 0 but null data
+    - Test returning length = 0 but non-null data
 Cal_CpsToPwm
 Cal_CalcForwardOperatingRange
 Cal_CalcBackwardOperatingRange
 Cal_CalcTriangularProfile
-
 
 */

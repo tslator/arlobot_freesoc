@@ -693,7 +693,7 @@ static UINT8 GetCommand(UINT8 cmd_class)
     int result;
     UINT8 cmd = NULL_CMD;
 
-    result = Ser_ReadLine(line, TRUE);
+    result = Ser_ReadLine(line, TRUE, 2);
     if (result != 0)
     {
 
@@ -1100,7 +1100,9 @@ void Cal_Update()
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Cal_ReadResponse
- * Description: Read a FLOATing point value from the serial port. 
+ * Description: Read a floating point value from the serial port.
+ *              NOTE: This a blocking call and should only be used it is known not to impact other
+ *              module updates.   The serial module update is kicked to keep the connection alive.
  * Parameters: None
  * Return: None
  * 
@@ -1109,16 +1111,14 @@ FLOAT Cal_ReadResponse()
 {
     static char digits[10] = {'0'};
     int result;
-    int num_digits = 0;
 
     do
     {
         Ser_Update();
     
-        result = Ser_ReadLine(digits, true);
-        if (result > 0 && num_digits < 10)
+        result = Ser_ReadLine(digits, true, 10);
+        if (result > 0)
         {
-            num_digits++;
             return atof((char *) digits);
         }
     } while (result == 0);
