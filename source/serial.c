@@ -36,6 +36,7 @@ SOFTWARE.
 #include <stdio.h>
 #include <stdarg.h>
 #include "serial.h"
+#include "utils.h"
 #include "consts.h"
 
 /*---------------------------------------------------------------------------------------------------
@@ -271,17 +272,22 @@ UINT8 Ser_ReadByte()
  * Description: Non-blocking reads all serial data until a newline is received.
  *              Note: Putty apparently does not send \n so \r is being used.
  * Parameters: line - pointer to charater buffer
+ *             echo - echos characters to serial port if TRUE.
+ *             max_length - the maximum length of the line (maximum is 64).
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-UINT8 Ser_ReadLine(CHAR *line, UINT8 echo)
+UINT8 Ser_ReadLine(CHAR *line, UINT8 echo, UINT8 max_length)
 {
     static CHAR line_data[64];
-    static UINT8 line_offset = 0;
-    CHAR ch;
+    static UINT8 char_offset = 0;
     UINT8 length;
+    UINT8 line_length;
+    CHAR ch;
     
     length = 0;
+    line_length = max_length == 0 ? 64 : min(max_length, 64);
+
     ch = Ser_ReadByte();
     if (ch == 0x00)
     {
@@ -289,23 +295,24 @@ UINT8 Ser_ReadLine(CHAR *line, UINT8 echo)
     }
     else if (ch == '\n' || ch == '\r')
     {   
-        length = line_offset;
-        line_data[line_offset] = '\0';
+        length = char_offset;
+        line_data[char_offset] = '\0';
         memcpy(line, line_data, length);
         memset(line_data, 0, 64);
-        line_offset = 0;
+        char_offset = 0;
     }
     else
     {
-        line_data[line_offset] = ch;
+        line_data[char_offset] = ch;
         if (echo)
         {
             Ser_WriteByte(ch);
         }
-        line_offset++;
-        if (line_offset == 64)
+        char_offset++;
+
+        if (char_offset == line_length)
         {
-            line_offset--;
+            char_offset--;
         }
     }
     

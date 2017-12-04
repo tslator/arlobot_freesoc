@@ -220,7 +220,7 @@ void test_WhenNullCharReturned_ThenZeroIsReturned(void)
 
 
     // When
-    result = Ser_ReadLine(data, FALSE);
+    result = Ser_ReadLine(data, FALSE, 10);
 
     // Then
     TEST_ASSERT_EQUAL_UINT8(0, result);
@@ -237,7 +237,7 @@ void test_WhenNewLineReturned_ThenNewLineIsReturned(void)
 
 
     // When
-    result = Ser_ReadLine(data, FALSE);
+    result = Ser_ReadLine(data, FALSE, 10);
 
     // Then
     TEST_ASSERT_EQUAL_UINT8(0, result);
@@ -255,7 +255,7 @@ void test_WhenLineReturnReturned_ThenLineReturnReturned(void)
 
 
     // When
-    result = Ser_ReadLine(data, FALSE);
+    result = Ser_ReadLine(data, FALSE, 10);
 
     // Then
     TEST_ASSERT_EQUAL_UINT8(0, result);
@@ -285,10 +285,10 @@ void test_WhenLineDataWithNewLine_ThenDataIsReturned(void)
 
 
     // When
-    result1 = Ser_ReadLine(data, FALSE);
-    result2 = Ser_ReadLine(data, FALSE);
-    result3 = Ser_ReadLine(data, FALSE);
-    result4 = Ser_ReadLine(data, FALSE);
+    result1 = Ser_ReadLine(data, FALSE, 10);
+    result2 = Ser_ReadLine(data, FALSE, 10);
+    result3 = Ser_ReadLine(data, FALSE, 10);
+    result4 = Ser_ReadLine(data, FALSE, 10);
 
     // Then
     TEST_ASSERT_EQUAL_UINT8(0, result1);
@@ -321,10 +321,10 @@ void test_WhenLineDataWithLineReturn_ThenDataIsReturned(void)
 
 
     // When
-    result1 = Ser_ReadLine(data, FALSE);
-    result2 = Ser_ReadLine(data, FALSE);
-    result3 = Ser_ReadLine(data, FALSE);
-    result4 = Ser_ReadLine(data, FALSE);
+    result1 = Ser_ReadLine(data, FALSE, 10);
+    result2 = Ser_ReadLine(data, FALSE, 10);
+    result3 = Ser_ReadLine(data, FALSE, 10);
+    result4 = Ser_ReadLine(data, FALSE, 10);
 
     // Then
     TEST_ASSERT_EQUAL_UINT8(0, result1);
@@ -369,10 +369,10 @@ void test_WhenLineDataWithNewLineAndEcho_ThenDataIsReturnedAndOutput(void)
 
 
     // When
-    result1 = Ser_ReadLine(data, TRUE);
-    result2 = Ser_ReadLine(data, TRUE);
-    result3 = Ser_ReadLine(data, TRUE);
-    result4 = Ser_ReadLine(data, TRUE);
+    result1 = Ser_ReadLine(data, TRUE, 10);
+    result2 = Ser_ReadLine(data, TRUE, 10);
+    result3 = Ser_ReadLine(data, TRUE, 10);
+    result4 = Ser_ReadLine(data, TRUE, 10);
 
     // Then
     TEST_ASSERT_EQUAL_UINT8(0, result1);
@@ -417,10 +417,10 @@ void test_WhenLineDataWithLineReturnAndEcho_ThenDataIsReturnedAndOutput(void)
 
 
     // When
-    result1 = Ser_ReadLine(data, TRUE);
-    result2 = Ser_ReadLine(data, TRUE);
-    result3 = Ser_ReadLine(data, TRUE);
-    result4 = Ser_ReadLine(data, TRUE);
+    result1 = Ser_ReadLine(data, TRUE, 10);
+    result2 = Ser_ReadLine(data, TRUE, 10);
+    result3 = Ser_ReadLine(data, TRUE, 10);
+    result4 = Ser_ReadLine(data, TRUE, 10);
 
     // Then
     TEST_ASSERT_EQUAL_UINT8(0, result1);
@@ -428,6 +428,43 @@ void test_WhenLineDataWithLineReturnAndEcho_ThenDataIsReturnedAndOutput(void)
     TEST_ASSERT_EQUAL_UINT8(0, result3);
     TEST_ASSERT_EQUAL_UINT8(3, result4);
     TEST_ASSERT_EQUAL_STRING("123", data);
+}
+
+void test_WhenMaxLengthLessThanMaxPossibleAndDataLengthGreaterThanMaxLength_ThenMaxLengthDataReturned(void)
+{
+    UINT8 test_data[] = "0123456789012345678901234";
+    UINT8 expected_data[] = "0123456784";
+    UINT8 results[25];
+    UINT8 data[10] = {0};
+    int ii;
+
+    for (ii = 0; ii < 25; ++ii)
+    {
+        USBUART_GetConfiguration_ExpectAndReturn(1);
+        USBUART_DataIsReady_ExpectAndReturn(1);
+        USBUART_GetChar_ExpectAndReturn(test_data[ii]);
+        USBUART_GetConfiguration_ExpectAndReturn(1);
+        USBUART_CDCIsReady_ExpectAndReturn(1);
+        USBUART_PutChar_Expect(test_data[ii]);
+
+    }
+    
+    USBUART_GetConfiguration_ExpectAndReturn(1);
+    USBUART_DataIsReady_ExpectAndReturn(1);
+    USBUART_GetChar_ExpectAndReturn('\n');
+
+    // When
+    for (ii = 0; ii < 10; ++ii)
+    {
+        results[ii] = Ser_ReadLine(data, TRUE, 10);
+        printf("Results: %d\n", results[ii]);
+        printf("Data: %d\n", data[ii]);
+    }
+
+    // Then
+    TEST_ASSERT_EACH_EQUAL_UINT8(0, results, 10);
+    TEST_ASSERT_EQUAL_UINT8(9, results[9]);
+    TEST_ASSERT_EQUAL_STRING(expected_data, data);
 }
 
 void test_WhenLineDataExceedsMaxLineLength_ThenNewDataIsDropped(void)
@@ -457,7 +494,7 @@ void test_WhenLineDataExceedsMaxLineLength_ThenNewDataIsDropped(void)
     // When
     for (ii = 0; ii < 101; ++ii)
     {
-        results[ii] = Ser_ReadLine(data, TRUE);
+        results[ii] = Ser_ReadLine(data, TRUE, 0);
     }
 
     // Then
