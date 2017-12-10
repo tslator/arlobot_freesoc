@@ -49,6 +49,8 @@ SOFTWARE.
 #include "calang.h"
 #include "valang.h"
 #include "debug.h"
+#include "serial.h"
+#include "usbif.h"
 #include "consts.h"
 #include "assertion.h"
 
@@ -1114,7 +1116,7 @@ FLOAT Cal_ReadResponse()
 
     do
     {
-        Ser_Update();
+        USBIF_Update();
     
         result = Ser_ReadLine(digits, true, 10);
         if (result > 0)

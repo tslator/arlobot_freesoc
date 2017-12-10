@@ -14,6 +14,7 @@
 #include "mock_vallin.h"
 #include "mock_valang.h"
 #include "mock_assertion.h"
+#include "mock_usbif.h"
 #include "cal.h"
 #include "consts.h"
 
@@ -475,7 +476,7 @@ DEFINE_START_TEST(WhenReadingSingleCharResponse_ThenCorrectResponseReturned, TRU
     FLOAT result;
 
     Ser_ReadLine_StubWithCallback(EnterFailExitCalibration);
-    Ser_Update_Expect();
+    USBIF_Update_Expect();
 
 
     // When

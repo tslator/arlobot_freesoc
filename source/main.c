@@ -40,6 +40,8 @@ SOFTWARE.
 #include "odom.h"
 #include "cal.h"
 #include "nvstore.h"
+#include "usbif.h"
+#include "serial.h"
 #include "utils.h"
 #include "consts.h"
 
@@ -51,6 +53,7 @@ int main()
     CyGlobalIntEnable;
     
     Nvstore_Init();
+    USBIF_Init();
     Ser_Init();
     Debug_Init();
     Debug_Start();    
@@ -66,6 +69,7 @@ int main()
     Cal_Init();
     
     Nvstore_Start();
+    USBIF_Start();
     Ser_Start();
     I2CIF_Start();
     Control_Start();
@@ -108,8 +112,8 @@ int main()
         /* Handle calibration request */
         Cal_Update();
         
-        /* Keep the serial connection active */
-        Ser_Update();
+        /* Keep the USB connection active */
+        USBIF_Update();
 
         I2CIF_TEST();
         MAIN_LOOP_END();
