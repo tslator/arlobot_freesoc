@@ -95,13 +95,13 @@ int main()
         MAIN_LOOP_START();
 
         /* Update any control changes */
-        Control_Update();  // reads and validates linear/angular
+        Control_Update();   // reads and validates linear/angular
         
         /* Update encoder-related values */
-        Encoder_Update();  // measures current left/right speed
+        Encoder_Update();   // measures current left/right speed
 
         /* Apply the velocity command to PIDs */
-        Pid_Update(); // tracks linear/angular velocity
+        Pid_Update();       // tracks linear/angular velocity
 
         /* Update the odometry calculation */
         Odom_Update();      // measures left/right speed, x/y position, heading, linear/angular
