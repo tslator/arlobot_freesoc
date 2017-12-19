@@ -9,21 +9,22 @@ static char MESSAGE[] = "ASSERT MSG (%s:%d): %s\r\n";
  */
 
 #ifdef DEBUG
-#define MSG_ACTION(msg)   Ser_PutStringFormat(MESSAGE, __FILE__, __LINE__, msg)
+#define MSG_ACTION(msg, file, line)   Ser_PutStringFormat(MESSAGE, file, line, msg)
 #define TEST_ACTION(test) assert(test)
 #elif defined NDEBUG
-#define MSG_ACTION(msg)    Ser_PutStringFormat(MESSAGE, __FILE__, __LINE__, msg)
+#define MSG_ACTION(msg)    Ser_PutStringFormat(MESSAGE, file, line, msg)
 #define TEST_ACTION(test)
 #else
 #define MSG_ACTION(msg)
 #define TEST_ACTION(test)
 #endif
 
-void assertion(UINT8 test, char* msg)
+//void assertion(UINT8 test, char* msg)
+void assertion(UINT8 test, char* msg, char* file, int line)
 {
     if (test == 0)
     {
-        MSG_ACTION(msg);
+        MSG_ACTION(msg, file, line);
         TEST_ACTION(test);
     }
 }

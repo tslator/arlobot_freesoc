@@ -19,6 +19,8 @@
 #define RETURN_VALUE_ON_FAILURE(test, rvalue)
 #endif
     
-void assertion(UINT8 test, char* msg);
+void assertion(UINT8 test, char* msg, char* file, int line);
+
+#define ASSERTION(test, msg) assertion(test, msg, __FILE__, __LINE__)
 
 #endif

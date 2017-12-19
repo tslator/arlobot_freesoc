@@ -121,6 +121,13 @@ void CalValMenuExitOutput(void)
     Control_OverrideDebug_Expect(FALSE);
 }
 
+UINT8 Failed_Ser_ReadLine(char *line, UINT8 echo, UINT8 max_length, int call_count)
+{
+    printf("Failing call to Ser_ReadLine\n");
+    return 0;
+}
+
+
 UINT8 EnterExitReadLineReturn(char c, char *line, int call_count)
 {
     UINT8 return_value;
@@ -183,13 +190,7 @@ void tearDown(void)
 
 DEFINE_START_TEST(WhenAnyMenuRequestAndZeroSerialReadLineResult_ThenNoMenuDisplayed, TRUE)
 {
-    UINT8 mock_Ser_ReadLine(char *line, UINT8 echo, UINT8 max_length, int call_count)
-    {
-        printf("Failing call to Ser_ReadLine\n");
-        return 0;
-    }
-
-    Ser_ReadLine_StubWithCallback(mock_Ser_ReadLine);
+    Ser_ReadLine_StubWithCallback(Failed_Ser_ReadLine);
 
     // When
     Cal_Update();

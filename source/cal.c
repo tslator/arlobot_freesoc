@@ -1291,7 +1291,7 @@ void Cal_CalcTriangularProfile(UINT8 num_points, FLOAT lower_limit, FLOAT upper_
     FLOAT stop;
     int ii;
 
-    assertion(num_points % 2 != 0, "num_points is even");
+    ASSERTION(num_points % 2 != 0, "num_points is even");
 
     for (ii = 0; ii < num_points; ++ii)
     {

@@ -5,6 +5,69 @@
 #include "mock_time.h"
 #include "mock_assertion.h"
 
+
+#define V_IS_NOT_NULL() assertion_Expect(1, "v is NULL", "source/utils.c", 568)
+#define V_IS_NULL() assertion_Expect(0, "v is NULL", "source/utils.c", 568)
+#define W_IS_NOT_NULL() assertion_Expect(1, "w is NULL", "source/utils.c", 569)
+#define W_IS_NULL() assertion_Expect(0, "w is NULL", "source/utils.c", 569)
+#define LEFT_IS_NOT_NULL() assertion_Expect(1, "left is NULL", "source/utils.c", 363)
+#define LEFT_IS_NULL() assertion_Expect(0, "left is NULL", "source/utils.c", 363)
+#define RIGHT_IS_NOT_NULL() assertion_Expect(1, "right is NULL", "source/utils.c", 364)
+#define RIGHT_IS_NULL() assertion_Expect(0, "right is NULL", "source/utils.c", 364)
+#define LINEAR_IS_NOT_NULL() assertion_Expect(1, "linear is NULL", "source/utils.c", 397)
+#define LINEAR_IS_NULL() assertion_Expect(0, "linear is NULL", "source/utils.c", 397)
+#define ANGULAR_IS_NOT_NULL() assertion_Expect(1, "angular is NULL", "source/utils.c", 398)
+#define ANGULAR_IS_NULL() assertion_Expect(0, "angular is NULL", "source/utils.c", 398)
+
+#define DATA_POINTS_IS_NOT_NULL() assertion_Expect(1, "data_points is NULL", "source/utils.c", 299)
+#define DATA_POINTS_IS_NULL() assertion_Expect(0, "data_points is NULL", "source/utils.c", 299)
+#define LOWER_INDEX_IS_NOT_NULL() assertion_Expect(1, "lower_index is NULL", "source/utils.c", 300)
+#define LOWER_INDEX_IS_NULL() assertion_Expect(0, "lower_index is NULL", "source/utils.c", 300)
+#define UPPER_INDEX_IS_NOT_NULL() assertion_Expect(1, "upper_index is NULL", "source/utils.c", 301)
+#define UPPER_INDEX_IS_NULL() assertion_Expect(0, "upper_index is NULL", "source/utils.c", 301)
+#define NUM_POINTS_GREATER_THAN_ONE() assertion_Expect(1, "num_points <= 1", "source/utils.c", 302)
+#define NUM_POINTS_LESS_THAN_EQUAL_ONE() assertion_Expect(0, "num_points <= 1", "source/utils.c", 302)
+
+#define NUM_POINTS_IS_ODD() assertion_Expect(1, "num_points is not odd", "source/utils.c", 508)
+#define NUM_POINTS_IS_NOT_ODD() assertion_Expect(0, "num_points is not odd", "source/utils.c", 508)
+#define LOWER_LIMIT_LESS_THAN_UPPER_LIMIT() assertion_Expect(1, "lower_limit >= upper_limit", "source/utils.c", 516)
+#define LOWER_LIMIT_GREATER_THAN_UPPER_LIMIT() assertion_Expect(0, "lower_limit >= upper_limit", "source/utils.c", 516)
+
+#define UNITODIFF_LEFT_IS_NOT_NULL() assertion_Expect(1, "left is NULL", "source/utils.c", 363)
+#define UNITODIFF_RIGHT_IS_NOT_NULL() assertion_Expect(1, "right is NULL", "source/utils.c", 364)
+
+#define DIFFTOUNI_LINEAR_IS_NOT_NULL() assertion_Expect(1, "linear is NULL", "source/utils.c", 397)
+#define DIFFTOUNI_ANGULAR_IS_NOT_NULL() assertion_Expect(1, "angular is NULL", "source/utils.c", 398)
+
+#define ENSUREANGULARVELOCITY_V_IS_NOT_NULL() assertion_Expect(1, "v is NULL", "source/utils.c", 568)
+#define ENSUREANGULARVELOCITY_W_IS_NOT_NULL() assertion_Expect(1, "w is NULL", "source/utils.c", 569)
+#define ENSUREANGULARVELOCITY_LEFT_IS_NOT_NULL() assertion_Expect(1, "left is NULL", "source/utils.c", 363)
+#define ENSUREANGULARVELOCITY_RIGHT_IS_NOT_NULL() assertion_Expect(1, "right is NULL", "source/utils.c", 364)
+    
+#define ENSUREANGULARVELOCITY_LINEAR_IS_NOT_NULL() assertion_Expect(1, "linear is NULL", "source/utils.c", 397)
+#define ENSUREANGULARVELOCITY_ANGULAR_IS_NOT_NULL() assertion_Expect(1, "angular is NULL", "source/utils.c", 398)
+
+#define LIMITLINEARACCEL_LAST_TIME_IS_NOT_NULL() assertion_Expect(1, "last_time is NULL", "source/utils.c", 641)
+
+
+void EnsureAngularVelocity_contract_fulfilled()
+{   
+    V_IS_NOT_NULL();
+    W_IS_NOT_NULL();
+    LEFT_IS_NOT_NULL();
+    RIGHT_IS_NOT_NULL();
+    LINEAR_IS_NOT_NULL();
+    ANGULAR_IS_NOT_NULL();
+}
+
+void BinaryRangeSearch_contract_fulfilled(void)
+{
+    DATA_POINTS_IS_NOT_NULL();
+    LOWER_INDEX_IS_NOT_NULL();
+    UPPER_INDEX_IS_NOT_NULL();
+    NUM_POINTS_GREATER_THAN_ONE();
+}
+
 void setUp(void)
 {
 }
@@ -31,11 +94,13 @@ void test_WhenTwoBytePatternValue_ThenValidUint16Value(void)
     UINT8 ii;
     UINT16 value;
     
+    ////TEST_IGNORE();
+    
     for (ii = 0; ii < NUM_PATTERNS; ++ii)
     {
         printf("Testing [0x%02X, 0x%02X] => Expecting %d\n", patterns[ii][0], patterns[ii][1], values[ii]);
         
-        assertion_Expect(1, "bytes is null");
+        assertion_Expect(1, "bytes is null", "source/utils.c", 202);
         
         // When
         value = TwoBytesToUint16(patterns[ii]);
@@ -53,11 +118,13 @@ void test_WhenTwoBytePatternValue_ThenValidInt16Value(void)
     UINT8 ii;
     INT16 value;
     
+    ////TEST_IGNORE();
+    
     for (ii = 0; ii < NUM_PATTERNS; ++ii)
     {
         printf("Testing [0x%02X, 0x%02X] => Expecting %d\n", patterns[ii][0], patterns[ii][1], values[ii]);
 
-        assertion_Expect(1, "bytes is null");
+        assertion_Expect(1, "bytes is null", "source/utils.c", 202);
 
         // When
         value = TwoBytesToInt16(patterns[ii]);
@@ -78,11 +145,13 @@ void test_WhenFourBytePatternValue_ThenValidUint32Value(void)
     UINT8 ii;
     UINT32 value;
     
+    //TEST_IGNORE();
+    
     for (ii = 0; ii < NUM_PATTERNS; ++ii)
     {
         printf("Testing [0x%02X 0x%02X 0x%02X 0x%02X] => Expecting %d\n", patterns[ii][0], patterns[ii][1], patterns[ii][2], patterns[ii][3], values[ii]);
         
-        assertion_Expect(1, "bytes is null");
+        assertion_Expect(1, "bytes is null", "source/utils.c", 232);
         
         // When
         value = FourBytesToUint32(patterns[ii]);
@@ -103,11 +172,13 @@ void test_WhenFourBytePatternValue_ThenValidInt32Value(void)
     UINT8 ii;
     INT32 value;
     
+    //TEST_IGNORE();
+    
     for (ii = 0; ii < NUM_PATTERNS; ++ii)
     {
         printf("Testing [0x%02X 0x%02X 0x%02X 0x%02X] => Expecting %d\n", patterns[ii][0], patterns[ii][1], patterns[ii][2], patterns[ii][3], values[ii]);
         
-        assertion_Expect(1, "bytes is null");
+        assertion_Expect(1, "bytes is null", "source/utils.c", 232);
         
         // When
         value = FourBytesToInt32(patterns[ii]);
@@ -128,11 +199,13 @@ void test_WhenUint32Value_ThenValidFourBytePatternValue(void)
     UINT8 ii;
     UINT8 actual[4];
     
+    //TEST_IGNORE();
+    
     for (ii = 0; ii < NUM_PATTERNS; ++ii)
     {
         printf("Testing [0x%02X 0x%02X 0x%02X 0x%02X] => Expecting %d\n", patterns[ii][0], patterns[ii][1], patterns[ii][2], patterns[ii][3], values[ii]);
 
-        assertion_Expect(1, "bytes is null");
+        assertion_Expect(1, "bytes is null", "source/utils.c", 143);
 
         // When
         Uint32ToFourBytes(values[ii], actual);
@@ -153,11 +226,13 @@ void test_WhenInt32Value_ThenValidFourBytesValue(void)
     UINT8 ii;
     UINT8 actual[4];
     
+    //TEST_IGNORE();
+    
     for (ii = 0; ii < NUM_PATTERNS; ++ii)
     {
         printf("Testing [0x%02X 0x%02X 0x%02X 0x%02X] => Expecting %d\n", patterns[ii][0], patterns[ii][1], patterns[ii][2], patterns[ii][3], values[ii]);
 
-        assertion_Expect(1, "bytes is null");
+        assertion_Expect(1, "bytes is null", "source/utils.c", 143);
 
         // When
         Int32ToFourBytes(values[ii], actual);
@@ -178,11 +253,13 @@ void test_WhenFloatValue_ThenValidFourBytesValue(void)
     UINT8 ii;
     UINT8 actual[4];
     
+    //TEST_IGNORE();
+    
     for (ii = 0; ii < 4; ++ii)
     {
         printf("Testing [0x%02X 0x%02X 0x%02X 0x%02X] => Expecting %d\n", patterns[ii][0], patterns[ii][1], patterns[ii][2], patterns[ii][3],values[ii]);
 
-        assertion_Expect(1, "bytes is null");
+        assertion_Expect(1, "bytes is null", "source/utils.c", 181);
 
         // When
         FloatToFourBytes(values[ii], actual);
@@ -201,10 +278,16 @@ void test_WhenDataPointsIsNull_ThenAssertion(void)
     UINT8 lower_index;
     UINT8 upper_index;
     
-    assertion_Expect(0, "data_points is NULL");
-    assertion_Expect(1, "lower_index is NULL");
-    assertion_Expect(1, "upper_index is NULL");
-    assertion_Expect(1, "num_points <= 1");
+    //TEST_IGNORE();
+
+    DATA_POINTS_IS_NULL();
+    LOWER_INDEX_IS_NOT_NULL();
+    UPPER_INDEX_IS_NOT_NULL();
+    NUM_POINTS_GREATER_THAN_ONE();
+    // assertion_Expect(0, "data_points is NULL", "source/utils.c", 202);
+    // assertion_Expect(1, "lower_index is NULL", "source/utils.c", 202);
+    // assertion_Expect(1, "upper_index is NULL", "source/utils.c", 202);
+    // assertion_Expect(1, "num_points <= 1", "source/utils.c", 202);
     
     // When
     BinaryRangeSearch(0, 0, 2, &lower_index, &upper_index);
@@ -218,10 +301,16 @@ void test_WhenLowerLimitIsNull_ThenAssertion(void)
     INT16 data_points[2] = {0, 0};
     UINT8 upper_index;
     
-    assertion_Expect(1, "data_points is NULL");
-    assertion_Expect(0, "lower_index is NULL");
-    assertion_Expect(1, "upper_index is NULL");
-    assertion_Expect(1, "num_points <= 1");
+    //TEST_IGNORE();
+    
+    DATA_POINTS_IS_NOT_NULL();
+    LOWER_INDEX_IS_NULL();
+    UPPER_INDEX_IS_NOT_NULL();
+    NUM_POINTS_GREATER_THAN_ONE();
+    // assertion_Expect(1, "data_points is NULL", "source/utils.c", 202);
+    // assertion_Expect(0, "lower_index is NULL", "source/utils.c", 202);
+    // assertion_Expect(1, "upper_index is NULL", "source/utils.c", 202);
+    // assertion_Expect(1, "num_points <= 1", "source/utils.c", 202);
     
     // When
     BinaryRangeSearch(0, data_points, 2, 0, &upper_index);
@@ -235,10 +324,16 @@ void test_WhenUpperIndexIsNull_ThenAssertion(void)
     INT16 data_points[2] = {0, 0};
     UINT8 lower_index;
     
-    assertion_Expect(1, "data_points is NULL");
-    assertion_Expect(1, "lower_index is NULL");
-    assertion_Expect(0, "upper_index is NULL");
-    assertion_Expect(1, "num_points <= 1");
+    //TEST_IGNORE();
+    
+    DATA_POINTS_IS_NOT_NULL();
+    LOWER_INDEX_IS_NOT_NULL();
+    UPPER_INDEX_IS_NULL();
+    NUM_POINTS_GREATER_THAN_ONE();
+    // assertion_Expect(1, "data_points is NULL", "source/utils.c", 202);
+    // assertion_Expect(1, "lower_index is NULL", "source/utils.c", 202);
+    // assertion_Expect(0, "upper_index is NULL", "source/utils.c", 202);
+    // assertion_Expect(1, "num_points <= 1", "source/utils.c", 202);
     
     // When
     BinaryRangeSearch(0, data_points, 2, &lower_index, 0);
@@ -253,10 +348,16 @@ void test_WhenLowerIndexIsNull_ThenAssertion(void)
     UINT8 lower_index;
     UINT8 upper_index;
     
-    assertion_Expect(1, "data_points is NULL");
-    assertion_Expect(1, "lower_index is NULL");
-    assertion_Expect(1, "upper_index is NULL");
-    assertion_Expect(0, "num_points <= 1");
+    //TEST_IGNORE();
+    
+    DATA_POINTS_IS_NOT_NULL();
+    LOWER_INDEX_IS_NOT_NULL();
+    UPPER_INDEX_IS_NOT_NULL();
+    NUM_POINTS_LESS_THAN_EQUAL_ONE();
+    // assertion_Expect(1, "data_points is NULL", "source/utils.c", 202);
+    // assertion_Expect(1, "lower_index is NULL", "source/utils.c", 202);
+    // assertion_Expect(1, "upper_index is NULL", "source/utils.c", 202);
+    // assertion_Expect(0, "num_points <= 1", "source/utils.c", 202);
     
     // When
     BinaryRangeSearch(0, data_points, 0, &lower_index, &upper_index);
@@ -271,10 +372,9 @@ void test_WhenNumPointsEquals2SearchEquals0_ThenLLIs0AndULIs0(void)
     UINT8 lower_index;
     UINT8 upper_index;
     
-    assertion_Expect(1, "data_points is NULL");
-    assertion_Expect(1, "lower_index is NULL");
-    assertion_Expect(1, "upper_index is NULL");
-    assertion_Expect(1, "num_points <= 1");
+    //TEST_IGNORE();
+    
+    BinaryRangeSearch_contract_fulfilled();
     
     // When
     BinaryRangeSearch(0, data_points, 2, &lower_index, &upper_index);
@@ -290,10 +390,9 @@ void test_WhenNumPointsEquals3SearchEquals1_ThenLLIs1AndULIs1(void)
     UINT8 lower_index;
     UINT8 upper_index;
     
-    assertion_Expect(1, "data_points is NULL");
-    assertion_Expect(1, "lower_index is NULL");
-    assertion_Expect(1, "upper_index is NULL");
-    assertion_Expect(1, "num_points <= 1");
+    //TEST_IGNORE();
+    
+    BinaryRangeSearch_contract_fulfilled();
     
     // When
     BinaryRangeSearch(1, data_points, 3, &lower_index, &upper_index);
@@ -309,10 +408,9 @@ void test_WhenNumPointsEquals3SearchEquals3_ThenLLIs0AndULIs1(void)
     UINT8 lower_index;
     UINT8 upper_index;
     
-    assertion_Expect(1, "data_points is NULL");
-    assertion_Expect(1, "lower_index is NULL");
-    assertion_Expect(1, "upper_index is NULL");
-    assertion_Expect(1, "num_points <= 1");
+    //TEST_IGNORE();
+    
+    BinaryRangeSearch_contract_fulfilled();
     
     // When
     BinaryRangeSearch(3, data_points, 3, &lower_index, &upper_index);
@@ -328,10 +426,9 @@ void test_WhenNumPointsEquals3SearchEquals7_ThenLLIs1AndULIs2(void)
     UINT8 lower_index;
     UINT8 upper_index;
     
-    assertion_Expect(1, "data_points is NULL");
-    assertion_Expect(1, "lower_index is NULL");
-    assertion_Expect(1, "upper_index is NULL");
-    assertion_Expect(1, "num_points <= 1");
+    //TEST_IGNORE();
+    
+    BinaryRangeSearch_contract_fulfilled();
     
     // When
     BinaryRangeSearch(7, data_points, 3, &lower_index, &upper_index);
@@ -354,6 +451,8 @@ void test_WhenX1EqualsX2AndY1EqualsY2_ThenReturnY1(void)
     INT16 value;
     INT16 result = (INT16) y1;
     
+    //TEST_IGNORE();
+    
     value = Interpolate(0, x1, x2, y1, y2);
     
     TEST_ASSERT_EQUAL(value, result);
@@ -367,6 +466,8 @@ void test_WhenX1EqualsX2AndY1NotEqualY2_ThenReturnY1PlusAvgDiffY2Y1(void)
     UINT16 y2 = 2;
     INT16 value;
     INT16 result = y1 + ((y2 - y1) / 2);
+    
+    //TEST_IGNORE();
     
     value = Interpolate(0, x1, x2, y1, y2);
     
@@ -382,6 +483,8 @@ void test_WhenAllZeros_ThenReturnZero(void)
     UINT16 y2 = 0;
     INT16 value;
     INT16 result = 0;
+    
+    //TEST_IGNORE();
     
     // When
     value = Interpolate(0, x1, x2, y1, y2);
@@ -404,6 +507,8 @@ void test_WhenGivenX_ThenReturnYEqualsMxPlusb(void)
     INT16 value;
     INT16 result = m * x + b;
     
+    //TEST_IGNORE();
+    
     value = Interpolate(x, x1, x2, y1, y2);
     
     TEST_ASSERT_EQUAL(value, result);
@@ -423,6 +528,8 @@ void test_WhenLRCountEqual_ThenReturnZero(void)
     FLOAT count_per_rev = 1;
     FLOAT bias = 1.0;
     
+    //TEST_IGNORE();
+    
     // When
     heading = CalcHeading(left_count, right_count, radius, width, count_per_rev, bias);
     
@@ -438,6 +545,8 @@ void test_WhenLRCountDiffEqualsOne_ThenReturnPi(void)
     FLOAT width = 1.0;
     FLOAT count_per_rev = 1;
     FLOAT bias = 1.0;
+    
+    //TEST_IGNORE();
     
     // When
     heading = CalcHeading(left_count, right_count, radius, width, count_per_rev, bias);
@@ -456,6 +565,8 @@ void test_WhenLRCountDiffEqualsMinusOne_ThenReturnPi(void)
     FLOAT count_per_rev = 1;
     FLOAT bias = 1.0;
     
+    //TEST_IGNORE();
+    
     // When
     heading = CalcHeading(left_count, right_count, radius, width, count_per_rev, bias);
     
@@ -471,6 +582,8 @@ void test_WhenHeadingEqualZero_ThenReturnZero(void)
 {
     FLOAT heading;
     
+    //TEST_IGNORE();
+    
     // When
     heading = NormalizeHeading(0.0);
     
@@ -481,6 +594,8 @@ void test_WhenHeadingEqualZero_ThenReturnZero(void)
 void test_WhenHeadingEqualPI_ThenReturnPI(void)
 {
     FLOAT heading;
+    
+    //TEST_IGNORE();
     
     // When
     // Note: Passing constant PI results in -PI likely because of idiosyncracies of floating
@@ -495,6 +610,8 @@ void test_WhenHeadingEqualMinusPI_ThenReturnMinusPI(void)
 {
     FLOAT heading;
     
+    //TEST_IGNORE();
+    
     // When
     // Note: Passing constant -PI results in PI likely because of idiosyncracies of floating
     // point implementation, so just use a shorter precision test value.
@@ -508,6 +625,8 @@ void test_WhenHeadingGreaterThanPI_ThenReturnMinusPIToPI(void)
 {
     FLOAT heading;
     
+    //TEST_IGNORE();
+    
     // When
     heading = NormalizeHeading(1.5 * 3.14159);
     
@@ -518,6 +637,8 @@ void test_WhenHeadingGreaterThanPI_ThenReturnMinusPIToPI(void)
 void test_WhenHeadingLessThanMinusPI_ThenReturnMinusPIToPI(void)
 {
     FLOAT heading;
+    
+    //TEST_IGNORE();
     
     // When
     heading = NormalizeHeading(1.5 * -3.14159);
@@ -530,6 +651,8 @@ void test_WhenHeadingMultipleOfPI_ThenReturnMinusPIToPI(void)
 {
     FLOAT heading;
     
+    //TEST_IGNORE();
+    
     // When
     heading = NormalizeHeading(5 * 3.14159);
     
@@ -540,6 +663,8 @@ void test_WhenHeadingMultipleOfPI_ThenReturnMinusPIToPI(void)
 void test_WhenHeadingNegMultipleOfPI_ThenReturnMinusPIToPI(void)
 {
     FLOAT heading;
+    
+    //TEST_IGNORE();
     
     // When
     heading = NormalizeHeading(5 * -3.14159);
@@ -560,8 +685,12 @@ void test_WhenNumPointEven_ThenAssert(void)
     FLOAT profile[2] = {0.0, 0.0};
     FLOAT result[2] = {0.0, 0.0};
 
-    assertion_Expect(0, "num_points is not odd");
-    assertion_Expect(1, "lower_limit >= upper_limit");
+    //TEST_IGNORE();
+
+    NUM_POINTS_IS_NOT_ODD();
+    LOWER_LIMIT_LESS_THAN_UPPER_LIMIT();    
+    // assertion_Expect(0, "num_points is not odd", "source/utils.c", 202);
+    // assertion_Expect(1, "lower_limit >= upper_limit", "source/utils.c", 202);
 
     // When
     CalcTriangularProfile(num_points, lower_limit, upper_limit, profile);
@@ -577,8 +706,12 @@ void test_WhenLowerEqualsUpper_ThenAssert(void)
     FLOAT upper_limit = 10.0;
     FLOAT profile[2];
 
-    assertion_Expect(1, "num_points is not odd");
-    assertion_Expect(0, "lower_limit >= upper_limit");
+    //TEST_IGNORE();
+    
+    NUM_POINTS_IS_ODD();
+    LOWER_LIMIT_GREATER_THAN_UPPER_LIMIT();    
+    // assertion_Expect(1, "num_points is not odd", "source/utils.c", 202);
+    // assertion_Expect(0, "lower_limit >= upper_limit", "source/utils.c", 202);
     
     // When
     CalcTriangularProfile(num_points, lower_limit, upper_limit, profile);
@@ -594,8 +727,12 @@ void test_WhenLowerGreaterThanUpper_ThenAssert(void)
     FLOAT upper_limit = 0.0;
     FLOAT profile[2];
 
-    assertion_Expect(1, "num_points is not odd");
-    assertion_Expect(0, "lower_limit >= upper_limit");
+    //TEST_IGNORE();
+    
+    NUM_POINTS_IS_ODD();
+    LOWER_LIMIT_GREATER_THAN_UPPER_LIMIT();    
+    // assertion_Expect(1, "num_points is not odd", "source/utils.c", 202);
+    // assertion_Expect(0, "lower_limit >= upper_limit", "source/utils.c", 202);
     
     // When
     CalcTriangularProfile(num_points, lower_limit, upper_limit, profile);
@@ -612,8 +749,12 @@ void test_WhenNumPoints7AndRange1To10_ThenAssert(void)
     FLOAT results[7] = {1.0, 4.0, 7.0, 10.0, 7.0, 4.0, 1.0};
     FLOAT profile[7];
 
-    assertion_Expect(1, "num_points is not odd");
-    assertion_Expect(1, "lower_limit >= upper_limit");
+    //TEST_IGNORE();
+    
+    NUM_POINTS_IS_ODD();
+    LOWER_LIMIT_LESS_THAN_UPPER_LIMIT();    
+    // assertion_Expect(1, "num_points is not odd", "source/utils.c", 202);
+    // assertion_Expect(1, "lower_limit >= upper_limit", "source/utils.c", 202);
     
     // When
     CalcTriangularProfile(num_points, lower_limit, upper_limit, profile);
@@ -630,8 +771,12 @@ void test_WhenNumPoints21AndRangeMinus10To10_ThenAssert(void)
     FLOAT results[21] = {-10.0, -8.0, -6.0, -4.0, -2.0, 0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 8.0, 6.0, 4.0, 2.0, 0.0, -2.0, -4.0, -6.0, -8.0, -10.0};
     FLOAT profile[21];
 
-    assertion_Expect(1, "num_points is not odd");
-    assertion_Expect(1, "lower_limit >= upper_limit");
+    //TEST_IGNORE();
+    
+    NUM_POINTS_IS_ODD();
+    LOWER_LIMIT_LESS_THAN_UPPER_LIMIT();    
+    // assertion_Expect(1, "num_points is not odd", "source/utils.c", 508);
+    // assertion_Expect(1, "lower_limit >= upper_limit", "source/utils.c", 509);
     
     // When
     CalcTriangularProfile(num_points, lower_limit, upper_limit, profile);
@@ -651,8 +796,10 @@ void test_WhenLinearAngularZero_ThenLeftRightZero(void)
     float left;
     float right;
 
-    assertion_Expect(1, "left is NULL");
-    assertion_Expect(1, "right is NULL");
+    //TEST_IGNORE();
+    
+    assertion_Expect(1, "left is NULL", "source/utils.c", 363);
+    assertion_Expect(1, "right is NULL", "source/utils.c", 364);
     
     // When
     UniToDiff(linear, angular, &left, &right);
@@ -670,8 +817,10 @@ void test_WhenLinearForwardMaxAngularZero_ThenLeftRightMax(void)
     float right;
     float result = 2 * MAX_WHEEL_RADIAN_PER_SECOND / WHEEL_DIAMETER;
 
-    assertion_Expect(1, "left is NULL");
-    assertion_Expect(1, "right is NULL");
+    //TEST_IGNORE();
+    
+    assertion_Expect(1, "left is NULL", "source/utils.c", 363);
+    assertion_Expect(1, "right is NULL", "source/utils.c", 364);
     
     // When
     UniToDiff(linear, angular, &left, &right);
@@ -689,8 +838,12 @@ void test_WhenLinearBackwardMaxAngularZero_ThenLeftRightMax(void)
     float right;
     float result = -2 * MAX_WHEEL_RADIAN_PER_SECOND / WHEEL_DIAMETER;
 
-    assertion_Expect(1, "left is NULL");
-    assertion_Expect(1, "right is NULL");
+    //TEST_IGNORE();
+
+    UNITODIFF_LEFT_IS_NOT_NULL();
+    UNITODIFF_RIGHT_IS_NOT_NULL();
+    // assertion_Expect(1, "left is NULL", "source/utils.c", 363);
+    // assertion_Expect(1, "right is NULL", "source/utils.c", 364);
     
     // When
     UniToDiff(linear, angular, &left, &right);
@@ -709,8 +862,12 @@ void test_WhenAngularCWMaxLinearZero_ThenLeftRightMax(void)
     float left_result = -MAX_WHEEL_RADIAN_PER_SECOND;
     float right_result = MAX_WHEEL_RADIAN_PER_SECOND;
 
-    assertion_Expect(1, "left is NULL");
-    assertion_Expect(1, "right is NULL");
+    //TEST_IGNORE();
+    
+    UNITODIFF_LEFT_IS_NOT_NULL();
+    UNITODIFF_RIGHT_IS_NOT_NULL();
+    // assertion_Expect(1, "left is NULL", "source/utils.c", 363);
+    // assertion_Expect(1, "right is NULL", "source/utils.c", 364);
     
     // When
     UniToDiff(linear, angular, &left, &right);
@@ -732,8 +889,12 @@ void test_WhenLeftRightZero_ThenLinearAngularZero(void)
     float angular;
     float result = 0.0;
 
-    assertion_Expect(1, "linear is NULL");
-    assertion_Expect(1, "angular is NULL");
+    //TEST_IGNORE();
+
+    DIFFTOUNI_LINEAR_IS_NOT_NULL();
+    DIFFTOUNI_ANGULAR_IS_NOT_NULL();    
+    // assertion_Expect(1, "linear is NULL", "source/utils.c", 397);
+    // assertion_Expect(1, "angular is NULL", "source/utils.c", 398);
     
     // When
     DiffToUni(left, right, &linear, &angular);
@@ -750,8 +911,12 @@ void test_WhenLeftRightForwardEqualsOne_ThenLinearForwardWheelRadiusAngularZero(
     float linear;
     float angular;
 
-    assertion_Expect(1, "linear is NULL");
-    assertion_Expect(1, "angular is NULL");
+    //TEST_IGNORE();
+    
+    DIFFTOUNI_LINEAR_IS_NOT_NULL();
+    DIFFTOUNI_ANGULAR_IS_NOT_NULL();    
+    // assertion_Expect(1, "linear is NULL", "source/utils.c", 397);
+    // assertion_Expect(1, "angular is NULL", "source/utils.c", 398);
     
     // When
     DiffToUni(left, right, &linear, &angular);
@@ -768,8 +933,12 @@ void test_WhenLeftRightBackwardEqualsOne_ThenLinearBackwardWheelRadiusAngularZer
     float linear;
     float angular;
 
-    assertion_Expect(1, "linear is NULL");
-    assertion_Expect(1, "angular is NULL");
+    //TEST_IGNORE();
+    
+    DIFFTOUNI_LINEAR_IS_NOT_NULL();
+    DIFFTOUNI_ANGULAR_IS_NOT_NULL();    
+    // assertion_Expect(1, "linear is NULL", "source/utils.c", 397);
+    // assertion_Expect(1, "angular is NULL", "source/utils.c", 398);
     
     // When
     DiffToUni(left, right, &linear, &angular);
@@ -787,8 +956,12 @@ void test_WhenLeftRightForwardEqual_ThenLinearForwardNWheelRadiusAngularZero(voi
     float angular;
     float result = left * WHEEL_RADIUS;
 
-    assertion_Expect(1, "linear is NULL");
-    assertion_Expect(1, "angular is NULL");
+    //TEST_IGNORE();
+    
+    DIFFTOUNI_LINEAR_IS_NOT_NULL();
+    DIFFTOUNI_ANGULAR_IS_NOT_NULL();    
+    // assertion_Expect(1, "linear is NULL", "source/utils.c", 397);
+    // assertion_Expect(1, "angular is NULL", "source/utils.c", 398);
     
     // When
     DiffToUni(left, right, &linear, &angular);
@@ -806,8 +979,12 @@ void test_WhenLeftRightBackwardEqual_ThenLinearBackwardNWheelRadiusAngularZero(v
     float angular;
     float result = left * WHEEL_RADIUS;
 
-    assertion_Expect(1, "linear is NULL");
-    assertion_Expect(1, "angular is NULL");
+    //TEST_IGNORE();
+    
+    DIFFTOUNI_LINEAR_IS_NOT_NULL();
+    DIFFTOUNI_ANGULAR_IS_NOT_NULL();    
+    // assertion_Expect(1, "linear is NULL", "source/utils.c", 397);
+    // assertion_Expect(1, "angular is NULL", "source/utils.c", 398);
     
     // When
     DiffToUni(left, right, &linear, &angular);
@@ -826,8 +1003,12 @@ void test_WhenLeftZeroRightTwo_ThenLinearWheelRadiusAngular2WheelRadiusOverTrack
     float linear_result = WHEEL_RADIUS;
     float angular_result = 2 * WHEEL_RADIUS / TRACK_WIDTH;
 
-    assertion_Expect(1, "linear is NULL");
-    assertion_Expect(1, "angular is NULL");
+    //TEST_IGNORE();
+    
+    DIFFTOUNI_LINEAR_IS_NOT_NULL();
+    DIFFTOUNI_ANGULAR_IS_NOT_NULL();    
+    // assertion_Expect(1, "linear is NULL", "source/utils.c", 397);
+    // assertion_Expect(1, "angular is NULL", "source/utils.c", 398);
     
     // When
     DiffToUni(left, right, &linear, &angular);
@@ -846,8 +1027,12 @@ void test_WhenLeftMinusTwoRightZero_ThenLinearWheelRadiusAngularMinus2WheelRadiu
     float linear_result = -WHEEL_RADIUS;
     float angular_result = -2 * WHEEL_RADIUS / TRACK_WIDTH;
 
-    assertion_Expect(1, "linear is NULL");
-    assertion_Expect(1, "angular is NULL");
+    //TEST_IGNORE();
+    
+    DIFFTOUNI_LINEAR_IS_NOT_NULL();
+    DIFFTOUNI_ANGULAR_IS_NOT_NULL();    
+    // assertion_Expect(1, "linear is NULL", "source/utils.c", 397);
+    // assertion_Expect(1, "angular is NULL", "source/utils.c", 398);
     
     // When
     DiffToUni(left, right, &linear, &angular);
@@ -866,10 +1051,16 @@ void test_WhenVWEqualZero_ThenEnsureVWEqualZero(void)
     float v = 0.0;
     float w = 0.0;
 
-    assertion_Expect(1, "v is NULL");
-    assertion_Expect(1, "w is NULL");
-    assertion_Expect(1, "left is NULL");
-    assertion_Expect(1, "right is NULL");
+    //TEST_IGNORE();
+    
+    ENSUREANGULARVELOCITY_V_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_W_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_LEFT_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_RIGHT_IS_NOT_NULL();
+    // assertion_Expect(1, "v is NULL", "source/utils.c", 564);
+    // assertion_Expect(1, "w is NULL", "source/utils.c", 565);
+    // assertion_Expect(1, "left is NULL", "source/utils.c", 363);
+    // assertion_Expect(1, "right is NULL", "source/utils.c", 364);
     
     // When
     EnsureAngularVelocity(&v, &w);
@@ -884,10 +1075,16 @@ void test_WhenMaxForwardVZeroW_ThenEnsureMaxForwardV(void)
     float w = 0.0;
     float result = MAX_WHEEL_METER_PER_SECOND;
 
-    assertion_Expect(1, "v is NULL");
-    assertion_Expect(1, "w is NULL");
-    assertion_Expect(1, "left is NULL");
-    assertion_Expect(1, "right is NULL");
+    //TEST_IGNORE();
+    
+    ENSUREANGULARVELOCITY_V_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_W_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_LEFT_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_RIGHT_IS_NOT_NULL();
+    // assertion_Expect(1, "v is NULL", "source/utils.c", 564);
+    // assertion_Expect(1, "w is NULL", "source/utils.c", 565);
+    // assertion_Expect(1, "left is NULL", "source/utils.c", 363);
+    // assertion_Expect(1, "right is NULL", "source/utils.c", 364);
     
     // When
     EnsureAngularVelocity(&v, &w);
@@ -902,10 +1099,16 @@ void test_WhenMaxBackwardVZeroW_ThenEnsureMaxBackwardV(void)
     float w = 0.0;
     float result = -MAX_WHEEL_METER_PER_SECOND;
 
-    assertion_Expect(1, "v is NULL");
-    assertion_Expect(1, "w is NULL");
-    assertion_Expect(1, "left is NULL");
-    assertion_Expect(1, "right is NULL");
+    //TEST_IGNORE();
+    
+    ENSUREANGULARVELOCITY_V_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_W_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_LEFT_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_RIGHT_IS_NOT_NULL();
+    // assertion_Expect(1, "v is NULL", "source/utils.c", 564);
+    // assertion_Expect(1, "w is NULL", "source/utils.c", 565);
+    // assertion_Expect(1, "left is NULL", "source/utils.c", 363);
+    // assertion_Expect(1, "right is NULL", "source/utils.c", 364);
     
     // When
     EnsureAngularVelocity(&v, &w);
@@ -921,12 +1124,20 @@ void test_WhenVForwardMaxAndMatchingW_ThenEnsureVIsZeroWUnchanged(void)
     float linear_result = 0.0;
     float angular_result = 2 * v / TRACK_WIDTH;
 
-    assertion_Expect(1, "v is NULL");
-    assertion_Expect(1, "w is NULL");
-    assertion_Expect(1, "left is NULL");
-    assertion_Expect(1, "right is NULL");
-    assertion_Expect(1, "linear is NULL");
-    assertion_Expect(1, "angular is NULL");
+    //TEST_IGNORE();
+    
+    ENSUREANGULARVELOCITY_V_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_W_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_LEFT_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_RIGHT_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_LINEAR_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_ANGULAR_IS_NOT_NULL();
+    // assertion_Expect(1, "v is NULL", "source/utils.c", 564);
+    // assertion_Expect(1, "w is NULL", "source/utils.c", 565);
+    // assertion_Expect(1, "left is NULL", "source/utils.c", 363);
+    // assertion_Expect(1, "right is NULL", "source/utils.c", 364);
+    // assertion_Expect(1, "linear is NULL", "source/utils.c", 397);
+    // assertion_Expect(1, "angular is NULL", "source/utils.c", 398);
     
     // When
     EnsureAngularVelocity(&v, &w);
@@ -943,12 +1154,20 @@ void test_WhenVBackwardMaxAndMatchingW_ThenEnsureVIsZeroWUnchanged(void)
     float linear_result = 0.0;
     float angular_result = 2 * v / TRACK_WIDTH;
 
-    assertion_Expect(1, "v is NULL");
-    assertion_Expect(1, "w is NULL");
-    assertion_Expect(1, "left is NULL");
-    assertion_Expect(1, "right is NULL");
-    assertion_Expect(1, "linear is NULL");
-    assertion_Expect(1, "angular is NULL");
+    //TEST_IGNORE();
+    
+    ENSUREANGULARVELOCITY_V_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_W_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_LEFT_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_RIGHT_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_LINEAR_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_ANGULAR_IS_NOT_NULL();
+    // assertion_Expect(1, "v is NULL", "source/utils.c", 564);
+    // assertion_Expect(1, "w is NULL", "source/utils.c", 565);
+    // assertion_Expect(1, "left is NULL", "source/utils.c", 363);
+    // assertion_Expect(1, "right is NULL", "source/utils.c", 364);
+    // assertion_Expect(1, "linear is NULL", "source/utils.c", 397);
+    // assertion_Expect(1, "angular is NULL", "source/utils.c", 398);
     
     // When
     EnsureAngularVelocity(&v, &w);
@@ -965,10 +1184,16 @@ void test_WhenForwardVZeroCWWMatch_ThenEnsureVIs0WUnchanged(void)
     float w = WHEEL_RADIUS * 2 * MAX_WHEEL_RADIAN_PER_SECOND / TRACK_WIDTH;
     float result = WHEEL_RADIUS * 2 * MAX_WHEEL_RADIAN_PER_SECOND / TRACK_WIDTH;
     
-    assertion_Expect(1, "v is NULL");
-    assertion_Expect(1, "w is NULL");
-    assertion_Expect(1, "left is NULL");
-    assertion_Expect(1, "right is NULL");
+    //TEST_IGNORE();
+    
+    V_IS_NOT_NULL();
+    W_IS_NOT_NULL();
+    LEFT_IS_NOT_NULL();
+    RIGHT_IS_NOT_NULL();
+    // assertion_Expect(1, "v is NULL", "source/utils.c", 564);
+    // assertion_Expect(1, "w is NULL", "source/utils.c", 565);
+    // assertion_Expect(1, "left is NULL", "source/utils.c", 363);
+    // assertion_Expect(1, "right is NULL", "source/utils.c", 364);
     
     // When
     EnsureAngularVelocity(&v, &w);
@@ -984,13 +1209,10 @@ void test_WhenForwardVGreaterThanZeroCWWMatch_ThenEnsureVIs0WUnchanged(void)
     float w = WHEEL_RADIUS * 2 * MAX_WHEEL_RADIAN_PER_SECOND / TRACK_WIDTH;
     float result = WHEEL_RADIUS * 2 * MAX_WHEEL_RADIAN_PER_SECOND / TRACK_WIDTH;
     
-    assertion_Expect(1, "v is NULL");
-    assertion_Expect(1, "w is NULL");
-    assertion_Expect(1, "left is NULL");
-    assertion_Expect(1, "right is NULL");
-    assertion_Expect(1, "linear is NULL");
-    assertion_Expect(1, "angular is NULL");
+    //TEST_IGNORE();
     
+    EnsureAngularVelocity_contract_fulfilled();
+
     // When
     EnsureAngularVelocity(&v, &w);
 
@@ -1005,12 +1227,9 @@ void test_WhenBackwardVGreaterThanZeroCWWMatch_ThenEnsureVIs0WUnchanged(void)
     float w = -WHEEL_RADIUS * 2 * MAX_WHEEL_RADIAN_PER_SECOND / TRACK_WIDTH;
     float result = -WHEEL_RADIUS * 2 * MAX_WHEEL_RADIAN_PER_SECOND / TRACK_WIDTH;
     
-    assertion_Expect(1, "v is NULL");
-    assertion_Expect(1, "w is NULL");
-    assertion_Expect(1, "left is NULL");
-    assertion_Expect(1, "right is NULL");
-    assertion_Expect(1, "linear is NULL");
-    assertion_Expect(1, "angular is NULL");
+    //TEST_IGNORE();
+
+    EnsureAngularVelocity_contract_fulfilled();
     
     // When
     EnsureAngularVelocity(&v, &w);
@@ -1030,9 +1249,13 @@ void test_WhenNVGreaterThanLVAndNVLessThanMV_ThenNewVelocityAchieved(void)
     
     FLOAT result;
 
-    assertion_Expect(1, "last_time is NULL");
+    //TEST_IGNORE();
+
+    LIMITLINEARACCEL_LAST_TIME_IS_NOT_NULL();
+    // assertion_Expect(1, "last_time is NULL", "source/utils.c", 641);
     millis_ExpectAndReturn(100);
-    assertion_Expect(1, "last_time is NULL");
+    LIMITLINEARACCEL_LAST_TIME_IS_NOT_NULL();
+    // assertion_Expect(1, "last_time is NULL", "source/utils.c", 641);
     millis_ExpectAndReturn(200);
     
     // When
@@ -1050,9 +1273,13 @@ void test_WhenNVLessThanLVAndNVLessThanMV_ThenNewVelocityAchieved(void)
     
     FLOAT result;
 
-    assertion_Expect(1, "last_time is NULL");
+    //TEST_IGNORE();
+
+    LIMITLINEARACCEL_LAST_TIME_IS_NOT_NULL();
+    // assertion_Expect(1, "last_time is NULL", "source/utils.c", 641);
     millis_ExpectAndReturn(300);
-    assertion_Expect(1, "last_time is NULL");
+    LIMITLINEARACCEL_LAST_TIME_IS_NOT_NULL();
+    // assertion_Expect(1, "last_time is NULL", "source/utils.c", 641);
     millis_ExpectAndReturn(400);
 
     /* Note: the LimitLinearAccel function maintains state.  The test of

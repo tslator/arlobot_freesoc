@@ -67,7 +67,7 @@ MA[i]= MA*[i]/N
 {
     INT32 ma_curr;
 
-    assertion(ma != NULL, "ma is NULL");
+    ASSERTION(ma != NULL, "ma is NULL");
     RETURN_VALUE_ON_FAILURE(ma == NULL, 0);
     
     ma_curr = ma->last + value - ma->last/ma->n;
@@ -96,7 +96,7 @@ MA[i]= MA*[i]/N
 {
     FLOAT ma_curr;
     
-    assertion(ma != NULL, "ma is NULL");
+    ASSERTION(ma != NULL, "ma is NULL");
     RETURN_VALUE_ON_FAILURE(ma == NULL, 0.0);
     
     ma_curr = ma->last + value - ma->last/ma->n;
@@ -118,7 +118,7 @@ void Uint16ToTwoBytes(UINT16 value, UINT8* bytes)
 {
     /* Note: We are not changing the endianess, we're just getting a pointer to the first byte */
     
-    assertion(bytes != NULL, "bytes is null");
+    ASSERTION(bytes != NULL, "bytes is null");
     RETURN_ON_FAILURE(bytes == NULL);
     
     UINT8 *p_bytes = (UINT8 *) &value;
@@ -140,7 +140,7 @@ void Uint32ToFourBytes(UINT32 value, UINT8* bytes)
 {
     /* Note: We are not changing the endianess, we're just getting a pointer to the first byte */
 
-    assertion(bytes != NULL, "bytes is null");
+    ASSERTION(bytes != NULL, "bytes is null");
     RETURN_ON_FAILURE(bytes == NULL);
     
     UINT8 *p_bytes = (UINT8 *) &value;
@@ -178,7 +178,7 @@ void FloatToFourBytes(FLOAT value, UINT8* bytes)
 {
     /* Note: We are not changing the endianess, we're just getting a pointer to the first byte */
 
-    assertion(bytes != NULL, "bytes is null");
+    ASSERTION(bytes != NULL, "bytes is null");
     RETURN_ON_FAILURE(bytes == NULL);
     
     UINT8 *p_bytes = (UINT8 *) &value;
@@ -199,7 +199,7 @@ void FloatToFourBytes(FLOAT value, UINT8* bytes)
  *-------------------------------------------------------------------------------------------------*/
 UINT16 TwoBytesToUint16(UINT8* bytes)
 {
-    assertion(bytes != NULL, "bytes is null");
+    ASSERTION(bytes != NULL, "bytes is null");
     RETURN_VALUE_ON_FAILURE(bytes == NULL, 0);
     
     UINT16 value = *((UINT16 *) bytes);
@@ -229,7 +229,7 @@ INT16 TwoBytesToInt16(UINT8* bytes)
  *-------------------------------------------------------------------------------------------------*/
 UINT32 FourBytesToUint32(UINT8* bytes)
 {
-    assertion(bytes != NULL, "bytes is null");
+    ASSERTION(bytes != NULL, "bytes is null");
     RETURN_VALUE_ON_FAILURE(bytes == NULL, 0);
     
     UINT32 value = *((UINT32 *) bytes);
@@ -259,7 +259,7 @@ INT32 FourBytesToInt32(UINT8* bytes)
  *-------------------------------------------------------------------------------------------------*/
 FLOAT FourBytesToFloat(UINT8 *bytes)
 {   
-    assertion(bytes != NULL, "bytes is null");
+    ASSERTION(bytes != NULL, "bytes is null");
     RETURN_VALUE_ON_FAILURE(bytes == NULL, 0);
     
     FLOAT value = *((FLOAT *) bytes);    
@@ -296,10 +296,10 @@ void BinaryRangeSearch(INT16 search, INT16 *data_points, UINT8 num_points, UINT8
     UINT8 last = num_points - 1;
     UINT8 middle = (first+last)/2;
     
-    assertion(data_points != NULL, "data_points is NULL");
-    assertion(lower_index != NULL, "lower_index is NULL");
-    assertion(upper_index != NULL, "upper_index is NULL");
-    assertion(num_points > 1, "num_points <= 1");
+    ASSERTION(data_points != NULL, "data_points is NULL");
+    ASSERTION(lower_index != NULL, "lower_index is NULL");
+    ASSERTION(upper_index != NULL, "upper_index is NULL");
+    ASSERTION(num_points > 1, "num_points <= 1");
     RETURN_ON_FAILURE(data_points == NULL || lower_index == NULL || upper_index == NULL || num_points <= 1);
     
     *lower_index = 0;
@@ -360,8 +360,8 @@ void UniToDiff(FLOAT linear, FLOAT angular, FLOAT *left, FLOAT *right)
         R - the radius of the wheel
 */
 {
-    assertion(left != NULL, "left is NULL");
-    assertion(right != NULL, "right is NULL");
+    ASSERTION(left != NULL, "left is NULL");
+    ASSERTION(right != NULL, "right is NULL");
     RETURN_ON_FAILURE(left == NULL || right == NULL);
     
     *left = (2*linear - angular*TRACK_WIDTH)/WHEEL_DIAMETER;
@@ -394,8 +394,8 @@ void DiffToUni(FLOAT left, FLOAT right, FLOAT *linear, FLOAT *angular)
 
 */
 {
-    assertion(linear != NULL, "linear is NULL");
-    assertion(angular != NULL, "angular is NULL");
+    ASSERTION(linear != NULL, "linear is NULL");
+    ASSERTION(angular != NULL, "angular is NULL");
     RETURN_ON_FAILURE(linear == NULL || angular == NULL);
     
     *linear = WHEEL_RADIUS * (right + left) / 2;
@@ -505,9 +505,17 @@ void CalcTriangularProfile(UINT8 num_points, FLOAT lower_limit, FLOAT upper_limi
     FLOAT value;
     UINT8 ii;
 
-    assertion(num_points % 2 != 0, "num_points is not odd");
-    assertion(lower_limit < upper_limit, "lower_limit >= upper_limit");
-    RETURN_ON_FAILURE(num_points % 2 == 0 || lower_limit >= upper_limit);
+    ASSERTION(num_points % 2 != 0, "num_points is not odd");
+    if (lower_limit < 0 && upper_limit < 0)
+    {
+        ASSERTION(lower_limit > upper_limit, "lower_limit <= upper_limit");
+        RETURN_ON_FAILURE(num_points % 2 == 0 || lower_limit <= upper_limit);
+    }
+    else
+    {
+        ASSERTION(lower_limit < upper_limit, "lower_limit >= upper_limit");
+        RETURN_ON_FAILURE(num_points % 2 == 0 || lower_limit >= upper_limit);
+    }
 
     /* Calculate the mid point */
     mid_sample_offset = num_points / 2;
@@ -557,8 +565,8 @@ void EnsureAngularVelocity(FLOAT *v, FLOAT *w)
     FLOAT l_v;
     FLOAT r_v;
 
-    assertion(v != NULL, "v is NULL");
-    assertion(w != NULL, "w is NULL");
+    ASSERTION(v != NULL, "v is NULL");
+    ASSERTION(w != NULL, "w is NULL");
     RETURN_ON_FAILURE(v == NULL || w == NULL);
 
     temp_v = *v;
@@ -630,7 +638,7 @@ static FLOAT AdjustVelocity(FLOAT last_velocity, FLOAT curr_velocity, FLOAT max_
     FLOAT velocity;
     FLOAT now;
     
-    assertion(last_time != NULL, "last_time is NULL");
+    ASSERTION(last_time != NULL, "last_time is NULL");
     RETURN_VALUE_ON_FAILURE(last_time == NULL, 0);
     
     velocity = 0.0;
