@@ -7,8 +7,6 @@
 
 /* Assertion macros - defined to limit line impacts due to code changes, i.e., define once, fix once */
 
-#define V_IS_NOT_NULL() assertion_Expect(1, "v is NULL", "source/utils.c", 568)
-#define W_IS_NOT_NULL() assertion_Expect(1, "w is NULL", "source/utils.c", 569)
 #define LEFT_IS_NOT_NULL() assertion_Expect(1, "left is NULL", "source/utils.c", 363)
 #define RIGHT_IS_NOT_NULL() assertion_Expect(1, "right is NULL", "source/utils.c", 364)
 #define LINEAR_IS_NOT_NULL() assertion_Expect(1, "linear is NULL", "source/utils.c", 397)
@@ -25,8 +23,9 @@
 
 #define NUM_POINTS_IS_ODD() assertion_Expect(1, "num_points is not odd", "source/utils.c", 508)
 #define NUM_POINTS_IS_NOT_ODD() assertion_Expect(0, "num_points is not odd", "source/utils.c", 508)
-#define LOWER_LIMIT_LESS_THAN_UPPER_LIMIT() assertion_Expect(1, "lower_limit >= upper_limit", "source/utils.c", 516)
-#define LOWER_LIMIT_GREATER_THAN_UPPER_LIMIT() assertion_Expect(0, "lower_limit >= upper_limit", "source/utils.c", 516)
+#define LOWER_LIMIT_LESS_THAN_UPPER_LIMIT() assertion_Expect(1, "lower_limit exceeds upper_limit", "source/utils.c", 510)
+#define LOWER_LIMIT_GREATER_THAN_UPPER_LIMIT() assertion_Expect(0, "lower_limit exceeds upper_limit", "source/utils.c", 510)
+#define LOWER_LIMIT_UPPER_LIMIT_WRONG_DOMAIN() assertion_Expect(0, "lower_limit exceeds upper_limit", "source/utils.c", 510)
 
 #define UNITODIFF_LEFT_IS_NOT_NULL() assertion_Expect(1, "left is NULL", "source/utils.c", 363)
 #define UNITODIFF_RIGHT_IS_NOT_NULL() assertion_Expect(1, "right is NULL", "source/utils.c", 364)
@@ -34,25 +33,24 @@
 #define DIFFTOUNI_LINEAR_IS_NOT_NULL() assertion_Expect(1, "linear is NULL", "source/utils.c", 397)
 #define DIFFTOUNI_ANGULAR_IS_NOT_NULL() assertion_Expect(1, "angular is NULL", "source/utils.c", 398)
 
-#define ENSUREANGULARVELOCITY_V_IS_NOT_NULL() assertion_Expect(1, "v is NULL", "source/utils.c", 568)
-#define ENSUREANGULARVELOCITY_W_IS_NOT_NULL() assertion_Expect(1, "w is NULL", "source/utils.c", 569)
+#define ENSUREANGULARVELOCITY_V_IS_NOT_NULL() assertion_Expect(1, "v is NULL", "source/utils.c", 563)
+#define ENSUREANGULARVELOCITY_W_IS_NOT_NULL() assertion_Expect(1, "w is NULL", "source/utils.c", 564)
 #define ENSUREANGULARVELOCITY_LEFT_IS_NOT_NULL() assertion_Expect(1, "left is NULL", "source/utils.c", 363)
-#define ENSUREANGULARVELOCITY_RIGHT_IS_NOT_NULL() assertion_Expect(1, "right is NULL", "source/utils.c", 364)
-    
+#define ENSUREANGULARVELOCITY_RIGHT_IS_NOT_NULL() assertion_Expect(1, "right is NULL", "source/utils.c", 364)    
 #define ENSUREANGULARVELOCITY_LINEAR_IS_NOT_NULL() assertion_Expect(1, "linear is NULL", "source/utils.c", 397)
 #define ENSUREANGULARVELOCITY_ANGULAR_IS_NOT_NULL() assertion_Expect(1, "angular is NULL", "source/utils.c", 398)
 
-#define LIMITLINEARACCEL_LAST_TIME_IS_NOT_NULL() assertion_Expect(1, "last_time is NULL", "source/utils.c", 641)
+#define LIMITLINEARACCEL_LAST_TIME_IS_NOT_NULL() assertion_Expect(1, "last_time is NULL", "source/utils.c", 636)
 
 
 void EnsureAngularVelocity_contract_fulfilled()
 {   
-    V_IS_NOT_NULL();
-    W_IS_NOT_NULL();
-    LEFT_IS_NOT_NULL();
-    RIGHT_IS_NOT_NULL();
-    LINEAR_IS_NOT_NULL();
-    ANGULAR_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_V_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_W_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_LEFT_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_RIGHT_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_LINEAR_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_ANGULAR_IS_NOT_NULL();
 }
 
 void BinaryRangeSearch_contract_fulfilled(void)
@@ -745,7 +743,7 @@ void test_WhenNumPoints21AndRangeMinus10To10_ThenAssert(void)
     //TEST_IGNORE();
     
     NUM_POINTS_IS_ODD();
-    LOWER_LIMIT_LESS_THAN_UPPER_LIMIT();    
+    LOWER_LIMIT_UPPER_LIMIT_WRONG_DOMAIN();    
     
     // When
     CalcTriangularProfile(num_points, lower_limit, upper_limit, profile);
@@ -1113,10 +1111,10 @@ void test_WhenForwardVZeroCWWMatch_ThenEnsureVIs0WUnchanged(void)
     
     //TEST_IGNORE();
     
-    V_IS_NOT_NULL();
-    W_IS_NOT_NULL();
-    LEFT_IS_NOT_NULL();
-    RIGHT_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_V_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_W_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_LEFT_IS_NOT_NULL();
+    ENSUREANGULARVELOCITY_RIGHT_IS_NOT_NULL();
     
     // When
     EnsureAngularVelocity(&v, &w);

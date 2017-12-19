@@ -506,16 +506,11 @@ void CalcTriangularProfile(UINT8 num_points, FLOAT lower_limit, FLOAT upper_limi
     UINT8 ii;
 
     ASSERTION(num_points % 2 != 0, "num_points is not odd");
-    if (lower_limit < 0 && upper_limit < 0)
-    {
-        ASSERTION(lower_limit > upper_limit, "lower_limit <= upper_limit");
-        RETURN_ON_FAILURE(num_points % 2 == 0 || lower_limit <= upper_limit);
-    }
-    else
-    {
-        ASSERTION(lower_limit < upper_limit, "lower_limit >= upper_limit");
-        RETURN_ON_FAILURE(num_points % 2 == 0 || lower_limit >= upper_limit);
-    }
+    ASSERTION( (lower_limit < 0 && upper_limit < 0 && lower_limit > upper_limit) || 
+               (lower_limit > 0 && upper_limit > 0 && lower_limit < upper_limit), "lower_limit exceeds upper_limit");
+    RETURN_ON_FAILURE( (num_points % 2 == 0) ||
+                       (lower_limit < 0 && upper_limit < 0 && lower_limit <= upper_limit) ||
+                       (lower_limit > 0 && upper_limit > 0 && lower_limit >= upper_limit));
 
     /* Calculate the mid point */
     mid_sample_offset = num_points / 2;
