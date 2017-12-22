@@ -66,9 +66,12 @@ static UINT8 CopyAndTerminateLine(CHAR *line)
     UINT8 length;
 
     length = char_offset;
-
-    memcpy(line, line_data, length);
-    line[length] = '\0';
+    
+    if (length > 0)
+    {
+        memcpy(line, line_data, length);
+        line[length] = '\0';
+    }
 
     memset(line_data, 0, USBUART_BUFFER_SIZE);
     char_offset = 0;
@@ -207,12 +210,12 @@ UINT8 Ser_ReadLine(CHAR *line, UINT8 echo, UINT8 max_length)
         /* This means there was no input and since this is a polled routine we return zero length
            to indicate that nothing happened.
          */
-        length = 0;
+        length = -1;
     }
     else if (ch == '\n' || ch == '\r' || max_chars_read)
     {   
         length = CopyAndTerminateLine(line);
-        /* reset_line is True if we have read max_length characters.
+        /* max_chars_read is True if we have read max_length characters.
            we will have actually read the next character when this condition
            occurs, so we store it before returning so that we don't drop
            data.

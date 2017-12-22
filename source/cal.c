@@ -1123,7 +1123,7 @@ FLOAT Cal_ReadResponse()
         {
             return atof((char *) digits);
         }
-    } while (result == 0);
+    } while (result < 1);
     
     return 0.0;
 }
