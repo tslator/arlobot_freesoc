@@ -52,6 +52,6 @@ typedef enum {VAL_PID_LEFT_FORWARD,
  * Functions
  *-------------------------------------------------------------------------------------------------*/
 void ValPid_Init();
-CALVAL_INTERFACE_TYPE * ValPid_Start(VAL_PID_TYPE val_pid);
+CALVAL_INTERFACE_TYPE* const ValPid_Start(VAL_PID_TYPE val_pid);
 
 #endif

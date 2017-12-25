@@ -51,7 +51,7 @@ void CANIF_Start();
 
 UINT16 CANIF_ReadDeviceControl();
 UINT16 CANIF_ReadDebugControl();
-void CANIF_ReadCmdVelocity(FLOAT *linear, FLOAT *angular, UINT32 *timeout);
+void CANIF_ReadCmdVelocity(FLOAT* const linear, FLOAT* const angular, UINT32* const timeout);
 
 void CANIF_SetDeviceStatusBit(UINT16 bit);
 void CANIF_ClearDeviceStatusBit(UINT16 bit);

@@ -330,12 +330,12 @@ void CalAng_Init()
 {
 }
 
-CALVAL_INTERFACE_TYPE *CalAng_Start()
+CALVAL_INTERFACE_TYPE* const CalAng_Start()
 {
     angular_calibration.state = CAL_INIT_STATE;
     angular_calibration.stage = CAL_CALIBRATE_STAGE;
     p_ang_params = angular_calibration.params;
-    return (CALVAL_INTERFACE_TYPE *) &angular_calibration;
+    return (CALVAL_INTERFACE_TYPE * const) &angular_calibration;
 }
 
 /*-------------------------------------------------------------------------------*/

@@ -76,7 +76,7 @@ void Nvstore_Start()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Nvstore_WriteBytes(UINT8 *bytes, UINT16 num_bytes, UINT16 offset)
+void Nvstore_WriteBytes(UINT8* const bytes, UINT16 num_bytes, UINT16 offset)
 {
     UINT16 ii;
     

@@ -61,7 +61,7 @@ static UINT8 char_offset = 0;
  * Return: line length
  * 
  *-------------------------------------------------------------------------------------------------*/
-static UINT8 CopyAndTerminateLine(CHAR *line)
+static UINT8 CopyAndTerminateLine(CHAR* const line)
 {
     UINT8 length;
 
@@ -131,7 +131,7 @@ void Ser_Start()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Ser_PutString(char *str)
+void Ser_PutString(CHAR* const str)
 {
     USBIF_PutString(str);
 }
@@ -144,9 +144,9 @@ void Ser_PutString(char *str)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Ser_PutStringFormat(const char *fmt, ...)
+void Ser_PutStringFormat(const CHAR* const fmt, ...)
 {    
-    char str[MAX_STRING_LENGTH];
+    CHAR str[MAX_STRING_LENGTH];
     va_list ap;
 
     va_start(ap, fmt);
@@ -164,7 +164,7 @@ void Ser_PutStringFormat(const char *fmt, ...)
  * Return: Number of bytes read.
  * 
  *-------------------------------------------------------------------------------------------------*/
-UINT8 Ser_ReadData(CHAR *data)
+UINT8 Ser_ReadData(CHAR* const data)
 {
     return USBIF_GetAll(data);
 }
@@ -191,7 +191,7 @@ UINT8 Ser_ReadByte()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-UINT8 Ser_ReadLine(CHAR *line, UINT8 echo, UINT8 max_length)
+UINT8 Ser_ReadLine(CHAR* const line, UINT8 echo, UINT8 max_length)
 {
     UINT8 length;
     UINT8 line_length;

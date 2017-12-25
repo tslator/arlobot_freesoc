@@ -282,7 +282,7 @@ void Odom_Reset()
  * Return: FLOAT
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Odom_GetMeasVelocity(FLOAT *linear, FLOAT *angular)
+void Odom_GetMeasVelocity(FLOAT* const linear, FLOAT* const angular)
 {
    *linear = linear_meas_velocity;
    *angular = angular_meas_velocity;     
@@ -296,7 +296,7 @@ void Odom_GetMeasVelocity(FLOAT *linear, FLOAT *angular)
  * Return: FLOAT
  * 
  *-------------------------------------------------------------------------------------------------*/
- void Odom_GetXYPosition(FLOAT * x, FLOAT * y)
+ void Odom_GetXYPosition(FLOAT* const x, FLOAT* const y)
 {
     *x = x_position;
     *y = y_position;

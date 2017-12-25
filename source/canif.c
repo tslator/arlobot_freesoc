@@ -170,7 +170,7 @@ UINT16 CANIF_ReadDebugControl()
     return control;
 }
 
-void CANIF_ReadCmdVelocity(FLOAT *linear, FLOAT *angular, UINT32 *timeout)
+void CANIF_ReadCmdVelocity(FLOAT* const linear, FLOAT* const angular, UINT32* const timeout)
 {
     DisableInterrupt();
     if (write_occurred)

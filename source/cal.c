@@ -288,7 +288,7 @@ void Cal_PrintSamples(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *cal_data, U
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Cal_PrintPidGains(WHEEL_TYPE wheel, FLOAT *gains, UINT8 as_json)
+void Cal_PrintPidGains(WHEEL_TYPE wheel, FLOAT* const gains, UINT8 as_json)
 {
     if (as_json)
     {
@@ -1224,7 +1224,7 @@ void Cal_Clear()
     Cal_ClearCalibrationStatusBit(CAL_PID_BIT);
 }
 
-void Cal_CalcForwardOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT *start, FLOAT *stop)
+void Cal_CalcForwardOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT* const start, FLOAT* const stop)
 {        
     FLOAT tmp_start;
     FLOAT tmp_stop;
@@ -1247,7 +1247,7 @@ void Cal_CalcForwardOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT 
 
 }
 
-void Cal_CalcBackwardOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT *start, FLOAT *stop)
+void Cal_CalcBackwardOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT* const start, FLOAT* const stop)
 {
     FLOAT tmp_start;
     FLOAT tmp_stop;
@@ -1281,7 +1281,7 @@ void Cal_CalcBackwardOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Cal_CalcTriangularProfile(UINT8 num_points, FLOAT lower_limit, FLOAT upper_limit, FLOAT *forward_profile, FLOAT *backward_profile)
+void Cal_CalcTriangularProfile(UINT8 num_points, FLOAT lower_limit, FLOAT upper_limit, FLOAT* const forward_profile, FLOAT* const backward_profile)
 /* This routine calculates a series of count/second values in a triangle profile (slow, fast, slow).  It uses the motor
    calibration data to determine a range of forward and reverse values for each wheel.  The routine is called from
    motor validation to confirm that motor calibration conversion from count/second to pwm is reasonably accurate.
@@ -1376,7 +1376,7 @@ UINT16 Cal_GetStatus()
     return p_cal_eeprom->status;
 }
 
-void Cal_SetGains(PID_ENUM_TYPE pid, FLOAT* gains)
+void Cal_SetGains(PID_ENUM_TYPE pid, FLOAT* const gains)
 {
     switch (pid)
     {

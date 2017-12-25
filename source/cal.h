@@ -182,19 +182,19 @@ void Cal_SetCalibrationStatusBit(UINT16 bit);
 UINT16 Cal_GetCalibrationStatusBit(UINT16 bit);
 
 void Cal_PrintAllMotorParams(BOOL as_json);
-void Cal_PrintSamples(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *cal_data, UINT8 as_json);
-void Cal_PrintPidGains(WHEEL_TYPE wheel, FLOAT *gains, UINT8 as_json);
-void Cal_CalcTriangularProfile(UINT8 num_points, FLOAT lower_limit, FLOAT upper_limit, FLOAT *forward_output, FLOAT *backward_output);
+void Cal_PrintSamples(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE* const cal_data, UINT8 as_json);
+void Cal_PrintPidGains(WHEEL_TYPE wheel, FLOAT* const gains, UINT8 as_json);
+void Cal_CalcTriangularProfile(UINT8 num_points, FLOAT lower_limit, FLOAT upper_limit, FLOAT* const forward_output, FLOAT* const backward_output);
 
-void Cal_CalcOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT domain, FLOAT *start, FLOAT *stop);
-void Cal_CalcForwardOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT *start, FLOAT *stop);
-void Cal_CalcBackwardOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT *start, FLOAT *stop);
+void Cal_CalcOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT domain, FLOAT* const start, FLOAT* const stop);
+void Cal_CalcForwardOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT* const start, FLOAT* const stop);
+void Cal_CalcBackwardOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT* const start, FLOAT* const stop);
 
 FLOAT Cal_GetLinearBias();
 FLOAT Cal_GetAngularBias();
 CAL_PID_TYPE* Cal_GetPidGains(PID_ENUM_TYPE pid);
 UINT16 Cal_GetStatus();
-void Cal_SetGains(PID_ENUM_TYPE pid, FLOAT* gains);
+void Cal_SetGains(PID_ENUM_TYPE pid, FLOAT* const gains);
 CAL_DATA_TYPE* Cal_GetMotorData(WHEEL_TYPE wheel, DIR_TYPE dir);
 
 void Cal_SetAngularBias(FLOAT bias);

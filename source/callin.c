@@ -90,7 +90,7 @@ static CALVAL_LIN_PARAMS *p_lin_params;
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
-static void GetCommandVelocity(FLOAT *linear, FLOAT *angular, UINT32 *timeout)
+static void GetCommandVelocity(FLOAT* const linear, FLOAT* const angular, UINT32 *timeout)
 {
     *linear = p_lin_params->linear;
     *angular = p_lin_params->angular;
@@ -98,7 +98,7 @@ static void GetCommandVelocity(FLOAT *linear, FLOAT *angular, UINT32 *timeout)
 }
  
  
-static UINT8 IsMoveFinished(FLOAT * distance)
+static UINT8 IsMoveFinished(FLOAT* const distance)
 {
     FLOAT x;
     FLOAT y;
@@ -291,12 +291,12 @@ void CalLin_Init()
 {
 }
 
-CALVAL_INTERFACE_TYPE* CalLin_Start()
+CALVAL_INTERFACE_TYPE* const CalLin_Start()
 {
     linear_calibration.state = CAL_INIT_STATE;
     linear_calibration.stage = CAL_CALIBRATE_STAGE;
     p_lin_params = linear_calibration.params;
-    return &linear_calibration;
+    return (CALVAL_INTERFACE_TYPE* const) &linear_calibration;
 }
 
 /*-------------------------------------------------------------------------------*/

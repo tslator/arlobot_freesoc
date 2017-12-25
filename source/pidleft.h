@@ -57,7 +57,7 @@ void LeftPid_Start();
 void LeftPid_Process();
 
 void LeftPid_SetGains(FLOAT kp, FLOAT ki, FLOAT kd, FLOAT kf);
-void LeftPid_GetGains(FLOAT *kp, FLOAT *ki, FLOAT *kd, FLOAT *kf);
+void LeftPid_GetGains(FLOAT* const kp, FLOAT* const ki, FLOAT* const kd, FLOAT* const kf);
 
 void LeftPid_SetTarget(GET_TARGET_FUNC_TYPE target);
 void LeftPid_RestoreTarget();

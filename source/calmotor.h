@@ -49,6 +49,6 @@ SOFTWARE.
  * Functions
  *-------------------------------------------------------------------------------------------------*/
 void CalMotor_Init();
-CALVAL_INTERFACE_TYPE *CalMotor_Start();  
+CALVAL_INTERFACE_TYPE* const CalMotor_Start();  
     
 #endif    

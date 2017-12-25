@@ -48,6 +48,6 @@ SOFTWARE.
  * Functions
  *-------------------------------------------------------------------------------------------------*/
 void CalPid_Init();
-CALVAL_INTERFACE_TYPE* CalPid_Start(WHEEL_TYPE wheel);
+CALVAL_INTERFACE_TYPE* const CalPid_Start(WHEEL_TYPE wheel);
 
 #endif

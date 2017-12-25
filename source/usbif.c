@@ -108,7 +108,7 @@ void USBIF_Update()
     
 }
 
-void USBIF_PutString(CHAR *str)
+void USBIF_PutString(CHAR* const str)
 {
     if (WaitForCDCIsReady(CDC_IS_READY_TIMEOUT))
     {
@@ -123,7 +123,7 @@ void USBIF_PutString(CHAR *str)
 }
 
 
-UINT8 USBIF_GetAll(CHAR *data)
+UINT8 USBIF_GetAll(CHAR* const data)
 {
     UINT8 count = 0;
     UINT8 buffer[USBUART_BUFFER_SIZE];

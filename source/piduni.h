@@ -52,7 +52,7 @@ void UniPid_Start();
 void UniPid_Process();
 
 void UniPid_SetGains(FLOAT theta_kp, FLOAT theta_ki, FLOAT theta_kd, FLOAT theta_kf);
-void UniPid_GetGains(FLOAT *theta_kp, FLOAT *theta_ki, FLOAT *theta_kd, FLOAT *theta_kf);
+void UniPid_GetGains(FLOAT* const theta_kp, FLOAT* const theta_ki, FLOAT* const theta_kd, FLOAT* const theta_kf);
 
 void UniPid_Reset();
 void UniPid_Enable(BOOL enable);

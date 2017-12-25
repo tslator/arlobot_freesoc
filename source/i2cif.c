@@ -252,7 +252,7 @@ UINT16 I2CIF_ReadDebugControl()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void I2CIF_ReadCmdVelocity(FLOAT *linear, FLOAT *angular, UINT32 *timeout)
+void I2CIF_ReadCmdVelocity(FLOAT* const linear, FLOAT* const angular, UINT32* const timeout)
 {
     /* GetActivity() returns the status of the I2C activity: write, read, busy, or error
        Wrt to I2C writes, only the first 12 bytes can be written to.  Of those 12 bytes, 2 are for the control register,

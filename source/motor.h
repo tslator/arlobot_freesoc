@@ -58,7 +58,7 @@ void Motor_SetPwm(PWM_TYPE left_pwm, PWM_TYPE right_pwm);
 
 PWM_TYPE Motor_LeftGetPwm();
 PWM_TYPE Motor_RightGetPwm();
-void Motor_GetPwm(PWM_TYPE *left, PWM_TYPE *right);
+void Motor_GetPwm(PWM_TYPE* const left, PWM_TYPE* const right);
 
 void Motor_LeftRamp(UINT32 time, PWM_TYPE target);
 void Motor_RightRamp(UINT32 time, PWM_TYPE target);

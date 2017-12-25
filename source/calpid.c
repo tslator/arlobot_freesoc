@@ -99,12 +99,12 @@ static CALVAL_PID_PARAMS *p_pid_params;
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void StoreLeftGains(FLOAT *gains)
+static void StoreLeftGains(FLOAT* const gains)
 {
     Cal_SetGains(PID_TYPE_LEFT, gains);
 }
 
-static void StoreRightGains(FLOAT *gains)
+static void StoreRightGains(FLOAT* const gains)
 {
     Cal_SetGains(PID_TYPE_RIGHT, gains);
 }
@@ -361,7 +361,7 @@ void CalPid_Init()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-CALVAL_INTERFACE_TYPE* CalPid_Start(WHEEL_TYPE wheel)
+CALVAL_INTERFACE_TYPE* const CalPid_Start(WHEEL_TYPE wheel)
 {
     /* Note: This calculation is required to determine the maximum count/sec value between left/right
        motor calibration parameters and the maximum allowed PID range.  It cannot be done until
@@ -377,15 +377,15 @@ CALVAL_INTERFACE_TYPE* CalPid_Start(WHEEL_TYPE wheel)
         case WHEEL_LEFT:
             left_pid_calibration.state = CAL_INIT_STATE;
             p_pid_params = left_pid_calibration.params;
-            return &left_pid_calibration;
+            return (CALVAL_INTERFACE_TYPE * const) &left_pid_calibration;
 
         case WHEEL_RIGHT:
             right_pid_calibration.state = CAL_INIT_STATE;
             p_pid_params = right_pid_calibration.params;
-            return &right_pid_calibration;
+            return (CALVAL_INTERFACE_TYPE * const) &right_pid_calibration;
             
         default:
-            return (CALVAL_INTERFACE_TYPE *)NULL;
+            return (CALVAL_INTERFACE_TYPE * const) NULL;
     }
 }
 

@@ -65,7 +65,7 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/    
 void Nvstore_Init();
 void Nvstore_Start();
-void Nvstore_WriteBytes(UINT8 *bytes, UINT16 num_bytes, UINT16 offset);
+void Nvstore_WriteBytes(UINT8* const bytes, UINT16 num_bytes, UINT16 offset);
 void Nvstore_WriteUint16(UINT16 value, UINT16 offset);
 void Nvstore_WriteFloat(FLOAT value, UINT16 offset);
 

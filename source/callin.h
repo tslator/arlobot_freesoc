@@ -50,7 +50,7 @@ SOFTWARE.
  * Functions
  *-------------------------------------------------------------------------------------------------*/
 void CalLin_Init();        
-CALVAL_INTERFACE_TYPE* CalLin_Start();
+CALVAL_INTERFACE_TYPE* const CalLin_Start();
 
 #endif
   

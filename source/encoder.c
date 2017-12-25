@@ -125,7 +125,7 @@ static ENCODER_TYPE right_enc = {
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
- static void DumpEncoder(ENCODER_TYPE *enc)
+ static void DumpEncoder(ENCODER_TYPE* const enc)
 {
     if (Debug_IsEnabled(DEBUG_LEFT_ENCODER_ENABLE_BIT|DEBUG_RIGHT_ENCODER_ENABLE_BIT)) 
     {    
@@ -160,7 +160,7 @@ static ENCODER_TYPE right_enc = {
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void Encoder_Sample(ENCODER_TYPE *enc, UINT32 delta_time)
+static void Encoder_Sample(ENCODER_TYPE* const enc, UINT32 delta_time)
 {
     enc->count = (INT32) enc->read_counter();
     enc->delta_count = enc->count - enc->last_count;

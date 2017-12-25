@@ -50,7 +50,7 @@ SOFTWARE.
  * Functions
  *-------------------------------------------------------------------------------------------------*/
 void CalAng_Init();
-CALVAL_INTERFACE_TYPE *CalAng_Start();
+CALVAL_INTERFACE_TYPE* const CalAng_Start();
 
 #endif
 
