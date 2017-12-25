@@ -185,7 +185,7 @@ void Control_Start()
 }
 
 #ifdef ENABLE_VELOCITY_REPEAT
-static void RepeatVelocity(FLOAT *linear, FLOAT *angular, UINT32 *timeout)
+static void RepeatVelocity(FLOAT* const linear, FLOAT* const angular, UINT32* const timeout)
 {
     static UINT8 select = 0;
     static UINT32 last_time = 0;
@@ -462,7 +462,7 @@ FLOAT Control_AngularGetCmdVelocity()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/ 
- void Control_GetCmdVelocity(FLOAT *linear, FLOAT *angular)
+ void Control_GetCmdVelocity(FLOAT* const linear, FLOAT* const angular)
 {
     *linear = linear_velocity_mps;
     *angular = angular_velocity_rps;

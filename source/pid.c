@@ -78,7 +78,7 @@ SOFTWARE.
     defined (UNIPID_DUMP_ENABLED) ||    \
     defined (ANGPID_DUMP_ENABLED)
 
-void DumpPid(char *name, PIDControl *pid)
+void DumpPid(char* const name, PIDControl* const pid)
 {
     if ( Debug_IsEnabled(DEBUG_LEFT_PID_ENABLE_BIT|DEBUG_RIGHT_PID_ENABLE_BIT|DEBUG_UNIPID_ENABLE_BIT|DEBUG_ANGPID_ENABLE_BIT) )
     {
@@ -237,7 +237,7 @@ void Pid_BypassAll(BOOL bypass)
     RightPid_Bypass(bypass);
 }
 
-BOOL Pid_SetGains(PIDControl *p_pid, CAL_PID_TYPE *p_gains)
+BOOL Pid_SetGains(PIDControl* const p_pid, CAL_PID_TYPE* const p_gains)
 {
     BOOL result = FALSE;
 

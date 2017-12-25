@@ -274,7 +274,7 @@ static char *direction_str[2] = {"forward", "backward"};
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void CalculateMinMaxCpsSample(INT32 *samples, INT32 *min, INT32 *max)
+static void CalculateMinMaxCpsSample(INT32* const samples, INT32* const min, INT32* const max)
 {
     UINT8 ii;
     /* Note: it was necessary to introduce local variables.  Accessing min/max parameters had 
@@ -311,7 +311,7 @@ static void CalculateMinMaxCpsSample(INT32 *samples, INT32 *min, INT32 *max)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void InitCalibrationParams(CAL_MOTOR_PARAMS *params)
+static void InitCalibrationParams(CAL_MOTOR_PARAMS* const params)
 {
     UINT8 ii;
     UINT16 pwm;
@@ -344,7 +344,7 @@ static void InitCalibrationParams(CAL_MOTOR_PARAMS *params)
     params->iterations = MAX_MOTOR_CAL_ITERATION;
  }
   
-static UINT8 GetNextPwm(CAL_MOTOR_PARAMS *params, PWM_TYPE *pwm)
+static UINT8 GetNextPwm(CAL_MOTOR_PARAMS* const params, PWM_TYPE* const pwm)
 {
     UINT8 index;
 
@@ -365,7 +365,7 @@ static UINT8 GetNextPwm(CAL_MOTOR_PARAMS *params, PWM_TYPE *pwm)
     return 1;        
 }
 
-static UINT8 PerformMotorCalibrationIteration(CAL_MOTOR_PARAMS *params)
+static UINT8 PerformMotorCalibrationIteration(CAL_MOTOR_PARAMS* const params)
 {
     static UINT8 pwm_running = FALSE;
     static UINT32 pwm_start_time = 0;
@@ -448,7 +448,7 @@ static UINT8 PerformMotorCalibrationIteration(CAL_MOTOR_PARAMS *params)
     return CAL_OK;
 }
 
-static UINT8 PerformMotorCalibrateAverage(CAL_MOTOR_PARAMS *params)
+static UINT8 PerformMotorCalibrateAverage(CAL_MOTOR_PARAMS* const params)
 {
     UINT8 ii;
     UINT8 result;
@@ -490,7 +490,7 @@ static UINT8 PerformMotorCalibrateAverage(CAL_MOTOR_PARAMS *params)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void StoreMotorCalibration(CAL_MOTOR_PARAMS *params)
+static void StoreMotorCalibration(CAL_MOTOR_PARAMS* const params)
 {
     UINT8 ii;
 
@@ -533,7 +533,7 @@ static void StoreMotorCalibration(CAL_MOTOR_PARAMS *params)
     Cal_SetMotorData(params->wheel, params->direction, &cal_data);
 }
   
-static UINT8 PerformMotorCalibration(CAL_MOTOR_PARAMS *cal_params)
+static UINT8 PerformMotorCalibration(CAL_MOTOR_PARAMS* const cal_params)
 {
     static UINT8 running = FALSE;
     UINT8 result;
@@ -671,9 +671,9 @@ void CalMotor_Init()
 {
 }
 
-CALVAL_INTERFACE_TYPE *CalMotor_Start()
+CALVAL_INTERFACE_TYPE* const CalMotor_Start()
 {
-    return &motor_calibration;
+    return (CALVAL_INTERFACE_TYPE* const) &motor_calibration;
 }
 
 /* [] END OF FILE */

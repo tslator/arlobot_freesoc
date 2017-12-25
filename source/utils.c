@@ -56,7 +56,7 @@ SOFTWARE.
  * Return: average
  * 
  *-------------------------------------------------------------------------------------------------*/
-INT32 MovingAverage(MOVING_AVERAGE_TYPE* ma, INT32 value)
+INT32 MovingAverage(MOVING_AVERAGE_TYPE* const ma, INT32 value)
 /*
 MA*[i]= MA*[i-1] +X[i] - MA*[i-1]/N
 
@@ -85,7 +85,7 @@ MA[i]= MA*[i]/N
  * Return: average
  * 
  *-------------------------------------------------------------------------------------------------*/
-FLOAT MovingAverageFloat(MOVING_AVERAGE_FLOAT_TYPE* ma, FLOAT value)
+FLOAT MovingAverageFloat(MOVING_AVERAGE_FLOAT_TYPE* const ma, FLOAT value)
 /*
 MA*[i]= MA*[i-1] +X[i] - MA*[i-1]/N
 
@@ -114,7 +114,7 @@ MA[i]= MA*[i]/N
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Uint16ToTwoBytes(UINT16 value, UINT8* bytes)
+void Uint16ToTwoBytes(UINT16 value, UINT8* const bytes)
 {
     /* Note: We are not changing the endianess, we're just getting a pointer to the first byte */
     
@@ -136,7 +136,7 @@ void Uint16ToTwoBytes(UINT16 value, UINT8* bytes)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Uint32ToFourBytes(UINT32 value, UINT8* bytes)
+void Uint32ToFourBytes(UINT32 value, UINT8* const bytes)
 {
     /* Note: We are not changing the endianess, we're just getting a pointer to the first byte */
 
@@ -160,7 +160,7 @@ void Uint32ToFourBytes(UINT32 value, UINT8* bytes)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Int32ToFourBytes(INT32 value, UINT8* bytes)
+void Int32ToFourBytes(INT32 value, UINT8* const bytes)
 {
     Uint32ToFourBytes((UINT32)value, bytes);
 }
@@ -174,7 +174,7 @@ void Int32ToFourBytes(INT32 value, UINT8* bytes)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void FloatToFourBytes(FLOAT value, UINT8* bytes)
+void FloatToFourBytes(FLOAT value, UINT8* const bytes)
 {
     /* Note: We are not changing the endianess, we're just getting a pointer to the first byte */
 
@@ -197,7 +197,7 @@ void FloatToFourBytes(FLOAT value, UINT8* bytes)
  * Return: UINT16
  * 
  *-------------------------------------------------------------------------------------------------*/
-UINT16 TwoBytesToUint16(UINT8* bytes)
+UINT16 TwoBytesToUint16(UINT8* const bytes)
 {
     ASSERTION(bytes != NULL, "bytes is null");
     RETURN_VALUE_ON_FAILURE(bytes == NULL, 0);
@@ -214,7 +214,7 @@ UINT16 TwoBytesToUint16(UINT8* bytes)
  * Return: INT16
  * 
  *-------------------------------------------------------------------------------------------------*/
-INT16 TwoBytesToInt16(UINT8* bytes)
+INT16 TwoBytesToInt16(UINT8* const bytes)
 {
     return (INT16) TwoBytesToUint16(bytes);
 }
@@ -227,7 +227,7 @@ INT16 TwoBytesToInt16(UINT8* bytes)
  * Return: UINT32
  * 
  *-------------------------------------------------------------------------------------------------*/
-UINT32 FourBytesToUint32(UINT8* bytes)
+UINT32 FourBytesToUint32(UINT8* const bytes)
 {
     ASSERTION(bytes != NULL, "bytes is null");
     RETURN_VALUE_ON_FAILURE(bytes == NULL, 0);
@@ -244,7 +244,7 @@ UINT32 FourBytesToUint32(UINT8* bytes)
  * Return: INT32
  * 
  *-------------------------------------------------------------------------------------------------*/
-INT32 FourBytesToInt32(UINT8* bytes)
+INT32 FourBytesToInt32(UINT8* const bytes)
 {
     return (INT32) FourBytesToUint32(bytes);
 }
@@ -257,7 +257,7 @@ INT32 FourBytesToInt32(UINT8* bytes)
  * Return: FLOATing point value
  * 
  *-------------------------------------------------------------------------------------------------*/
-FLOAT FourBytesToFloat(UINT8 *bytes)
+FLOAT FourBytesToFloat(UINT8* const bytes)
 {   
     ASSERTION(bytes != NULL, "bytes is null");
     RETURN_VALUE_ON_FAILURE(bytes == NULL, 0);
@@ -279,7 +279,7 @@ FLOAT FourBytesToFloat(UINT8 *bytes)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void BinaryRangeSearch(INT16 search, INT16 *data_points, UINT8 num_points, UINT8 *lower_index, UINT8 *upper_index)
+void BinaryRangeSearch(INT16 search, INT16* const data_points, UINT8 num_points, UINT8* const lower_index, UINT8* const upper_index)
 /*
     This is a binary search modified to return a range, e.g., lower and upper, when searching for an element.
 
@@ -347,7 +347,7 @@ void BinaryRangeSearch(INT16 search, INT16 *data_points, UINT8 num_points, UINT8
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void UniToDiff(FLOAT linear, FLOAT angular, FLOAT *left, FLOAT *right)
+void UniToDiff(FLOAT linear, FLOAT angular, FLOAT* const left, FLOAT* const right)
 /*
     Vr = (2*V + W*L)/(2*R)
     Vl = (2*V - W*L)/(2*R)
@@ -380,7 +380,7 @@ void UniToDiff(FLOAT linear, FLOAT angular, FLOAT *left, FLOAT *right)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void DiffToUni(FLOAT left, FLOAT right, FLOAT *linear, FLOAT *angular)
+void DiffToUni(FLOAT left, FLOAT right, FLOAT* const linear, FLOAT* const angular)
 /*
     V = R/2 * (Vr + Vl)
     W = R/L * (Vr - Vl)
@@ -498,7 +498,7 @@ FLOAT NormalizeHeading(FLOAT heading)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void CalcTriangularProfile(UINT8 num_points, FLOAT lower_limit, FLOAT upper_limit, FLOAT *profile)
+void CalcTriangularProfile(UINT8 num_points, FLOAT lower_limit, FLOAT upper_limit, FLOAT* const profile)
 {
     UINT8 mid_sample_offset;
     FLOAT delta;
@@ -539,7 +539,7 @@ void CalcTriangularProfile(UINT8 num_points, FLOAT lower_limit, FLOAT upper_limi
     
 }
 
-void EnsureAngularVelocity(FLOAT *v, FLOAT *w)
+void EnsureAngularVelocity(FLOAT* const v, FLOAT* const w)
 {
     /*
     Ensure specified angular velocity can be met by adjusting linear velocity
@@ -617,7 +617,7 @@ void EnsureAngularVelocity(FLOAT *v, FLOAT *w)
  * 
  *-------------------------------------------------------------------------------------------------*/ 
 #ifdef ENABLE_ACCEL_LIMIT
-static FLOAT AdjustVelocity(FLOAT last_velocity, FLOAT curr_velocity, FLOAT max_velocity, FLOAT response_time, UINT32 *last_time)
+static FLOAT AdjustVelocity(FLOAT last_velocity, FLOAT curr_velocity, FLOAT max_velocity, FLOAT response_time, UINT32* const last_time)
 /*
     Explanation: The approach here is to limit acceleration in terms of a response time, e.g., wheel should reach new 
     speed within X seconds.  The worst case is 0 to max speed.  On each call delta time, delta velocity and percent

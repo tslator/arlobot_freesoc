@@ -256,7 +256,7 @@ void ValLin_Init()
 {
 }
 
-CALVAL_INTERFACE_TYPE* ValLin_Start(DIR_TYPE dir)
+CALVAL_INTERFACE_TYPE* const ValLin_Start(DIR_TYPE dir)
 {
     linear_validation.state = CAL_INIT_STATE;
     linear_validation.stage = CAL_VALIDATE_STAGE;

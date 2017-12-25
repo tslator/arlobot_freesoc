@@ -51,7 +51,7 @@ static FLOAT CalcError(FLOAT setpoint, FLOAT input)
     return setpoint - input;
 }
 
-void PIDInit(PIDControl *pid, FLOAT kp, FLOAT ki, FLOAT kd, FLOAT kf,
+void PIDInit(PIDControl* const pid, FLOAT kp, FLOAT ki, FLOAT kd, FLOAT kf,
              FLOAT sampleTimeSeconds, FLOAT minOutput, FLOAT maxOutput, 
              PIDMode mode, PIDDirection controllerDirection, PIDCalcError calcError)     	
 {
@@ -78,7 +78,7 @@ void PIDInit(PIDControl *pid, FLOAT kp, FLOAT ki, FLOAT kd, FLOAT kf,
     PIDTuningsSet(pid, kp, ki, kd, kf);
 }
 
-BOOL PIDCompute(PIDControl *pid) 
+BOOL PIDCompute(PIDControl* const pid) 
 {
     FLOAT error, dInput;
 
@@ -112,7 +112,7 @@ BOOL PIDCompute(PIDControl *pid)
     return true;
 }
      
-void PIDModeSet(PIDControl *pid, PIDMode mode)                                                                                                                                       
+void PIDModeSet(PIDControl* const pid, PIDMode mode)                                                                                                                                       
 {
     // If the mode changed from MANUAL to AUTOMATIC
     if(pid->mode != mode && mode == AUTOMATIC)
@@ -128,7 +128,7 @@ void PIDModeSet(PIDControl *pid, PIDMode mode)
     pid->mode = mode;
 }
 
-void PIDOutputLimitsSet(PIDControl *pid, FLOAT min, FLOAT max) 							  							  
+void PIDOutputLimitsSet(PIDControl* const pid, FLOAT min, FLOAT max) 							  							  
 {
     // Check if the parameters are valid
     if(min >= max)
@@ -178,27 +178,27 @@ void PIDTuningsSet(PIDControl *pid, FLOAT kp, FLOAT ki, FLOAT kd, FLOAT kf)
     }
 }
 
-void PIDTuningKpSet(PIDControl *pid, FLOAT kp)
+void PIDTuningKpSet(PIDControl* const pid, FLOAT kp)
 {
     PIDTuningsSet(pid, kp, pid->dispKi, pid->dispKd, pid->dispKf);
 }
 
-void PIDTuningKiSet(PIDControl *pid, FLOAT ki)
+void PIDTuningKiSet(PIDControl* const pid, FLOAT ki)
 {
     PIDTuningsSet(pid, pid->dispKp, ki, pid->dispKd, pid->dispKf);
 }
 
-void PIDTuningKdSet(PIDControl *pid, FLOAT kd)
+void PIDTuningKdSet(PIDControl* const pid, FLOAT kd)
 {
     PIDTuningsSet(pid, pid->dispKp, pid->dispKi, kd, pid->dispKf);
 }
 
-void PIDTunningKfSet(PIDControl *pid, FLOAT kf)
+void PIDTunningKfSet(PIDControl* const pid, FLOAT kf)
 {
     PIDTuningsSet(pid, pid->dispKp, pid->dispKi, pid->dispKd, kf);
 }
 
-void PIDControllerDirectionSet(PIDControl *pid, PIDDirection controllerDirection)	  									  									  									  
+void PIDControllerDirectionSet(PIDControl* const pid, PIDDirection controllerDirection)	  									  									  									  
 {
     // If in automatic mode and the controller's sense of direction is reversed
     if(pid->mode == AUTOMATIC && controllerDirection == REVERSE)
@@ -213,7 +213,7 @@ void PIDControllerDirectionSet(PIDControl *pid, PIDDirection controllerDirection
     pid->controllerDirection = controllerDirection;
 }
 
-void PIDSampleTimeSet(PIDControl *pid, FLOAT sampleTimeSeconds)                                                       									  									  									   
+void PIDSampleTimeSet(PIDControl* const pid, FLOAT sampleTimeSeconds)                                                       									  									  									   
 {
     FLOAT ratio;
 
@@ -229,23 +229,23 @@ void PIDSampleTimeSet(PIDControl *pid, FLOAT sampleTimeSeconds)
     }
 }
 
-void PIDSetpointSet(PIDControl *pid, FLOAT setpoint) { pid->setpoint = setpoint; }
+void PIDSetpointSet(PIDControl* const pid, FLOAT setpoint) { pid->setpoint = setpoint; }
 
-void PIDInputSet(PIDControl *pid, FLOAT input) { pid->input = input; }
+void PIDInputSet(PIDControl* const pid, FLOAT input) { pid->input = input; }
 
-FLOAT PIDOutputGet(PIDControl *pid) { return pid->output; }
+FLOAT PIDOutputGet(PIDControl* const pid) { return pid->output; }
 
-FLOAT PIDKpGet(PIDControl *pid) { return pid->dispKp; }						  
+FLOAT PIDKpGet(PIDControl* const pid) { return pid->dispKp; }						  
 
-FLOAT PIDKiGet(PIDControl *pid) { return pid->dispKi; }						  
+FLOAT PIDKiGet(PIDControl* const pid) { return pid->dispKi; }						  
 
-FLOAT PIDKdGet(PIDControl *pid) { return pid->dispKd; }	
+FLOAT PIDKdGet(PIDControl* const pid) { return pid->dispKd; }	
 
-FLOAT PIDKfGet(PIDControl *pid) { return pid->dispKf; }
+FLOAT PIDKfGet(PIDControl* const pid) { return pid->dispKf; }
 
-PIDMode PIDModeGet(PIDControl *pid) { return pid->mode; }						  
+PIDMode PIDModeGet(PIDControl* const pid) { return pid->mode; }						  
 
-PIDDirection PIDDirectionGet(PIDControl *pid) { return pid->controllerDirection; }		
+PIDDirection PIDDirectionGet(PIDControl* const pid) { return pid->controllerDirection; }		
 
 
 

@@ -42,11 +42,11 @@ SOFTWARE.
 void Ser_Init();
 void Ser_Start();
 
-void Ser_PutString(char *str);
-void Ser_PutStringFormat(const char *fmt, ...);
+void Ser_PutString(CHAR* const str);
+void Ser_PutStringFormat(const CHAR* const fmt, ...);
 UINT8 Ser_ReadData(CHAR *data);
 UINT8 Ser_ReadByte();
-UINT8 Ser_ReadLine(CHAR *line, UINT8 echo, UINT8 max_length);
+UINT8 Ser_ReadLine(CHAR* const line, UINT8 echo, UINT8 max_length);
 void Ser_WriteByte(UINT8 value);
 
 UINT8 Ser_GetConnectState(void);

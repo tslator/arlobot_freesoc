@@ -48,7 +48,7 @@ SOFTWARE.
  * Functions
  *-------------------------------------------------------------------------------------------------*/
 void ValAng_Init();
-CALVAL_INTERFACE_TYPE *ValAng_Start(DIR_TYPE dir);
+CALVAL_INTERFACE_TYPE* const ValAng_Start(DIR_TYPE dir);
 
 #endif
 

@@ -309,13 +309,13 @@ void ValAng_Init()
 {
 }
 
-CALVAL_INTERFACE_TYPE *ValAng_Start(DIR_TYPE dir)
+CALVAL_INTERFACE_TYPE* const ValAng_Start(DIR_TYPE dir)
 {
     angular_validation.state = CAL_INIT_STATE;
     angular_validation.stage = CAL_VALIDATE_STAGE;
     p_ang_params = angular_validation.params;
     p_ang_params->direction = dir;
-    return (CALVAL_INTERFACE_TYPE *) &angular_validation;
+    return (CALVAL_INTERFACE_TYPE * const) &angular_validation;
 }
 
 /*-------------------------------------------------------------------------------*/

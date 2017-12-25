@@ -113,7 +113,7 @@ static MOTOR_TYPE right_motor = {
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void DumpMotor(MOTOR_TYPE *motor)
+static void DumpMotor(MOTOR_TYPE* const motor)
 {
     if (Debug_IsEnabled(DEBUG_LEFT_MOTOR_ENABLE_BIT | DEBUG_RIGHT_MOTOR_ENABLE_BIT))
     {
@@ -241,7 +241,7 @@ PWM_TYPE Motor_RightGetPwm()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Motor_GetPwm(PWM_TYPE *left, PWM_TYPE *right)
+void Motor_GetPwm(PWM_TYPE* const left, PWM_TYPE* const right)
 {
     *left = left_motor.get_pwm();
     *right = right_motor.get_pwm();
@@ -278,7 +278,7 @@ void Motor_Stop()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
- static void CalcRampParams(MOTOR_TYPE *motor, UINT32 time_ms, PWM_TYPE target, INT16 *step, UINT32 *time_delay)
+ static void CalcRampParams(MOTOR_TYPE* const motor, UINT32 time_ms, PWM_TYPE target, INT16* const step, UINT32* const time_delay)
 {
     #define MIN_PWM_STEP (1)
     #define MAX_PWM_STEP (10)
@@ -316,7 +316,7 @@ void Motor_Stop()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
- static void Ramp(MOTOR_TYPE *motor, UINT32 time_ms, PWM_TYPE target, PWM_TYPE step)
+ static void Ramp(MOTOR_TYPE* const motor, UINT32 time_ms, PWM_TYPE target, PWM_TYPE step)
 {
     INT16 pwm_step;
     PWM_TYPE pwm;

@@ -57,7 +57,7 @@ void I2CIF_Start();
 
 UINT16 I2CIF_ReadDeviceControl();
 UINT16 I2CIF_ReadDebugControl();
-void I2CIF_ReadCmdVelocity(FLOAT *linear, FLOAT *angular, UINT32 *timeout);
+void I2CIF_ReadCmdVelocity(FLOAT* const linear, FLOAT* const angular, UINT32* const timeout);
 
 void I2CIF_SetDeviceStatusBit(UINT16 bit);
 void I2CIF_ClearDeviceStatusBit(UINT16 bit);

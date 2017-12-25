@@ -57,7 +57,7 @@ void RightPid_Start();
 void RightPid_Process();
 
 void RightPid_SetGains(FLOAT kp, FLOAT ki, FLOAT kd, FLOAT kf);
-void RightPid_GetGains(FLOAT *kp, FLOAT *ki, FLOAT *kd, FLOAT *kf);
+void RightPid_GetGains(FLOAT* const kp, FLOAT* const ki, FLOAT* const kd, FLOAT* const kf);
 
 void RightPid_SetTarget(GET_TARGET_FUNC_TYPE target);
 void RightPid_RestoreTarget();

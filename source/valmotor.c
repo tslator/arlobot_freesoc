@@ -475,11 +475,11 @@ void ValMotor_Init()
     motor_val_index = 0;
 }
 
-CALVAL_INTERFACE_TYPE * ValMotor_Start()
+CALVAL_INTERFACE_TYPE* const ValMotor_Start()
 {
     motor_validation.stage = CAL_VALIDATE_STAGE;
     motor_validation.state = CAL_INIT_STATE;
-    return &motor_validation;        
+    return (CALVAL_INTERFACE_TYPE* const) &motor_validation;        
 }
 
 /* [] END OF FILE */

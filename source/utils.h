@@ -112,30 +112,30 @@ typedef struct _moving_average_FLOAT_tag
  * Functions
  *-------------------------------------------------------------------------------------------------*/    
 
-INT32 MovingAverage(MOVING_AVERAGE_TYPE* ma, INT32 value);
-FLOAT MovingAverageFloat(MOVING_AVERAGE_FLOAT_TYPE* ma, FLOAT value);
+INT32 MovingAverage(MOVING_AVERAGE_TYPE* const ma, INT32 value);
+FLOAT MovingAverageFloat(MOVING_AVERAGE_FLOAT_TYPE* const ma, FLOAT value);
 
-INT16 TwoBytesToInt16(UINT8* bytes);
-UINT16 TwoBytesToUint16(UINT8* bytes);
-UINT32 FourBytesToUint32(UINT8* bytes);
-INT32 FourBytesToInt32(UINT8* bytes);
-FLOAT FourBytesToFloat(UINT8 *bytes);
-void Uint16ToTwoBytes(UINT16 value, UINT8* bytes);
-void Int32ToFourBytes(INT32 value, UINT8* bytes);
-void Uint16ToTwoBytes(UINT16 value, UINT8* bytes);
-void FloatToFourBytes(FLOAT value, UINT8* bytes);
+INT16 TwoBytesToInt16(UINT8* const bytes);
+UINT16 TwoBytesToUint16(UINT8* const bytes);
+UINT32 FourBytesToUint32(UINT8* const bytes);
+INT32 FourBytesToInt32(UINT8* const bytes);
+FLOAT FourBytesToFloat(UINT8* const bytes);
+void Uint16ToTwoBytes(UINT16 value, UINT8* const bytes);
+void Int32ToFourBytes(INT32 value, UINT8* const bytes);
+void Uint16ToTwoBytes(UINT16 value, UINT8* const bytes);
+void FloatToFourBytes(FLOAT value, UINT8* const bytes);
 
-void BinaryRangeSearch(INT16 search, INT16 *data_points, UINT8 num_points, UINT8 *lower_index, UINT8 *upper_index);
+void BinaryRangeSearch(INT16 search, INT16* const data_points, UINT8 num_points, UINT8* const lower_index, UINT8* const upper_index);
 INT16 Interpolate(INT16 x, INT16 x1, INT16 x2, UINT16 y1, UINT16 y2);
 
-void UniToDiff(FLOAT linear, FLOAT angular, FLOAT *left, FLOAT *right);
-void DiffToUni(FLOAT left, FLOAT right, FLOAT *linear, FLOAT *angular);
+void UniToDiff(FLOAT linear, FLOAT angular, FLOAT* const left, FLOAT* const right);
+void DiffToUni(FLOAT left, FLOAT right, FLOAT* const linear, FLOAT* const angular);
 FLOAT CalcHeading(FLOAT left_count, FLOAT right_count, FLOAT radius, FLOAT width, FLOAT count_per_rev, FLOAT bias);
 
 FLOAT NormalizeHeading(FLOAT heading);
 
 void CalcTriangularProfile(UINT8 num_points, FLOAT lower_limit, FLOAT upper_limit, FLOAT *profile);
-void EnsureAngularVelocity(FLOAT *linear_cmd_velocity, FLOAT *angular_cmd_velocity);
+void EnsureAngularVelocity(FLOAT* const linear_cmd_velocity, FLOAT* const angular_cmd_velocity);
 
 FLOAT LimitLinearAccel(FLOAT linear_velocity, FLOAT max_linear, FLOAT response_time);
 FLOAT LimitAngularAccel(FLOAT angular_velocity, FLOAT max_angular, FLOAT response_time);

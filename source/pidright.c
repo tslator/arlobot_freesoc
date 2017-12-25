@@ -295,7 +295,7 @@ void RightPid_SetGains(FLOAT kp, FLOAT ki, FLOAT kd, FLOAT kf)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void RightPid_GetGains(FLOAT *kp, FLOAT *ki, FLOAT *kd, FLOAT *kf)
+void RightPid_GetGains(FLOAT* const kp, FLOAT* const ki, FLOAT* const kd, FLOAT* const kf)
 {
     *kp = pid.pid.dispKp;
     *ki = pid.pid.dispKi;

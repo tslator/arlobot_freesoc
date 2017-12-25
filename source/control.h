@@ -71,7 +71,7 @@ FLOAT Control_LeftGetCmdVelocity();
 FLOAT Control_RightGetCmdVelocity();
 FLOAT Control_LinearGetCmdVelocity();
 FLOAT Control_AngularGetCmdVelocity();
-void Control_GetCmdVelocity(FLOAT *linear, FLOAT *angular);
+void Control_GetCmdVelocity(FLOAT* const linear, FLOAT* const angular);
 void Control_SetCmdVelocity(FLOAT linear, FLOAT angular);
 void Control_OverrideDebug(BOOL override);
 

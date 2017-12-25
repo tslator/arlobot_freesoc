@@ -40,6 +40,6 @@ SOFTWARE.
  * Functions
  *-------------------------------------------------------------------------------------------------*/
 void ValMotor_Init();
-CALVAL_INTERFACE_TYPE * ValMotor_Start();
+CALVAL_INTERFACE_TYPE* const ValMotor_Start();
 
 #endif    

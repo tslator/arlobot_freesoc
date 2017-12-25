@@ -50,9 +50,9 @@ void Pid_Reset();
 void Pid_Enable(BOOL left, BOOL right, BOOL uni);
 void Pid_Bypass(BOOL left, BOOL right, BOOL uni);
 void Pid_BypassAll(BOOL bypass);
-BOOL Pid_SetGains(PIDControl *p_pid, CAL_PID_TYPE *p_gains);
+BOOL Pid_SetGains(PIDControl* const p_pid, CAL_PID_TYPE* const p_gains);
 
-void DumpPid(char *name, PIDControl *pid);
+void DumpPid(char* const name, PIDControl* const pid);
 
 #endif
 
