@@ -11,8 +11,8 @@
 void USBIF_Init(void);
 void USBIF_Start(void);
 void USBIF_Update(void);
-void USBIF_PutString(CHAR *str);
-UINT8 USBIF_GetAll(CHAR *data);
+void USBIF_PutString(CHAR* const str);
+UINT8 USBIF_GetAll(CHAR* const data);
 UINT8 USBIF_GetChar(void);
 void USBIF_PutChar(CHAR value);
 UINT8 USBIF_GetConnectState(void);
