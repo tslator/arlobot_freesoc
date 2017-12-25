@@ -19,8 +19,7 @@ static char MESSAGE[] = "ASSERT MSG (%s:%d): %s\r\n";
 #define TEST_ACTION(test)
 #endif
 
-//void assertion(UINT8 test, char* msg)
-void assertion(UINT8 test, char* msg, char* file, int line)
+void assertion(UINT8 test, char* const msg, char* const file, int line)
 {
     if (test == 0)
     {
