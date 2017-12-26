@@ -46,7 +46,7 @@ void Ser_PutString(CHAR* const str);
 void Ser_PutStringFormat(const CHAR* const fmt, ...);
 UINT8 Ser_ReadData(CHAR *data);
 UINT8 Ser_ReadByte();
-UINT8 Ser_ReadLine(CHAR* const line, UINT8 echo, UINT8 max_length);
+INT8 Ser_ReadLine(CHAR* const line, UINT8 echo, UINT8 max_length);
 void Ser_WriteByte(UINT8 value);
 
 UINT8 Ser_GetConnectState(void);

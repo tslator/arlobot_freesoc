@@ -191,7 +191,7 @@ UINT8 Ser_ReadByte()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-UINT8 Ser_ReadLine(CHAR* const line, UINT8 echo, UINT8 max_length)
+INT8 Ser_ReadLine(CHAR* const line, UINT8 echo, UINT8 max_length)
 {
     UINT8 length;
     UINT8 line_length;

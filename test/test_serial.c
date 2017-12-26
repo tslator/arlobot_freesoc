@@ -15,7 +15,7 @@ void tearDown(void)
 
 void test_WhenNullCharReturned_ThenZeroIsReturned(void)
 {
-    UINT8 result;
+    INT8 result;
     UINT8 data[10];
 
     // Given
@@ -25,7 +25,7 @@ void test_WhenNullCharReturned_ThenZeroIsReturned(void)
     result = Ser_ReadLine(data, FALSE, 10);
 
     // Then
-    TEST_ASSERT_EQUAL_UINT8(0, result);
+    TEST_ASSERT_EQUAL_UINT8(-1, result);
 }
 
 void test_WhenNewLineReturned_ThenNewLineIsReturned(void)
