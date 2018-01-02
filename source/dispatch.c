@@ -6,16 +6,11 @@
 #include "conmotor.h"
 #include "conconfig.h"
 #include "conpid.h"
+#include "conmotion.h"
 #include "debug.h"
 
 
 static CONCMD_IF_TYPE active_command;
-
-static BOOL ConMotion_Assign(CONCMD_IF_TYPE *p_cmdif, ...)
-{
-    return FALSE;
-}
-
 
 static void validate_motor_command(COMMAND_TYPE* const command)
 {
