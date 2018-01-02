@@ -6,7 +6,7 @@
 
 void ConMotor_Init(void);
 void ConMotor_Start(void);
-BOOL ConMotor_Assign(COMMAND_IF_TYPE *p_cmdif, ...);    
+BOOL ConMotor_Assign(CONCMD_IF_TYPE *p_cmdif, ...);    
     
 #endif
     

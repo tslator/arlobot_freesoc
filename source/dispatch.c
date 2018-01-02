@@ -9,9 +9,9 @@
 #include "debug.h"
 
 
-static COMMAND_IF_TYPE active_command;
+static CONCMD_IF_TYPE active_command;
 
-static BOOL ConMotion_Assign(COMMAND_IF_TYPE *p_cmdif, ...)
+static BOOL ConMotion_Assign(CONCMD_IF_TYPE *p_cmdif, ...)
 {
     return FALSE;
 }

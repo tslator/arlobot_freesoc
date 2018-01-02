@@ -167,7 +167,7 @@ static void config_clear_results(void)
 {
 }
 
-BOOL ConConfig_Assign(COMMAND_IF_TYPE *p_cmdif, ...)
+BOOL ConConfig_Assign(CONCMD_IF_TYPE *p_cmdif, ...)
 {
     va_list valist;
     BOOL result = FALSE;

@@ -7,6 +7,6 @@
     
 void ConPid_Init(void);
 void ConPid_Start(void);
-BOOL ConPid_Assign(COMMAND_IF_TYPE *p_cmdif, ...);
+BOOL ConPid_Assign(CONCMD_IF_TYPE *p_cmdif, ...);
     
 #endif

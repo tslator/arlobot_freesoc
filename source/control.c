@@ -90,7 +90,7 @@ static FLOAT linear_trim;
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/ 
-void Update_Debug(UINT16 bits)
+static void Update_Debug(UINT16 bits)
 {
     if (bits & ENCODER_DEBUG_BIT)
     {

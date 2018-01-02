@@ -216,7 +216,7 @@ void ConMotion_Start(void)
 
 }
 
-BOOL ConMotion_Assign(COMMAND_IF_TYPE *p_cmdif, ...)
+BOOL ConMotion_Assign(CONCMD_IF_TYPE *p_cmdif, ...)
 {
         va_list valist;
     BOOL result = FALSE;

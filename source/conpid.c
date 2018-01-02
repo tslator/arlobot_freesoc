@@ -118,7 +118,7 @@ void ConPid_Start(void)
 
 }
 
-BOOL ConPid_Assign(COMMAND_IF_TYPE *p_cmdif, ...)
+BOOL ConPid_Assign(CONCMD_IF_TYPE *p_cmdif, ...)
 {
     va_list valist;
     BOOL result = FALSE;

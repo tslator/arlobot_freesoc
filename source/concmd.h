@@ -11,7 +11,7 @@ typedef struct _command_if
     BOOL (*update)();
     BOOL (*status)();
     void (*results)();
-} COMMAND_IF_TYPE;
+} CONCMD_IF_TYPE;
 
 #define GET_WHEEL(left, right) ( (left && right) || (!left && !right) ? WHEEL_BOTH : (left ? WHEEL_LEFT : (right ? WHEEL_RIGHT : -1)))
 

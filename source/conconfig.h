@@ -4,6 +4,6 @@
 #include "freesoc.h"
 #include "concmd.h"
 
-BOOL ConConfig_Assign(COMMAND_IF_TYPE *p_cmdif, ...);
+BOOL ConConfig_Assign(CONCMD_IF_TYPE *p_cmdif, ...);
 
 #endif
