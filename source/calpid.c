@@ -174,7 +174,7 @@ static UINT8 Init()
 
     Cal_ClearCalibrationStatusBit(CAL_PID_BIT);
     Control_SetLeftRightVelocityOverride(TRUE);
-    Control_SetLeftRightVelocity(0.0, 0.0);
+    Control_SetLeftRightVelocityCps(0.0, 0.0);
 
     Debug_Store();
 
@@ -229,12 +229,12 @@ static UINT8 Start()
     {
         case PID_TYPE_LEFT:
             LeftPid_SetGains(gains[0], gains[1], gains[2], gains[3]);
-            Control_SetLeftRightVelocity(step_velocity, 0);
+            Control_SetLeftRightVelocityCps(step_velocity, 0);
             break;
             
         case PID_TYPE_RIGHT:
             RightPid_SetGains(gains[0], gains[1], gains[2], gains[3]);
-            Control_SetLeftRightVelocity(0, step_velocity);
+            Control_SetLeftRightVelocityCps(0, step_velocity);
             break;
             
         default:
@@ -277,7 +277,7 @@ static UINT8 Stop()
 {
     FLOAT gains[4];
 
-    Control_SetLeftRightVelocity(0, 0);
+    Control_SetLeftRightVelocityCps(0, 0);
 
     switch (p_pid_params->pid_type)
     {

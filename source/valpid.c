@@ -173,11 +173,11 @@ static UINT8 SetNextValidationVelocity()
     switch (p_pid_params->pid_type)
     {
         case PID_TYPE_LEFT:        
-            Control_SetLeftRightVelocity(velocity, 0);
+            Control_SetLeftRightVelocityCps(velocity, 0);
             break;
 
         case PID_TYPE_RIGHT:
-            Control_SetLeftRightVelocity(0, velocity);
+            Control_SetLeftRightVelocityCps(0, velocity);
             break;
             
         default:
@@ -283,7 +283,7 @@ static UINT8 Update()
  *-------------------------------------------------------------------------------------------------*/
 static UINT8 Stop()
 {
-    Control_SetLeftRightVelocity(0.0, 0.0);
+    Control_SetLeftRightVelocityCps(0.0, 0.0);
     Control_SetLeftRightVelocityOverride(FALSE);
 
     Ser_PutStringFormat("\r\n%s PID validation complete\r\n", p_pid_params->name);

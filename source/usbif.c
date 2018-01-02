@@ -1,5 +1,4 @@
 #include "usbif.h"
-#include "consts.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -121,7 +120,6 @@ void USBIF_PutString(CHAR* const str)
     }    
     
 }
-
 
 UINT8 USBIF_GetAll(CHAR* const data)
 {

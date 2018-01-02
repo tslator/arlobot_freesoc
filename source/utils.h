@@ -140,6 +140,10 @@ void EnsureAngularVelocity(FLOAT* const linear_cmd_velocity, FLOAT* const angula
 FLOAT LimitLinearAccel(FLOAT linear_velocity, FLOAT max_linear, FLOAT response_time);
 FLOAT LimitAngularAccel(FLOAT angular_velocity, FLOAT max_angular, FLOAT response_time);
 
+FLOAT CalcMaxLinearVelocity();
+FLOAT CalcMaxAngularVelocity();
+FLOAT CalcMaxDiffVelocity();
+
 #endif
 
 /* [] END OF FILE */

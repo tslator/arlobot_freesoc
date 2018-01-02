@@ -49,7 +49,6 @@ SOFTWARE.
 #include "nvstore.h"
 #include "debug.h"
 #include "pwm.h"
-#include "consts.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants

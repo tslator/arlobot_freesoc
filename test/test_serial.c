@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "unity.h"
+#include "freesoc.h"
 #include "serial.h"
-#include "consts.h"
 #include "mock_usbif.h"
 
 void setUp(void)

@@ -37,6 +37,7 @@ SOFTWARE.
 #include "config.h"
 #include "consts.h"
 #include "assertion.h"
+#include "serial.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -616,7 +617,6 @@ void EnsureAngularVelocity(FLOAT* const v, FLOAT* const w)
  * Return: limited velocity
  * 
  *-------------------------------------------------------------------------------------------------*/ 
-#ifdef ENABLE_ACCEL_LIMIT
 static FLOAT AdjustVelocity(FLOAT last_velocity, FLOAT curr_velocity, FLOAT max_velocity, FLOAT response_time, UINT32* const last_time)
 /*
     Explanation: The approach here is to limit acceleration in terms of a response time, e.g., wheel should reach new 
@@ -645,6 +645,15 @@ static FLOAT AdjustVelocity(FLOAT last_velocity, FLOAT curr_velocity, FLOAT max_
     
     percent_change = abs(delta_velocity / max_velocity);
     adjust = IS_NAN_DEFAULT(delta_velocity / (response_time * percent_change / delta_time), 0.0);
+    
+    if (adjust > 0.0 && adjust < 0.0001)
+    {
+        adjust = 0.0;
+    }
+    else if (adjust < 0.0 && adjust > -0.0001)
+    {
+        adjust = 0.0;
+    }
     
     if (last_velocity <= curr_velocity)
     {
@@ -703,6 +712,36 @@ FLOAT LimitAngularAccel(FLOAT angular_velocity, FLOAT max_angular, FLOAT respons
 
     return last_velocity;    
 }
-#endif
+
+FLOAT CalcMaxLinearVelocity()
+{
+    FLOAT max_linear;
+    FLOAT dont_care;
+    
+    DiffToUni(MAX_WHEEL_RADIAN_PER_SECOND, MAX_WHEEL_RADIAN_PER_SECOND, &max_linear, &dont_care);
+    
+    return max_linear;
+}
+
+FLOAT CalcMaxAngularVelocity()
+{
+    FLOAT max_angular;
+    FLOAT dont_care;
+    
+    DiffToUni(MAX_WHEEL_RADIAN_PER_SECOND, -MAX_WHEEL_RADIAN_PER_SECOND, &dont_care, &max_angular);
+    
+    return max_angular;
+}
+
+FLOAT CalcMaxDiffVelocity()
+{
+    FLOAT max_diff;
+    FLOAT dont_care;
+    
+    UniToDiff(MAX_WHEEL_METER_PER_SECOND, 0, &max_diff, &dont_care);
+    
+    return max_diff;
+}
+
 
 /* [] END OF FILE */

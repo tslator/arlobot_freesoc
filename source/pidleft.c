@@ -146,7 +146,7 @@ void LeftPid_Init()
 {
     pid_enabled = FALSE;
     
-    target_source = Control_LeftGetCmdVelocity;
+    target_source = Control_LeftGetCmdVelocityCps;
     old_target_source = NULL;
 
     PIDInit(&pid.pid, 0, 0, 0, 0, LEFT_PID_SAMPLE_TIME_SEC, LEFTPID_MIN, LEFTPID_MAX, AUTOMATIC, DIRECT, NULL);        

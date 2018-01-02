@@ -37,17 +37,13 @@ SOFTWARE.
 #include <stdarg.h>
 #include "serial.h"
 #include "utils.h"
-#include "consts.h"
 #include "usbif.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/
 
-
-#define MAX_STRING_LENGTH (255)
-
-static CHAR line_data[USBUART_BUFFER_SIZE];
+static CHAR line_data[MAX_LINE_LENGTH];
 static UINT8 char_offset = 0;
 
 /*---------------------------------------------------------------------------------------------------
@@ -73,7 +69,7 @@ static UINT8 CopyAndTerminateLine(CHAR* const line)
         line[length] = '\0';
     }
 
-    memset(line_data, 0, USBUART_BUFFER_SIZE);
+    memset(line_data, 0, MAX_LINE_LENGTH);
     char_offset = 0;
 
     return length;
@@ -88,7 +84,7 @@ static UINT8 CopyAndTerminateLine(CHAR* const line)
  * Return: line length
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void SetCharData(CHAR ch, UINT8 echo)
+static void SetCharData(CHAR ch, BOOL echo)
 {
     line_data[char_offset] = ch;    
     char_offset++;
@@ -108,7 +104,7 @@ static void SetCharData(CHAR ch, UINT8 echo)
  *-------------------------------------------------------------------------------------------------*/
 void Ser_Init()
 {
-    memset(line_data, 0, USBUART_BUFFER_SIZE);
+    memset(line_data, 0, MAX_LINE_LENGTH);
     char_offset = 0;
 }
 
@@ -191,7 +187,7 @@ UINT8 Ser_ReadByte()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-INT8 Ser_ReadLine(CHAR* const line, UINT8 echo, UINT8 max_length)
+INT8 Ser_ReadLine(CHAR* const line, BOOL echo, UINT8 max_length)
 {
     UINT8 length;
     UINT8 line_length;
@@ -199,7 +195,7 @@ INT8 Ser_ReadLine(CHAR* const line, UINT8 echo, UINT8 max_length)
     BOOL max_chars_read = FALSE;
     
     length = 0;
-    line_length = max_length == 0 ? USBUART_BUFFER_SIZE : min(max_length, USBUART_BUFFER_SIZE);
+    line_length = max_length == 0 ? MAX_LINE_LENGTH : min(max_length, MAX_LINE_LENGTH);
     line_length--;
 
     max_chars_read = char_offset == line_length;
@@ -224,13 +220,15 @@ INT8 Ser_ReadLine(CHAR* const line, UINT8 echo, UINT8 max_length)
         {
             SetCharData(ch, echo);
         }
+        
+        return length;
     }
     else
     {
         SetCharData(ch, echo);
     }
 
-    return length;
+    return -1;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -244,5 +242,11 @@ void Ser_WriteByte(UINT8 value)
 {
     USBIF_PutChar(value);
 }
+
+void Ser_WriteLine(CHAR* const line, BOOL newline)
+{
+    Ser_PutStringFormat("%s%s", line, newline == TRUE? "\r\n" : "");
+}
+
 
 /* [] END OF FILE */

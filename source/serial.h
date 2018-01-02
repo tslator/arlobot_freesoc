@@ -37,6 +37,12 @@ SOFTWARE.
 #include "freesoc.h"
 
 /*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/    
+#define MAX_STRING_LENGTH (255)
+#define MAX_LINE_LENGTH (MAX_STRING_LENGTH)
+
+/*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/    
 void Ser_Init();
@@ -46,8 +52,9 @@ void Ser_PutString(CHAR* const str);
 void Ser_PutStringFormat(const CHAR* const fmt, ...);
 UINT8 Ser_ReadData(CHAR *data);
 UINT8 Ser_ReadByte();
-INT8 Ser_ReadLine(CHAR* const line, UINT8 echo, UINT8 max_length);
+INT8 Ser_ReadLine(CHAR* const line, BOOL echo, UINT8 max_length);
 void Ser_WriteByte(UINT8 value);
+void Ser_WriteLine(CHAR* const line, BOOL newline);
 
 UINT8 Ser_GetConnectState(void);
 #endif

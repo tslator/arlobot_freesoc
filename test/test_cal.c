@@ -16,7 +16,6 @@
 #include "mock_assertion.h"
 #include "mock_usbif.h"
 #include "cal.h"
-#include "consts.h"
 
 
 /* Helper Macros */

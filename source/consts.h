@@ -3,9 +3,6 @@
 
 #include "freesoc.h"
 
-#define TRUE (true)
-#define FALSE (false)    
-    
 /*---------------------------------------------------------------------------------------------------
  * Motors
  *-------------------------------------------------------------------------------------------------*/
@@ -28,9 +25,11 @@
 #define WHEEL_METER_PER_COUNT (WHEEL_METER_PER_REV/WHEEL_COUNT_PER_REV)
 #define WHEEL_COUNT_PER_METER (WHEEL_COUNT_PER_REV/WHEEL_METER_PER_REV)
 #define WHEEL_COUNT_PER_RADIAN (WHEEL_COUNT_PER_REV / TWOPI)
+#define WHEEL_RADIAN_PER_COUNT (1.0 / WHEEL_COUNT_PER_RADIAN)
+#define WHEEL_RADIAN_PER_METER (WHEEL_RADIAN_PER_COUNT * WHEEL_COUNT_PER_METER)
 
 /* Wheel maximum radian/second: 
-    omega = theta / sec = RPM/60 * 2PI
+    omega = theta / sec = 2PI * RPM/60
  */
 #define MAX_WHEEL_RADIAN_PER_SECOND   ((MAX_WHEEL_RPM / SEC_PER_MIN) * RADIAN_PER_REV)
 

@@ -181,7 +181,7 @@ VAL_MOTOR_PARAMS motor_val_params[4] =
             Motor_LeftRampDown,
             Encoder_LeftGetMeterPerSec,
             Encoder_LeftGetCntsPerSec,
-            Control_SetLeftRightVelocity
+            Control_SetLeftRightVelocityCps
         }, 
         {
             "right-forward",
@@ -194,7 +194,7 @@ VAL_MOTOR_PARAMS motor_val_params[4] =
             Motor_RightRampDown,
             Encoder_RightGetMeterPerSec,
             Encoder_RightGetCntsPerSec, 
-            Control_SetLeftRightVelocity,
+            Control_SetLeftRightVelocityCps
         },
         {
             "left-backward",
@@ -207,7 +207,7 @@ VAL_MOTOR_PARAMS motor_val_params[4] =
             Motor_LeftRampDown,
             Encoder_LeftGetMeterPerSec,
             Encoder_LeftGetCntsPerSec,
-            Control_SetLeftRightVelocity
+            Control_SetLeftRightVelocityCps
         }, 
         {
             "right-backward",
@@ -220,7 +220,7 @@ VAL_MOTOR_PARAMS motor_val_params[4] =
             Motor_RightRampDown,
             Encoder_RightGetMeterPerSec,
             Encoder_RightGetCntsPerSec,
-            Control_SetLeftRightVelocity
+            Control_SetLeftRightVelocityCps
         }
     };
 
@@ -392,7 +392,7 @@ static UINT8 Init()
 static UINT8 Start()
 {
     Ser_PutString("\r\nPerforming motor validation\r\n");
-    Control_SetLeftRightVelocity(0, 0);
+    Control_SetLeftRightVelocityCps(0, 0);
     Debug_Store();
     Debug_DisableAll();
     Debug_Enable(DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT);

@@ -43,7 +43,7 @@ SOFTWARE.
 #include "usbif.h"
 #include "serial.h"
 #include "utils.h"
-#include "consts.h"
+#include "console.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Main Function
@@ -55,6 +55,7 @@ int main()
     Nvstore_Init();
     USBIF_Init();
     Ser_Init();
+    Console_Init();
     Debug_Init();
     Debug_Start();    
     Diag_Init();
@@ -71,6 +72,7 @@ int main()
     Nvstore_Start();
     USBIF_Start();
     Ser_Start();
+    Console_Start();
     I2CIF_Start();
     Control_Start();
     Time_Start();
@@ -79,16 +81,8 @@ int main()
     Pid_Start();
     Odom_Start();
     Cal_Start();
-    
-            
-    //Ser_PutString("Hello, my name is ArloSoc!\r\n");
-    //Ser_PutString("I am the microcontroller for Arlobot.\r\n");
-    //Ser_PutString("I'm entering my main loop now!\r\n");
-
+                
     Debug_DisableAll();
-    
-    //Pid_Bypass(FALSE, FALSE, FALSE);
-    //Pid_Enable(TRUE, TRUE, FALSE);
     
     for(;;)
     {
@@ -109,11 +103,11 @@ int main()
         /* Diagnostic update */
         Diag_Update();
 
-        /* Handle calibration request */
-        Cal_Update();
-        
         /* Keep the USB connection active */
         USBIF_Update();
+        
+        /* Handle Console */
+        Console_Update();
 
         I2CIF_TEST();
         MAIN_LOOP_END();

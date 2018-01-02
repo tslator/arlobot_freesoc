@@ -42,6 +42,7 @@ SOFTWARE.
 #include "utils.h"
 #include "debug.h"
 #include "diag.h"
+#include "consts.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -147,7 +148,7 @@ void RightPid_Init()
 {
     pid_enabled = FALSE;
     
-    target_source = Control_RightGetCmdVelocity;
+    target_source = Control_RightGetCmdVelocityCps;
     old_target_source = NULL;
 
     PIDInit(&pid.pid, 0, 0, 0, 0, RIGHT_PID_SAMPLE_TIME_SEC, RIGHTPID_MIN, RIGHTPID_MAX, AUTOMATIC, DIRECT, NULL);        

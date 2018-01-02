@@ -63,7 +63,7 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/
-#define MAX_MOTOR_CAL_ITERATION (3)
+#define DEFAULT_MOTOR_CAL_ITERATION (3)
 #define CALIBRATION_ITERATION_DONE (255)
 #define MAX_CPS_ARRAY (51)
 #define NUM_MOTOR_CAL_PARAMS (4)
@@ -111,22 +111,10 @@ static UINT16        cal_pwm_samples[CAL_NUM_SAMPLES];
 static INT32         cal_cps_avg[CAL_NUM_SAMPLES];
 static CAL_DATA_TYPE cal_data;
 
-/* Provides an implementation of the Calibration interface */
-static UINT8 Init();
-static UINT8 Start();
-static UINT8 Update();
-static UINT8 Stop();
-static UINT8 Results();
+static CAL_MOTOR_PARAMS *cal_params;
 
-static CALVAL_INTERFACE_TYPE motor_calibration = { CAL_INIT_STATE, 
-                                              CAL_CALIBRATE_STAGE,
-                                              NULL,
-                                              Init, 
-                                              Start, 
-                                              Update, 
-                                              Stop, 
-                                              Results };
-
+static UINT8 motor_cal_iterations;
+    
 /* The PWM params: start, end, step are defined for each motor (left/right) and each direction (forward/backward)
    In general, the servo interface to the motors is defined as follows:
         1500 - stop
@@ -184,7 +172,7 @@ static CAL_MOTOR_PARAMS motor_cal_params[NUM_MOTOR_CAL_PARAMS] =
         "left-forward", 
         WHEEL_LEFT,
         DIR_FORWARD,
-        /* iterations */ 3,
+        /* iterations */ DEFAULT_MOTOR_CAL_ITERATION,
         /* pwm_time */ PWM_TEST_TIME,
         /* pwm_index */ 0,
         /* p_pwm_samples */ &cal_pwm_samples[0],
@@ -201,7 +189,7 @@ static CAL_MOTOR_PARAMS motor_cal_params[NUM_MOTOR_CAL_PARAMS] =
         "left-backward",
         WHEEL_LEFT,
         DIR_BACKWARD,
-        /* iterations */ 3,
+        /* iterations */ DEFAULT_MOTOR_CAL_ITERATION,
         /* pwm_time */ PWM_TEST_TIME,
         0,
         /* p_pwm_samples */ &cal_pwm_samples[0],
@@ -218,7 +206,7 @@ static CAL_MOTOR_PARAMS motor_cal_params[NUM_MOTOR_CAL_PARAMS] =
         "right-forward",
         WHEEL_RIGHT,
         DIR_FORWARD,
-        /* iterations */ 3,
+        /* iterations */ DEFAULT_MOTOR_CAL_ITERATION,
         /* pwm_time */ PWM_TEST_TIME,
         0,
         /* p_pwm_samples */ &cal_pwm_samples[0],
@@ -235,7 +223,7 @@ static CAL_MOTOR_PARAMS motor_cal_params[NUM_MOTOR_CAL_PARAMS] =
         "right-backward",
         WHEEL_RIGHT,
         DIR_BACKWARD,
-        /* iterations */ 3,
+        /* iterations */ DEFAULT_MOTOR_CAL_ITERATION,
         /* pwm_time */ PWM_TEST_TIME,
         0,
         /* p_pwm_samples */ &cal_pwm_samples[0],
@@ -251,6 +239,8 @@ static CAL_MOTOR_PARAMS motor_cal_params[NUM_MOTOR_CAL_PARAMS] =
 };
 
 static UINT8 motor_cal_index;
+static UINT8 motor_cal_end;
+
 
 static char *wheel_str[2] = {"left", "right"};
 static char *direction_str[2] = {"forward", "backward"};
@@ -311,7 +301,7 @@ static void CalculateMinMaxCpsSample(INT32* const samples, INT32* const min, INT
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void InitCalibrationParams(CAL_MOTOR_PARAMS* const params)
+static void InitCalibrationParams()
 {
     UINT8 ii;
     UINT16 pwm;
@@ -320,8 +310,8 @@ static void InitCalibrationParams(CAL_MOTOR_PARAMS* const params)
     WHEEL_TYPE wheel;
     DIR_TYPE dir;
      
-    wheel = params->wheel;
-    dir = params->direction;
+    wheel = cal_params->wheel;
+    dir = cal_params->direction;
         
     pwm_start = pwm_params[wheel][dir].start;
     pwm_step = pwm_params[wheel][dir].step;
@@ -332,40 +322,40 @@ static void InitCalibrationParams(CAL_MOTOR_PARAMS* const params)
     */
     for (ii =0, pwm = pwm_start; ii < CAL_NUM_SAMPLES; ++ii, pwm += pwm_step)
     {
-        params->p_pwm_samples[ii] = pwm;
-        params->p_cps_samples[ii] = 0;
-        params->p_cps_avg[ii] = 0;
+        cal_params->p_pwm_samples[ii] = pwm;
+        cal_params->p_cps_samples[ii] = 0;
+        cal_params->p_cps_avg[ii] = 0;
     }
   
     /* The first pwm entry is always PWM_STOP and it must correspond to CPS value 0 in order to stop the motor.  So,
        So, set pwm_index to start at 1.
     */
-    params->pwm_index = 1;
-    params->iterations = MAX_MOTOR_CAL_ITERATION;
+    cal_params->pwm_index = 1;
+    cal_params->iterations = motor_cal_iterations;
  }
   
-static UINT8 GetNextPwm(CAL_MOTOR_PARAMS* const params, PWM_TYPE* const pwm)
+static UINT8 GetNextPwm(PWM_TYPE* const pwm)
 {
     UINT8 index;
 
-    if (params->pwm_index < CAL_NUM_SAMPLES)
+    if (cal_params->pwm_index < CAL_NUM_SAMPLES)
     {
-        index = PWM_CALC_OFFSET(params->direction, params->pwm_index);
-        *pwm = params->p_pwm_samples[index];
-        params->cps_index = index;
-        params->pwm_index++;
+        index = PWM_CALC_OFFSET(cal_params->direction, cal_params->pwm_index);
+        *pwm = cal_params->p_pwm_samples[index];
+        cal_params->cps_index = index;
+        cal_params->pwm_index++;
         return 0;
     }
     
     /* Reset the pwm_index for next run.  this is needed doing an average and multiple iterations 
        are run because there is no initialziation between iterations 
     */
-    params->pwm_index = 1;            
+    cal_params->pwm_index = 1;            
     
     return 1;        
 }
 
-static UINT8 PerformMotorCalibrationIteration(CAL_MOTOR_PARAMS* const params)
+static UINT8 PerformMotorCalibrationIteration()
 {
     static UINT8 pwm_running = FALSE;
     static UINT32 pwm_start_time = 0;
@@ -384,7 +374,7 @@ static UINT8 PerformMotorCalibrationIteration(CAL_MOTOR_PARAMS* const params)
 
     if (!pwm_running)
     {        
-        result = GetNextPwm(params, &pwm);
+        result = GetNextPwm(&pwm);
         if (result)
         {
             /* We've finished running a series of pwm values:
@@ -392,8 +382,8 @@ static UINT8 PerformMotorCalibrationIteration(CAL_MOTOR_PARAMS* const params)
                 2. Stop the motors (just to make sure)
                 3. Reset the pwm index (we might not be the last iteration)
             */
-            params->ramp_down(MOTOR_RAMP_DOWN_TIME);
-            params->set_pwm(PWM_STOP);
+            cal_params->ramp_down(MOTOR_RAMP_DOWN_TIME);
+            cal_params->set_pwm(PWM_STOP);
             return CALIBRATION_ITERATION_DONE;
         }
 
@@ -402,12 +392,12 @@ static UINT8 PerformMotorCalibrationIteration(CAL_MOTOR_PARAMS* const params)
             2. Set the running flag
             3. Grab the current time for pwm running and cps sampling
         */
-        params->set_pwm(pwm);
+        cal_params->set_pwm(pwm);
 
         num_cps_samples_collected = 0;
         pwm_running = TRUE;
-        params->reset();
-        last_count = params->get_count();
+        cal_params->reset();
+        last_count = cal_params->get_count();
         pwm_start_time = millis();
         sample_start_time = millis();
     }
@@ -418,16 +408,16 @@ static UINT8 PerformMotorCalibrationIteration(CAL_MOTOR_PARAMS* const params)
         pwm_delta = now - pwm_start_time;
         sample = now - sample_start_time;
         
-            /* Is the pwm time up? */
-        if (pwm_delta < params->pwm_time)
+        /* Is the pwm time up? */
+        if (pwm_delta < cal_params->pwm_time)
         {                
             /* Is is time to sample? */
-            if (sample > params->sample_time)
+            if (sample > cal_params->sample_time)
             {
                 /* Note: cps_index is set when select the pwm (see GetNextPwm) */
                 sample_start_time = millis();
-                count = params->get_count();
-                params->p_cps_samples[params->cps_index] += (count - last_count);
+                count = cal_params->get_count();
+                cal_params->p_cps_samples[cal_params->cps_index] += (count - last_count);
                 last_count = count;
                 num_cps_samples_collected++;
             }
@@ -437,10 +427,10 @@ static UINT8 PerformMotorCalibrationIteration(CAL_MOTOR_PARAMS* const params)
             /* Pwm time is up */
 
             /* Calculate total sample time, count average and counts/second */
-            total_sample_time = params->sample_time * num_cps_samples_collected;
-            total_counts = params->p_cps_samples[params->cps_index];
-            params->p_cps_samples[params->cps_index] = total_counts * MILLIS_PER_SECOND / total_sample_time;
-            //Ser_PutStringFormat("tst: %d, tc: %d, cps: %d\r\n", total_sample_time, total_counts, params->p_cps_samples[params->cps_index]);
+            total_sample_time = cal_params->sample_time * num_cps_samples_collected;
+            total_counts = cal_params->p_cps_samples[cal_params->cps_index];
+            cal_params->p_cps_samples[cal_params->cps_index] = total_counts * MILLIS_PER_SECOND / total_sample_time;
+            //Ser_PutStringFormat("tst: %d, tc: %d, cps: %d\r\n", total_sample_time, total_counts, cal_params->p_cps_samples[params->cps_index]);
             pwm_running = FALSE;
         } 
     }
@@ -448,23 +438,23 @@ static UINT8 PerformMotorCalibrationIteration(CAL_MOTOR_PARAMS* const params)
     return CAL_OK;
 }
 
-static UINT8 PerformMotorCalibrateAverage(CAL_MOTOR_PARAMS* const params)
+static UINT8 PerformMotorCalibrateAverage()
 {
     UINT8 ii;
     UINT8 result;
     
-    if (params->iterations > 0)
+    if (cal_params->iterations > 0)
     {
-        result = PerformMotorCalibrationIteration(params);
+        result = PerformMotorCalibrationIteration();
         if (result == CALIBRATION_ITERATION_DONE)
         {            
-            params->iterations--;
+            cal_params->iterations--;
             
             /* Sum the collected cps's */
             for (ii = 0; ii < CAL_NUM_SAMPLES; ++ii)
             {
-                params->p_cps_avg[ii] += params->p_cps_samples[ii];
-                params->p_cps_samples[ii] = 0;
+                cal_params->p_cps_avg[ii] += cal_params->p_cps_samples[ii];
+                cal_params->p_cps_samples[ii] = 0;
             }
         }
         return CAL_OK;
@@ -473,8 +463,8 @@ static UINT8 PerformMotorCalibrateAverage(CAL_MOTOR_PARAMS* const params)
     /* Calculate average cps's */
     for (ii = 0; ii < CAL_NUM_SAMPLES; ++ii)
     {
-        params->p_cps_avg[ii] = params->p_cps_avg[ii]/MAX_MOTOR_CAL_ITERATION;
-        //Ser_PutStringFormat("Avg CPS (%d): %d\r\n", params->p_pwm_samples[ii], params->p_cps_avg[ii]);
+        cal_params->p_cps_avg[ii] = cal_params->p_cps_avg[ii]/motor_cal_iterations;
+        //Ser_PutStringFormat("Avg CPS (%d): %d\r\n", cal_params->p_pwm_samples[ii], cal_params->p_cps_avg[ii]);
     }
     
     return CALIBRATION_ITERATION_DONE;
@@ -490,7 +480,7 @@ static UINT8 PerformMotorCalibrateAverage(CAL_MOTOR_PARAMS* const params)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void StoreMotorCalibration(CAL_MOTOR_PARAMS* const params)
+static void StoreMotorCalibration()
 {
     UINT8 ii;
 
@@ -504,36 +494,36 @@ static void StoreMotorCalibration(CAL_MOTOR_PARAMS* const params)
     /* Remove unwanted spurious neg/pos values */
     for (ii = 0; ii < CAL_NUM_SAMPLES; ++ii)
     {
-        if (params->direction == DIR_FORWARD)
+        if (cal_params->direction == DIR_FORWARD)
         {
-            if (params->p_cps_avg[ii] < 0)
+            if (cal_params->p_cps_avg[ii] < 0)
             {
-                params->p_cps_avg[ii] = 0;
+                cal_params->p_cps_avg[ii] = 0;
             }
         }
 
-        if (params->direction == DIR_BACKWARD)
+        if (cal_params->direction == DIR_BACKWARD)
         {
-            if (params->p_cps_avg[ii] > 0)
+            if (cal_params->p_cps_avg[ii] > 0)
             {
-                params->p_cps_avg[ii] = 0;
+                cal_params->p_cps_avg[ii] = 0;
             }
         }
     }
 
-    CalculateMinMaxCpsSample(params->p_cps_avg, (INT32 *) &cal_data.cps_min, (INT32 *) &cal_data.cps_max);
+    CalculateMinMaxCpsSample(cal_params->p_cps_avg, (INT32 *) &cal_data.cps_min, (INT32 *) &cal_data.cps_max);
     
     for (ii = 0; ii < CAL_NUM_SAMPLES; ++ii)
     {
         /* Note: Just a reminder, count/sec storage is INT16 */
-        cal_data.pwm_data[ii] = (INT16) params->p_pwm_samples[ii];
-        cal_data.cps_data[ii] = (INT16) params->p_cps_avg[ii];       
+        cal_data.pwm_data[ii] = (INT16) cal_params->p_pwm_samples[ii];
+        cal_data.cps_data[ii] = (INT16) cal_params->p_cps_avg[ii];       
     }
 
-    Cal_SetMotorData(params->wheel, params->direction, &cal_data);
+    Cal_SetMotorData(cal_params->wheel, cal_params->direction, &cal_data);
 }
   
-static UINT8 PerformMotorCalibration(CAL_MOTOR_PARAMS* const cal_params)
+static UINT8 PerformMotorCalibration()
 {
     static UINT8 running = FALSE;
     UINT8 result;
@@ -543,18 +533,18 @@ static UINT8 PerformMotorCalibration(CAL_MOTOR_PARAMS* const cal_params)
         Ser_PutStringFormat("%s-%s Calibration\r\n", wheel_str[cal_params->wheel], direction_str[cal_params->direction]);
 
         Motor_SetPwm(PWM_STOP, PWM_STOP);
-        InitCalibrationParams(cal_params);
+        InitCalibrationParams();
         
         running = TRUE;
     }
     
     if ( running )
     {
-        result = PerformMotorCalibrateAverage(cal_params);
+        result = PerformMotorCalibrateAverage();
         if (result)
         {        
             Motor_SetPwm(PWM_STOP, PWM_STOP);
-            StoreMotorCalibration(cal_params);
+            StoreMotorCalibration();
             Ser_PutString("Complete\r\n");
             running = FALSE;
             return CALIBRATION_ITERATION_DONE;
@@ -564,43 +554,49 @@ static UINT8 PerformMotorCalibration(CAL_MOTOR_PARAMS* const cal_params)
     return CAL_OK;
 }
 
-/*----------------------------------------------------------------------------------------------------------------------
- * Calibration Interface Routines
- *---------------------------------------------------------------------------------------------------------------------*/
-
-/*---------------------------------------------------------------------------------------------------
- * Name: Init
- * Description: Calibration/Validation interface Init function.  Performs initialization for Linear 
- *              Validation.
- * Parameters: None 
- * Return: UINT8 - CAL_OK
- * 
- *-------------------------------------------------------------------------------------------------*/
-static UINT8 Init()
+static void InitCalParams(UINT8 index, UINT8 end)
 {
-    Control_OverrideDebug(TRUE);
-    Ser_PutString("\r\nInitialize motor calibration\r\n");
-    motor_cal_index = 0;
-    Cal_ClearCalibrationStatusBit(CAL_MOTOR_BIT);
-
-    return CAL_OK;    
+    /* Set cal_params to point to the forward/backward (indecies 0 and 1) */
+    motor_cal_index = index;
+    motor_cal_end = end;
+    cal_params = (CAL_MOTOR_PARAMS *) &motor_cal_params[motor_cal_index];
 }
 
-/*---------------------------------------------------------------------------------------------------
- * Name: Start
- * Description: Calibration/Validation interface Start function.  Start Linear Validation.
- * Parameters: None 
- * Return: UINT8 - CAL_OK
- * 
- *-------------------------------------------------------------------------------------------------*/
-static UINT8 Start()
+static UINT8 NextCalParams(void)
 {
-    Ser_PutString("\r\nPerforming motor calibration\r\n");
-    Debug_Store();
-    Pid_Enable(FALSE, FALSE, FALSE);
-    Motor_SetPwm(PWM_STOP, PWM_STOP);
-    
+    motor_cal_index++;
+    cal_params = (CAL_MOTOR_PARAMS *) &motor_cal_params[motor_cal_index];
+
+    if ( motor_cal_index == motor_cal_end )
+    {
+        return CAL_COMPLETE;
+    }
+
     return CAL_OK;
+}
+
+
+/*----------------------------------------------------------------------------------------------------------------------
+ * Module Interface Routines
+ *---------------------------------------------------------------------------------------------------------------------*/
+void CalMotor_Init(WHEEL_TYPE wheel, UINT8 iters)
+{
+    if (wheel == WHEEL_LEFT)
+    {
+        InitCalParams(0, 2);
+    }
+    else if (wheel == WHEEL_RIGHT)
+    {
+        InitCalParams(2, 4);
+    }
+    else // WHEEL_BOTH
+    {
+        InitCalParams(0, 4);
+    }
+    
+    motor_cal_iterations = iters;
+    
+    Motor_SetPwm(PWM_STOP, PWM_STOP);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -612,68 +608,16 @@ static UINT8 Start()
  * Return: UINT8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
-static UINT8 Update()
+UINT8 CalMotor_Update(void)
 {
-    CAL_MOTOR_PARAMS *cal_params = (CAL_MOTOR_PARAMS *) &motor_cal_params[motor_cal_index];
-    
-    UINT8 result = PerformMotorCalibration(cal_params);
+    UINT8 result = PerformMotorCalibration();
     if ( result == CALIBRATION_ITERATION_DONE )
     {
-        motor_cal_index++;
-
-        if ( motor_cal_index == NUM_MOTOR_CAL_PARAMS )
-        {
-            return CAL_COMPLETE;
-        }
+        result = NextCalParams();
     }
     
-    return CAL_OK;
+    return result;
 }
 
-/*---------------------------------------------------------------------------------------------------
- * Name: Stop
- * Description: Calibration/Validation interface Stop function.  Called to stop validation.
- * Parameters: stage - the calibration/validation stage
- *             params - motor validation parameters 
- * Return: UINT8 - CAL_OK
- * 
- *-------------------------------------------------------------------------------------------------*/
-static UINT8 Stop()
-{
-    Ser_PutString("Motor calibration complete\r\n");
-    Cal_SetCalibrationStatusBit(CAL_MOTOR_BIT);
-    Debug_Restore();
-    
-    return CAL_OK;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: Results
- * Description: Calibration/Validation interface Results function.  Called to display calibration/ 
- *              validation results. 
- * Parameters: stage - the calibration/validation stage 
- *             params - motor calibration/validation parameters 
- * Return: UINT8 - CAL_OK
- * 
- *-------------------------------------------------------------------------------------------------*/
-static UINT8 Results()
-{
-    Ser_PutString("\r\nPrinting motor calibration results\r\n");
-    Cal_PrintAllMotorParams(FALSE);
-        
-    return CAL_OK;
-}
-
-/*----------------------------------------------------------------------------------------------------------------------
- * Module Interface Routines
- *---------------------------------------------------------------------------------------------------------------------*/
-void CalMotor_Init()
-{
-}
-
-CALVAL_INTERFACE_TYPE* const CalMotor_Start()
-{
-    return (CALVAL_INTERFACE_TYPE* const) &motor_calibration;
-}
 
 /* [] END OF FILE */

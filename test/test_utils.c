@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "unity.h"
+#include "freesoc.h"
 #include "utils.h"
-#include "consts.h"
 #include "mock_time.h"
 #include "mock_assertion.h"
 

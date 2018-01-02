@@ -51,7 +51,6 @@ SOFTWARE.
 #include "debug.h"
 #include "serial.h"
 #include "usbif.h"
-#include "consts.h"
 #include "assertion.h"
 
 /*---------------------------------------------------------------------------------------------------
@@ -205,12 +204,24 @@ static PWM_TYPE CpsToPwm(INT16 cps, INT16 *cps_data, UINT16 *pwm_data, UINT8 dat
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
- void Cal_PrintAllMotorParams(BOOL as_json)
+
+void Cal_PrintLeftMotorParams(BOOL as_json)
 {
     Cal_PrintSamples(WHEEL_LEFT, DIR_BACKWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD], as_json);
     Cal_PrintSamples(WHEEL_LEFT, DIR_FORWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD], as_json);
+}
+
+void Cal_PrintRightMotorParams(BOOL as_json)
+{
     Cal_PrintSamples(WHEEL_RIGHT, DIR_BACKWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD], as_json);
     Cal_PrintSamples(WHEEL_RIGHT, DIR_FORWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD], as_json);
+}
+
+
+ void Cal_PrintAllMotorParams(BOOL as_json)
+{
+    Cal_PrintLeftMotorParams(as_json);
+    Cal_PrintRightMotorParams(as_json);
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -305,6 +316,25 @@ void Cal_PrintPidGains(WHEEL_TYPE wheel, FLOAT* const gains, UINT8 as_json)
                             wheel == WHEEL_LEFT ? "Left" : "Right", 
                             gains[0], gains[1], gains[2], gains[3]);
     }
+}
+
+void Cal_PrintAllPidGains(BOOL as_json)
+{
+    CAL_PID_TYPE *p_pid;
+    FLOAT gains[4];
+    
+    p_pid = Cal_GetPidGains(PID_TYPE_LEFT);
+    gains[0] = p_pid->kp;
+    gains[1] = p_pid->ki;
+    gains[2] = p_pid->kd;
+    gains[3] = p_pid->kf;
+    Cal_PrintPidGains(WHEEL_LEFT, gains, as_json);
+    p_pid = Cal_GetPidGains(PID_TYPE_RIGHT);
+    gains[0] = p_pid->kp;
+    gains[1] = p_pid->ki;
+    gains[2] = p_pid->kd;
+    gains[3] = p_pid->kf;
+    Cal_PrintPidGains(WHEEL_RIGHT, gains, as_json);            
 }
 
 void Cal_PrintStatus(UINT8 as_json)
@@ -955,7 +985,7 @@ void Cal_Init()
     Cal_LeftTarget = LeftTarget;
     Cal_RightTarget = RightTarget;
     
-    CalMotor_Init();
+    //CalMotor_Init(WHEEL_LEFT, 3);
     ValMotor_Init();
     CalPid_Init();
     ValPid_Init();
