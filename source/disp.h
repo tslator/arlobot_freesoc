@@ -22,21 +22,36 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#ifndef DISP_H
+#define DISP_H
+    
 /*---------------------------------------------------------------------------------------------------
-   Description: This module implements a console that is used to issue calibration, validation, and
-   configuration commands.  It can be used as a high-level debug interface.
+ * Includes
  *-------------------------------------------------------------------------------------------------*/    
-
-#ifndef _CONSOLE_H
-#define _CONSOLE_H
-
+#include "freesoc.h"
+#include "conparser.h"
+    
+/*---------------------------------------------------------------------------------------------------
+ * Types
+ *-------------------------------------------------------------------------------------------------*/    
+typedef struct _tag_command
+{
+    BOOL is_valid;
+    BOOL is_parsed;
+    BOOL is_exit;
+    DocoptArgs args;
+} COMMAND_TYPE;
+    
+    
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/    
-void Console_Init();
-void Console_Start();
-void Console_Update();
-
-#endif // _CONSOLE_H
-
+void Disp_Init(void);
+void Disp_Start(void);
+BOOL Disp_IsRunning(void);
+void Disp_Results();
+BOOL Disp_Update();
+void Disp_Dispatch(COMMAND_TYPE* const command);
+    
+#endif
 /* [] END OF FILE */

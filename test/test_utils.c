@@ -2,6 +2,7 @@
 #include "unity.h"
 #include "freesoc.h"
 #include "utils.h"
+#include "consts.h"
 #include "mock_time.h"
 #include "mock_assertion.h"
 
@@ -12,33 +13,33 @@
 #define LINEAR_IS_NOT_NULL() assertion_Expect(1, "linear is NULL", "source/utils.c", 397)
 #define ANGULAR_IS_NOT_NULL() assertion_Expect(1, "angular is NULL", "source/utils.c", 398)
 
-#define DATA_POINTS_IS_NOT_NULL() assertion_Expect(1, "data_points is NULL", "source/utils.c", 299)
-#define DATA_POINTS_IS_NULL() assertion_Expect(0, "data_points is NULL", "source/utils.c", 299)
-#define LOWER_INDEX_IS_NOT_NULL() assertion_Expect(1, "lower_index is NULL", "source/utils.c", 300)
-#define LOWER_INDEX_IS_NULL() assertion_Expect(0, "lower_index is NULL", "source/utils.c", 300)
-#define UPPER_INDEX_IS_NOT_NULL() assertion_Expect(1, "upper_index is NULL", "source/utils.c", 301)
-#define UPPER_INDEX_IS_NULL() assertion_Expect(0, "upper_index is NULL", "source/utils.c", 301)
-#define NUM_POINTS_GREATER_THAN_ONE() assertion_Expect(1, "num_points <= 1", "source/utils.c", 302)
-#define NUM_POINTS_LESS_THAN_EQUAL_ONE() assertion_Expect(0, "num_points <= 1", "source/utils.c", 302)
+#define DATA_POINTS_IS_NOT_NULL() assertion_Expect(1, "data_points is NULL", "source/utils.c", 300)
+#define DATA_POINTS_IS_NULL() assertion_Expect(0, "data_points is NULL", "source/utils.c", 300)
+#define LOWER_INDEX_IS_NOT_NULL() assertion_Expect(1, "lower_index is NULL", "source/utils.c", 301)
+#define LOWER_INDEX_IS_NULL() assertion_Expect(0, "lower_index is NULL", "source/utils.c", 301)
+#define UPPER_INDEX_IS_NOT_NULL() assertion_Expect(1, "upper_index is NULL", "source/utils.c", 302)
+#define UPPER_INDEX_IS_NULL() assertion_Expect(0, "upper_index is NULL", "source/utils.c", 302)
+#define NUM_POINTS_GREATER_THAN_ONE() assertion_Expect(1, "num_points <= 1", "source/utils.c", 303)
+#define NUM_POINTS_LESS_THAN_EQUAL_ONE() assertion_Expect(0, "num_points <= 1", "source/utils.c", 303)
 
-#define NUM_POINTS_IS_ODD() assertion_Expect(1, "num_points is not odd", "source/utils.c", 508)
-#define NUM_POINTS_IS_NOT_ODD() assertion_Expect(0, "num_points is not odd", "source/utils.c", 508)
-#define LOWER_LIMIT_LESS_THAN_UPPER_LIMIT() assertion_Expect(1, "lower_limit exceeds upper_limit", "source/utils.c", 510)
-#define LOWER_LIMIT_GREATER_THAN_UPPER_LIMIT() assertion_Expect(0, "lower_limit exceeds upper_limit", "source/utils.c", 510)
-#define LOWER_LIMIT_UPPER_LIMIT_WRONG_DOMAIN() assertion_Expect(0, "lower_limit exceeds upper_limit", "source/utils.c", 510)
+#define NUM_POINTS_IS_ODD() assertion_Expect(1, "num_points is not odd", "source/utils.c", 509)
+#define NUM_POINTS_IS_NOT_ODD() assertion_Expect(0, "num_points is not odd", "source/utils.c", 509)
+#define LOWER_LIMIT_LESS_THAN_UPPER_LIMIT() assertion_Expect(1, "lower_limit exceeds upper_limit", "source/utils.c", 511)
+#define LOWER_LIMIT_GREATER_THAN_UPPER_LIMIT() assertion_Expect(0, "lower_limit exceeds upper_limit", "source/utils.c", 511)
+#define LOWER_LIMIT_UPPER_LIMIT_WRONG_DOMAIN() assertion_Expect(0, "lower_limit exceeds upper_limit", "source/utils.c", 511)
 
-#define UNITODIFF_LEFT_IS_NOT_NULL() assertion_Expect(1, "left is NULL", "source/utils.c", 363)
-#define UNITODIFF_RIGHT_IS_NOT_NULL() assertion_Expect(1, "right is NULL", "source/utils.c", 364)
+#define UNITODIFF_LEFT_IS_NOT_NULL() assertion_Expect(1, "left is NULL", "source/utils.c", 364)
+#define UNITODIFF_RIGHT_IS_NOT_NULL() assertion_Expect(1, "right is NULL", "source/utils.c", 365)
 
-#define DIFFTOUNI_LINEAR_IS_NOT_NULL() assertion_Expect(1, "linear is NULL", "source/utils.c", 397)
-#define DIFFTOUNI_ANGULAR_IS_NOT_NULL() assertion_Expect(1, "angular is NULL", "source/utils.c", 398)
+#define DIFFTOUNI_LINEAR_IS_NOT_NULL() assertion_Expect(1, "linear is NULL", "source/utils.c", 398)
+#define DIFFTOUNI_ANGULAR_IS_NOT_NULL() assertion_Expect(1, "angular is NULL", "source/utils.c", 399)
 
-#define ENSUREANGULARVELOCITY_V_IS_NOT_NULL() assertion_Expect(1, "v is NULL", "source/utils.c", 563)
-#define ENSUREANGULARVELOCITY_W_IS_NOT_NULL() assertion_Expect(1, "w is NULL", "source/utils.c", 564)
-#define ENSUREANGULARVELOCITY_LEFT_IS_NOT_NULL() assertion_Expect(1, "left is NULL", "source/utils.c", 363)
-#define ENSUREANGULARVELOCITY_RIGHT_IS_NOT_NULL() assertion_Expect(1, "right is NULL", "source/utils.c", 364)    
-#define ENSUREANGULARVELOCITY_LINEAR_IS_NOT_NULL() assertion_Expect(1, "linear is NULL", "source/utils.c", 397)
-#define ENSUREANGULARVELOCITY_ANGULAR_IS_NOT_NULL() assertion_Expect(1, "angular is NULL", "source/utils.c", 398)
+#define ENSUREANGULARVELOCITY_V_IS_NOT_NULL() assertion_Expect(1, "v is NULL", "source/utils.c", 564)
+#define ENSUREANGULARVELOCITY_W_IS_NOT_NULL() assertion_Expect(1, "w is NULL", "source/utils.c", 565)
+#define ENSUREANGULARVELOCITY_LEFT_IS_NOT_NULL() assertion_Expect(1, "left is NULL", "source/utils.c", 364)
+#define ENSUREANGULARVELOCITY_RIGHT_IS_NOT_NULL() assertion_Expect(1, "right is NULL", "source/utils.c", 365)    
+#define ENSUREANGULARVELOCITY_LINEAR_IS_NOT_NULL() assertion_Expect(1, "linear is NULL", "source/utils.c", 398)
+#define ENSUREANGULARVELOCITY_ANGULAR_IS_NOT_NULL() assertion_Expect(1, "angular is NULL", "source/utils.c", 399)
 
 #define LIMITLINEARACCEL_LAST_TIME_IS_NOT_NULL() assertion_Expect(1, "last_time is NULL", "source/utils.c", 636)
 
@@ -93,7 +94,7 @@ void test_WhenTwoBytePatternValue_ThenValidUint16Value(void)
     {
         printf("Testing [0x%02X, 0x%02X] => Expecting %d\n", patterns[ii][0], patterns[ii][1], values[ii]);
         
-        assertion_Expect(1, "bytes is null", "source/utils.c", 202);
+        assertion_Expect(1, "bytes is null", "source/utils.c", 203);
         
         // When
         value = TwoBytesToUint16(patterns[ii]);
@@ -117,7 +118,7 @@ void test_WhenTwoBytePatternValue_ThenValidInt16Value(void)
     {
         printf("Testing [0x%02X, 0x%02X] => Expecting %d\n", patterns[ii][0], patterns[ii][1], values[ii]);
 
-        assertion_Expect(1, "bytes is null", "source/utils.c", 202);
+        assertion_Expect(1, "bytes is null", "source/utils.c", 203);
 
         // When
         value = TwoBytesToInt16(patterns[ii]);
@@ -144,7 +145,7 @@ void test_WhenFourBytePatternValue_ThenValidUint32Value(void)
     {
         printf("Testing [0x%02X 0x%02X 0x%02X 0x%02X] => Expecting %d\n", patterns[ii][0], patterns[ii][1], patterns[ii][2], patterns[ii][3], values[ii]);
         
-        assertion_Expect(1, "bytes is null", "source/utils.c", 232);
+        assertion_Expect(1, "bytes is null", "source/utils.c", 233);
         
         // When
         value = FourBytesToUint32(patterns[ii]);
@@ -171,7 +172,7 @@ void test_WhenFourBytePatternValue_ThenValidInt32Value(void)
     {
         printf("Testing [0x%02X 0x%02X 0x%02X 0x%02X] => Expecting %d\n", patterns[ii][0], patterns[ii][1], patterns[ii][2], patterns[ii][3], values[ii]);
         
-        assertion_Expect(1, "bytes is null", "source/utils.c", 232);
+        assertion_Expect(1, "bytes is null", "source/utils.c", 233);
         
         // When
         value = FourBytesToInt32(patterns[ii]);
@@ -198,7 +199,7 @@ void test_WhenUint32Value_ThenValidFourBytePatternValue(void)
     {
         printf("Testing [0x%02X 0x%02X 0x%02X 0x%02X] => Expecting %d\n", patterns[ii][0], patterns[ii][1], patterns[ii][2], patterns[ii][3], values[ii]);
 
-        assertion_Expect(1, "bytes is null", "source/utils.c", 143);
+        assertion_Expect(1, "bytes is null", "source/utils.c", 144);
 
         // When
         Uint32ToFourBytes(values[ii], actual);
@@ -225,7 +226,7 @@ void test_WhenInt32Value_ThenValidFourBytesValue(void)
     {
         printf("Testing [0x%02X 0x%02X 0x%02X 0x%02X] => Expecting %d\n", patterns[ii][0], patterns[ii][1], patterns[ii][2], patterns[ii][3], values[ii]);
 
-        assertion_Expect(1, "bytes is null", "source/utils.c", 143);
+        assertion_Expect(1, "bytes is null", "source/utils.c", 144);
 
         // When
         Int32ToFourBytes(values[ii], actual);
@@ -252,7 +253,7 @@ void test_WhenFloatValue_ThenValidFourBytesValue(void)
     {
         printf("Testing [0x%02X 0x%02X 0x%02X 0x%02X] => Expecting %d\n", patterns[ii][0], patterns[ii][1], patterns[ii][2], patterns[ii][3],values[ii]);
 
-        assertion_Expect(1, "bytes is null", "source/utils.c", 181);
+        assertion_Expect(1, "bytes is null", "source/utils.c", 182);
 
         // When
         FloatToFourBytes(values[ii], actual);
@@ -765,8 +766,8 @@ void test_WhenLinearAngularZero_ThenLeftRightZero(void)
 
     //TEST_IGNORE();
     
-    assertion_Expect(1, "left is NULL", "source/utils.c", 363);
-    assertion_Expect(1, "right is NULL", "source/utils.c", 364);
+    assertion_Expect(1, "left is NULL", "source/utils.c", 364);
+    assertion_Expect(1, "right is NULL", "source/utils.c", 365);
     
     // When
     UniToDiff(linear, angular, &left, &right);
@@ -786,8 +787,8 @@ void test_WhenLinearForwardMaxAngularZero_ThenLeftRightMax(void)
 
     //TEST_IGNORE();
     
-    assertion_Expect(1, "left is NULL", "source/utils.c", 363);
-    assertion_Expect(1, "right is NULL", "source/utils.c", 364);
+    assertion_Expect(1, "left is NULL", "source/utils.c", 364);
+    assertion_Expect(1, "right is NULL", "source/utils.c", 365);
     
     // When
     UniToDiff(linear, angular, &left, &right);

@@ -6,7 +6,31 @@
 
 void ConMotor_Init(void);
 void ConMotor_Start(void);
-BOOL ConMotor_Assign(CONCMD_IF_TYPE *p_cmdif, ...);    
-    
+
+CONCMD_IF_TYPE * const ConMotor_InitMotorShow(WHEEL_TYPE wheel, BOOL plain_text);
+CONCMD_IF_TYPE * const ConMotor_InitMotorRepeat(
+            WHEEL_TYPE wheel,
+            FLOAT first,
+            FLOAT second,
+            FLOAT intvl,
+            INT8 iters,
+            BOOL no_pid,
+            BOOL no_accel);
+CONCMD_IF_TYPE * const ConMotor_InitMotorCal(
+            WHEEL_TYPE wheel,
+            INT8 iters);
+CONCMD_IF_TYPE * const ConMotor_InitMotorVal(
+            WHEEL_TYPE wheel,
+            DIR_TYPE direction,
+            FLOAT min_percent,
+            FLOAT max_percent,
+            INT8 num_points);
+CONCMD_IF_TYPE * const ConMotor_InitMotorMove(
+            FLOAT left_speed,
+            FLOAT right_speed,
+            FLOAT duration,
+            BOOL no_pid,
+            BOOL no_accel);
+
 #endif
     

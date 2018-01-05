@@ -4,6 +4,10 @@
 #include "freesoc.h"
 #include "concmd.h"
 
-BOOL ConConfig_Assign(CONCMD_IF_TYPE *p_cmdif, ...);
+void ConConfig_Init(void);
+void ConConfig_Start(void);
+CONCMD_IF_TYPE * const ConConfig_InitConfigDebug(BOOL enable, UINT16 mask);
+CONCMD_IF_TYPE * const ConConfig_InitConfigShow(UINT16 mask, BOOL plain_text);
+CONCMD_IF_TYPE * const ConConfig_InitConfigClear(UINT16 mask, BOOL plain_text);
 
 #endif

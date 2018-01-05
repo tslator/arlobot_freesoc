@@ -1,3 +1,8 @@
+
+
+/*---------------------------------------------------------------------------------------------------
+ * Includes
+ *-------------------------------------------------------------------------------------------------*/    
 #include <string.h>
 #include "parser.h"
 #include "serial.h"
@@ -5,6 +10,8 @@
 
 #define MAX_NUM_ELMS (10)
 #define MAX_STR_LEN (MAX_LINE_LENGTH)
+
+static const char SPACE_STR[2] = " ";
 
 static char args_strs[MAX_NUM_ELMS][MAX_STR_LEN];
 static char* args_ptrs[MAX_NUM_ELMS];
@@ -21,27 +28,39 @@ static void init_args_storage()
     }
 }
 
-static int args_str_array(char *str)
+static int args_str_array(CHAR * const str)
 {
-   const char s[2] = " ";
-   char *token;
+   CHAR *token;
    int index = 0;
    
    /* get the first token */
-   token = strtok(str, s);
+   token = strtok(str, SPACE_STR);
    
    /* walk through other tokens */
    while( token != NULL ) {
       strcpy(ppargs[index], token);
       index++;
-      token = strtok(NULL, s);
+      token = strtok(NULL, SPACE_STR);
    }
    
    return index;
 }
 
+static BOOL EnforceArgumentMutualExclusion(BOOL arg1, BOOL arg2)
+{
+    if ((arg1 && arg2) || (!arg1 && !arg2))
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 void Parser_Init(void)
 {
+    memset(args_strs, 0, sizeof args_strs);
+    memset(args_ptrs, 0, sizeof args_ptrs);
+    ppargs = 0;
 }
 
 void Parser_Start(void)
@@ -52,14 +71,21 @@ void Parser_Start(void)
 void Parser_Parse(CHAR* const line, COMMAND_TYPE* const cmd)
 {
     int success;
-    int num_args = args_str_array(line);        
+    int num_args;
+    
+    if (strcmp(line, "exit") == 0)
+    {
+        cmd->is_exit = TRUE;
+    }
+    
+    num_args = args_str_array(line);      
     cmd->args = docopt(num_args, ppargs, 1, "0.1.0", &success); 
     Ser_PutStringFormat("Success: %d\r\n", success);
 
     switch (success)
     {
         case -1:
-            Ser_PutString(cmd->args.usage_pattern);
+            Ser_PutString((CHAR * const) cmd->args.usage_pattern);
             cmd->is_parsed = FALSE;
             return;
     
@@ -69,23 +95,23 @@ void Parser_Parse(CHAR* const line, COMMAND_TYPE* const cmd)
             {
                 if (cmd->args.motor)
                 {
-                    Ser_PutString(cmd->args.motor_help_message);
+                    Ser_PutString((CHAR * const) cmd->args.motor_help_message);
                 }
                 else if (cmd->args.pid)
                 {
-                    Ser_PutString(cmd->args.pid_help_message);
+                    Ser_PutString((CHAR * const) cmd->args.pid_help_message);
                 }
                 else if (cmd->args.config)
                 {
-                    Ser_PutString(cmd->args.config_help_message);
+                    Ser_PutString((CHAR * const) cmd->args.config_help_message);
                 }
                 else if (cmd->args.motion)
                 {
-                    Ser_PutString(cmd->args.motion_help_message);
+                    Ser_PutString((CHAR * const) cmd->args.motion_help_message);
                 }
                 else
                 {
-                    Ser_PutString(cmd->args.help_message);
+                    Ser_PutString((CHAR * const) cmd->args.help_message);
                 }
 
                 cmd->is_parsed = FALSE;
@@ -110,42 +136,34 @@ void Parser_Parse(CHAR* const line, COMMAND_TYPE* const cmd)
             2. either impulse or step (step has a default so it is always specified) must be specified
             3. with_debug is optional
     */
+
     if (cmd->args.pid && cmd->args.cal)
     {
-        if ((cmd->args.left && cmd->args.right) || (!cmd->args.left && !cmd->args.right))
-        {
-            cmd->is_parsed = FALSE;
-        }
+        cmd->is_parsed = EnforceArgumentMutualExclusion(cmd->args.left, cmd->args.right);
+    }
+
+    if (cmd->args.pid && cmd->args.val)
+    {
+        cmd->is_parsed = EnforceArgumentMutualExclusion(cmd->args.forward, cmd->args.backward);
     }
 
     if (cmd->args.config && cmd->args.debug)
     {
-        if ((cmd->args.enable && cmd->args.disable) || (!cmd->args.enable && !cmd->args.disable))
-        {
-            cmd->is_parsed = FALSE;
-        }
-        
+        cmd->is_parsed = EnforceArgumentMutualExclusion(cmd->args.enable, cmd->args.disable);
     }
 
     if (cmd->args.motion && cmd->args.val)
     {
         if (cmd->args.square)
         {
-            if ((cmd->args.left && cmd->args.right) || !(cmd->args.left && cmd->args.right))
-            {
-                cmd->is_parsed = FALSE;
-            }
+            cmd->is_parsed = EnforceArgumentMutualExclusion(cmd->args.left, cmd->args.right);
         }
         else if (cmd->args.circle)
         {
-            if ((cmd->args.cw && cmd->args.ccw) || !(cmd->args.cw && cmd->args.ccw))
-            {
-                cmd->is_parsed = FALSE;
-            }
+            cmd->is_parsed = EnforceArgumentMutualExclusion(cmd->args.cw, cmd->args.ccw);
         }
         
     }
-    
     
     Ser_PutStringFormat("Command Is Parsed: %d\r\n", cmd->is_parsed);
     

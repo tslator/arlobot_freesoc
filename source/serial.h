@@ -39,7 +39,7 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/    
-#define MAX_STRING_LENGTH (255)
+#define MAX_STRING_LENGTH (127)
 #define MAX_LINE_LENGTH (MAX_STRING_LENGTH)
 
 /*---------------------------------------------------------------------------------------------------
@@ -48,9 +48,9 @@ SOFTWARE.
 void Ser_Init();
 void Ser_Start();
 
-void Ser_PutString(CHAR* const str);
-void Ser_PutStringFormat(const CHAR* const fmt, ...);
-UINT8 Ser_ReadData(CHAR *data);
+void Ser_PutString(CHAR const * const str);
+void Ser_PutStringFormat(CHAR const * const fmt, ...);
+UINT8 Ser_ReadData(CHAR * const data);
 UINT8 Ser_ReadByte();
 INT8 Ser_ReadLine(CHAR* const line, BOOL echo, UINT8 max_length);
 void Ser_WriteByte(UINT8 value);

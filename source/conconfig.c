@@ -5,40 +5,61 @@
 #include "cal.h"
 #include "utils.h"
 
+typedef enum {CONFIG_FIRST = 0, CONFIG_DEBUG=CONFIG_FIRST, CONFIG_CLEAR, CONFIG_SHOW, CONFIG_LAST} CONFIG_CMD_TYPE;
+
 typedef struct _tag_config_show
 {
     UINT16 mask;
     BOOL plain_text;
 } CONFIG_SHOW_TYPE;
 
+typedef struct _tag_config_debug
+{
+    BOOL enable;
+    UINT16 mask;
+} CONFIG_DEBUG_TYPE;
+
 typedef struct _tag_config_clear
 {
     UINT16 mask;
+    BOOL plain_text;
 } CONFIG_CLEAR_TYPE;
+
 
 static BOOL is_running;
 
+static CONFIG_DEBUG_TYPE config_debug;
 static CONFIG_SHOW_TYPE config_show;
 static CONFIG_CLEAR_TYPE config_clear;
+
+
+static CONCMD_IF_TYPE cmd_if_array[CONFIG_LAST];
+
 
 /*-------------------------------------------------------------------
     Config Debug
 */
-static void config_debug_init(BOOL enable_disable, UINT16 mask)
-{
-    if (enable_disable)
-    {
-        Debug_Enable(mask);
-    }
-    else
-    {
-        Debug_Disable(mask);
-    }
+static CONCMD_IF_TYPE * const config_debug_init(BOOL enable, UINT16 mask)
+{    
+    config_debug.enable = enable;
+    config_debug.mask = mask;
+
     is_running = TRUE;
+
+    return &cmd_if_array[CONFIG_DEBUG];
 }
 
 static BOOL config_debug_update(void)
 {
+    if (config_debug.enable)
+    {
+        Debug_Enable(config_debug.mask);
+    }
+    else
+    {
+        Debug_Disable(config_debug.mask);
+    }
+    
     is_running = FALSE;
     return is_running;
 }
@@ -56,11 +77,13 @@ static void config_debug_results(void)
     Config Show
 */
 
-static void config_show_init(UINT16 mask, BOOL plain_text)
+static CONCMD_IF_TYPE * const config_show_init(UINT16 mask, BOOL plain_text)
 {
     config_show.mask = mask;
     config_show.plain_text = plain_text;
     is_running = TRUE;
+
+    return &cmd_if_array[CONFIG_SHOW];
 }
 
 static BOOL config_show_update(void)
@@ -146,10 +169,13 @@ static void config_show_results(void)
     it unimplmeneted for now
 */
 
-static void config_clear_init(UINT16 mask)
+static CONCMD_IF_TYPE * const config_clear_init(UINT16 mask, BOOL plain_text)
 {
     config_clear.mask = mask;
+    config_clear.plain_text = plain_text;
+
     is_running = TRUE;
+    return &cmd_if_array[CONFIG_SHOW];
 }
 
 static BOOL config_clear_update(void)
@@ -164,72 +190,47 @@ static BOOL config_clear_status(void)
 }
 
 static void config_clear_results(void)
+{    
+}
+
+void ConConfig_Init(void)
+{    
+    cmd_if_array[CONFIG_DEBUG].update = config_debug_update;
+    cmd_if_array[CONFIG_DEBUG].status = config_debug_status;
+    cmd_if_array[CONFIG_DEBUG].results = config_debug_results;
+
+    cmd_if_array[CONFIG_CLEAR].update = config_clear_update;
+    cmd_if_array[CONFIG_CLEAR].status = config_clear_status;
+    cmd_if_array[CONFIG_CLEAR].results = config_clear_results;
+
+    cmd_if_array[CONFIG_SHOW].update = config_show_update;
+    cmd_if_array[CONFIG_SHOW].status = config_show_status;
+    cmd_if_array[CONFIG_SHOW].results = config_show_results;
+
+    memset(&config_debug, 0, sizeof config_debug);
+    memset(&config_show, 0, sizeof config_show);
+    memset(&config_clear, 0, sizeof config_clear);
+
+    is_running = FALSE;
+}
+
+void ConConfig_Start(void)
 {
 }
 
-BOOL ConConfig_Assign(CONCMD_IF_TYPE *p_cmdif, ...)
+CONCMD_IF_TYPE * const ConConfig_InitConfigDebug(BOOL enable, UINT16 mask)
 {
-    va_list valist;
-    BOOL result = FALSE;
-    int cmd;
-
-    va_start(valist, p_cmdif);
-    cmd = va_arg(valist, int);
-    
-    switch (cmd)
-    {
-        case CONFIG_DEBUG:
-        {
-            BOOL enable_disable = (BOOL) va_arg(valist, int);
-            UINT16 mask = (UINT16) va_arg(valist, int);
-
-            config_debug_init(enable_disable, mask);
-            p_cmdif->update = config_debug_update;
-            p_cmdif->status = config_debug_status;
-            p_cmdif->results = config_debug_results;
-            
-            p_cmdif->is_assigned = TRUE;
-            result = TRUE;
-
-            break;
-        }
-
-        case CONFIG_SHOW:
-        {
-            UINT16 mask = (UINT16) va_arg(valist, int);
-            BOOL plain_text = (BOOL) va_arg(valist, int);
-
-            config_show_init(mask, plain_text);
-            p_cmdif->update = config_show_update;
-            p_cmdif->status = config_show_status;
-            p_cmdif->results = config_show_results;
-            
-            p_cmdif->is_assigned = TRUE;
-            result = TRUE;
-
-            break;
-        }
-
-        case CONFIG_CLEAR:
-        {
-            UINT16 mask = (UINT16) va_arg(valist, int);
-
-            config_clear_init(mask);
-            p_cmdif->update = config_clear_update;
-            p_cmdif->status = config_clear_status;
-            p_cmdif->results = config_clear_results;
-            
-            p_cmdif->is_assigned = TRUE;
-            result = TRUE;
-            break;                        
-        }
-        default:
-            break;
-    }
-
-    /* clean memory reserved for valist */
-    va_end(valist);
-    
-    return result;
-    
+    return config_debug_init(enable, mask);
 }
+
+CONCMD_IF_TYPE * const ConConfig_InitConfigShow(UINT16 mask, BOOL plain_text)
+{
+    return config_show_init(mask, plain_text);
+}
+
+CONCMD_IF_TYPE * const ConConfig_InitConfigClear(UINT16 mask, BOOL plain_text)
+{
+    return config_clear_init(mask, plain_text);
+}
+
+/* [] END OF FILE */

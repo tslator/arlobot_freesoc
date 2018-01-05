@@ -2,7 +2,7 @@
 #define PARSER_H
     
 #include "freesoc.h"
-#include "dispatch.h"
+#include "disp.h"
     
 void Parser_Init(void);
 void Parser_Start(void);

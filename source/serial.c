@@ -127,7 +127,7 @@ void Ser_Start()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Ser_PutString(CHAR* const str)
+void Ser_PutString(CHAR const * const str)
 {
     USBIF_PutString(str);
 }
@@ -140,7 +140,7 @@ void Ser_PutString(CHAR* const str)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Ser_PutStringFormat(const CHAR* const fmt, ...)
+void Ser_PutStringFormat(CHAR const * const fmt, ...)
 {    
     CHAR str[MAX_STRING_LENGTH];
     va_list ap;
@@ -184,7 +184,9 @@ UINT8 Ser_ReadByte()
  * Parameters: line - pointer to charater buffer
  *             echo - echos characters to serial port if TRUE.
  *             max_length - the maximum length of the line (maximum is 64).
- * Return: None
+ * Return: 0 for newline or carriage return
+ *         -1 for no input
+ *         > 0 for all other
  * 
  *-------------------------------------------------------------------------------------------------*/
 INT8 Ser_ReadLine(CHAR* const line, BOOL echo, UINT8 max_length)
@@ -203,7 +205,7 @@ INT8 Ser_ReadLine(CHAR* const line, BOOL echo, UINT8 max_length)
     ch = Ser_ReadByte();
     if (ch == 0x00)
     {
-        /* This means there was no input and since this is a polled routine we return zero length
+        /* This means there was no input and since this is a polled routine we return -1 length
            to indicate that nothing happened.
          */
         length = -1;
@@ -220,7 +222,6 @@ INT8 Ser_ReadLine(CHAR* const line, BOOL echo, UINT8 max_length)
         {
             SetCharData(ch, echo);
         }
-        
         return length;
     }
     else

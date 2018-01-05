@@ -18,6 +18,8 @@ void test_WhenNullCharReturned_ThenZeroIsReturned(void)
     INT8 result;
     UINT8 data[10];
 
+    //TEST_IGNORE();
+
     // Given
     USBIF_GetChar_ExpectAndReturn(0);
 
@@ -30,8 +32,10 @@ void test_WhenNullCharReturned_ThenZeroIsReturned(void)
 
 void test_WhenNewLineReturned_ThenNewLineIsReturned(void)
 {
-    UINT8 result;
+    INT8 result;
     UINT8 data[10];
+
+    //TEST_IGNORE();
 
     // Given
     USBIF_GetChar_ExpectAndReturn('\n');
@@ -46,9 +50,11 @@ void test_WhenNewLineReturned_ThenNewLineIsReturned(void)
 
 void test_WhenLineReturnReturned_ThenLineReturnReturned(void)
 {
-    UINT8 result;
+    INT8 result;
     UINT8 data[10];
 
+    //TEST_IGNORE();
+    
     // Given
     USBIF_GetChar_ExpectAndReturn('\r');
 
@@ -62,12 +68,14 @@ void test_WhenLineReturnReturned_ThenLineReturnReturned(void)
 
 void test_WhenLineDataWithNewLine_ThenDataIsReturned(void)
 {
-    UINT8 result1;
-    UINT8 result2;
-    UINT8 result3;
-    UINT8 result4;
+    INT8 result1;
+    INT8 result2;
+    INT8 result3;
+    INT8 result4;
     UINT8 data[10] = {0};
 
+    //TEST_IGNORE();
+    
     // Given
     USBIF_GetChar_ExpectAndReturn('1');
     USBIF_GetChar_ExpectAndReturn('2');
@@ -81,21 +89,23 @@ void test_WhenLineDataWithNewLine_ThenDataIsReturned(void)
     result4 = Ser_ReadLine(data, FALSE, 10);
 
     // Then
-    TEST_ASSERT_EQUAL_UINT8(0, result1);
-    TEST_ASSERT_EQUAL_UINT8(0, result2);
-    TEST_ASSERT_EQUAL_UINT8(0, result3);
-    TEST_ASSERT_EQUAL_UINT8(3, result4);
+    TEST_ASSERT_EQUAL_INT8(-1, result1);
+    TEST_ASSERT_EQUAL_INT8(-1, result2);
+    TEST_ASSERT_EQUAL_INT8(-1, result3);
+    TEST_ASSERT_EQUAL_INT8(3, result4);
     TEST_ASSERT_EQUAL_STRING("123", data);
 }
 
 void test_WhenLineDataWithLineReturn_ThenDataIsReturned(void)
 {
-    UINT8 result1;
-    UINT8 result2;
-    UINT8 result3;
-    UINT8 result4;
+    INT8 result1;
+    INT8 result2;
+    INT8 result3;
+    INT8 result4;
     UINT8 data[10] = {0};
   
+    //TEST_IGNORE();
+    
     // Given
     USBIF_GetChar_ExpectAndReturn('1');
     USBIF_GetChar_ExpectAndReturn('2');
@@ -109,21 +119,23 @@ void test_WhenLineDataWithLineReturn_ThenDataIsReturned(void)
     result4 = Ser_ReadLine(data, FALSE, 10);
 
     // Then
-    TEST_ASSERT_EQUAL_UINT8(0, result1);
-    TEST_ASSERT_EQUAL_UINT8(0, result2);
-    TEST_ASSERT_EQUAL_UINT8(0, result3);
-    TEST_ASSERT_EQUAL_UINT8(3, result4);
+    TEST_ASSERT_EQUAL_INT8(-1, result1);
+    TEST_ASSERT_EQUAL_INT8(-1, result2);
+    TEST_ASSERT_EQUAL_INT8(-1, result3);
+    TEST_ASSERT_EQUAL_INT8(3, result4);
     TEST_ASSERT_EQUAL_STRING("123", data);
 }
 
 void test_WhenLineDataWithNewLineAndEcho_ThenDataIsReturnedAndOutput(void)
 {
-    UINT8 result1;
-    UINT8 result2;
-    UINT8 result3;
-    UINT8 result4;
+    INT8 result1;
+    INT8 result2;
+    INT8 result3;
+    INT8 result4;
     UINT8 data[10] = {0};
   
+    //TEST_IGNORE();
+    
     // Given
     USBIF_GetChar_ExpectAndReturn('1');
     USBIF_PutChar_Expect('1');
@@ -140,21 +152,23 @@ void test_WhenLineDataWithNewLineAndEcho_ThenDataIsReturnedAndOutput(void)
     result4 = Ser_ReadLine(data, TRUE, 10);
 
     // Then
-    TEST_ASSERT_EQUAL_UINT8(0, result1);
-    TEST_ASSERT_EQUAL_UINT8(0, result2);
-    TEST_ASSERT_EQUAL_UINT8(0, result3);
-    TEST_ASSERT_EQUAL_UINT8(3, result4);
+    TEST_ASSERT_EQUAL_INT8(-1, result1);
+    TEST_ASSERT_EQUAL_INT8(-1, result2);
+    TEST_ASSERT_EQUAL_INT8(-1, result3);
+    TEST_ASSERT_EQUAL_INT8(3, result4);
     TEST_ASSERT_EQUAL_STRING("123", data);
 }
 
 void test_WhenLineDataWithLineReturnAndEcho_ThenDataIsReturnedAndOutput(void)
 {
-    UINT8 result1;
-    UINT8 result2;
-    UINT8 result3;
-    UINT8 result4;
+    INT8 result1;
+    INT8 result2;
+    INT8 result3;
+    INT8 result4;
     UINT8 data[10] = {0};
   
+    //TEST_IGNORE();
+    
     // Given
     USBIF_GetChar_ExpectAndReturn('1');
     USBIF_PutChar_Expect('1');
@@ -171,10 +185,10 @@ void test_WhenLineDataWithLineReturnAndEcho_ThenDataIsReturnedAndOutput(void)
     result4 = Ser_ReadLine(data, TRUE, 10);
 
     // Then
-    TEST_ASSERT_EQUAL_UINT8(0, result1);
-    TEST_ASSERT_EQUAL_UINT8(0, result2);
-    TEST_ASSERT_EQUAL_UINT8(0, result3);
-    TEST_ASSERT_EQUAL_UINT8(3, result4);
+    TEST_ASSERT_EQUAL_INT8(-1, result1);
+    TEST_ASSERT_EQUAL_INT8(-1, result2);
+    TEST_ASSERT_EQUAL_INT8(-1, result3);
+    TEST_ASSERT_EQUAL_INT8(3, result4);
     TEST_ASSERT_EQUAL_STRING("123", data);
 }
 
@@ -182,10 +196,12 @@ void test_WhenMaxLengthLessThanMaxPossibleAndDataLengthGreaterThanMaxLength_Then
 {
     UINT8 test_data[] = "012345678901234567890123456\n";
     UINT8 expected_data[] = "890123456";
-    UINT8 results[28];
+    INT8 results[28];
     UINT8 data[10] = {0};
     int ii;
 
+    //TEST_IGNORE();
+    
     // Given
     for (ii = 0; ii <= 27; ++ii)
     {
@@ -200,20 +216,23 @@ void test_WhenMaxLengthLessThanMaxPossibleAndDataLengthGreaterThanMaxLength_Then
     }
 
     // Then
-    TEST_ASSERT_EACH_EQUAL_UINT8(0, &results[19], 6);
-    TEST_ASSERT_EQUAL_UINT8(9, results[27]);
+    TEST_ASSERT_EACH_EQUAL_INT8(-1, &results[19], 6);
+    TEST_ASSERT_EQUAL_INT8(9, results[27]);
     TEST_ASSERT_EQUAL_STRING(expected_data, data);
 }
 
 void test_WhenLineDataExceedsMaxLineLength_ThenNewDataIsDropped(void)
-{                                                                                        //|
+{
+    #define TEST_MAX_LINE_LENGTH (64)
     UINT8 test_data[] =     "1234567812345678123456781234567812345678123456781234567812345678123456781234567812345678123456781234\n";
     UINT8 expected_data[] = "8123456781234567812345678123456781234";
-    UINT8 results[101];
-    UINT8 data[64] = {0};
+    INT8 results[101] = {0};
+    UINT8 data[TEST_MAX_LINE_LENGTH] = {0};
     int ii;
     int count = 0;
 
+    //TEST_IGNORE();
+    
     // Given
     for (ii = 0; ii < 100; ++ii)
     {
@@ -223,20 +242,22 @@ void test_WhenLineDataExceedsMaxLineLength_ThenNewDataIsDropped(void)
     USBIF_GetChar_ExpectAndReturn(test_data[ii]);
 
     // When
-    for (ii = 0; ii < 64; ++ii)
+    for (ii = 0; ii < TEST_MAX_LINE_LENGTH; ++ii)
     {
-        results[ii] = Ser_ReadLine(data, TRUE, 0);
+        results[ii] = Ser_ReadLine(data, TRUE, TEST_MAX_LINE_LENGTH);
     }
     memset(data, 0, sizeof data);
     memset(results, 0, sizeof results);
     for (ii = 0; ii < 37; ++ii)
     {
-        results[ii] = Ser_ReadLine(data, TRUE, 0);
+        results[ii] = Ser_ReadLine(data, TRUE, TEST_MAX_LINE_LENGTH);
     }
 
     // Then
-    TEST_ASSERT_EACH_EQUAL_UINT8(0, results, 36);
-    TEST_ASSERT_EQUAL_UINT8(37, results[36]);
+    TEST_ASSERT_EACH_EQUAL_INT8(-1, results, 35);
+    TEST_ASSERT_EQUAL_INT8(37, results[36]);
     TEST_ASSERT_EQUAL_STRING(expected_data, data);
     
 }
+
+/* Note: Serial line length has been extended to 127.  Add new test for exceeding 127 */
