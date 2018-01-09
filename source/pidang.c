@@ -46,7 +46,7 @@ SOFTWARE.
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
 #ifdef ANGPID_DUMP_ENABLED
-#define ANGPID_DUMP() DumpPid(pid.name, &pid.pid)
+#define ANGPID_DUMP() DumpPid(pid.name, pid.debug_bit, &pid.pid)
 #else
 #define ANGPID_DUMP()
 #endif
@@ -82,6 +82,7 @@ static PID_TYPE pid = {
     /* name */          "ang",
     /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, /*Kf*/0, 0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC, NULL},
     /* sign */          1.0,
+    /* debug bit */     DEBUG_ANGPID_ENABLE_BIT,
     /* get_target */    GetControlVelocity,
     /* get_input */     GetOdomVelocity,
     /* update */        AngularPidUpdate,

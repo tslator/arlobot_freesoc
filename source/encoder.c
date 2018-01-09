@@ -88,6 +88,7 @@ typedef struct _encoder_tag
     FLOAT avg_cps;
     FLOAT avg_mps;
     FLOAT delta_dist;
+    UINT16 debug_bit;
     MOVING_AVERAGE_FLOAT_TYPE delta_count_ma;
     MOVING_AVERAGE_FLOAT_TYPE avg_cps_ma;
     READ_ENCODER_COUNTER_TYPE read_counter;
@@ -101,6 +102,7 @@ static ENCODER_TYPE left_enc = {
     /* name */              "left",
     /* count/speed */       0, 0, 0, 0, 0, 0,
     /* delta_dist */        0.0,
+    /* debug bit */         DEBUG_LEFT_ENCODER_ENABLE_BIT,
     /* count ma */          {0, 0},
     /* cps ma */            {0, 0},
     /* get enc count */     Left_QuadDec_GetCounter,
@@ -111,6 +113,7 @@ static ENCODER_TYPE right_enc = {
     /* name */              "right",
     /* count/speed */       0, 0, 0, 0, 0, 0,
     /* delta dist */        0.0,
+    /* debug bit */         DEBUG_RIGHT_ENCODER_ENABLE_BIT,
     /* count ma */          {0, 0},
     /* cps ma */            {0, 0},
     /* get enc count */     Right_QuadDec_GetCounter,
@@ -127,10 +130,9 @@ static ENCODER_TYPE right_enc = {
  *-------------------------------------------------------------------------------------------------*/
  static void DumpEncoder(ENCODER_TYPE* const enc)
 {
-    if (Debug_IsEnabled(DEBUG_LEFT_ENCODER_ENABLE_BIT|DEBUG_RIGHT_ENCODER_ENABLE_BIT)) 
+    if (Debug_IsEnabled(enc->debug_bit)) 
     {    
-#ifdef JSON_OUTPUT_ENABLE
-        DEBUG_PRINT_ARG("{ \"%s enc\": {\"avg_cps\":%.3f, \"avg_mps\":%.3f, \"avg_delta_count\":%.3f, \"delta_count\":%ld, \"delta_dist\":%.3f}}\r\n",
+        DEBUG_PRINT_ARG("{\"%s enc\": {\"avg_cps\":%.3f, \"avg_mps\":%.3f, \"avg_delta_count\":%.3f, \"delta_count\":%ld, \"delta_dist\":%.3f}}\r\n",
                 enc->name, 
                 enc->avg_cps, 
                 enc->avg_mps, 
@@ -138,15 +140,6 @@ static ENCODER_TYPE right_enc = {
                 enc->delta_count, 
                 enc->delta_dist
         );
-#else    
-        DEBUG_PRINT_ARG("%s enc: %.3f %.3f %.3f %ld %.3f\r\n", 
-                        enc->name, 
-                        enc->avg_cps, 
-                        enc->avg_mps, 
-                        enc->avg_delta_count, 
-                        enc->delta_count, 
-                        enc->delta_dist);
-#endif
     }                    
 }
 #endif
@@ -191,6 +184,7 @@ void Encoder_Init()
     left_enc.delta_count = 0;
     left_enc.avg_delta_count = 0;
     left_enc.delta_dist = 0.0;
+    left_enc.debug_bit = DEBUG_LEFT_ENCODER_ENABLE_BIT;
     left_enc.delta_count_ma.last = 0;
     left_enc.delta_count_ma.n = NUM_DELTA_COUNT_SAMPLES;
     left_enc.avg_cps_ma.last = 0;
@@ -203,6 +197,7 @@ void Encoder_Init()
     right_enc.delta_count = 0;
     right_enc.avg_delta_count = 0;
     right_enc.delta_dist = 0.0;
+    right_enc.debug_bit = DEBUG_RIGHT_ENCODER_ENABLE_BIT;
     right_enc.delta_count_ma.last = 0;
     right_enc.delta_count_ma.n = NUM_DELTA_COUNT_SAMPLES;
     right_enc.avg_cps_ma.last = 0;

@@ -743,5 +743,76 @@ FLOAT CalcMaxDiffVelocity()
     return max_diff;
 }
 
+CHAR * format_string(CHAR *str, FORMAT_TYPE format)
+{
+    switch (format)
+    {
+        case FORMAT_UPPER:
+            return strupr(str);
+        
+        case FORMAT_LOWER:
+            return strlwr(str);
+            
+        case FORMAT_TITLE:
+            str = strlwr(str);
+            toupper(str[0]);
+            return str;
+    }
+
+    return str;
+}
+
+CHAR * const WheelToString(WHEEL_TYPE wheel, FORMAT_TYPE format)
+{
+    switch (wheel)
+    {
+        case WHEEL_LEFT:
+        {
+            switch (format)
+            {
+                case FORMAT_UPPER:
+                    return "LEFT";
+                
+                case FORMAT_LOWER:
+                    return "left";
+
+                case FORMAT_TITLE:
+                    return "Left";
+            }
+        }
+
+        case WHEEL_RIGHT:
+        {
+            switch (format)
+            {
+                case FORMAT_UPPER:
+                    return "RIGHT";
+                
+                case FORMAT_LOWER:
+                    return "right";
+
+                case FORMAT_TITLE:
+                    return "Right";
+            }
+        }
+
+        case WHEEL_BOTH:
+        {
+            switch (format)
+            {
+                case FORMAT_UPPER:
+                    return "BOTH";
+                
+                case FORMAT_LOWER:
+                    return "both";
+
+                case FORMAT_TITLE:
+                    return "Both";
+            }
+        }
+    }
+
+    return "unknown wheel";
+}
 
 /* [] END OF FILE */

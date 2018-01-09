@@ -48,16 +48,15 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Defines
  *-------------------------------------------------------------------------------------------------*/
-//#define ENABLE_VELOCITY_REPEAT    
-//#define OVERRIDE_VELOCITY
+
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/
 #define MAX_CMD_VELOCITY_TIMEOUT (2000)
 
-#define LINEAR_RESPONSE_TIME (3.0)
-#define ANGULAR_RESPONSE_TIME (3.0)
+#define LINEAR_RESPONSE_TIME (1.0)
+#define ANGULAR_RESPONSE_TIME (1.0)
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -251,19 +250,7 @@ void Control_Update()
     control_cmd_velocity(&linear_velocity_mps, &angular_velocity_rps, &timeout);
 
     //EnsureAngularVelocity(&linear_cmd_velocity, &angular_cmd_velocity);    
-    
-    //Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
-    //Debug_Enable(DEBUG_LEFT_ENCODER_ENABLE_BIT);
-    //Debug_Enable(DEBUG_RIGHT_ENCODER_ENABLE_BIT);
-    //Debug_Enable(DEBUG_LEFT_PID_ENABLE_BIT);
-    //Debug_Enable(DEBUG_RIGHT_PID_ENABLE_BIT);
-    
-#ifdef OVERRIDE_VELOCITY
-    linear_velocity_mps = 0.0;
-    angular_velocity_rps = 0.0;
-    timeout = 0;
-#endif
-
+        
     if (acceleration_enabled)
     {
         linear_velocity_mps = LimitLinearAccel(linear_velocity_mps, max_linear, LINEAR_RESPONSE_TIME);

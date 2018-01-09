@@ -75,7 +75,8 @@ typedef void (*STOP_PWM_FUNC_TYPE)();
 
 typedef struct _motor_tag
 {
-    char name[6];
+    CHAR name[6];
+    UINT16 debug_bit;
     HB25_ENABLE_FUNC_TYPE   enable;
     START_PWM_FUNC_TYPE     start;
     STOP_PWM_FUNC_TYPE      stop;
@@ -85,6 +86,7 @@ typedef struct _motor_tag
 
 static MOTOR_TYPE left_motor = {
     "left",
+    DEBUG_LEFT_MOTOR_ENABLE_BIT,
     Left_HB25_Enable_Pin_Write,
     Left_HB25_PWM_Start,
     Left_HB25_PWM_Stop,
@@ -94,6 +96,7 @@ static MOTOR_TYPE left_motor = {
 
 static MOTOR_TYPE right_motor = {
     "right",
+    DEBUG_RIGHT_MOTOR_ENABLE_BIT,
     Right_HB25_Enable_Pin_Write,
     Right_HB25_PWM_Start,
     Right_HB25_PWM_Stop,
@@ -114,17 +117,13 @@ static MOTOR_TYPE right_motor = {
  * 
  *-------------------------------------------------------------------------------------------------*/
 static void DumpMotor(MOTOR_TYPE* const motor)
-{
-    if (Debug_IsEnabled(DEBUG_LEFT_MOTOR_ENABLE_BIT | DEBUG_RIGHT_MOTOR_ENABLE_BIT))
+{       
+    if (Debug_IsEnabled(motor->debug_bit))
     {
-#ifdef JSON_OUTPUT_ENABLE
         DEBUG_PRINT_ARG("{\"%s motor\": {\"pwm\":%d}}\r\n",
                         motor->name, 
                         motor->get_pwm()
         );
-#else    
-        DEBUG_PRINT_ARG("%s: %d \r\n", motor->name, motor->get_pwm());
-#endif
     }
 }
 #endif
@@ -160,9 +159,11 @@ void Motor_Start()
     left_motor.enable(HB25_ENABLE);
     left_motor.start();
     left_motor.set_pwm(PWM_STOP);
+    left_motor.debug_bit = DEBUG_LEFT_MOTOR_ENABLE_BIT;
     right_motor.enable(HB25_ENABLE);
     right_motor.start();
     right_motor.set_pwm(PWM_STOP);
+    right_motor.debug_bit = DEBUG_RIGHT_MOTOR_ENABLE_BIT;
     
     Control_SetDeviceStatusBit(STATUS_HB25_CNTRL_INIT_BIT);
 }

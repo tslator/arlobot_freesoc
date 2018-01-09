@@ -80,7 +80,7 @@ void Parser_Parse(CHAR* const line, COMMAND_TYPE* const cmd)
     
     num_args = args_str_array(line);      
     cmd->args = docopt(num_args, ppargs, 1, "0.1.0", &success); 
-    Ser_PutStringFormat("Success: %d\r\n", success);
+    Ser_PutStringFormat("\r\nSuccess: %d\r\n", success);
 
     switch (success)
     {
@@ -147,7 +147,7 @@ void Parser_Parse(CHAR* const line, COMMAND_TYPE* const cmd)
         cmd->is_parsed = EnforceArgumentMutualExclusion(cmd->args.forward, cmd->args.backward);
     }
 
-    if (cmd->args.config && cmd->args.debug)
+    if (cmd->args.config && cmd->args.debug && !cmd->args.show)
     {
         cmd->is_parsed = EnforceArgumentMutualExclusion(cmd->args.enable, cmd->args.disable);
     }

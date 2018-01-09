@@ -122,7 +122,7 @@ void test_WhenConfigShowBits_ThenIsValidTrue(void)
     cmd.args.params = 1;
     cmd.args.plain_text = 1;
 
-    ConConfig_InitConfigShow_ExpectAndReturn(0x0015, cmd.args.plain_text, &concmd);
+    ConConfig_InitConfigShow_ExpectAndReturn(0x0025, cmd.args.plain_text, &concmd);
 
     Disp_Dispatch(&cmd);
 

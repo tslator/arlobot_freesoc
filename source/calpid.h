@@ -33,8 +33,7 @@ SOFTWARE.
  * Includes
  *-------------------------------------------------------------------------------------------------*/
 #include "freesoc.h"
-#include "config.h"
-#include "cal.h"
+#include "calstore.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -47,7 +46,8 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
-void CalPid_Init();
-CALVAL_INTERFACE_TYPE* const CalPid_Start(WHEEL_TYPE wheel);
+void CalPid_Init(WHEEL_TYPE wheel, BOOL impulse, FLOAT step, BOOL no_debug);
+UINT8 CalPid_Update();
+
 
 #endif

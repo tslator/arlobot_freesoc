@@ -50,7 +50,7 @@ SOFTWARE.
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
 #ifdef UNIPID_DUMP_ENABLED
-#define UNIPID_DUMP() DUMP_PID(DEBUG_UNIPID_ENABLE_BIT, pid.name, &pid.pid)
+#define UNIPID_DUMP() DumpPid(pid.name, pid.debug_bit, &pid.pid)
 #else
 #define UNIPID_DUMP()
 #endif
@@ -87,6 +87,7 @@ static PID_TYPE pid = {
     /* name */          "theta",
     /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, /*Kf*/0, 0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC, Calc_Angle_Error},
     /* sign */          1.0,
+    /* debug bit */     DEBUG_UNIPID_ENABLE_BIT,
     /* get_target */    GetControlVelocity,
     /* get_input */     GetOdomVelocity,
     /* update */        ThetaPidUpdate,

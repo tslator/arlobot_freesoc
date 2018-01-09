@@ -33,13 +33,12 @@ SOFTWARE.
  * Includes
  *-------------------------------------------------------------------------------------------------*/
 #include "freesoc.h"
-#include "cal.h"
 
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
-void ValMotor_Init();
-CALVAL_INTERFACE_TYPE* const ValMotor_Start();
+void ValMotor_Init(WHEEL_TYPE wheel, DIR_TYPE direction, FLOAT min_percent, FLOAT max_percent, UINT8 num_points);
+UINT8 ValMotor_Update(void);
 
 #endif    

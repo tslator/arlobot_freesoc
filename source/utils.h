@@ -33,6 +33,7 @@ SOFTWARE.
  * Includes
  *-------------------------------------------------------------------------------------------------*/    
 #include "freesoc.h"
+#include "consts.h"
     
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -48,6 +49,15 @@ SOFTWARE.
 #define min(a, b) (a < b ? a : b)
 #define max(a, b) (a > b ? a : b)
 #define constrain(a, b, c) (min(max(a, b), c))
+
+#define in_range(value, lower, upper) (value >= lower ? (value <= upper ? TRUE : FALSE) : FALSE)
+
+#define equal_float(f1, f2, precision)  (((f1 > (f2 - precision)) && (f1 < (f2 + precision))) ? TRUE : FALSE)
+#define lessthan_float(f1, f2, precision) ((f1 < (f2 + precision)) ? TRUE : FALSE)
+#define greaterthan_float(f1, f2, precision) ((f1 > (f2 - precision)) ? TRUE : FALSE)
+#define compare_float(f1, f2, precision) (equal_float(f1, f2, precision) ? 0 : (lessthan_float(f1, f2, precision) ? -1 : 1))
+#define in_range_float(value, lower, upper) (greaterthan_float(value, lower, FLOAT_PRECISION) ? (lessthan_float(value, upper, FLOAT_PRECISION) ? TRUE : FALSE) : FALSE)
+
 // Scale X -> Y
 //    X          Y
 //  -----    = -----  => y = x * y range / x range
@@ -64,6 +74,8 @@ SOFTWARE.
 #define SAMPLE_TIME_SEC(rate) (SAMPLE_TIME_MS(rate) / 1000.0)
 
 #define abs(x)  ( x < 0 ? -x : x )
+#define is_even(x)  (x % 2 == 0 ? TRUE : FALSE)
+#define is_odd(x) (!is_even(x))
     
 #define constrain_angle(angle) do                         \
                                {                          \
@@ -107,6 +119,9 @@ typedef struct _moving_average_FLOAT_tag
     FLOAT n;
     FLOAT last;
 } MOVING_AVERAGE_FLOAT_TYPE;
+
+
+typedef enum {FORMAT_UPPER, FORMAT_LOWER, FORMAT_TITLE} FORMAT_TYPE;
     
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -143,6 +158,9 @@ FLOAT LimitAngularAccel(FLOAT angular_velocity, FLOAT max_angular, FLOAT respons
 FLOAT CalcMaxLinearVelocity();
 FLOAT CalcMaxAngularVelocity();
 FLOAT CalcMaxDiffVelocity();
+
+CHAR * const WheelToString(WHEEL_TYPE wheel, FORMAT_TYPE format);
+CHAR * format_string(CHAR *str, FORMAT_TYPE format);
 
 #endif
 

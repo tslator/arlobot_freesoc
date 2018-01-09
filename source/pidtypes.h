@@ -15,6 +15,7 @@ typedef struct _pid_tag
     char name[8];
     PIDControl pid;
     int sign;
+    UINT16 debug_bit;
     GET_TARGET_FUNC_TYPE get_target;
     GET_INPUT_FUNC_TYPE get_input;
     PID_UPDATE_TYPE update;

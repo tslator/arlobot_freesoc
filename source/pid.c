@@ -78,12 +78,11 @@ SOFTWARE.
     defined (UNIPID_DUMP_ENABLED) ||    \
     defined (ANGPID_DUMP_ENABLED)
 
-void DumpPid(char* const name, PIDControl* const pid)
+void DumpPid(char* const name, UINT16 debug_bit, PIDControl* const pid)
 {
-    if ( Debug_IsEnabled(DEBUG_LEFT_PID_ENABLE_BIT|DEBUG_RIGHT_PID_ENABLE_BIT|DEBUG_UNIPID_ENABLE_BIT|DEBUG_ANGPID_ENABLE_BIT) )
+    if ( Debug_IsEnabled(debug_bit) )
     {
-#ifdef JSON_OUTPUT_ENABLE
-        DEBUG_PRINT_ARG("{ \"%s pid\": {\"set_point\":%.3f, \"input\":%.3f, \"error\":%.3f, \"last_input\":%.3f, \"iterm\":%.3f, \"output\":%.3f }}\r\n",
+        DEBUG_PRINT_ARG("{\"%s pid\": {\"set_point\":%.3f, \"input\":%.3f, \"error\":%.3f, \"last_input\":%.3f, \"iterm\":%.3f, \"output\":%.3f }}\r\n",
             name, 
             IS_NAN_DEFAULT(pid->setpoint, 0), 
             IS_NAN_DEFAULT(pid->input, 0), 
@@ -92,17 +91,6 @@ void DumpPid(char* const name, PIDControl* const pid)
             IS_NAN_DEFAULT(pid->iTerm, 0), 
             IS_NAN_DEFAULT(pid->output, 0)
         );
-#else
-        DEBUG_PRINT_ARG("%s pid: %f %f %f %f %f %f\r\n", 
-            name, 
-            IS_NAN_DEFAULT(pid->setpoint, 0), 
-            IS_NAN_DEFAULT(pid->input, 0), 
-            IS_NAN_DEFAULT(pid->setpoint - pid->input, 0), 
-            IS_NAN_DEFAULT(pid->lastInput, 0), 
-            IS_NAN_DEFAULT(pid->iTerm, 0), 
-            IS_NAN_DEFAULT(pid->output, 0)
-        );
-#endif        
     }
 }
 

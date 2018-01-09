@@ -42,10 +42,6 @@ SOFTWARE.
 /* Enable/Disable debug */
 #define COMMS_DEBUG_ENABLED
 
-/* Enabled acceleration limit calculations */
-#define ENABLE_ACCEL_LIMIT
-
-
 /* Select either I2C or CAN interfaces */
 #define ENABLE_I2CIF
 //#define ENABLE_CANIF

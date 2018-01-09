@@ -263,7 +263,7 @@ static UINT8 Results()
     
     Ser_PutString("\r\nMeasure the distance traveled by the robot.");
     Ser_PutString("\r\nEnter the distance (0.5 to 1.5): ");
-    distance = Cal_ReadResponse();
+    //distance = Cal_ReadResponse();
     Ser_PutString("\r\n");
 
     if (distance < CAL_LINEAR_BIAS_MIN || distance > CAL_LINEAR_BIAS_MAX)

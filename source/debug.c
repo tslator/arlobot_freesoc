@@ -149,4 +149,9 @@ void Debug_Restore()
     debug_control_enabled = saved_debug_control_enabled;
 }
 
+UINT16 Debug_GetMask()
+{
+    return debug_control_enabled;
+}
+
 /* [] END OF FILE */

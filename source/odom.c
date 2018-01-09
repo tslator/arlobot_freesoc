@@ -93,7 +93,6 @@ static void DumpOdom()
 {
     if (Debug_IsEnabled(DEBUG_ODOM_ENABLE_BIT)) 
     {    
-#ifdef JSON_OUTPUT_ENABLE
         DEBUG_PRINT_ARG("{\"odom\":{\"left_mps\":%.3f,\"right_mps\":%.3f,\"x_pos\":%.3f,\"y_pos\":%.3f,\"theta\":%.3f,\"lin_vel\":%.3f,\"ang_vel\":%.3f,}}\r\n",
                         left_mps, 
                         right_mps, 
@@ -103,16 +102,6 @@ static void DumpOdom()
                         linear_meas_velocity,
                         angular_meas_velocity
         );
-#else    
-        DEBUG_PRINT_ARG("ls: %.3f rs: %.3f x: %.3f y: %.3f th: %.3f lv: %.3f av: %.3f\r\n", 
-                        left_mps, 
-                        right_mps, 
-                        x_position, 
-                        y_position, 
-                        theta,
-                        linear_meas_velocity,
-                        angular_meas_velocity);
-#endif
     }
 }
 #endif
@@ -144,8 +133,8 @@ void Odom_Init()
  *-------------------------------------------------------------------------------------------------*/
 void Odom_Start()
 {
-    linear_bias = Cal_GetLinearBias();
-    angular_bias = Cal_GetAngularBias();
+    linear_bias = 1.0;//Cal_GetLinearBias();
+    angular_bias = 1.0;//Cal_GetAngularBias();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -160,6 +149,12 @@ void Odom_Update()
 {
     static UINT32 last_update_time = ODOM_SCHED_OFFSET;
     static UINT32 delta_time;
+    static INT32 last_left_tick;
+    static INT32 last_right_tick;
+    INT32 left_delta_tick;
+    INT32 right_delta_tick;
+    INT32 left_tick;
+    INT32 right_tick;
     
     FLOAT left_cps;
     FLOAT right_cps;
@@ -173,6 +168,14 @@ void Odom_Update()
     if (delta_time >= ODOM_SAMPLE_TIME_MS)
     {
         last_update_time = millis();
+        
+        left_tick = Encoder_LeftGetCount();
+        left_delta_tick = left_tick - last_left_tick;
+        last_left_tick = left_tick;
+        
+        right_tick = Encoder_RightGetCount();
+        right_delta_tick = right_tick - last_right_tick;
+        last_right_tick = right_tick;
         
         left_mps = Encoder_LeftGetMeterPerSec();
         right_mps = Encoder_RightGetMeterPerSec();
@@ -223,17 +226,22 @@ void Odom_Update()
         */
         theta += dt_sec * angular;
 #else
-        FLOAT left_delta_dist = left_mps * delta_time / 1000.0;
-        FLOAT right_delta_dist = right_mps * delta_time / 1000.0;
+        //FLOAT left_delta_dist = left_mps * delta_time / 1000.0;
+        //FLOAT right_delta_dist = right_mps * delta_time / 1000.0;
+        //FLOAT center_delta_dist = linear_bias * (left_delta_dist + right_delta_dist) / 2.0;
+    
+        FLOAT left_delta_dist = 2 * PI * WHEEL_RADIUS * (FLOAT) left_delta_tick / WHEEL_COUNT_PER_REV;
+        FLOAT right_delta_dist = 2 * PI * WHEEL_RADIUS * (FLOAT) right_delta_tick / WHEEL_COUNT_PER_REV;
         FLOAT center_delta_dist = linear_bias * (left_delta_dist + right_delta_dist) / 2.0;
         
         theta += angular_bias * (right_delta_dist - left_delta_dist)/TRACK_WIDTH;
+        /* Constrain theta to -PI to PI */
+        theta = NormalizeHeading(theta);
+
         x_position += center_delta_dist * cos(theta);
         y_position += center_delta_dist * sin(theta);
         
 #endif        
-        /* Constrain theta to -PI to PI */
-        theta = NormalizeHeading(theta);
 
         Control_WriteOdom(linear_meas_velocity, angular_meas_velocity, x_position, y_position, theta);
         

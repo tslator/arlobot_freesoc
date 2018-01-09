@@ -48,7 +48,7 @@ SOFTWARE.
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
 #ifdef LEFT_PID_DUMP_ENABLED
-#define LEFTPID_DUMP()  DumpPid(pid.name, &pid.pid)
+#define LEFTPID_DUMP()  DumpPid(pid.name, pid.debug_bit, &pid.pid)
 #else
 #define LEFTPID_DUMP()
 #endif
@@ -86,6 +86,7 @@ static PID_TYPE pid = {
     /* name */          "left",
     /* pid */           {0, 0, 0, /*Kp*/0, /*Ki*/0, /*Kd*/0, /*Kf*/0, 0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECT, AUTOMATIC, NULL},
     /* sign */          1.0,
+    /* debug bit */     DEBUG_LEFT_PID_ENABLE_BIT,
     /* get_target */    GetCmdVelocity,
     /* get_input */     EncoderInput,
     /* update */        PidUpdate,

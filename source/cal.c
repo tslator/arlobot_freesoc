@@ -39,6 +39,8 @@ SOFTWARE.
 #include "utils.h"
 #include "serial.h"
 #include "pid.h"
+#include "pidleft.h"
+#include "pidright.h"
 #include "nvstore.h"
 #include "calmotor.h"
 #include "valmotor.h"
@@ -224,6 +226,22 @@ void Cal_PrintRightMotorParams(BOOL as_json)
     Cal_PrintRightMotorParams(as_json);
 }
 
+void Cal_PrintMotorParams(WHEEL_TYPE wheel, BOOL as_json)
+{        
+    if (wheel == WHEEL_LEFT)
+    {
+        Cal_PrintLeftMotorParams(as_json);
+    }
+    else if (wheel == WHEEL_RIGHT)
+    {
+        Cal_PrintRightMotorParams(as_json);
+    }
+    else // WHEEL_BOTH
+    {
+        Cal_PrintAllMotorParams(as_json);
+    }
+}
+
 /*---------------------------------------------------------------------------------------------------
  * Name: Cal_PrintSamples
  * Description: Prints the count/sec and pwm samples.  Called from the CalMotor module.
@@ -318,7 +336,7 @@ void Cal_PrintPidGains(WHEEL_TYPE wheel, FLOAT* const gains, UINT8 as_json)
     }
 }
 
-void Cal_PrintAllPidGains(BOOL as_json)
+void Cal_PrintLeftPidGains(BOOL as_json)
 {
     CAL_PID_TYPE *p_pid;
     FLOAT gains[4];
@@ -329,12 +347,25 @@ void Cal_PrintAllPidGains(BOOL as_json)
     gains[2] = p_pid->kd;
     gains[3] = p_pid->kf;
     Cal_PrintPidGains(WHEEL_LEFT, gains, as_json);
+}
+
+void Cal_PrintRightPidGains(BOOL as_json)
+{
+    CAL_PID_TYPE *p_pid;
+    FLOAT gains[4];
+
     p_pid = Cal_GetPidGains(PID_TYPE_RIGHT);
     gains[0] = p_pid->kp;
     gains[1] = p_pid->ki;
     gains[2] = p_pid->kd;
     gains[3] = p_pid->kf;
     Cal_PrintPidGains(WHEEL_RIGHT, gains, as_json);            
+}
+
+void Cal_PrintAllPidGains(BOOL as_json)
+{
+    Cal_PrintLeftPidGains(as_json);
+    Cal_PrintRightPidGains(as_json);
 }
 
 void Cal_PrintStatus(UINT8 as_json)
@@ -772,14 +803,14 @@ static CALVAL_INTERFACE_TYPE* GetCalibration(UINT8 cmd)
 {
     switch (cmd)
     {
-        case CAL_MOTOR_CMD:
-            return CalMotor_Start();
+//        case CAL_MOTOR_CMD:
+//            return CalMotor_Start();
             
-        case CAL_PID_LEFT_CMD:
-            return CalPid_Start(WHEEL_LEFT);
+//        case CAL_PID_LEFT_CMD:
+//            return CalPid_Start(WHEEL_LEFT);
 
-        case CAL_PID_RIGHT_CMD:
-            return CalPid_Start(WHEEL_RIGHT);
+//        case CAL_PID_RIGHT_CMD:
+//            return CalPid_Start(WHEEL_RIGHT);
             
         case CAL_LINEAR_CMD:
             return CalLin_Start();
@@ -806,9 +837,9 @@ static CALVAL_INTERFACE_TYPE* GetValidation(UINT8 cmd)
 {
     switch (cmd)
     {
-        case VAL_MOTOR_CMD:
-            Ser_PutString("\r\nPerforming Motor Validation by operating the motors at varying velocities.\r\n");
-            return ValMotor_Start();
+//        case VAL_MOTOR_CMD:
+//            Ser_PutString("\r\nPerforming Motor Validation by operating the motors at varying velocities.\r\n");
+//            return ValMotor_Start();
 
         case VAL_PID_CMD:
             Ser_PutString("\r\nCommand not supported\r\n");
@@ -817,19 +848,19 @@ static CALVAL_INTERFACE_TYPE* GetValidation(UINT8 cmd)
             
         case VAL_PID_LEFT_FWD_CMD:
             Ser_PutString("\r\nPerforming Left PID validation in the forward direction.\r\n");
-            return ValPid_Start(VAL_PID_LEFT_FORWARD);
+            //return ValPid_Start(VAL_PID_LEFT_FORWARD);
 
         case VAL_PID_LEFT_BWD_CMD:
             Ser_PutString("\r\nPerforming Left PID validation in the backward direction.\r\n");
-            return ValPid_Start(VAL_PID_LEFT_BACKWARD);
+            //return ValPid_Start(VAL_PID_LEFT_BACKWARD);
 
         case VAL_PID_RIGHT_FWD_CMD:
             Ser_PutString("\r\nPerforming Right PID validation in the forward direction.\r\n");
-            return ValPid_Start(VAL_PID_RIGHT_FORWARD);
+            //return ValPid_Start(VAL_PID_RIGHT_FORWARD);
 
         case VAL_PID_RIGHT_BWD_CMD:
             Ser_PutString("\r\nPerforming Right PID validation in the backward direction.\r\n");
-            return ValPid_Start(VAL_PID_RIGHT_BACKWARD);
+            //return ValPid_Start(VAL_PID_RIGHT_BACKWARD);
                        
         case VAL_LINEAR_FWD_CMD:
             Ser_PutString("\r\nPerforming straight line validation in the forward direction.\r\n");
@@ -986,9 +1017,9 @@ void Cal_Init()
     Cal_RightTarget = RightTarget;
     
     //CalMotor_Init(WHEEL_LEFT, 3);
-    ValMotor_Init();
-    CalPid_Init();
-    ValPid_Init();
+    //ValMotor_Init();
+    //CalPid_Init();
+    //ValPid_Init();
     CalLin_Init();
     CalAng_Init();
 }
@@ -1139,23 +1170,80 @@ void Cal_Update()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-FLOAT Cal_ReadResponse()
+int Cal_ReadResponse(CHAR * const digits, BOOL echo, UINT8 max_length)
 {
-    static char digits[10] = {'0'};
     int result;
 
     do
     {
         USBIF_Update();
     
-        result = Ser_ReadLine(digits, true, 10);
-        if (result > 0)
+        result = Ser_ReadLine(digits, echo, max_length);
+        if (result >= 0)
         {
-            return atof((char *) digits);
+            break;
         }
     } while (result < 1);
     
+    return result;
+}
+
+FLOAT Cal_ReadResponseFloat()
+{
+    static char digits[10] = {0};
+    int result;
+
+    result = Cal_ReadResponse(digits, TRUE, 10);
+    if (result > 0)
+    {
+        return atof((char *) digits);
+    }
+
     return 0.0;
+}
+
+UINT8 Cal_ReadResponseReturn()
+{
+    static char digits[10] = {0};
+    int result;
+
+    result = Cal_ReadResponse(digits, TRUE, 10);
+    if (result == 0)
+    {
+        return 1;
+    }
+
+    return 0;
+}
+
+CHAR Cal_ReadResponseChar()
+{
+    CHAR chars[2] = {'0'};
+    int result;
+
+    result = Cal_ReadResponse(chars, TRUE, 10);
+    if (result > 0)
+    {
+        return chars[0];
+    }
+    
+    return '\n';
+}
+
+FLOAT Cal_ReadResponseWithDefault(FLOAT dflt)
+{
+    static char digits[10] = {0};
+    int result;
+
+    result = Cal_ReadResponse(digits, TRUE, 10);
+    if (result > 0)
+    {
+        return atof((char *) digits);
+    }
+    else
+    {
+        return dflt;
+    }
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -1440,6 +1528,44 @@ void Cal_SetMotorData(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *data)
 CAL_DATA_TYPE* Cal_GetMotorData(WHEEL_TYPE wheel, DIR_TYPE dir)
 {
     return WHEEL_DIR_TO_CAL_DATA[wheel][dir];
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: Cal_CalMaxCps
+ * Description: Calculates the minimum of the maximum CPS values between the left/right motors. 
+ * Parameters: None
+ * Return: FLOAT - cps (count/second)
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+FLOAT Cal_CalcMaxCps()
+/* The step input velocity is 80% of maximum wheel velocity.
+   Maximum wheel velocity is determined considering two factors:
+        1. the maximum left/right PID value (derived from the theoretical maximum)
+        2. the maximum calibrated velocity of each wheel
+   The minimum value of the above is the basis for determining the step input velocity.
+ */
+{
+    INT16 left_fwd_max;
+    INT16 left_bwd_max;
+    INT16 right_fwd_max;
+    INT16 right_bwd_max;
+    INT16 left_max;
+    INT16 right_max;
+    INT16 max_leftright_cps;
+    INT16 max_leftright_pid;
+
+    left_fwd_max = abs(Cal_GetMotorData(WHEEL_LEFT, DIR_FORWARD)->cps_max);
+    left_bwd_max = abs(Cal_GetMotorData(WHEEL_LEFT, DIR_BACKWARD)->cps_min);
+    right_fwd_max = abs(Cal_GetMotorData(WHEEL_RIGHT, DIR_FORWARD)->cps_max);
+    right_bwd_max = abs(Cal_GetMotorData(WHEEL_RIGHT, DIR_BACKWARD)->cps_min);
+    
+    left_max = min(left_fwd_max, left_bwd_max);
+    right_max = min(right_fwd_max, right_bwd_max);
+    
+    max_leftright_cps = min(left_max, right_max);
+    max_leftright_pid = min(LEFTPID_MAX, RIGHTPID_MAX);
+
+    return min(max_leftright_cps, max_leftright_pid);
 }
 
 /*-------------------------------------------------------------------------------*/

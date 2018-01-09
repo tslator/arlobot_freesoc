@@ -51,7 +51,8 @@ static CONCMD_IF_TYPE * p_active_command;
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/    
-static CONCMD_IF_TYPE * const validate_config_command(COMMAND_TYPE* const command)
+
+static CONCMD_IF_PTR_TYPE validate_config_command(COMMAND_TYPE* const command)
 {
     /* Note: The args flags have contextual meaning.  To resolve ambiguity, 'clear' is processed
        before 'debug': 
@@ -71,10 +72,10 @@ static CONCMD_IF_TYPE * const validate_config_command(COMMAND_TYPE* const comman
         }
         else
         {
-            mask |= BOOL_TO_BITMASK(command->args.motor, 0);
-            mask |= BOOL_TO_BITMASK(command->args.pid, 1);
-            mask |= BOOL_TO_BITMASK(command->args.bias, 2);
-            mask |= BOOL_TO_BITMASK(command->args.debug, 3);
+            mask |= command->args.motor ? CONCONFIG_MOTOR_BIT : 0;
+            mask |= command->args.pid ? CONCONFIG_PID_BIT : 0;
+            mask |= command->args.bias ? CONCONFIG_BIAS_BIT : 0;
+            mask |= command->args.debug ? CONCONFIG_DEBUG_BIT : 0;
         }
 
         return ConConfig_InitConfigClear(mask, command->args.plain_text);
@@ -83,11 +84,12 @@ static CONCMD_IF_TYPE * const validate_config_command(COMMAND_TYPE* const comman
     {
         UINT8 mask = 0;
 
-        mask |= BOOL_TO_BITMASK(command->args.motor, 0);
-        mask |= BOOL_TO_BITMASK(command->args.pid, 1);
-        mask |= BOOL_TO_BITMASK(command->args.bias, 2);
-        mask |= BOOL_TO_BITMASK(command->args.debug, 3);
-        mask |= BOOL_TO_BITMASK(command->args.params, 4);
+        mask |= command->args.motor ? CONCONFIG_MOTOR_BIT : 0;
+        mask |= command->args.pid ? CONCONFIG_PID_BIT : 0;
+        mask |= command->args.bias ? CONCONFIG_BIAS_BIT : 0;
+        mask |= command->args.debug ? CONCONFIG_DEBUG_BIT : 0;
+        mask |= command->args.status ? CONCONFIG_STATUS_BIT : 0;
+        mask |= command->args.params ? CONCONFIG_PARAMS_BIT : 0;
 
         return ConConfig_InitConfigShow(mask, command->args.plain_text);
     }
@@ -120,7 +122,7 @@ static CONCMD_IF_TYPE * const validate_config_command(COMMAND_TYPE* const comman
     return (CONCMD_IF_TYPE *) NULL;
 }
 
-static CONCMD_IF_TYPE * const validate_motor_command(COMMAND_TYPE* const command)
+static CONCMD_IF_PTR_TYPE validate_motor_command(COMMAND_TYPE* const command)
 {
     if (command->args.show)
     {
@@ -146,7 +148,7 @@ static CONCMD_IF_TYPE * const validate_motor_command(COMMAND_TYPE* const command
                 STR_TO_FLOAT(command->args.first),
                 STR_TO_FLOAT(command->args.second),
                 STR_TO_FLOAT(command->args.intvl),
-                STR_TO_INT(command->args.iters),
+                (UINT8) STR_TO_INT(command->args.iters),
                 command->args.no_pid,
                 command->args.no_accel);
         }
@@ -154,14 +156,15 @@ static CONCMD_IF_TYPE * const validate_motor_command(COMMAND_TYPE* const command
     else if (command->args.cal)
     {   
         int wheel;
+        UINT8 iters;
 
         wheel = GET_WHEEL(command->args.left, command->args.right);
-
+        iters = (UINT8) STR_TO_INT(command->args.iters);
         if (wheel >= 0)
         {
             return ConMotor_InitMotorCal(
                 (WHEEL_TYPE) wheel,
-                STR_TO_INT(command->args.iters));
+                iters);
         }
     }
     else if (command->args.val)
@@ -179,7 +182,7 @@ static CONCMD_IF_TYPE * const validate_motor_command(COMMAND_TYPE* const command
                 (DIR_TYPE) direction,
                 STR_TO_FLOAT(command->args.min_percent),
                 STR_TO_FLOAT(command->args.max_percent),
-                STR_TO_INT(command->args.num_points));
+                (UINT8) STR_TO_INT(command->args.num_points));
         }
     }
     else
@@ -195,7 +198,7 @@ static CONCMD_IF_TYPE * const validate_motor_command(COMMAND_TYPE* const command
     return (CONCMD_IF_TYPE *) NULL;
 }
 
-static CONCMD_IF_TYPE * const validate_pid_command(COMMAND_TYPE* const command)
+static CONCMD_IF_PTR_TYPE validate_pid_command(COMMAND_TYPE* const command)
 {
     if (command->args.show)
     {
@@ -251,7 +254,7 @@ static CONCMD_IF_TYPE * const validate_pid_command(COMMAND_TYPE* const command)
     return (CONCMD_IF_TYPE *) NULL;
 }
 
-static CONCMD_IF_TYPE * const validate_motion_cal_commands(COMMAND_TYPE* const command)
+static CONCMD_IF_PTR_TYPE validate_motion_cal_commands(COMMAND_TYPE* const command)
 {
     if (command->args.linear)
     {
@@ -270,7 +273,7 @@ static CONCMD_IF_TYPE * const validate_motion_cal_commands(COMMAND_TYPE* const c
     return (CONCMD_IF_TYPE *) NULL;
 }
 
-static CONCMD_IF_TYPE * const validate_motion_val_commands(COMMAND_TYPE* const command)
+static CONCMD_IF_PTR_TYPE validate_motion_val_commands(COMMAND_TYPE* const command)
 {
     if (command->args.linear)
     {
@@ -296,7 +299,7 @@ static CONCMD_IF_TYPE * const validate_motion_val_commands(COMMAND_TYPE* const c
     return (CONCMD_IF_TYPE *) NULL;
 }
 
-static CONCMD_IF_TYPE * const validate_motion_command(COMMAND_TYPE* const command)
+static CONCMD_IF_PTR_TYPE validate_motion_command(COMMAND_TYPE* const command)
 {
     if (command->args.cal)
     {
@@ -358,6 +361,8 @@ void Disp_Results()
     {
         p_active_command->results();
     }
+
+    p_active_command = (CONCMD_IF_TYPE *) NULL;
 }
 
 void Disp_Dispatch(COMMAND_TYPE* const command)

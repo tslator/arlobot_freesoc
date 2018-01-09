@@ -31,7 +31,6 @@ SOFTWARE.
  * Includes
  *-------------------------------------------------------------------------------------------------*/
 #include <stdio.h>
-#include "config.h"
 #include "control.h"
 #include "calpid.h"
 #include "cal.h"
@@ -47,6 +46,7 @@ SOFTWARE.
 #include "debug.h"
 #include "control.h"
 #include "odom.h"
+#include "assertion.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -61,192 +61,167 @@ static UINT32 start_time;
 static CALVAL_PID_PARAMS left_pid_params = {"left", PID_TYPE_LEFT, DIR_FORWARD, 3000};
 static CALVAL_PID_PARAMS right_pid_params = {"right", PID_TYPE_RIGHT, DIR_FORWARD, 3000};
 
-static UINT8 Init();
-static UINT8 Start();
-static UINT8 Update();
-static UINT8 Stop();
-static UINT8 Results();
-
-static CALVAL_INTERFACE_TYPE left_pid_calibration = {CAL_INIT_STATE,
-                                                CAL_CALIBRATE_STAGE,
-                                                &left_pid_params,
-                                                Init,
-                                                Start,
-                                                Update,
-                                                Stop,
-                                                Results};
-
-static CALVAL_INTERFACE_TYPE right_pid_calibration = {CAL_INIT_STATE,
-                                                 CAL_CALIBRATE_STAGE,
-                                                 &right_pid_params,
-                                                 Init,
-                                                 Start,
-                                                 Update,
-                                                 Stop,
-                                                 Results};
-
 static FLOAT max_cps;
 static CALVAL_PID_PARAMS *p_pid_params;
+static FLOAT step_velocity;
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
-
-/*---------------------------------------------------------------------------------------------------
- * Name: StoreLeftGains/StoreRightGains
- * Description: Stores the specified gain values into the EEPROM for the left PID. 
- * Parameters: gains - array of FLOAT values corresponding to Kp, Ki, Kd.
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-static void StoreLeftGains(FLOAT* const gains)
+static void SetupDebug(WHEEL_TYPE wheel, BOOL no_debug)
 {
-    Cal_SetGains(PID_TYPE_LEFT, gains);
+    UINT16 mask;
+
+    Control_OverrideDebug(TRUE);
+    Debug_Store();
+    Debug_DisableAll();
+    mask = no_debug ? 0 : (wheel == WHEEL_LEFT) ? DEBUG_LEFT_PID_ENABLE_BIT : DEBUG_RIGHT_PID_ENABLE_BIT;
+    Debug_Enable(mask);
 }
 
-static void StoreRightGains(FLOAT* const gains)
+static void GetCurrentGains(WHEEL_TYPE wheel, CAL_PID_TYPE* curr_gains)
 {
-    Cal_SetGains(PID_TYPE_RIGHT, gains);
+    CAL_PID_TYPE *p_gains;
+
+    if (wheel == WHEEL_LEFT)
+    {
+        p_gains = Cal_GetPidGains(PID_TYPE_LEFT);
+    }
+    else if (wheel == WHEEL_RIGHT)
+    {
+        p_gains = Cal_GetPidGains(PID_TYPE_RIGHT);
+    }
+
+    *curr_gains = *p_gains;
+
+    //Ser_PutStringFormat("kp: %.3f ki: %.3f kd: %.3f kf: %.3f\r\n", curr_gains->kp, curr_gains->ki, curr_gains->kd, curr_gains->kf);
 }
 
-/*---------------------------------------------------------------------------------------------------
- * Name: GetStepVelocity
- * Description: Calculates a step velocity at the percent based on the calibration motor values. 
- * Parameters: None
- * Return: FLOAT - velocity (meter/second)
- * 
- *-------------------------------------------------------------------------------------------------*/
-static void CalcMaxCps()
-/* The step input velocity is 80% of maximum wheel velocity.
-   Maximum wheel velocity is determined considering two factors:
-        1. the maximum left/right PID value (derived from the theoretical maximum)
-        2. the maximum calibrated velocity of each wheel
-   The minimum value of the above is the basis for determining the step input velocity.
- */
+
+static void ReadGains(WHEEL_TYPE wheel, CAL_PID_TYPE* new_gains)
 {
-    INT16 left_fwd_max;
-    INT16 left_bwd_max;
-    INT16 right_fwd_max;
-    INT16 right_bwd_max;
-    INT16 left_max;
-    INT16 right_max;
-    INT16 max_leftright_cps;
-    INT16 max_leftright_pid;
+    CHAR prop_text[] = "Enter proportional gain (%.3f): ";
+    CHAR integ_text[] = "Enter integral gain (%.3f): ";
+    CHAR deriv_text[] = "Enter deriviative gain (%.3f): ";
+    CHAR feedfwd_text[] = "Enter feedforward gain (%.3f): ";
+    CHAR output[40];
+    CAL_PID_TYPE curr_gains;
 
-    left_fwd_max = abs(Cal_GetMotorData(WHEEL_LEFT, DIR_FORWARD)->cps_max);
-    left_bwd_max = abs(Cal_GetMotorData(WHEEL_LEFT, DIR_BACKWARD)->cps_min);
-    right_fwd_max = abs(Cal_GetMotorData(WHEEL_RIGHT, DIR_FORWARD)->cps_max);
-    right_bwd_max = abs(Cal_GetMotorData(WHEEL_RIGHT, DIR_BACKWARD)->cps_min);
+    GetCurrentGains(wheel, &curr_gains);
     
-    left_max = min(left_fwd_max, left_bwd_max);
-    right_max = min(right_fwd_max, right_bwd_max);
+    Ser_WriteLine("Type <enter> to keep the current gain value or enter a new value.", TRUE);
+    sprintf(output, prop_text, curr_gains.kp);
+    Ser_WriteLine(output, FALSE);
+    new_gains->kp = Cal_ReadResponseWithDefault(curr_gains.kp);
+    Ser_WriteLine("", TRUE);
+
+    sprintf(output, integ_text, curr_gains.ki);
+    Ser_WriteLine(output, FALSE);
+    new_gains->ki = Cal_ReadResponseWithDefault(curr_gains.ki);
+    Ser_WriteLine("", TRUE);
+
+    sprintf(output, deriv_text, curr_gains.kd);
+    Ser_WriteLine(output, FALSE);
+    new_gains->kd = Cal_ReadResponseWithDefault(curr_gains.kd);
+    Ser_WriteLine("", TRUE);
+
+    sprintf(output, feedfwd_text, curr_gains.kf);
+    Ser_WriteLine(output, FALSE);
+    new_gains->kf = Cal_ReadResponseWithDefault(curr_gains.kf);
+    Ser_WriteLine("", TRUE);
+}
+
+static void UpdatePidGains(WHEEL_TYPE wheel, BOOL impulse)
+{
+    CAL_PID_TYPE gains;
+
+    if (!impulse)
+    {
+        ReadGains(wheel, &gains);
+
+        switch (wheel)
+        {
+            case WHEEL_LEFT:
+                LeftPid_SetGains(gains.kp, gains.ki, gains.kd, gains.kf);
+                break;
+                
+            case WHEEL_RIGHT:
+                RightPid_SetGains(gains.kp, gains.ki, gains.kd, gains.kf);
+                break;  
+                
+            default:
+            case WHEEL_BOTH:
+                ASSERTION(FALSE, "Unexpected wheel");
+                break;
+        }
+    }    
+}
+
+static void SetVelocity(WHEEL_TYPE wheel, FLOAT step)
+{
+    FLOAT left_cps;
+    FLOAT right_cps;
+
+    max_cps = Cal_CalcMaxCps();
+    step_velocity = max_cps * step;
     
-    max_leftright_cps = min(left_max, right_max);
-    max_leftright_pid = min(LEFTPID_MAX, RIGHTPID_MAX);
+    //Ser_PutStringFormat("Setting step velocity: %.3f\r\n", step_velocity);
+    left_cps = 0.0;
+    right_cps = 0.0;
 
-    max_cps = min(max_leftright_cps, max_leftright_pid);
-
+    switch (wheel)
+    {
+        case WHEEL_LEFT:
+            p_pid_params = &left_pid_params;
+            left_cps = step_velocity;
+            break;
+            
+        case WHEEL_RIGHT:
+            p_pid_params = &right_pid_params;
+            right_cps = step_velocity;
+            break;  
+            
+        default:
+        case WHEEL_BOTH:
+            return;
+    }
+    
+    Control_SetLeftRightVelocityCps(left_cps, right_cps);
+    
 }
 
 /*----------------------------------------------------------------------------------------------------------------------
- * Calibration Interface Routines
+ * Module Interface Routines
  *---------------------------------------------------------------------------------------------------------------------*/
 
+
 /*---------------------------------------------------------------------------------------------------
- * Name: Init
- * Description: Calibration/Validation interface Init function.  Performs initialization for Linear 
- *              Validation.
- * Parameters: None
- * Return: UINT8 - CAL_OK, CAL_COMPLETE
+ * Name: CalPid_Init
+ * Description: Initializes the PID calibration module 
+ * Parameters: None 
+ * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-static UINT8 Init()
+void CalPid_Init(WHEEL_TYPE wheel, BOOL impulse, FLOAT step, BOOL no_debug)
 {
-    Control_OverrideDebug(TRUE);
-    
-    if (!Cal_GetCalibrationStatusBit(CAL_MOTOR_BIT))
-    {
-        Ser_PutStringFormat("Motor calibration not performed (%02x)\r\n", Cal_GetStatus());
-        return CAL_COMPLETE;
-    }
+    Ser_PutStringFormat("%s PID calibration\r\n", WheelToString(wheel, FORMAT_LOWER));
 
-    Ser_PutStringFormat("\r\n%s PID calibration\r\n", p_pid_params->name);
-
+    SetupDebug(wheel, no_debug);
     Cal_ClearCalibrationStatusBit(CAL_PID_BIT);
     Control_SetLeftRightVelocityOverride(TRUE);
     Control_SetLeftRightVelocityCps(0.0, 0.0);
-
-    Debug_Store();
-
-    switch (p_pid_params->pid_type)
-    {
-        case PID_TYPE_LEFT:
-            Debug_Enable(DEBUG_LEFT_PID_ENABLE_BIT);
-            break;
-            
-        case PID_TYPE_RIGHT:
-            Debug_Enable(DEBUG_RIGHT_PID_ENABLE_BIT);
-            break;
-            
-        default:
-            Ser_PutString("Unknown PID type\r\n");
-            return CAL_COMPLETE;
-    }        
-
-    return CAL_OK;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: Start
- * Description: Calibration/Validation interface Start function.  Starts PID Calibration/Validation.
- * Parameters: None 
- * Return: UINT8 - CAL_OK, CAL_COMPLETE
- * 
- *-------------------------------------------------------------------------------------------------*/
-static UINT8 Start()
-{
-    FLOAT gains[4];
-    
-    Ser_PutString("\r\nEnter proportional gain: ");
-    gains[0] = Cal_ReadResponse();
-    Ser_PutString("\r\nEnter integral gain: ");
-    gains[1] = Cal_ReadResponse();
-    Ser_PutString("\r\nEnter derivative gain: ");
-    gains[2] = Cal_ReadResponse();
-    Ser_PutString("\r\nEnter feedforward gain: ");
-    gains[3] = Cal_ReadResponse();
-    Ser_PutString("\r\n");
-    
-    Pid_Enable(TRUE, TRUE, FALSE);
-    Encoder_Reset();
+    UpdatePidGains(wheel, impulse);
+    Pid_BypassAll(!impulse);
+    Pid_Enable(!impulse, !impulse, FALSE);
     Pid_Reset();
+    Encoder_Reset();
     Odom_Reset();
-    
-    FLOAT step_velocity = max_cps * STEP_VELOCITY_PERCENT;
-    Ser_PutStringFormat("Setting step velocity: %.3f\r\n", step_velocity);
-    
-    switch (p_pid_params->pid_type)
-    {
-        case PID_TYPE_LEFT:
-            LeftPid_SetGains(gains[0], gains[1], gains[2], gains[3]);
-            Control_SetLeftRightVelocityCps(step_velocity, 0);
-            break;
-            
-        case PID_TYPE_RIGHT:
-            RightPid_SetGains(gains[0], gains[1], gains[2], gains[3]);
-            Control_SetLeftRightVelocityCps(0, step_velocity);
-            break;
-            
-        default:
-            Ser_PutString("Unknown PID type\r\n");
-            return CAL_COMPLETE;
-    }
-            
-    Ser_PutString("\r\nCalibrating\r\n");
+
+    SetVelocity(wheel, step);    
+
     start_time = millis();
-            
-    return CAL_OK;
 }
+
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Update
@@ -256,9 +231,12 @@ static UINT8 Start()
  * Return: UINT8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
-static UINT8 Update()
+UINT8 CalPid_Update()
 {
-    if (millis() - start_time < p_pid_params->run_time)
+    UINT32 delta;
+
+    delta = millis() - start_time;
+    if (delta < p_pid_params->run_time)
     {
         return CAL_OK;
     }
@@ -266,128 +244,6 @@ static UINT8 Update()
     return CAL_COMPLETE;
 }
 
-/*---------------------------------------------------------------------------------------------------
- * Name: Stop
- * Description: Calibration/Validation interface Stop function.  Called to stop validation.
- * Parameters: None 
- * Return: UINT8 - CAL_OK, CAL_COMPLETE
- * 
- *-------------------------------------------------------------------------------------------------*/
-static UINT8 Stop()
-{
-    FLOAT gains[4];
-
-    Control_SetLeftRightVelocityCps(0, 0);
-
-    switch (p_pid_params->pid_type)
-    {
-        case PID_TYPE_LEFT:
-            LeftPid_GetGains(&gains[0], &gains[1], &gains[2], &gains[3]);
-            StoreLeftGains(gains);
-            break;
-            
-        case PID_TYPE_RIGHT:
-            RightPid_GetGains(&gains[0], &gains[1], &gains[2], &gains[3]);
-            StoreRightGains(gains);
-            break;
-
-        default:
-            Ser_PutString("Unknown PID type\r\n");
-            return CAL_COMPLETE;
-    }
-    Cal_SetCalibrationStatusBit(CAL_PID_BIT);
-
-    Control_SetLeftRightVelocityOverride(FALSE);
-    Ser_PutStringFormat("\r\n%s PID calibration complete\r\n", p_pid_params->name);
-    Debug_Restore();    
-            
-    return CAL_OK;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: Results
- * Description: Calibration/Validation interface Results function.  Called to display calibration/ 
- *              validation results. 
- * Parameters: None 
- * Return: UINT8 - CAL_OK
- * 
- *-------------------------------------------------------------------------------------------------*/
-static UINT8 Results()
-{
-    FLOAT gains[4];
-    
-    Ser_PutString("\r\nPrinting PID calibration results\r\n");
-
-    switch (p_pid_params->pid_type)
-    {
-        case PID_TYPE_LEFT:
-            LeftPid_GetGains(&gains[0], &gains[1], &gains[2], &gains[3]);
-            Cal_PrintPidGains(WHEEL_LEFT, gains, FALSE);
-            break;
-        
-        case PID_TYPE_RIGHT:
-            RightPid_GetGains(&gains[0], &gains[1], &gains[2], &gains[3]);
-            Cal_PrintPidGains(WHEEL_RIGHT, gains, FALSE);
-            break;
-            
-        default:
-            Ser_PutString("Unknown PID type\r\n");
-            return CAL_COMPLETE;            
-    }
-
-    return CAL_OK;
-}
-
-/*----------------------------------------------------------------------------------------------------------------------
- * Module Interface Routines
- *---------------------------------------------------------------------------------------------------------------------*/
-
-/*---------------------------------------------------------------------------------------------------
- * Name: CalPid_Init
- * Description: Initializes the PID calibration module 
- * Parameters: None 
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-void CalPid_Init()
-{
-    max_cps = 0.0;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: CalPid_Start
- * Description: Initializes the calibration structure for the calibration requested.
- * Parameters: None 
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-CALVAL_INTERFACE_TYPE* const CalPid_Start(WHEEL_TYPE wheel)
-{
-    /* Note: This calculation is required to determine the maximum count/sec value between left/right
-       motor calibration parameters and the maximum allowed PID range.  It cannot be done until
-       the NVRAM component is started, so we wait to do this in 'Start' instead of 'Init'.
-
-       Note: It is called each time a calibration is started but it's a minor calculation with not
-       much appreciable overhead.
-    */
-    CalcMaxCps();
-
-    switch (wheel)
-    {
-        case WHEEL_LEFT:
-            left_pid_calibration.state = CAL_INIT_STATE;
-            p_pid_params = left_pid_calibration.params;
-            return (CALVAL_INTERFACE_TYPE * const) &left_pid_calibration;
-
-        case WHEEL_RIGHT:
-            right_pid_calibration.state = CAL_INIT_STATE;
-            p_pid_params = right_pid_calibration.params;
-            return (CALVAL_INTERFACE_TYPE * const) &right_pid_calibration;
-            
-        default:
-            return (CALVAL_INTERFACE_TYPE * const) NULL;
-    }
-}
 
 /*-------------------------------------------------------------------------------*/
 /* [] END OF FILE */

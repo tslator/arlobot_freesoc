@@ -64,13 +64,13 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/
-#define VAL_LOWER_BOUND_PERCENTAGE (0.2)
-#define VAL_UPPER_BOUND_PERCENTAGE (0.8)
-#define VAL_NUM_PROFILE_DATA_POINTS (11)
-#define VALIDATION_INTERATION_DONE (255)
-#define MAX_CPS_ARRAY (51)
+#define VAL_NUM_PROFILE_DATA_POINTS (13)
 #define NUM_MOTOR_VAL_PARAMS (4)
 
+#define LEFT_FORWARD_INDEX (0)
+#define RIGHT_FORWARD_INDEX (1)
+#define LEFT_BACKWARD_INDEX (2)
+#define RIGHT_BACKWARD_INDEX (3)
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -99,24 +99,9 @@ typedef struct
  * Variables
  *-------------------------------------------------------------------------------------------------*/
 
-static FLOAT val_fwd_cps[VAL_NUM_PROFILE_DATA_POINTS] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-static FLOAT val_bwd_cps[VAL_NUM_PROFILE_DATA_POINTS] = {-0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0};
+static FLOAT val_fwd_cps[VAL_NUM_PROFILE_DATA_POINTS] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+static FLOAT val_bwd_cps[VAL_NUM_PROFILE_DATA_POINTS] = {-0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0};
 
-/* Provides an implementation of the Calibration interface */
-static UINT8 Init();
-static UINT8 Start();
-static UINT8 Update();
-static UINT8 Stop();
-static UINT8 Results();
-
-static CALVAL_INTERFACE_TYPE motor_validation = {CAL_INIT_STATE, 
-                                            CAL_VALIDATE_STAGE,
-                                            NULL,
-                                            Init, 
-                                            Start, 
-                                            Update, 
-                                            Stop, 
-                                            Results };
 
 /* The PWM params: start, end, step are defined for each motor (left/right) and each direction (forward/backward)
    In general, the servo interface to the motors is defined as follows:
@@ -160,15 +145,8 @@ static CALVAL_INTERFACE_TYPE motor_validation = {CAL_INIT_STATE,
    The above ensures that the pwm array and cps array is matched and ensures that the cps values are in ascending order
    so that linear interpolation works.
  */
-//PWM_PARAMS_TYPE pwm_params[2][2] = {{{LEFT_PWM_STOP, LEFT_PWM_FULL_FORWARD, LEFT_PWM_FORWARD_DOMAIN / (CAL_NUM_SAMPLES - 1)}, 
-//                                     {LEFT_PWM_FULL_BACKWARD, LEFT_PWM_STOP, LEFT_PWM_BACKWARD_DOMAIN / (CAL_NUM_SAMPLES - 1)}
-//                                    }, 
-//                                    {
-//                                     {RIGHT_PWM_STOP, RIGHT_PWM_FULL_FORWARD, -(RIGHT_PWM_FORWARD_DOMAIN / (CAL_NUM_SAMPLES - 1))}, 
-//                                     {RIGHT_PWM_FULL_BACKWARD, RIGHT_PWM_STOP, -(RIGHT_PWM_BACKWARD_DOMAIN / (CAL_NUM_SAMPLES - 1))}
-//                                    }};
 
-VAL_MOTOR_PARAMS motor_val_params[4] = 
+VAL_MOTOR_PARAMS motor_val_params[NUM_MOTOR_VAL_PARAMS] = 
     {
         {
             "left-forward", 
@@ -225,7 +203,12 @@ VAL_MOTOR_PARAMS motor_val_params[4] =
     };
 
 static UINT8 motor_val_index;
+static VAL_MOTOR_PARAMS *val_params;
 
+static UINT8 motor_val_sequence_index;
+static UINT8 motor_val_sequence_end;
+static UINT8 motor_val_sequence[NUM_MOTOR_VAL_PARAMS];
+static UINT8 num_profile_data_points;
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -235,7 +218,7 @@ static UINT8 motor_val_index;
  * Print Functions
  *-------------------------------------------------------------------------------------------------*/
 
-void PrintWheelVelocity(VAL_MOTOR_PARAMS *val_params, FLOAT cps)
+void PrintWheelVelocity(FLOAT cps)
 {    
     Ser_PutStringFormat("{\"calc cps\":%.3f,\"meas cps\":%.3f,\"diff\":%.3f, \"%% diff\":%.3f}\r\n", 
         cps, val_params->get_cps(), cps - val_params->get_cps(), 100.0 * (cps - val_params->get_cps())/cps);
@@ -252,7 +235,7 @@ static void PrintMotorValidationResults()
 {
 }
 
-static UINT8 GetNextCps(VAL_MOTOR_PARAMS *params, FLOAT *cps)
+static UINT8 GetNextCps(FLOAT *cps)
 /* Return the next value in the array and increment the index
    Return 0 if the index is in range 0 to N-1
    Return 1 if the index rolls over
@@ -261,20 +244,20 @@ static UINT8 GetNextCps(VAL_MOTOR_PARAMS *params, FLOAT *cps)
 {
     static UINT8 index = 0;
     
-    if (index == VAL_NUM_PROFILE_DATA_POINTS)
+    if (index == num_profile_data_points)
     {
         index = 0;
         return 1;
     }
 
-    switch (params->direction)
+    switch (val_params->direction)
     {
         case DIR_FORWARD:
-            *cps = params->p_cps[index];
+            *cps = val_params->p_cps[index];
             break;
             
         case DIR_BACKWARD:
-            *cps = params->p_cps[index];
+            *cps = val_params->p_cps[index];
             break;
             
         default:
@@ -287,19 +270,19 @@ static UINT8 GetNextCps(VAL_MOTOR_PARAMS *params, FLOAT *cps)
     return 0;
 }
 
-static void SetNextVelocity(VAL_MOTOR_PARAMS *params, FLOAT cps)
+static void SetNextVelocity(FLOAT cps)
 {
-    if (params->wheel == WHEEL_LEFT)
+    if (val_params->wheel == WHEEL_LEFT)
     {
-        params->set_velocity(cps, 0);
+        val_params->set_velocity(cps, 0);
     }
-    if (params->wheel == WHEEL_RIGHT)
+    if (val_params->wheel == WHEEL_RIGHT)
     {
-        params->set_velocity(0, cps);
+        val_params->set_velocity(0, cps);
     }
 }
 
-static UINT8 PerformMotorValidation(VAL_MOTOR_PARAMS *val_params)
+static UINT8 PerformMotorValidation()
 {
     static UINT8 running = FALSE;
     static UINT32 start_time = 0;
@@ -309,13 +292,13 @@ static UINT8 PerformMotorValidation(VAL_MOTOR_PARAMS *val_params)
     if( !running )
     {
         val_params->set_velocity(0, 0);
-        result = GetNextCps(val_params, &cps);
+        result = GetNextCps(&cps);
         if( result )
         {
             val_params->set_pwm(PWM_STOP);
             return CAL_COMPLETE;
         }
-        SetNextVelocity(val_params, cps);
+        SetNextVelocity(cps);
         start_time = millis();
         running = TRUE;
     }
@@ -326,7 +309,7 @@ static UINT8 PerformMotorValidation(VAL_MOTOR_PARAMS *val_params)
         {
             return CAL_OK;
         }
-        PrintWheelVelocity(val_params, cps);
+        PrintWheelVelocity(cps);
         
         /* Note: Make GetNextCps reset the index back to 0 when it reaches the end of the array
            so we don't have to explicitly reset the index.
@@ -334,14 +317,14 @@ static UINT8 PerformMotorValidation(VAL_MOTOR_PARAMS *val_params)
            Consider doing the same for the PID -- auto reset, it's better that way
          
          */
-        result = GetNextCps(val_params, &cps);
+        result = GetNextCps(&cps);
         if( result )
         {
             running = FALSE;
             val_params->set_velocity(0, 0);
-            return VALIDATION_INTERATION_DONE;
+            return INTERATION_DONE;
         }
-        SetNextVelocity(val_params, cps);
+        SetNextVelocity(cps);
         start_time = millis();
         return CAL_OK;
     }
@@ -349,55 +332,95 @@ static UINT8 PerformMotorValidation(VAL_MOTOR_PARAMS *val_params)
     return CAL_OK;
 }
 
-/*----------------------------------------------------------------------------------------------------------------------
- * Calibration Interface Routines
- *---------------------------------------------------------------------------------------------------------------------*/
-
-/*---------------------------------------------------------------------------------------------------
- * Name: Init
- * Description: Calibration/Validation interface Init function.  Performs initialization for Linear 
- *              Validation.
- * Parameters: stage - the calibration/validation stage 
- *             params - PID calibration/validation parameters, e.g. direction, run time, etc. 
- * Return: UINT8 - CAL_OK
- * 
- *-------------------------------------------------------------------------------------------------*/
-static UINT8 Init()
+static void InitValParams(WHEEL_TYPE wheel, DIR_TYPE direction)
 {
-    Control_OverrideDebug(TRUE);
-    Ser_PutString("\r\nInitialize motor validation\r\n");
+    /* If wheel is left and direction is forward then choose index 0
+       If wheel is right and direction is forward then choose index 1
+       If wheel is left and direction is backward then choose index 2
+       If wheel is right and direction is backward then choose index 3
 
-    Cal_CalcTriangularProfile(VAL_NUM_PROFILE_DATA_POINTS, 
-                              VAL_LOWER_BOUND_PERCENTAGE, 
-                              VAL_UPPER_BOUND_PERCENTAGE, 
+       If wheel is both and direction is forward then choose indeces 0 and 1
+       If wheel is both and direction is backward then choose indeces 2 and 3
+       If wheel is left and direction is both then choose indeces 0 and 2
+       If wheel is right and direction is both then choose indeces 1 and 3
+
+       If wheel is both and direction is both then choose indeces 1 through 3
+    */
+
+    motor_val_sequence_index = 0;
+    memset(motor_val_sequence, 0, sizeof motor_val_sequence);
+
+    if (wheel == WHEEL_LEFT && direction == DIR_FORWARD)
+    {
+        motor_val_sequence[0] = LEFT_FORWARD_INDEX;
+        motor_val_sequence_end = 1;
+    }
+    else if (wheel == WHEEL_RIGHT && direction == DIR_FORWARD)
+    {
+        motor_val_sequence[0] = RIGHT_FORWARD_INDEX;        
+        motor_val_sequence_end = 1;
+    }
+    else if (wheel == WHEEL_LEFT && direction == DIR_BACKWARD)
+    {
+        motor_val_sequence[0] = LEFT_BACKWARD_INDEX;
+        motor_val_sequence_end = 1;
+    }
+    else if (wheel == WHEEL_RIGHT && direction == DIR_BACKWARD)
+    {
+        motor_val_sequence[0] = RIGHT_BACKWARD_INDEX;
+        motor_val_sequence_end = 1;
+    }
+    else if (wheel == WHEEL_BOTH && direction == DIR_FORWARD)
+    {
+        motor_val_sequence[0] = LEFT_FORWARD_INDEX;        
+        motor_val_sequence[1] = RIGHT_FORWARD_INDEX;        
+        motor_val_sequence_end = 2;
+    }
+    else if (wheel == WHEEL_BOTH && direction == DIR_BOTH)
+    {
+        motor_val_sequence[0] = LEFT_FORWARD_INDEX;        
+        motor_val_sequence[1] = RIGHT_FORWARD_INDEX;        
+        motor_val_sequence[2] = LEFT_BACKWARD_INDEX;        
+        motor_val_sequence[3] = RIGHT_BACKWARD_INDEX;        
+        motor_val_sequence_end = 4;
+    }
+
+    motor_val_index = motor_val_sequence[motor_val_sequence_index];
+    val_params = (VAL_MOTOR_PARAMS *) &motor_val_params[motor_val_index];
+}
+
+static UINT8 NextValParams(void)
+{
+    motor_val_sequence_index++;
+    motor_val_index = motor_val_sequence[motor_val_sequence_index];
+    val_params = (VAL_MOTOR_PARAMS *) &motor_val_params[motor_val_index];
+
+    if (motor_val_sequence_index == motor_val_sequence_end )
+    {
+        return VAL_COMPLETE;
+    }
+
+    return VAL_OK;
+}
+
+/*----------------------------------------------------------------------------------------------------------------------
+ * Module Interface Routines
+ *---------------------------------------------------------------------------------------------------------------------*/
+void ValMotor_Init(WHEEL_TYPE wheel, DIR_TYPE direction, FLOAT min_percent, FLOAT max_percent, UINT8 num_points)
+{    
+    InitValParams(wheel, direction);
+
+    num_profile_data_points = num_points;
+
+    Cal_CalcTriangularProfile(num_profile_data_points, 
+                              min_percent, 
+                              max_percent, 
                               val_fwd_cps,
                               val_bwd_cps);
 
-    /* Setup the PIDs to be bypassed, i.e., they pass the target unchanged to the output. */
-    Pid_BypassAll(TRUE);
-    Control_SetLeftRightVelocityOverride(TRUE);
-    motor_val_index = 0;
-
-    return CAL_OK;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: Start
- * Description: Calibration/Validation interface Start function.  Start Linear Validation.
- * Parameters: stage - the calibration/validation stage 
- *             params - motor validation parameters, e.g. direction, run time, etc. 
- * Return: UINT8 - CAL_OK
- * 
- *-------------------------------------------------------------------------------------------------*/
-static UINT8 Start()
-{
-    Ser_PutString("\r\nPerforming motor validation\r\n");
-    Control_SetLeftRightVelocityCps(0, 0);
-    Debug_Store();
-    Debug_DisableAll();
-    Debug_Enable(DEBUG_LEFT_ENCODER_ENABLE_BIT | DEBUG_RIGHT_ENCODER_ENABLE_BIT);
-        
-    return CAL_OK;
+    
+    Motor_SetPwm(PWM_STOP, PWM_STOP);
+    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -409,9 +432,8 @@ static UINT8 Start()
  * Return: UINT8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
-static UINT8 Update()
+UINT8 ValMotor_Update()
 {
-    VAL_MOTOR_PARAMS *val_params = &motor_val_params[motor_val_index];
     
     /* Here is where we can decide what validation to do.  The validation menu has one option for
        motor validation.  I think that is find, but it should run both motors forwards and backwards.
@@ -419,67 +441,13 @@ static UINT8 Update()
        Why isn't that happening?
     */
 
-    UINT8 result = PerformMotorValidation(val_params);
-    if( result == VALIDATION_INTERATION_DONE )
+    UINT8 result = PerformMotorValidation();
+    if( result == INTERATION_DONE )
     {
-        motor_val_index++;
-        if( motor_val_index == NUM_MOTOR_VAL_PARAMS )
-        {
-            val_params->set_velocity(0, 0);
-            return CAL_COMPLETE;
-        }
+        result = NextValParams();
     }
     
-    return CAL_OK;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: Stop
- * Description: Calibration/Validation interface Stop function.  Called to stop validation.
- * Parameters: stage - the calibration/validation stage
- *             params - motor validation parameters 
- * Return: UINT8 - CAL_OK
- * 
- *-------------------------------------------------------------------------------------------------*/
-static UINT8 Stop()
-{
-    Ser_PutString("Motor validation complete\r\n");
-    Control_SetLeftRightVelocityOverride(FALSE);
-    Pid_BypassAll(FALSE);
-    Debug_Restore();
-    
-    return CAL_OK;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: Results
- * Description: Calibration/Validation interface Results function.  Called to display calibration/ 
- *              validation results. 
- * Parameters: stage - the calibration/validation stage 
- *             params - motor calibration/validation parameters 
- * Return: UINT8 - CAL_OK
- * 
- *-------------------------------------------------------------------------------------------------*/
-static UINT8 Results()
-{
-    Ser_PutString("\r\nPrinting motor validation results\r\n");
-
-    return CAL_OK;
-}
-
-/*----------------------------------------------------------------------------------------------------------------------
- * Module Interface Routines
- *---------------------------------------------------------------------------------------------------------------------*/
-void ValMotor_Init()
-{    
-    motor_val_index = 0;
-}
-
-CALVAL_INTERFACE_TYPE* const ValMotor_Start()
-{
-    motor_validation.stage = CAL_VALIDATE_STAGE;
-    motor_validation.state = CAL_INIT_STATE;
-    return (CALVAL_INTERFACE_TYPE* const) &motor_validation;        
+    return result;
 }
 
 /* [] END OF FILE */

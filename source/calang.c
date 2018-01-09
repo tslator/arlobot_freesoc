@@ -303,7 +303,7 @@ static UINT8 Results()
         
     Ser_PutString("\r\nMeasure the rotate traveled by the robot.");
     Ser_PutString("\r\nEnter the rotation (in degrees): ");
-    FLOAT rot_in_degrees = Cal_ReadResponse();
+    FLOAT rot_in_degrees; // = Cal_ReadResponse();
     Ser_PutString("\r\n");
     
     /* If the actual rotation is less than 360.0 then each delta is too small, i.e., lengthen delta by 360/rotation

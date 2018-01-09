@@ -51,7 +51,8 @@ typedef enum {VAL_PID_LEFT_FORWARD,
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
-void ValPid_Init();
-CALVAL_INTERFACE_TYPE* const ValPid_Start(VAL_PID_TYPE val_pid);
+void ValPid_Init(WHEEL_TYPE wheel, DIR_TYPE direction, FLOAT min_percent, FLOAT max_percent, UINT8 num_points);
+UINT8 ValPid_Update();
+void ValPid_Results();
 
 #endif

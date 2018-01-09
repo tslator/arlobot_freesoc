@@ -82,7 +82,12 @@ SOFTWARE.
 #define CAL_OK          (0)
 #define CAL_COMPLETE    (1)
 #define CAL_ERROR       (255)
+#define VAL_OK          (CAL_OK)
+#define VAL_COMPLETE    (CAL_COMPLETE)
+#define VAL_ERROR       (CAL_ERROR)
     
+#define INTERATION_DONE (255)
+
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -173,7 +178,13 @@ typedef struct _angular_params
 void Cal_Init();
 void Cal_Start();
 void Cal_Update();
-FLOAT Cal_ReadResponse();
+int Cal_ReadResponse(CHAR * const digits, BOOL echo, UINT8 max_length);
+FLOAT Cal_ReadResponseFloat();
+CHAR Cal_ReadResponseChar();
+UINT8 Cal_ReadResponseReturn();
+FLOAT Cal_ReadResponseWithDefault(FLOAT dflt);
+
+
 void Cal_SetLeftRightVelocity(FLOAT left, FLOAT right);
 PWM_TYPE Cal_CpsToPwm(WHEEL_TYPE wheel, FLOAT cps);
 void Cal_Clear();
@@ -184,9 +195,13 @@ UINT16 Cal_GetCalibrationStatusBit(UINT16 bit);
 void Cal_PrintLeftMotorParams(BOOL as_json);
 void Cal_PrintRightMotorParams(BOOL as_json);
 void Cal_PrintAllMotorParams(BOOL as_json);
+void Cal_PrintMotorParams(WHEEL_TYPE wheel, BOOL as_json);
 void Cal_PrintSamples(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE* const cal_data, UINT8 as_json);
 void Cal_PrintPidGains(WHEEL_TYPE wheel, FLOAT* const gains, UINT8 as_json);
+void Cal_PrintLeftPidGains(BOOL as_json);
+void Cal_PrintRightPidGains(BOOL as_json);
 void Cal_PrintAllPidGains(BOOL as_json);
+
 
 void Cal_CalcTriangularProfile(UINT8 num_points, FLOAT lower_limit, FLOAT upper_limit, FLOAT* const forward_output, FLOAT* const backward_output);
 
@@ -207,6 +222,7 @@ void Cal_SetAngularBias(FLOAT bias);
 void Cal_SetLinearBias(FLOAT bias);
 void Cal_SetMotorData(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *data);
 
+FLOAT Cal_CalcMaxCps();
 #endif
 
 /* [] END OF FILE */

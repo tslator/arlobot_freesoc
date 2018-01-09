@@ -52,7 +52,7 @@ void Pid_Bypass(BOOL left, BOOL right, BOOL uni);
 void Pid_BypassAll(BOOL bypass);
 BOOL Pid_SetGains(PIDControl* const p_pid, CAL_PID_TYPE* const p_gains);
 
-void DumpPid(char* const name, PIDControl* const pid);
+void DumpPid(char* const name, UINT16 debug_bit, PIDControl* const pid);
 
 #endif
 

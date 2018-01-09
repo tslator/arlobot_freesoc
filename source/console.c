@@ -154,11 +154,20 @@ void Console_Update()
     CHAR line[MAX_LINE_LENGTH];
     BOOL result;
 
+    /* Since all of the is_running interface routines are just returning is_running maybe there is no need for
+       this function in the interface.  Maybe just dispatch has the routine for the purposes of tracking
+       progress.  Or, maybe there is no need for Disp_IsRunning at all and Disp_Update can handle the 
+       same functionality with different return values:
+            -1 - nothing is active
+            1 - still running
+            0 - all done
+    */
     if (Disp_IsRunning())
     {
         result = Disp_Update();
         if (result)
         {
+            /* Only a single outstanding command is allowed - explicit return until dispatch is done */
             return;
         }
         else

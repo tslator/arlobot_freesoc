@@ -66,8 +66,6 @@ SOFTWARE.
 #define UNIPID_DUMP_ENABLED
 #define ANGPID_DUMP_ENABLED
 
-#define JSON_OUTPUT_ENABLE
-
 /* The following defines enable "cycle" logging for each feature */
 //#define ENC_UPDATE_DELTA_ENABLED
 //#define PID_UPDATE_DELTA_ENABLED
@@ -163,6 +161,7 @@ void Debug_EnableAll();
 void Debug_DisableAll();
 void Debug_Store();
 void Debug_Restore();
+UINT16 Debug_GetMask();
 
 #endif
 

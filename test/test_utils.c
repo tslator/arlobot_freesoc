@@ -1167,7 +1167,6 @@ void test_WhenBackwardVGreaterThanZeroCWWMatch_ThenEnsureVIs0WUnchanged(void)
 
 void test_WhenNVGreaterThanLVAndNVLessThanMV_ThenNewVelocityAchieved(void)
 {
-    #define ENABLE_ACCEL_LIMIT
     
     FLOAT result;
 
@@ -1189,7 +1188,6 @@ void test_WhenNVGreaterThanLVAndNVLessThanMV_ThenNewVelocityAchieved(void)
 
 void test_WhenNVLessThanLVAndNVLessThanMV_ThenNewVelocityAchieved(void)
 {
-    #define ENABLE_ACCEL_LIMIT
     
     FLOAT result;
 
