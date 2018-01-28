@@ -11,6 +11,10 @@
 #include "$module.h"
 #endif
 
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/
+DEFINE_THIS_FILE;
 
 const char help_message[] =
 $help_message;
@@ -282,7 +286,10 @@ int elems_to_args(Elements *elements, DocoptArgs *args, bool help,
 
 DocoptArgs docopt(int argc, char *argv[], bool help, const char *version, int* success) {
     DocoptArgs args = {$defaults
-        usage_pattern, help_message
+        usage_pattern, help_message,
+        motor_usage_pattern, motor_help_message,
+        pid_usage_pattern, pid_help_message, config_usage_pattern, config_help_message,
+        motion_usage_pattern, motion_help_message
     };
     Tokens ts;
     Command commands[] = {$elems_cmds

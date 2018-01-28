@@ -40,6 +40,7 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/    
+DEFINE_THIS_FILE;
 #define DIAG_HEARTBEAT_MS SAMPLE_TIME_MS(HEARTBEAT_RATE)
 #define DIAG_STATUS_LED_MS SAMPLE_TIME_MS(STATUS_LED_RATE)
 
@@ -91,7 +92,6 @@ void Diag_Start()
     
     now = millis();
     delta_time = now - last_heartbeat_time;
-    // Increment a counter that can be read over I2C
     if (delta_time > DIAG_HEARTBEAT_MS)
     {
         last_heartbeat_time = millis();

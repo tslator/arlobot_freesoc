@@ -46,6 +46,13 @@ SOFTWARE.
 #include "debug.h"
 #include "diag.h"
 #include "consts.h"
+#include "calstore.h"
+#include "conserial.h"
+
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/    
+DEFINE_THIS_FILE;
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -82,7 +89,7 @@ void DumpPid(char* const name, UINT16 debug_bit, PIDControl* const pid)
 {
     if ( Debug_IsEnabled(debug_bit) )
     {
-        DEBUG_PRINT_ARG("{\"%s pid\": {\"set_point\":%.3f, \"input\":%.3f, \"error\":%.3f, \"last_input\":%.3f, \"iterm\":%.3f, \"output\":%.3f }}\r\n",
+        DEBUG_PRINT_INFO("{\"%s pid\": {\"set_point\":%.3f, \"input\":%.3f, \"error\":%.3f, \"last_input\":%.3f, \"iterm\":%.3f, \"output\":%.3f }}\r\n",
             name, 
             IS_NAN_DEFAULT(pid->setpoint, 0), 
             IS_NAN_DEFAULT(pid->input, 0), 
@@ -225,7 +232,7 @@ void Pid_BypassAll(BOOL bypass)
     RightPid_Bypass(bypass);
 }
 
-BOOL Pid_SetGains(PIDControl* const p_pid, CAL_PID_TYPE* const p_gains)
+BOOL Pid_SetGains(PIDControl* const p_pid, CAL_PID_PTR_TYPE const p_gains)
 {
     BOOL result = FALSE;
 
@@ -240,7 +247,7 @@ BOOL Pid_SetGains(PIDControl* const p_pid, CAL_PID_TYPE* const p_gains)
     }
     else
     {
-        Ser_PutString("No valid PID calibration\r\n");        
+        ConSer_WriteLine(TRUE, "No valid PID calibration");        
     }
     
     return result;

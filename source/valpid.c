@@ -35,7 +35,7 @@ SOFTWARE.
 #include "config.h"
 #include "valpid.h"
 #include "cal.h"
-#include "serial.h"
+#include "conserial.h"
 #include "nvstore.h"
 #include "pid.h"
 #include "pidleft.h"
@@ -47,14 +47,13 @@ SOFTWARE.
 #include "control.h"
 #include "time.h"
 #include "debug.h"
-#include "assertion.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/
+DEFINE_THIS_FILE;
 #define VAL_NUM_PROFILE_DATA_POINTS (13)
 #define MAX_RUN_TIME (3000)
-
 
 /*---------------------------------------------------------------------------------------------------
  * Types
@@ -130,9 +129,9 @@ static void CalcValidationProfile(FLOAT low_percent, FLOAT high_percent, UINT8 n
     CalcTriangularProfile(num_points, start, stop, profile);
     for (ii = 0; ii < num_points; ++ii)
     {
-        Ser_PutStringFormat("%f, ", profile[ii]);
+        ConSer_WriteLine(FALSE, "%f, ", profile[ii]);
     }
-    Ser_PutString("\r\n");
+    ConSer_WriteLine(TRUE, "");
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -160,12 +159,12 @@ static UINT8 SetNextValidationVelocity()
             break;
             
         default:
-            Ser_PutString("Unknown PID type\r\n");
+            ConSer_WriteLine(TRUE, "Unknown PID type");
             return CAL_COMPLETE;
             
     }
     
-    //Ser_PutStringFormat("Speed: %.2f %d\r\n", velocity, profile_index);
+    //ConSer_WriteLine(TRUE, "Speed: %.2f %d", velocity, profile_index);
     
     return profile_index <= max_num_points ? 1 : 0;
 }
@@ -199,7 +198,7 @@ static UINT8 SetNextValidation()
     return pid_val_index < pid_val_end ? VAL_OK : VAL_COMPLETE;
 }
 
-static void InitPidValidation(WHEEL_TYPE wheel, DIR_TYPE direction)
+static void InitPidValidation(WHEEL_TYPE wheel, DIR_TYPE direction, FLOAT duration)
 {
     switch (wheel)
     {
@@ -226,7 +225,7 @@ static void InitPidValidation(WHEEL_TYPE wheel, DIR_TYPE direction)
 
     profile_index = 0;
     pid_val_index = 0;
-    run_time = min(3000, MAX_RUN_TIME);
+    run_time = min((UINT32)(duration*1000), MAX_RUN_TIME);
     p_pid_val = &pid_val[pid_val_index];
 }
 
@@ -268,7 +267,7 @@ static void EndPidValidation()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void ValPid_Init(WHEEL_TYPE wheel, DIR_TYPE direction, FLOAT min_percent, FLOAT max_percent, UINT8 num_points)
+void ValPid_Init(WHEEL_TYPE wheel, DIR_TYPE direction, FLOAT min_percent, FLOAT max_percent, UINT8 num_points, FLOAT duration)
 {
     UINT16 mask;
 
@@ -288,12 +287,12 @@ void ValPid_Init(WHEEL_TYPE wheel, DIR_TYPE direction, FLOAT min_percent, FLOAT 
     Pid_Reset();
     Odom_Reset();
     
-    InitPidValidation(wheel, direction);
+    InitPidValidation(wheel, direction, duration);
     CalcValidationProfile(min_percent, max_percent, num_points);
     StartPidValidation();
 }
 
-UINT8 ValPid_Update()
+BOOL ValPid_Update()
 {
     UINT8 result;
 
@@ -301,9 +300,10 @@ UINT8 ValPid_Update()
     if (result == VAL_COMPLETE)
     {
         EndPidValidation();
+        return FALSE;
     }
 
-    return result;
+    return TRUE;
 }
 
 void ValPid_Results()
@@ -312,7 +312,8 @@ void ValPid_Results()
     Control_OverrideDebug(FALSE);
     Debug_Restore();
 
-    Ser_PutString("\r\nPrinting PID validation results\r\n");
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "Printing PID validation results");
 }
 
 /*-------------------------------------------------------------------------------*/

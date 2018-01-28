@@ -46,6 +46,7 @@ SOFTWARE.
  * Functions
  *-------------------------------------------------------------------------------------------------*/
 void CalMotor_Init(WHEEL_TYPE wheel, UINT8 iters);
-UINT8 CalMotor_Update(void);
+BOOL CalMotor_Update(void);
+void CalMotor_Results(void);
     
 #endif    

@@ -42,8 +42,14 @@ SOFTWARE.
 #include "nvstore.h"
 #include "usbif.h"
 #include "serial.h"
+#include "conserial.h"
 #include "utils.h"
 #include "console.h"
+
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/    
+DEFINE_THIS_FILE;
 
 /*---------------------------------------------------------------------------------------------------
  * Main Function
@@ -53,7 +59,7 @@ int main()
     CyGlobalIntEnable;
     
     Nvstore_Init();
-    USBIF_Init();
+    ConSer_Init();
     Ser_Init();
     Console_Init();
     Debug_Init();
@@ -104,7 +110,8 @@ int main()
         Diag_Update();
 
         /* Keep the USB connection active */
-        USBIF_Update();
+        //USBIF_Update();
+        ConSer_Update();
         
         /* Handle Console */
         Console_Update();

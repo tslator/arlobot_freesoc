@@ -37,14 +37,20 @@ SOFTWARE.
 #include <stdarg.h>
 #include "serial.h"
 #include "utils.h"
-#include "usbif.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/
+DEFINE_THIS_FILE;
+#define MAX_TEXT_BUFFER (5000)
 
+/*---------------------------------------------------------------------------------------------------
+ * Variables
+ *-------------------------------------------------------------------------------------------------*/
 static CHAR line_data[MAX_LINE_LENGTH];
 static UINT8 char_offset = 0;
+static CHAR str[MAX_TEXT_BUFFER];
+static CHAR fmt_str[MAX_TEXT_BUFFER];
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -79,19 +85,20 @@ static UINT8 CopyAndTerminateLine(CHAR* const line)
  * Name: SetCharData
  * Description: Updates the character data in the line, adjusts the character offset, and echos the
  *              character is echo is TRUE.
- * Parameters: line - output line data
+ * Parameters: device - the serial device to which the characters will be written.
+ *             line - output line data
  *             echo - indicates whether the character should be echoed
  * Return: line length
  * 
  *-------------------------------------------------------------------------------------------------*/
-static void SetCharData(CHAR ch, BOOL echo)
+static void SetCharData(SERIAL_DEVICE_TYPE device, CHAR ch, BOOL echo)
 {
     line_data[char_offset] = ch;    
     char_offset++;
 
     if (echo)
     {
-        Ser_WriteByte(ch);
+        Ser_WriteByte(device, ch);
     }
 }
 
@@ -117,30 +124,31 @@ void Ser_Init()
  *-------------------------------------------------------------------------------------------------*/
 void Ser_Start()
 {
-    USBIF_Start();
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Ser_PutString
  * Description: Sends a string to the serial port
- * Parameters: str - the string to be output
+ * Parameters: device - the serial device to which the characters will be written.
+ *             str - the string to be output
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Ser_PutString(CHAR const * const str)
+void Ser_PutString(SERIAL_DEVICE_TYPE device, CHAR const * const str)
 {
-    USBIF_PutString(str);
+    device.put_string((CHAR * const) str);
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Ser_PutStringFormat
  * Description: Sends a string containing format specifiers to the serial port
- * Parameters: fmt - the string to be output
+ * Parameters: device - the serial device to which the characters will be written.
+ *             fmt - the string to be output
  *             ... - variable argument list
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Ser_PutStringFormat(CHAR const * const fmt, ...)
+void Ser_PutStringFormat(SERIAL_DEVICE_TYPE device, CHAR const * const fmt, ...)
 {    
     CHAR str[MAX_STRING_LENGTH];
     va_list ap;
@@ -149,39 +157,41 @@ void Ser_PutStringFormat(CHAR const * const fmt, ...)
     vsnprintf(str, MAX_STRING_LENGTH, fmt, ap);
     va_end(ap);       
     
-    Ser_PutString(str);
+    device.put_string(str);
     
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Ser_ReadData
- * Description: Reads one or more bytes (max 64) of data from the USB serial port.
- * Parameters: date read from the serial port
+ * Description: Reads one or more bytes (max 64) of data from the specified device.
+ * Parameters: device - the serial device to which the characters will be written.
+ *             data - characters read from the serial device
  * Return: Number of bytes read.
  * 
  *-------------------------------------------------------------------------------------------------*/
-UINT8 Ser_ReadData(CHAR* const data)
+UINT8 Ser_ReadData(SERIAL_DEVICE_TYPE device, CHAR* const data)
 {
-    return USBIF_GetAll(data);
+    return device.get_all(data);
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Ser_ReadByte
  * Description: Returns a byte from the serial port.
- * Parameters: None
- * Return: None
+ * Parameters: device - the serial device to which the characters will be written.
+ * Return: Number of characters written
  * 
  *-------------------------------------------------------------------------------------------------*/
-UINT8 Ser_ReadByte()
+UINT8 Ser_ReadByte(SERIAL_DEVICE_TYPE device)
 {
-    return USBIF_GetChar();
+    return device.get_char();
 }
 
 /*---------------------------------------------------------------------------------------------------
  * Name: Ser_ReadLine
  * Description: Non-blocking reads all serial data until a newline is received.
  *              Note: Putty apparently does not send \n so \r is being used.
- * Parameters: line - pointer to charater buffer
+ * Parameters: device - the serial device to which the characters will be written.
+ *             line - pointer to charater buffer
  *             echo - echos characters to serial port if TRUE.
  *             max_length - the maximum length of the line (maximum is 64).
  * Return: 0 for newline or carriage return
@@ -189,7 +199,7 @@ UINT8 Ser_ReadByte()
  *         > 0 for all other
  * 
  *-------------------------------------------------------------------------------------------------*/
-INT8 Ser_ReadLine(CHAR* const line, BOOL echo, UINT8 max_length)
+INT16 Ser_ReadLine(SERIAL_DEVICE_TYPE device, CHAR* const line, BOOL echo, UINT16 max_length)
 {
     UINT8 length;
     UINT8 line_length;
@@ -202,7 +212,7 @@ INT8 Ser_ReadLine(CHAR* const line, BOOL echo, UINT8 max_length)
 
     max_chars_read = char_offset == line_length;
 
-    ch = Ser_ReadByte();
+    ch = Ser_ReadByte(device);
     if (ch == 0x00)
     {
         /* This means there was no input and since this is a polled routine we return -1 length
@@ -220,13 +230,13 @@ INT8 Ser_ReadLine(CHAR* const line, BOOL echo, UINT8 max_length)
          */
         if (max_chars_read)
         {
-            SetCharData(ch, echo);
+            SetCharData(device, ch, echo);
         }
         return length;
     }
     else
     {
-        SetCharData(ch, echo);
+        SetCharData(device, ch, echo);
     }
 
     return -1;
@@ -235,19 +245,42 @@ INT8 Ser_ReadLine(CHAR* const line, BOOL echo, UINT8 max_length)
 /*---------------------------------------------------------------------------------------------------
  * Name: Ser_WriteByte
  * Description: Writes a byte to the serial port.
- * Parameters: None
+ * Parameters: device - the serial device to which the characters will be written.
+ *             value - the character to be written.
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Ser_WriteByte(UINT8 value)
+void Ser_WriteByte(SERIAL_DEVICE_TYPE device, UINT8 value)
 {
-    USBIF_PutChar(value);
+    device.put_char(value);
 }
 
-void Ser_WriteLine(CHAR* const line, BOOL newline)
+/*---------------------------------------------------------------------------------------------------
+ * Name: Ser_WriteLine
+ * Description: Writes a line of characters to the specified serial device.
+ * Parameters: device - the serial device to which the characters will be written.
+ *             new_line - when TRUE, appends a 'new line', i.e., \r\n, to the end; otherwise nothing.
+ *             fmt - a format string
+ *             args - a variable argument list
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/
+void Ser_WriteLine(SERIAL_DEVICE_TYPE device, BOOL new_line, CHAR const * const fmt, va_list args)
 {
-    Ser_PutStringFormat("%s%s", line, newline == TRUE? "\r\n" : "");
+    UINT32 length;
+    
+    /* Break up the string into max string size chunks */
+    
+    length = strlen(fmt);
+    (void)strcpy(fmt_str, fmt);
+    
+    (void)strcpy(fmt_str + length, new_line == TRUE ? "\r\n" : "");
+    length += new_line == TRUE ? 2 : 0;
+    fmt_str[length] = '\0';
+    
+    (void) vsnprintf(str, MAX_TEXT_BUFFER, fmt_str, args);
+    
+    device.put_string(str);
 }
-
 
 /* [] END OF FILE */

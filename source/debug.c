@@ -32,12 +32,46 @@ SOFTWARE.
  * Includes
  *-------------------------------------------------------------------------------------------------*/    
 #include "debug.h"
+#include "serial.h"
+#include "uartif.h"
+#include "usbif.h"
+
+
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/    
+DEFINE_THIS_FILE;
+#define ENCODER_DEBUG_BIT   (0x0001)
+#define PID_DEBUG_BIT       (0x0002)
+#define MOTOR_DEBUG_BIT     (0x0004)
+#define ODOM_DEBUG_BIT      (0x0008)
+#define SAMPLE_DEBUG_BIT    (0x0010)
+
+
 
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/    
-static UINT16 debug_control_enabled;
-static UINT16 saved_debug_control_enabled;
+static UINT8 debug_control_enabled;
+static UINT8 saved_debug_control_enabled;
+/*static SERIAL_DEVICE_TYPE device = {
+    UARTIF_PutString,
+    UARTIF_GetAll,
+    UARTIF_GetChar,
+    UARTIF_PutChar
+};*/
+
+/* Temporarily using the USB interface until a UART interface is wired up */
+static SERIAL_DEVICE_TYPE device = {
+    USBIF_PutString,
+    USBIF_GetAll,
+    USBIF_GetChar,
+    USBIF_PutChar
+};
+
+static CHAR fmt_str[1000];
+static UINT8 debug_level = DBG_DBG;
+
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -83,6 +117,7 @@ void Debug_Init()
     debug_control_enabled |= DEBUG_SAMPLE_ENABLE_BIT;
 #endif
 
+    UARTIF_Init();
 #endif    
 }
 
@@ -95,6 +130,7 @@ void Debug_Init()
  *-------------------------------------------------------------------------------------------------*/ 
 void Debug_Start()
 {
+    UARTIF_Start();
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -104,21 +140,21 @@ void Debug_Start()
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/ 
-void Debug_Enable(UINT16 flag)
+void Debug_Enable(UINT8 flag)
 {
 #ifdef COMMS_DEBUG_ENABLED
     debug_control_enabled |= flag;
 #endif
 }
 
-void Debug_Disable(UINT16 flag)
+void Debug_Disable(UINT8 flag)
 {
 #ifdef COMMS_DEBUG_ENABLED
     debug_control_enabled &= ~flag;
 #endif
 }
 
-UINT16 Debug_IsEnabled(UINT16 flag)
+UINT8 Debug_IsEnabled(UINT8 flag)
 {
 #ifdef COMMS_DEBUG_ENABLED
     return debug_control_enabled & flag;
@@ -128,7 +164,7 @@ UINT16 Debug_IsEnabled(UINT16 flag)
 void Debug_EnableAll()
 {
 #ifdef COMMS_DEBUG_ENABLED
-    debug_control_enabled = 0xFFFF;
+    debug_control_enabled = 0xFF;
 #endif
 }
 
@@ -152,6 +188,87 @@ void Debug_Restore()
 UINT16 Debug_GetMask()
 {
     return debug_control_enabled;
+}
+
+/*---------------------------------------------------------------------------------------------------
+ * Name: Update_Debug
+ * Description: Enables/Disables debug based on the specified bits.
+ * Parameters: bits - contains bits corresponding to the supported debug, e.g., encoder, pid, motor, etc
+ *                    1 indicates debug is enabled, 0 indicates debug is disabled
+ * Return: None
+ * 
+ *-------------------------------------------------------------------------------------------------*/ 
+void Debug_Update(UINT8 bits)
+{
+    if (bits & ENCODER_DEBUG_BIT)
+    {
+        Debug_Enable(DEBUG_LEFT_ENCODER_ENABLE_BIT);
+        Debug_Enable(DEBUG_RIGHT_ENCODER_ENABLE_BIT);
+    }
+    else
+    {
+        Debug_Disable(DEBUG_LEFT_ENCODER_ENABLE_BIT);
+        Debug_Disable(DEBUG_RIGHT_ENCODER_ENABLE_BIT);
+    }
+    
+    if (bits & PID_DEBUG_BIT)
+    {
+        Debug_Enable(DEBUG_LEFT_PID_ENABLE_BIT);
+        Debug_Enable(DEBUG_RIGHT_PID_ENABLE_BIT);
+    }
+    else
+    {
+        Debug_Disable(DEBUG_LEFT_PID_ENABLE_BIT);
+        Debug_Disable(DEBUG_RIGHT_PID_ENABLE_BIT);
+    }
+    
+    if (bits & MOTOR_DEBUG_BIT)
+    {
+        Debug_Enable(DEBUG_LEFT_MOTOR_ENABLE_BIT);
+        Debug_Enable(DEBUG_RIGHT_MOTOR_ENABLE_BIT);
+    }
+    else
+    {
+        Debug_Disable(DEBUG_LEFT_MOTOR_ENABLE_BIT);
+        Debug_Disable(DEBUG_RIGHT_MOTOR_ENABLE_BIT);
+    }
+
+    if (bits & ODOM_DEBUG_BIT)
+    {
+        Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
+    }
+    else
+    {
+        Debug_Disable(DEBUG_ODOM_ENABLE_BIT);
+    }
+    
+    if (bits & SAMPLE_DEBUG_BIT)
+    {
+        Debug_Enable(DEBUG_SAMPLE_ENABLE_BIT);
+    }
+    else
+    {
+        Debug_Disable(DEBUG_SAMPLE_ENABLE_BIT);
+    }
+}
+
+void Debug_Print(CHAR const * const file, CHAR const * const func, UINT16 line, CHAR const * const msg, ...)
+{
+    va_list args;
+    va_start(args, msg);
+    sprintf(fmt_str, "%s - [FILE : %s, FUNC : %s, LINE : %d]: %s", "<LEVEL>", file, func, line, msg);
+    Ser_WriteLine(device, TRUE, fmt_str, args);
+    va_end(args);
+}
+
+void Debug_SetLevel(UINT8 level)
+{
+    debug_level = level;
+}
+
+UINT8 Debug_GetLevel()
+{
+    return debug_level;
 }
 
 /* [] END OF FILE */

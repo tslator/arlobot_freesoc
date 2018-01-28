@@ -32,17 +32,22 @@ SOFTWARE.
  * Includes
  *-------------------------------------------------------------------------------------------------*/    
 #include <stdio.h>
+#include <math.h>
 #include "motor.h"
 #include "config.h"
 #include "utils.h"
 #include "encoder.h"
 #include "time.h"
-#include <math.h>
 #include "utils.h"
 #include "pwm.h"
 #include "cal.h"
 #include "debug.h"
 #include "control.h"
+
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/    
+DEFINE_THIS_FILE;
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -120,7 +125,7 @@ static void DumpMotor(MOTOR_TYPE* const motor)
 {       
     if (Debug_IsEnabled(motor->debug_bit))
     {
-        DEBUG_PRINT_ARG("{\"%s motor\": {\"pwm\":%d}}\r\n",
+        DEBUG_PRINT_INFO("{\"%s motor\": {\"pwm\":%d}}\r\n",
                         motor->name, 
                         motor->get_pwm()
         );

@@ -45,7 +45,7 @@ SOFTWARE.
 #include "pid.h"
 #include "time.h"
 #include "utils.h"
-#include "serial.h"
+#include "conserial.h"
 #include "nvstore.h"
 #include "debug.h"
 #include "pwm.h"
@@ -53,6 +53,7 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/
+DEFINE_THIS_FILE;
 #define LINEAR_DISTANCE (1.0)
 #define LINEAR_VELOCITY (0.2)
 #define LINEAR_MAX_TIME (20000)
@@ -136,7 +137,8 @@ static UINT8 Init()
     p_lin_params->linear = p_lin_params->direction == DIR_FORWARD ? LINEAR_VELOCITY : -LINEAR_VELOCITY;
     p_lin_params->angular = 0.0;
     
-    Ser_PutStringFormat("\r\n%s Linear validation\r\n", 
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "%s Linear validation", 
                         p_lin_params->direction == DIR_FORWARD ? "Forward" : "Backward");
 
     Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
@@ -159,8 +161,8 @@ static UINT8 Start()
     Pid_Reset();
     Odom_Reset();
 
-    Ser_PutString("Linear Validation Start\r\n");
-    Ser_PutString("\r\nValidating\r\n");
+    ConSer_WriteLine(TRUE, "Linear Validation Start");
+    ConSer_WriteLine(TRUE, "\r\nValidating");
 
     start_time = millis();
 
@@ -191,7 +193,8 @@ static UINT8 Update()
         return CAL_OK;
     }
     end_time = millis();
-    Ser_PutString("\r\nRun time expired\r\n");
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "Run time expired");
 
     return CAL_COMPLETE;
 }
@@ -209,7 +212,8 @@ static UINT8 Stop()
     Control_RestoreCommandVelocityFunc();
     Debug_Restore();    
     
-    Ser_PutStringFormat("\r\n%s Linear Validation complete\r\n", p_lin_params->direction == DIR_FORWARD ? "Forward" : "Backward");
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "%s Linear Validation complete", p_lin_params->direction == DIR_FORWARD ? "Forward" : "Backward");
 
     return CAL_OK;
 }
@@ -234,12 +238,16 @@ static UINT8 Results()
 
     left_count = Encoder_LeftGetCount();
     right_count = Encoder_RightGetCount();
-    Ser_PutStringFormat("X: %.6f\r\nY: %.6f\r\nDistance: %.6f\r\nLC: %d RC: %d\r\n", x, y, p_lin_params->distance, left_count, right_count);
-    Ser_PutStringFormat("Heading: %.6f\r\n", Odom_GetHeading());
-    Ser_PutStringFormat("Elapsed Time: %ld\r\n", end_time - start_time);
-    Ser_PutStringFormat("Linear Bias: %.6f\r\n", Cal_GetLinearBias());
+    ConSer_WriteLine(TRUE, "X: %.6f", x);
+    ConSer_WriteLine(TRUE, "Y: %.6f", y);
+    ConSer_WriteLine(TRUE, "Distance: %.6f", p_lin_params->distance);
+    ConSer_WriteLine(TRUE, "LC: %d RC: %d", left_count, right_count);
+    ConSer_WriteLine(TRUE, "Heading: %.6f", Odom_GetHeading());
+    ConSer_WriteLine(TRUE, "Elapsed Time: %ld", end_time - start_time);
+    ConSer_WriteLine(TRUE, "Linear Bias: %.6f", Cal_GetLinearBias());
                 
-    Ser_PutString("\r\nPrinting Linear validation results\r\n");
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "Printing Linear validation results");
 
     return CAL_OK;
 }

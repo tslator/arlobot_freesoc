@@ -41,6 +41,7 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/    
+DEFINE_THIS_FILE;
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -69,11 +70,13 @@ SOFTWARE.
                                                                     encoder counts
                                                                 - Bit 2: clear calibration
       02           2         [debug control]                the debug register supports
-                                                                - Bit 0: Enable/Disable Encoder Debug
-                                                                - Bit 1: Enable/Disable PID debug
-                                                                - Bit 2: Enable/Disable Motor debug
-                                                                - Bit 3: Enable/Disable Odometry debug
-                                                                - Bit 4: Enable/Disable Sample debug
+                                                                - level Bits0:7
+                                                                - enable/disable Bits8:15
+                                                                - Bit  8: Enable/Disable Encoder Debug
+                                                                - Bit  9: Enable/Disable PID debug
+                                                                - Bit 10: Enable/Disable Motor debug
+                                                                - Bit 11: Enable/Disable Odometry debug
+                                                                - Bit 12: Enable/Disable Sample debug                                                            
         <---- Commanded Velocity ---->
       04           4         [linear velocity]              commanded linear velocity in meter/second
       08           4         [angular velocity]             commanded angular velocity in radian/second

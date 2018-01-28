@@ -1,7 +1,7 @@
 #ifndef $module
 #define $module
 
-#include <stdbool.h>
+#include "freesoc.h"
 
 typedef struct {$commands$arguments$flags$options
     /* special */

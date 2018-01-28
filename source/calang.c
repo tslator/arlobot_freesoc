@@ -38,12 +38,17 @@ SOFTWARE.
 #include "pid.h"
 #include "time.h"
 #include "utils.h"
-#include "serial.h"
+#include "conserial.h"
 #include "nvstore.h"
 #include "debug.h"
 #include "pwm.h"
 #include "control.h"
 #include "consts.h"
+
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/
+DEFINE_THIS_FILE;
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -180,8 +185,10 @@ static UINT8 Init()
         What if we averaged the cw and ccw biases?
         */
 
-    Ser_PutString("\r\nAngular Calibration\r\n");
-    Ser_PutString("\r\nPlace a mark on the floor corresponding to the center of one of the wheels\r\n");
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "Angular Calibration");
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "Place a mark on the floor corresponding to the center of one of the wheels");
 
     p_ang_params->distance = ANGULAR_BIAS_ANGLE;
     p_ang_params->angular = p_ang_params->direction == DIR_CW ? -ANGULAR_BIAS_VELOCITY : ANGULAR_BIAS_VELOCITY;
@@ -209,9 +216,10 @@ static UINT8 Start()
     UniToDiff(p_ang_params->linear, p_ang_params->angular, &left, &right);    
     p_ang_params->heading = Odom_GetHeading();
 
-    Ser_PutStringFormat("Current Heading: %.6f\r\n", Odom_GetHeading());
-    Ser_PutString("Angular Calibration Start\r\n");            
-    Ser_PutString("\r\nCalibrating\r\n");
+    ConSer_WriteLine(TRUE, "Current Heading: %.6f", Odom_GetHeading());
+    ConSer_WriteLine(TRUE, "Angular Calibration Start");            
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "\r\nCalibrating");
             
     
     Cal_SetLeftRightVelocity(left * WHEEL_COUNT_PER_RADIAN, right * WHEEL_COUNT_PER_RADIAN);            
@@ -251,7 +259,8 @@ static UINT8 Update()
         
     }
     end_time = millis();
-    Ser_PutString("\r\nRun time expired\r\n");
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "Run time expired");
 
     return CAL_COMPLETE;
 }
@@ -268,7 +277,8 @@ static UINT8 Stop()
     Cal_SetLeftRightVelocity(0, 0);
     Motor_SetPwm(PWM_STOP, PWM_STOP);
 
-    Ser_PutString("\r\nAngular Calibration complete\r\n");
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "Angular Calibration complete");
 
     Debug_Restore();    
 
@@ -294,24 +304,27 @@ static UINT8 Results()
     heading = Odom_GetHeading();
     angular_bias = Cal_GetAngularBias();
 
-    Ser_PutStringFormat("X: %.6f\r\nY: %.6f\r\n", x, y);
-    Ser_PutStringFormat("Heading: %.6f\r\n", heading);
-    Ser_PutStringFormat("Elapsed Time: %ld\r\n", end_time - start_time);
-    Ser_PutStringFormat("Angular Bias: %.6f\r\n", angular_bias);
+    ConSer_WriteLine(TRUE, "X: %.6f", x);
+    ConSer_WriteLine(TRUE, "Y: %.6f", y);
+    ConSer_WriteLine(TRUE, "Heading: %.6f", heading);
+    ConSer_WriteLine(TRUE, "Elapsed Time: %ld", end_time - start_time);
+    ConSer_WriteLine(TRUE, "Angular Bias: %.6f", angular_bias);
 
-    Ser_PutStringFormat("Degrees Travelled: %.6f\r\n", 360 + RADIANS_TO_DEGREES(abs(heading)));
+    ConSer_WriteLine(TRUE, "Degrees Travelled: %.6f", 360 + RADIANS_TO_DEGREES(abs(heading)));
         
-    Ser_PutString("\r\nMeasure the rotate traveled by the robot.");
-    Ser_PutString("\r\nEnter the rotation (in degrees): ");
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "Measure the rotate traveled by the robot.");
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "Enter the rotation (in degrees): ");
     FLOAT rot_in_degrees; // = Cal_ReadResponse();
-    Ser_PutString("\r\n");
+    ConSer_WriteLine(TRUE, "");
     
     /* If the actual rotation is less than 360.0 then each delta is too small, i.e., lengthen delta by 360/rotation
         If the actual rotation is greater than 360.0 then each delta is too big, i.e., shorten delta by rotation/360
         */
     FLOAT bias = rot_in_degrees >= 360.0 ? 360.0 / rot_in_degrees : rot_in_degrees / 360.0;
 
-    Ser_PutStringFormat("New Angular Bias: %.6f\r\n", bias);
+    ConSer_WriteLine(TRUE, "New Angular Bias: %.6f", bias);
     
     Cal_SetAngularBias(bias);
     Cal_SetCalibrationStatusBit(CAL_ANGULAR_BIT);

@@ -50,7 +50,7 @@ SOFTWARE.
 #include "motor.h"
 #include "pwm.h"
 #include "nvstore.h"
-#include "serial.h"
+#include "conserial.h"
 #include "encoder.h"
 #include "time.h"
 #include "utils.h"
@@ -63,6 +63,8 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/
+DEFINE_THIS_FILE;
+
 #define DEFAULT_MOTOR_CAL_ITERATION (3)
 #define CALIBRATION_ITERATION_DONE (255)
 #define MAX_CPS_ARRAY (51)
@@ -97,6 +99,11 @@ typedef struct _cal_motor_params
     RESET_COUNT_FUNC_TYPE reset;
 } CAL_MOTOR_PARAMS;
 
+typedef struct _tag_motor_cal
+{
+    WHEEL_TYPE wheel;
+    UINT8 iters;
+} MOTOR_CAL_TYPE;
 
 /*---------------------------------------------------------------------------------------------------
  * Variables
@@ -240,7 +247,7 @@ static CAL_MOTOR_PARAMS motor_cal_params[NUM_MOTOR_CAL_PARAMS] =
 
 static UINT8 motor_cal_index;
 static UINT8 motor_cal_end;
-
+static MOTOR_CAL_TYPE motor_cal;
 
 static char *wheel_str[2] = {"left", "right"};
 static char *direction_str[2] = {"forward", "backward"};
@@ -284,7 +291,7 @@ static void CalculateMinMaxCpsSample(INT32* const samples, INT32* const min, INT
         {
             tmp_min = samples[ii];
         }
-        //Ser_PutStringFormat("Sample(%d): %d, Min/Max: %d/%d\r\n", ii, samples[ii], tmp_min, tmp_max);
+        //ConSer_WriteLine(TRUE, "Sample(%d): %d, Min/Max: %d/%d", ii, samples[ii], tmp_min, tmp_max);
     }
 
     *min = tmp_min;
@@ -430,7 +437,7 @@ static UINT8 PerformMotorCalibrationIteration()
             total_sample_time = cal_params->sample_time * num_cps_samples_collected;
             total_counts = cal_params->p_cps_samples[cal_params->cps_index];
             cal_params->p_cps_samples[cal_params->cps_index] = total_counts * MILLIS_PER_SECOND / total_sample_time;
-            //Ser_PutStringFormat("tst: %d, tc: %d, cps: %d\r\n", total_sample_time, total_counts, cal_params->p_cps_samples[params->cps_index]);
+            //ConSer_WriteLine(TRUE, "tst: %d, tc: %d, cps: %d", total_sample_time, total_counts, cal_params->p_cps_samples[params->cps_index]);
             pwm_running = FALSE;
         } 
     }
@@ -464,7 +471,7 @@ static UINT8 PerformMotorCalibrateAverage()
     for (ii = 0; ii < CAL_NUM_SAMPLES; ++ii)
     {
         cal_params->p_cps_avg[ii] = cal_params->p_cps_avg[ii]/motor_cal_iterations;
-        //Ser_PutStringFormat("Avg CPS (%d): %d\r\n", cal_params->p_pwm_samples[ii], cal_params->p_cps_avg[ii]);
+        //ConSer_WriteLine(TRUE, "Avg CPS (%d): %d", cal_params->p_pwm_samples[ii], cal_params->p_cps_avg[ii]);
     }
     
     return CALIBRATION_ITERATION_DONE;
@@ -530,7 +537,7 @@ static UINT8 PerformMotorCalibration()
     
     if ( !running )
     {
-        Ser_PutStringFormat("%s-%s Calibration\r\n", wheel_str[cal_params->wheel], direction_str[cal_params->direction]);
+        ConSer_WriteLine(TRUE, "%s-%s Calibration", wheel_str[cal_params->wheel], direction_str[cal_params->direction]);
 
         Motor_SetPwm(PWM_STOP, PWM_STOP);
         InitCalibrationParams();
@@ -545,7 +552,7 @@ static UINT8 PerformMotorCalibration()
         {        
             Motor_SetPwm(PWM_STOP, PWM_STOP);
             StoreMotorCalibration();
-            Ser_PutString("Complete\r\n");
+            ConSer_WriteLine(TRUE, "Complete");
             running = FALSE;
             return CALIBRATION_ITERATION_DONE;
         }
@@ -597,6 +604,17 @@ void CalMotor_Init(WHEEL_TYPE wheel, UINT8 iters)
     motor_cal_iterations = iters;
     
     Motor_SetPwm(PWM_STOP, PWM_STOP);
+
+    motor_cal.wheel = wheel;
+    motor_cal.iters = iters;
+
+    ConSer_WriteLine(TRUE, "Initialize motor calibration");
+    Debug_Store();
+    Control_OverrideDebug(TRUE);
+    Cal_ClearCalibrationStatusBit(CAL_MOTOR_BIT);
+    Pid_Enable(FALSE, FALSE, FALSE);
+    ConSer_WriteLine(TRUE, "Performing motor calibration");
+    
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -608,7 +626,7 @@ void CalMotor_Init(WHEEL_TYPE wheel, UINT8 iters)
  * Return: UINT8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
-UINT8 CalMotor_Update(void)
+BOOL CalMotor_Update(void)
 {
     UINT8 result = PerformMotorCalibration();
     if ( result == CALIBRATION_ITERATION_DONE )
@@ -616,8 +634,17 @@ UINT8 CalMotor_Update(void)
         result = NextCalParams();
     }
     
-    return result;
+    return (result == CAL_OK) ? TRUE : FALSE;
 }
 
+void CalMotor_Results(void)
+{
+    ConSer_WriteLine(TRUE, "Motor calibration complete");
+    Cal_SetCalibrationStatusBit(CAL_MOTOR_BIT);
+    Debug_Restore();
+    ConSer_WriteLine(TRUE, "Printing motor calibration results");
+    
+    Cal_PrintMotorParams(motor_cal.wheel, TRUE);
+}
 
 /* [] END OF FILE */

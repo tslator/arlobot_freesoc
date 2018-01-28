@@ -26,16 +26,45 @@ SOFTWARE.
  * Includes
  *-------------------------------------------------------------------------------------------------*/
 #include "console.h"
-#include "serial.h"
+#include "conserial.h"
 #include "conparser.h"
 #include "parser.h"
 #include "disp.h"
 #include "control.h"
+#include "utils.h"
+#include "consts.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/
+DEFINE_THIS_FILE;
 #define MAX_ENABLE_COUNT (3)
+
+static char const robot_facts[15][270] = {
+    "The word 'robot' comes from a Czech word 'robota',\r\nwhich means 'drudgery'.",
+    "The first known robot in recent history was created\r\nin the 5th century BC by Archytas of Tarentum. He\r\ncreated the mechanical doves.",
+    "In 1495 Leonardo da Vinci drew plans for a type of\r\nrobotic machine. It wasan armored humanoid. A\r\nfunctional, but miniature version has been created\r\nby Mark Rosheim, an engineer, to colonize Mars for NASA.",
+    "Elektro was the first humanoid robot. It was built\r\nin 1939 by Westinghouse. It was seven feet tall and\r\nhad a vocabulary of 700 words.",
+    "A robot killed a factory worker in 1981. A robotic\r\nfactory arm crushed an\r\nemployee at the Kawasaki plant.",
+    "It is estimated that more than one million industrial\r\nrobots are in operation\r\ntoday, with the majority being\r\nin Japan.",
+    "There are two robots on Mars - Spirit and Opportunity.\r\nThey were built to last 90 days on Mars but they lasted\r\nfor several years. Curiosity is the latest rover to land\r\non Mars to explore the planet.",
+    "The United States military has 4,000 robots that are\r\nused for scouting in dangerous countries like Iraq and\r\nAfghanistan where roadside bombs are common. The Taliban\r\nfighters have discovered that they can disable these\t\nrobots by flipping ladders on top of them.",
+    "A robot vacuum cleaner was invented that is capable\r\nof sensing its environment and cleaning the floor\r\nwithout human help to move the device.",
+    "Star Wars the movie franchise made robots even more\r\npopular in the imagination of people with characters\r\nsuch as R2-D2 and C-3PO.",
+    "Work is underway to develop a microrobot that will\r\nbe capable of performing a biopsy of a patient from the\r\ninside of that patient. It is being built to swim similar\r\nto the way E. coli bacteria moves.",
+    "Some people fear that robots will eventually take\r\nover the world because they will become their own species.",
+    "A robot has been created that uses bacteria-filled\r\n fuel cells. The robot is capable of producing electricity\r\nfrom dead flies to power its battery. It can also use\r\nrotten apples to create fuel.",
+    "The smallest robot is called a nanobot. It is less\r\nthan one-thousandth of a millimeter.",
+    "Japan's NES System Technologies recently built a\r\nwinebot, capable of identifying many different types\r\nof wines and cheeses. It made a mistake at one point\r\nand named a reporter's hand as prosciutto."
+};
+
+static char const quitting[5][60] = {
+    "Pain is temporary. Quitting lasts forever.",
+    "If you quit ONCE it becomes a habit.Never quit!!!",
+    "It's always to soon to quit!",
+    "Things can always get worse, but only quitters quit!",
+    "Age wrinkles the body. Quitting wrinkles the soul."
+};
 
 /*---------------------------------------------------------------------------------------------------
  * Variables
@@ -43,7 +72,6 @@ SOFTWARE.
 static BOOL is_console_active;
 static UINT8 console_enable_count;
 static COMMAND_TYPE command;
-static BOOL display_prompt;
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -55,32 +83,37 @@ static void ResetCommand(void)
 
 static void DisplayPrompt(void)
 {
-    Ser_WriteLine("", TRUE);
-    Ser_WriteLine("arlobot> ", FALSE);    
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(FALSE, "arlobot> ");    
 }
 
 static void DisplayUnknownCommand(void)
 {
-    Ser_WriteLine("", TRUE);            
-    Ser_WriteLine("unknown command", TRUE);
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "unknown command");
 }
 
 static void DisplayInvalidCommandParameters(void)
 {
-    Ser_WriteLine("", TRUE);            
-    Ser_WriteLine("invalid command parameters", TRUE);
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "invalid command parameters");
 }
 
 static void DisplayWelcomeBanner(void)
 {
-    // Add something interesting here like random robot facts
+    UINT8 index = (UINT8) GetRandomValue(0, 15);
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "------------------- Robot Facts -------------------");
+    ConSer_WriteLine(TRUE, robot_facts[index]);
+    ConSer_WriteLine(TRUE, "---------------------------------------------------");
 }
 
 static void DisplayGoodbyeBanner(void)
 {
-    Ser_WriteLine("", TRUE);            
-    Ser_WriteLine("goodbye", TRUE);
-    // Add something more substantial or witty here (maybe more random phrases about quitting)
+    UINT8 index = (UINT8) GetRandomValue(0, 5);
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(FALSE, quitting[index]);
+    ConSer_WriteLine(TRUE, "  Goodbye");
 }
 
 static void HandleZeroLengthInput()
@@ -92,13 +125,13 @@ static void HandleZeroLengthInput()
         {
             console_enable_count = 0;
             is_console_active = TRUE; 
+            DisplayWelcomeBanner();
         }
     }
     
     /* Note: We want to act immediately on the console state change (so no else to the if above) */
     if (is_console_active == TRUE)
     {
-        DisplayWelcomeBanner();
         DisplayPrompt();
     }        
 }
@@ -109,10 +142,16 @@ static void HandleLineParsing(CHAR * const line)
     if (command.is_exit)
     {
         is_console_active = FALSE;
-        DisplayGoodbyeBanner();                    
-    }                
+        DisplayGoodbyeBanner();
+    }
     else if (command.is_parsed)
     {
+        if (command.args.help)
+        {
+            DisplayPrompt();
+            return;
+        }
+        
         Disp_Dispatch(&command);
         
         if (!command.is_valid)
@@ -125,7 +164,7 @@ static void HandleLineParsing(CHAR * const line)
     {
         DisplayUnknownCommand();
         DisplayPrompt();
-    }                
+    }        
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -134,7 +173,6 @@ static void HandleLineParsing(CHAR * const line)
 void Console_Init()
 {   
     is_console_active = FALSE;
-    display_prompt = FALSE;
     console_enable_count = 0;
     
     ResetCommand();
@@ -154,14 +192,6 @@ void Console_Update()
     CHAR line[MAX_LINE_LENGTH];
     BOOL result;
 
-    /* Since all of the is_running interface routines are just returning is_running maybe there is no need for
-       this function in the interface.  Maybe just dispatch has the routine for the purposes of tracking
-       progress.  Or, maybe there is no need for Disp_IsRunning at all and Disp_Update can handle the 
-       same functionality with different return values:
-            -1 - nothing is active
-            1 - still running
-            0 - all done
-    */
     if (Disp_IsRunning())
     {
         result = Disp_Update();
@@ -178,7 +208,7 @@ void Console_Update()
         }        
     }
     
-    length = Ser_ReadLine(line, TRUE, MAX_LINE_LENGTH);
+    length = ConSer_ReadLine(line, TRUE, MAX_LINE_LENGTH);
     if (length == 0)
     {
         HandleZeroLengthInput();

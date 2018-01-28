@@ -37,7 +37,7 @@ SOFTWARE.
 #include "encoder.h"
 #include "control.h"
 #include "utils.h"
-#include "serial.h"
+#include "conserial.h"
 #include "pid.h"
 #include "pidleft.h"
 #include "pidright.h"
@@ -51,64 +51,12 @@ SOFTWARE.
 #include "calang.h"
 #include "valang.h"
 #include "debug.h"
-#include "serial.h"
-#include "usbif.h"
-#include "assertion.h"
+
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/
-
-/* Calibration interface commands */
-#define NO_CMD              '0'
-#define CAL_REQUEST         1
-#define VAL_REQUEST         2
-#define SETTING_REQUEST     3
-#define EXIT_CMD            255
-#define NULL_CMD            0
-#define CAL_REQUEST_CHR      'c'
-#define CAL_REQUEST_UCHR     'C'
-#define VAL_REQUEST_CHR      'v'
-#define VAL_REQUEST_UCHR     'V'
-#define SETTING_REQUEST_CHR  'd'
-#define SETTING_REQUEST_UCHR 'D'
-#define EXIT_CMD_CHR         'x'
-#define EXIT_CMD_UCHR        'X'
-
-#define CAL_MOTOR_CMD       1
-#define CAL_PID_LEFT_CMD    2
-#define CAL_PID_RIGHT_CMD   3
-#define CAL_LINEAR_CMD      4
-#define CAL_ANGULAR_CMD     5
-#define CAL_FIRST_CMD       CAL_MOTOR_CMD
-#define CAL_LAST_CMD        CAL_ANGULAR_CMD
-
-#define VAL_MOTOR_CMD           1
-#define VAL_PID_CMD             2
-#define VAL_PID_LEFT_FWD_CMD    3
-#define VAL_PID_LEFT_BWD_CMD    4
-#define VAL_PID_RIGHT_FWD_CMD   5
-#define VAL_PID_RIGHT_BWD_CMD   6
-#define VAL_LINEAR_FWD_CMD      7
-#define VAL_LINEAR_BWD_CMD      8
-#define VAL_ANGULAR_CW_CMD      9
-#define VAL_ANGULAR_CCW_CMD     10
-#define VAL_FIRST_CMD           VAL_MOTOR_CMD
-#define VAL_LAST_CMD            VAL_ANGULAR_CCW_CMD
-
-#define DISP_MOTOR_LEFT_CMD  1
-#define DISP_MOTOR_RIGHT_CMD 2
-#define DISP_PID_CMD         3
-#define DISP_BIAS_CMD        4
-#define DISP_ALL_CMD         5
-#define DISP_ALL_JSON_CMD    6
-#define DISP_FIRST_CMD       DISP_MOTOR_LEFT_CMD
-#define DISP_LAST_CMD        DISP_ALL_JSON_CMD
-
-#define CMD_TOP_LEVEL (0)
-#define CMD_CALIBRATION (1)
-#define CMD_VALIDATION (2)
-#define CMD_SETTINGS (3)
+DEFINE_THIS_FILE;
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -130,28 +78,17 @@ SOFTWARE.
 
 #define MOTOR_DATA_OFFSET(wheel, dir) (UINT16) NVSTORE_CAL_EEPROM_ADDR_TO_OFFSET(WHEEL_DIR_TO_CAL_DATA[wheel][dir])
 
-/*---------------------------------------------------------------------------------------------------
- * Types
- *-------------------------------------------------------------------------------------------------*/
-typedef enum {UI_STATE_INIT, UI_STATE_CALIBRATION, UI_STATE_VALIDATION, UI_STATE_SETTINGS, UI_STATE_EXIT} UI_STATE_ENUM;
 
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/
 
-char* cal_stage_to_string[] = {"CALIBRATION", "VALIDATE"};
-char* cal_state_to_string[] = {"INIT STATE", "START STATE", "RUNNING STATE", "STOP STATE", "RESULTS STATE", "DONE STATE"};
-
-static UI_STATE_ENUM ui_state;
-
-static CALVAL_INTERFACE_TYPE *active_calval;
-
 static FLOAT left_cmd_velocity;
 static FLOAT right_cmd_velocity;
 
-static volatile CAL_EEPROM_TYPE *p_cal_eeprom;
+static volatile CAL_EEPROM_TYPE * p_cal_eeprom;
 
-static CAL_DATA_TYPE * WHEEL_DIR_TO_CAL_DATA[2][2];
+static volatile CAL_DATA_TYPE * WHEEL_DIR_TO_CAL_DATA[2][2];
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -176,22 +113,29 @@ static PWM_TYPE CpsToPwm(INT16 cps, INT16 *cps_data, UINT16 *pwm_data, UINT8 dat
     UINT8 lower = 0;
     UINT8 upper = 0;
 
+    REQUIRE(in_range(cps, -MAX_WHEEL_COUNT_PER_SECOND, MAX_WHEEL_COUNT_PER_SECOND));
+    REQUIRE(cps_data != NULL);
+    REQUIRE(pwm_data != NULL);
+    REQUIRE(data_size == CAL_DATA_SIZE);
+
     if (cps > 0 || cps < 0)
     {
         BinaryRangeSearch(cps, cps_data, data_size, &lower, &upper);
         
-        pwm = Interpolate(cps, cps_data[lower], cps_data[upper], pwm_data[lower], pwm_data[upper]);
+        pwm = Interpolate( (INT32) cps, 
+                           (INT32) cps_data[lower], 
+                           (INT32) cps_data[upper], 
+                           (INT32) pwm_data[lower], 
+                           (INT32) pwm_data[upper]);
 
-        return (PWM_TYPE) constrain(pwm, MIN_PWM_VALUE, MAX_PWM_VALUE);
     }
 
-    //Ser_PutStringFormat("CpsToPwm: %d -> %u\r\n", cps, pwm);
+    ConSer_WriteLine(TRUE, "CpsToPwm: %d -> %u", cps, pwm);
+
+    ENSURE(in_range(pwm, MIN_PWM_VALUE, MAX_PWM_VALUE));
 
     return (PWM_TYPE) pwm;
 }
-
-
-
 
 /*---------------------------------------------------------------------------------------------------
  * Calibration Print Routines 
@@ -209,14 +153,14 @@ static PWM_TYPE CpsToPwm(INT16 cps, INT16 *cps_data, UINT16 *pwm_data, UINT8 dat
 
 void Cal_PrintLeftMotorParams(BOOL as_json)
 {
-    Cal_PrintSamples(WHEEL_LEFT, DIR_BACKWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD], as_json);
-    Cal_PrintSamples(WHEEL_LEFT, DIR_FORWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD], as_json);
+    Cal_PrintSamples(WHEEL_LEFT, DIR_BACKWARD, (CONST_CAL_DATA_CONST_PTR_TYPE) WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD], as_json);
+    Cal_PrintSamples(WHEEL_LEFT, DIR_FORWARD, (CONST_CAL_DATA_CONST_PTR_TYPE) WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD], as_json);
 }
 
 void Cal_PrintRightMotorParams(BOOL as_json)
 {
-    Cal_PrintSamples(WHEEL_RIGHT, DIR_BACKWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD], as_json);
-    Cal_PrintSamples(WHEEL_RIGHT, DIR_FORWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD], as_json);
+    Cal_PrintSamples(WHEEL_RIGHT, DIR_BACKWARD, (CONST_CAL_DATA_CONST_PTR_TYPE) WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD], as_json);
+    Cal_PrintSamples(WHEEL_RIGHT, DIR_FORWARD, (CONST_CAL_DATA_CONST_PTR_TYPE) WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD], as_json);
 }
 
 
@@ -251,51 +195,47 @@ void Cal_PrintMotorParams(WHEEL_TYPE wheel, BOOL as_json)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Cal_PrintSamples(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *cal_data, UINT8 as_json)
+void Cal_PrintSamples(WHEEL_TYPE wheel, DIR_TYPE dir, CONST_CAL_DATA_CONST_PTR_TYPE cal_data, UINT8 as_json)
 {
+    UINT16 ii;
+
+    REQUIRE(cal_data != NULL);
+    REQUIRE(wheel == WHEEL_LEFT || wheel == WHEEL_RIGHT);
+    REQUIRE(dir == DIR_FORWARD || dir == DIR_BACKWARD);
+
     if (as_json)
     {
         /* Example json
-            { "wheel": "left", 
-            "direction": "backward", 
-            "min": -4328, 
-            "max": 0, 
-            "values": [
-                {"cps": -4328, "pwm": 1000},
-                {"cps": -4328, "pwm": 1000},
-                {"cps": -4318, "pwm": 1010},
+            {"wheel":"left", 
+            "direction":"backward", 
+            "min":-4328, 
+            "max":0, 
+            "values":[
+                {"cps":-4328,"pwm":1000},
+                {"cps":-4328,"pwm":1000},
+                {"cps":-4318,"pwm":1010},
                 ...
-                {"cps": -50, "pwm": 1470},
-                {"cps": 0, "pwm": 1480},
-                {"cps": 0, "pwm": 1490},
-                {"cps": 0, "pwm": 1500}
+                {"cps":-50,"pwm":1470},
+                {"cps":0,"pwm":1480},
+                {"cps":0,"pwm":1490},
+                {"cps":0,"pwm":1500}
             ]}
         */
-        static char buffer[2000];
-        int offset;
-        int ii;
 
-        offset = 0;
-        memset(buffer, 0, sizeof(buffer));
-
-        offset += sprintf(buffer + offset, "{\"wheel\":\"%s\",", wheel == WHEEL_LEFT ? "left" : "right");
-        offset += sprintf(buffer + offset, "\"direction\":\"%s\",", dir == DIR_FORWARD ? "forward" : "backward");
-        offset += sprintf(buffer + offset, "\"min\":%d,", cal_data->cps_min);
-        offset += sprintf(buffer + offset, "\"max\":%d,", cal_data->cps_max);
-        offset += sprintf(buffer + offset, "\"values\":[");
+        ConSer_WriteLine(FALSE, "{\"wheel\":\"%s\",", wheel == WHEEL_LEFT ? "left" : "right");
+        ConSer_WriteLine(FALSE, "\"direction\":\"%s\",", dir == DIR_FORWARD ? "forward" : "backward");
+        ConSer_WriteLine(FALSE, "\"min\":%d,", cal_data->cps_min);
+        ConSer_WriteLine(FALSE, "\"max\":%d,", cal_data->cps_max);
+        ConSer_WriteLine(FALSE, "\"values\":[");
         for (ii = 0; ii < CAL_NUM_SAMPLES - 1; ++ii)
         {
-            offset += sprintf(buffer + offset, "{\"cps\":%d,\"pwm\":%d},", cal_data->cps_data[ii], cal_data->pwm_data[ii]);
+            ConSer_WriteLine(FALSE, "{\"cps\":%d,\"pwm\":%d},", cal_data->cps_data[ii], cal_data->pwm_data[ii]);
         }
-        offset += sprintf(buffer + offset, "{\"cps\":%d,\"pwm\":%d}]}\r\n", cal_data->cps_data[ii], cal_data->pwm_data[ii]);
-
-        Ser_PutString(buffer);
+        ConSer_WriteLine(TRUE, "{\"cps\":%d,\"pwm\":%d}]}\r\n", cal_data->cps_data[ii], cal_data->pwm_data[ii]);
     }
     else
     {
-        UINT8 ii;
-        
-        Ser_PutStringFormat("%s-%s - min/max: %d/%d\r\n", 
+        ConSer_WriteLine(TRUE, "%s-%s - min/max: %d/%d", 
                             wheel == WHEEL_LEFT ? "Left" : "Right", 
                             dir == DIR_FORWARD ? "Forward" : "Backward", 
                             cal_data->cps_min, 
@@ -303,9 +243,10 @@ void Cal_PrintSamples(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *cal_data, U
         
         for (ii = 0; ii < CAL_NUM_SAMPLES - 1; ++ii)
         {
-            Ser_PutStringFormat("%ld:%d ", cal_data->cps_data[ii], cal_data->pwm_data[ii]);
+            ConSer_WriteLine(TRUE, "%ld:%d ", cal_data->cps_data[ii], cal_data->pwm_data[ii]);
         }
-        Ser_PutStringFormat("%ld:%d\r\n\r\n", cal_data->cps_data[ii], cal_data->pwm_data[ii]);
+        ConSer_WriteLine(TRUE, "%ld:%d", cal_data->cps_data[ii], cal_data->pwm_data[ii]);
+        ConSer_WriteLine(TRUE, "");
     }
 }
 
@@ -317,20 +258,23 @@ void Cal_PrintSamples(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *cal_data, U
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-void Cal_PrintPidGains(WHEEL_TYPE wheel, FLOAT* const gains, UINT8 as_json)
+void Cal_PrintPidGains(WHEEL_TYPE wheel, FLOAT const * const gains, UINT8 as_json)
 {
+    REQUIRE(wheel == WHEEL_LEFT || wheel == WHEEL_RIGHT);
+    REQUIRE(gains != NULL);
+
     if (as_json)
     {
         /*
             {"wheel":"left", "p":%.3f,"i":%.3f,"d":%.3f,"f":%.3f}
         */
-        Ser_PutStringFormat("{\"wheel\":\"%s\",\"p\":%.3f,\"i\":%.3f,\"d\":%.3f,\"f\":%.3f}\r\n", 
+        ConSer_WriteLine(TRUE, "{\"wheel\":\"%s\",\"p\":%.3f,\"i\":%.3f,\"d\":%.3f,\"f\":%.3f}",
                             wheel == WHEEL_LEFT ? "left" : "right", 
                             gains[0], gains[1], gains[2], gains[3]);
     }
     else
     {
-        Ser_PutStringFormat("%s PID - P: %.3f, I: %.3f, D: %.3f, F: %.3f\r\n", 
+        ConSer_WriteLine(TRUE, "%s PID - P: %.3f, I: %.3f, D: %.3f, F: %.3f", 
                             wheel == WHEEL_LEFT ? "Left" : "Right", 
                             gains[0], gains[1], gains[2], gains[3]);
     }
@@ -338,7 +282,7 @@ void Cal_PrintPidGains(WHEEL_TYPE wheel, FLOAT* const gains, UINT8 as_json)
 
 void Cal_PrintLeftPidGains(BOOL as_json)
 {
-    CAL_PID_TYPE *p_pid;
+    CAL_PID_PTR_TYPE p_pid;
     FLOAT gains[4];
     
     p_pid = Cal_GetPidGains(PID_TYPE_LEFT);
@@ -351,7 +295,7 @@ void Cal_PrintLeftPidGains(BOOL as_json)
 
 void Cal_PrintRightPidGains(BOOL as_json)
 {
-    CAL_PID_TYPE *p_pid;
+    CAL_PID_PTR_TYPE p_pid;
     FLOAT gains[4];
 
     p_pid = Cal_GetPidGains(PID_TYPE_RIGHT);
@@ -373,11 +317,11 @@ void Cal_PrintStatus(UINT8 as_json)
     if (as_json)
     {
         /* TODO: Consider parsing out the bits of status into fields in the json */
-        Ser_PutStringFormat("{\"status\":%02x}\r\n", p_cal_eeprom->status);
+        ConSer_WriteLine(TRUE, "{\"status\":%02x}", p_cal_eeprom->status);
     }
     else
     {
-        Ser_PutStringFormat("Status - %02x\r\n", p_cal_eeprom->status);
+        ConSer_WriteLine(TRUE, "Status - %02x", p_cal_eeprom->status);
     }
 }
 
@@ -391,11 +335,11 @@ void Cal_PrintBias(UINT8 as_json)
 {
     if (as_json)
     {
-        Ser_PutStringFormat("{\"linear\":%.2f,\"angular\":%.2f}\r\n", Cal_GetLinearBias(), Cal_GetAngularBias());
+        ConSer_WriteLine(TRUE, "{\"linear\":%.2f,\"angular\":%.2f}", Cal_GetLinearBias(), Cal_GetAngularBias());
     }
     else
     {
-        Ser_PutStringFormat("Linear Bias: %.2f, Angular Bias: %.2f\r\n", Cal_GetLinearBias(), Cal_GetAngularBias());
+        ConSer_WriteLine(TRUE, "Linear Bias: %.2f, Angular Bias: %.2f", Cal_GetLinearBias(), Cal_GetAngularBias());
     }
 }
 
@@ -409,15 +353,15 @@ void Cal_PrintBias(UINT8 as_json)
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
- static FLOAT LeftTarget()
- {
-     return left_cmd_velocity;
- }
+static FLOAT LeftTarget()
+{
+    return left_cmd_velocity;
+}
  
- static FLOAT RightTarget()
- {
-     return right_cmd_velocity;
- }
+static FLOAT RightTarget()
+{
+    return right_cmd_velocity;
+}
  
  /*---------------------------------------------------------------------------------------------------
   * Name: ClearCalibrationStatusBit/SetCalibrationStatusBit/GetCalibrationStatusBit
@@ -429,565 +373,27 @@ void Cal_PrintBias(UINT8 as_json)
   *-------------------------------------------------------------------------------------------------*/
 void Cal_ClearCalibrationStatusBit(UINT16 bit)
 {
-     UINT16 status = p_cal_eeprom->status &= ~bit;
-     Nvstore_WriteUint16(status, STATUS_OFFSET);
-     Control_ClearCalibrationStatusBit(bit);
+    REQUIRE(is_power_of_two(bit));
+
+    UINT16 status = p_cal_eeprom->status &= ~bit;
+    Nvstore_WriteUint16(status, STATUS_OFFSET);
+    Control_ClearCalibrationStatusBit(bit);
 }
  
- void Cal_SetCalibrationStatusBit(UINT16 bit)
- {
-     UINT16 status = p_cal_eeprom->status | bit;
-     Nvstore_WriteUint16(status, STATUS_OFFSET);
-     Control_SetCalibrationStatusBit(bit);   
- }
+void Cal_SetCalibrationStatusBit(UINT16 bit)
+{
+    REQUIRE(is_power_of_two(bit));
+
+    UINT16 status = p_cal_eeprom->status | bit;
+    Nvstore_WriteUint16(status, STATUS_OFFSET);
+    Control_SetCalibrationStatusBit(bit);   
+}
  
- UINT16 Cal_GetCalibrationStatusBit(UINT16 bit)
- {
-     return p_cal_eeprom->status & bit;
- }
- 
- 
-/*---------------------------------------------------------------------------------------------------
- * Calibration Menu Routines 
- *-------------------------------------------------------------------------------------------------*/    
-
-/*---------------------------------------------------------------------------------------------------
- * Name: DisplayCalMenu
- * Description: Prints the Calibration Menu to the serial port
- * Parameters: None 
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-static void DisplayCalMenu()
+UINT16 Cal_GetCalibrationStatusBit(UINT16 bit)
 {
-    Ser_PutString("\r\nWelcome to the Arlobot calibration interface.\r\n");
-    Ser_PutString("The following calibration operations are allowed:\r\n");
-    Ser_PutStringFormat("    %d. Motor Calibration - creates mapping between count/sec and PWM.\r\n",  CAL_MOTOR_CMD);
-    Ser_PutStringFormat("    %d. PID Left Calibration - enter gains, execute step input, print velocity response.\r\n", CAL_PID_LEFT_CMD);
-    Ser_PutStringFormat("    %d. PID Right Calibration - enter gains, execute step input, print velocity response.\r\n", CAL_PID_RIGHT_CMD);
-    Ser_PutStringFormat("    %d. Linear Calibration - move 1 meter forward, measure and enter actual distance.\r\n", CAL_LINEAR_CMD);
-    Ser_PutStringFormat("    %d. Angular Calibration - rotate 360 degrees clockwise, measure and enter actual rotation.\r\n", CAL_ANGULAR_CMD);
-    Ser_PutString("\r\n");
-    Ser_PutStringFormat("\r\nEnter %c/%c to exit calibration\r\n", EXIT_CMD_CHR, EXIT_CMD_UCHR);
-    Ser_PutString("\r\n");
-    Ser_PutStringFormat("Make an entry [%d-%d,%c/%c]: ", CAL_FIRST_CMD, CAL_LAST_CMD, EXIT_CMD_CHR, EXIT_CMD_UCHR);
+    REQUIRE(is_power_of_two(bit));
+    return p_cal_eeprom->status & bit;
 }
-
-/*---------------------------------------------------------------------------------------------------
- * Name: DisplayValMenu
- * Description: Prints the Validation Menu to the serial port
- * Parameters: None 
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-static void DisplayValMenu()
-{
-    Ser_PutString("\r\nWelcome to the Arlobot validation interface.\r\n");
-    Ser_PutString("The following validation operations are allowed:\r\n");
-    Ser_PutStringFormat("    %d. Motor Validation - operates the motors at varying velocities.\r\n", VAL_MOTOR_CMD);
-    Ser_PutStringFormat("    %d. PID Validation - operates the motors at varying velocities, moves in a straight line and rotates in place.\r\n",VAL_PID_CMD);
-    Ser_PutStringFormat("    %d. Left PID (forward) Validation - operates the left motor in the forward direction at various velocities.\r\n", VAL_PID_LEFT_FWD_CMD);
-    Ser_PutStringFormat("    %d. Left PID (backward) Validation - operates the left motor in the backward direction at various velocities.\r\n", VAL_PID_LEFT_BWD_CMD);
-    Ser_PutStringFormat("    %d. Right PID (forward) Validation - operates the right motor in the forward direction at various velocities.\r\n", VAL_PID_RIGHT_FWD_CMD);
-    Ser_PutStringFormat("    %d. Right PID (backward) Validation - operates the right motor in the backward direction at various velocities.\r\n", VAL_PID_RIGHT_BWD_CMD);
-    Ser_PutStringFormat("    %d. Straight Line (forward) Validation - operates the robot in the forward direction at a constant (slow) velocity.\r\n", VAL_LINEAR_FWD_CMD);
-    Ser_PutStringFormat("    %d. Straight Line (backward) Validation - operates the robot in the backward direction at a constant (slow) velocity.\r\n", VAL_LINEAR_BWD_CMD);
-    Ser_PutStringFormat("    %d. Rotation (cw) Validation - rotates the robot in place in the clockwise direction at a constant (slow) velocity.\r\n", VAL_ANGULAR_CW_CMD);
-    Ser_PutStringFormat("    %d. Rotation (ccw) Validation - rotates the robot in place in the counter clockwise direction at a constant (slow) velocity.\r\n", VAL_ANGULAR_CCW_CMD);
-    Ser_PutStringFormat("\r\n\r\nEnter %c/%c to exit validation\r\n", EXIT_CMD_CHR, EXIT_CMD_UCHR);
-    Ser_PutStringFormat("\r\nMake an entry [%d-%d,%c/%c]: ", VAL_FIRST_CMD, VAL_LAST_CMD, EXIT_CMD_CHR, EXIT_CMD_UCHR);
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: DisplaySettingsMenu
- * Description: Prints the settings menu used to display the current calibration state.
- * Parameters: None
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-static void DisplaySettingsMenu()
-{
-    Ser_PutString("\r\nWelcome to the Arlobot settings display\r\n");
-    Ser_PutString("The following settings can be displayed\r\n");
-    Ser_PutStringFormat("    %d. Left Motor Calibration\r\n", DISP_MOTOR_LEFT_CMD);
-    Ser_PutStringFormat("    %d. Right Motor Calibration\r\n", DISP_MOTOR_RIGHT_CMD);
-    Ser_PutStringFormat("    %d. PID Gains: left pid and right pid\r\n", DISP_PID_CMD);
-    Ser_PutStringFormat("    %d. Linear/Angular Bias: linear and angular biases\r\n", DISP_BIAS_CMD);
-    Ser_PutStringFormat("    %d. Display All\r\n", DISP_ALL_CMD);
-    Ser_PutStringFormat("    %d. Display All (json)\r\n", DISP_ALL_JSON_CMD);
-    Ser_PutStringFormat("\r\n\r\nEnter %c/%c to exit validation\r\n", EXIT_CMD_CHR, EXIT_CMD_UCHR);
-    Ser_PutStringFormat("\r\nMake an entry [%d-%d,%c/%c]: ", DISP_FIRST_CMD, DISP_LAST_CMD, EXIT_CMD_CHR, EXIT_CMD_UCHR);
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: DisplayExit
- * Description: Prints the exit menu.
- * Parameters: None
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-static void DisplayExit()
-{
-    Ser_PutString("\r\nExiting Arlobot calibration/validation interface.");
-    Ser_PutStringFormat("\r\nType '%c/%c' to enter calibration, '%c/%c' to enter validation, '%c/%c' to display settings\r\n", 
-                    CAL_REQUEST_CHR, CAL_REQUEST_UCHR,
-                    VAL_REQUEST_CHR, VAL_REQUEST_UCHR,
-                    SETTING_REQUEST_CHR, SETTING_REQUEST_UCHR);
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: DisplayMenu
- * Description: Displays a menu, either calibration or validation, depending on the stage
- * Parameters: stage - the current calibration/validation stage 
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-static void DisplayMenu(CAL_STAGE_TYPE stage)
-{
-    Debug_DisableAll();
-    
-    if (stage == CAL_CALIBRATE_STAGE)
-    {
-        DisplayCalMenu();
-    }
-    else if (stage == CAL_VALIDATE_STAGE)
-    {
-        DisplayValMenu();
-    }
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: ProcessSettingsCmd
- * Description: Processes the setting command request to display the requested calibration values
- * Parameters: cmd - the calibration/validation command requested
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-static void ProcessSettingsCmd(UINT8 cmd)
-{
-    switch (cmd)
-    {
-        case DISP_MOTOR_LEFT_CMD:
-            Ser_PutString("\r\nDisplaying left motor calibration: count/sec, pwm mapping\r\n");
-            Cal_PrintSamples(WHEEL_LEFT, DIR_BACKWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD], FALSE);
-            Cal_PrintSamples(WHEEL_LEFT, DIR_FORWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD], FALSE);
-            Ser_PutString("\r\n");
-            
-            DisplaySettingsMenu();
-            break;
-            
-        case DISP_MOTOR_RIGHT_CMD:
-            Ser_PutString("\r\nDisplaying right motor calibration: count/sec, pwm mapping\r\n");
-            Cal_PrintSamples(WHEEL_RIGHT, DIR_BACKWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD], FALSE);
-            Cal_PrintSamples(WHEEL_RIGHT, DIR_FORWARD, WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD], FALSE);
-            Ser_PutString("\r\n");
-            
-            DisplaySettingsMenu();
-            break;
-            
-        case DISP_PID_CMD:
-            Ser_PutString("\r\nDisplaying all PID gains: left, right\r\n");
-            Cal_PrintPidGains(WHEEL_LEFT, (FLOAT *) &p_cal_eeprom->left_gains, FALSE);
-            Cal_PrintPidGains(WHEEL_RIGHT, (FLOAT *) &p_cal_eeprom->right_gains, FALSE);
-            Ser_PutString("\r\n");
-
-            DisplaySettingsMenu();
-            break;
-            
-        case DISP_BIAS_CMD:
-            Ser_PutString("\r\nDisplaying linear/angular bias\r\n");
-            Cal_PrintBias(FALSE);
-            Ser_PutString("\r\n");
-
-            DisplaySettingsMenu();
-            break;
-            
-        case DISP_ALL_CMD:
-            Ser_PutString("\r\nDisplaying all calibration/settings\r\n");
-
-            Cal_PrintAllMotorParams(FALSE);
-
-            Cal_PrintPidGains(WHEEL_LEFT, (FLOAT *) &p_cal_eeprom->left_gains, FALSE);
-            Cal_PrintPidGains(WHEEL_RIGHT, (FLOAT *) &p_cal_eeprom->right_gains, FALSE);
-            Cal_PrintStatus(FALSE);
-            Cal_PrintBias(FALSE);
-
-            DisplaySettingsMenu();
-            break;
-
-        case DISP_ALL_JSON_CMD:
-            Ser_PutString("\r\nDisplaying all calibration/settings\r\n");
-        
-            Cal_PrintAllMotorParams(TRUE);
-
-            Cal_PrintPidGains(WHEEL_LEFT, (FLOAT *) &p_cal_eeprom->left_gains, TRUE);
-            Cal_PrintPidGains(WHEEL_RIGHT, (FLOAT *) &p_cal_eeprom->right_gains, TRUE);
-            Cal_PrintStatus(TRUE);
-            Cal_PrintBias(TRUE);
-
-            DisplaySettingsMenu();
-            break;
-                    
-        default:
-            // Do nothing
-            break;
-    }
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: GetTopLevelCommand
- * Description: Translates command characters to numeric command values
- * Parameters: cmd - top level command
- * Return: numeric command
- * 
- *-------------------------------------------------------------------------------------------------*/
-static UINT8 GetTopLevelCommand(char* cmd)
-{
-    switch (cmd[0])
-    {
-        case CAL_REQUEST_CHR:
-        case CAL_REQUEST_UCHR:
-            return CAL_REQUEST;
-
-        case VAL_REQUEST_CHR:
-        case VAL_REQUEST_UCHR:
-            return VAL_REQUEST;
-
-        case SETTING_REQUEST_CHR:
-        case SETTING_REQUEST_UCHR:
-            return SETTING_REQUEST;
-
-        case EXIT_CMD_CHR:
-        case EXIT_CMD_UCHR:
-            return EXIT_CMD;
-    }
-
-    return NULL_CMD;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: GetCalibrationCommand
- * Description: Translates command characters to numeric command values
- * Parameters: cmd - calibration command
- * Return: numeric command
- * 
- *-------------------------------------------------------------------------------------------------*/
-static UINT8 GetCalibrationCommand(char* cmd)
-{
-    UINT8 num_cmd;
-
-    if (cmd[0] == EXIT_CMD_CHR || cmd[0] == EXIT_CMD_UCHR)
-    {
-        return EXIT_CMD;
-    }
-
-    num_cmd = atoi(cmd);
-
-    if (num_cmd >= CAL_FIRST_CMD && num_cmd <= CAL_LAST_CMD)
-    {
-        return num_cmd;
-    }
-
-    return NULL_CMD;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: GetValidationCommand
- * Description: Translates command characters to numeric command values
- * Parameters: cmd - validation command
- * Return: numeric command
- * 
- *-------------------------------------------------------------------------------------------------*/
-static UINT8 GetValidationCommand(char* cmd)
-{
-    UINT8 num_cmd;
-
-    if (cmd[0] == EXIT_CMD_CHR || cmd[0] == EXIT_CMD_UCHR)
-    {
-        return EXIT_CMD;
-    }
-
-    num_cmd = atoi(cmd);
-
-    if (num_cmd >= VAL_FIRST_CMD && num_cmd <= VAL_LAST_CMD)
-    {
-        return num_cmd;
-    }
-
-    return NULL_CMD;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: GetSettingsCommand
- * Description: Translates command characters to numeric command values
- * Parameters: cmd - settings command
- * Return: numeric command
- * 
- *-------------------------------------------------------------------------------------------------*/
-static UINT8 GetSettingsCommand(char* cmd)
-{
-    UINT8 num_cmd;
-
-    if (cmd[0] == EXIT_CMD_CHR || cmd[0] == EXIT_CMD_UCHR)
-    {
-        return EXIT_CMD;
-    }
-
-    num_cmd = atoi(cmd);
-    
-    if (num_cmd >= DISP_FIRST_CMD && num_cmd <= DISP_LAST_CMD)
-    {
-        return num_cmd;
-    }
-
-    return NULL_CMD;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: GetCommand
- * Description: Gets the calibration/validation/display command from the serial port
- * Parameters: cmd_class
- * Return: the command entered on the serial port.
- * 
- *-------------------------------------------------------------------------------------------------*/
-static UINT8 GetCommand(UINT8 cmd_class)
-{
-    char line[2] = {NULL_CMD, '\r'};
-    int result;
-    UINT8 cmd = NULL_CMD;
-
-    result = Ser_ReadLine(line, TRUE, 2);
-    if (result != 0)
-    {
-
-        switch (cmd_class)
-        {
-            case CMD_TOP_LEVEL:
-                cmd = GetTopLevelCommand(line);
-                break;
-
-            case CMD_CALIBRATION:
-                cmd = GetCalibrationCommand(line);
-                break;
-
-            case CMD_VALIDATION:
-                cmd = GetValidationCommand(line);
-                break;
-
-            case CMD_SETTINGS:
-                cmd = GetSettingsCommand(line);
-        }
-        
-        /* Reset value for next time */
-        line[0] = NULL_CMD;
-        line[1] = '\r';
-    
-        return cmd;
-    }
-    
-    /* The value returned from the function drives the calibration state machine.  The only values allowed are legitimate
-       commands or NULL_CMD (where NULL_CMD is ignored).
-     */
-    
-    return NULL_CMD;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: GetCalibration
- * Description: Gets the calibration specified by command
- * Parameters: cmd - the requested calibration.
- * Return: the specified calibration type; otherwise, NULL.
- * 
- *-------------------------------------------------------------------------------------------------*/
-static CALVAL_INTERFACE_TYPE* GetCalibration(UINT8 cmd)
-{
-    switch (cmd)
-    {
-//        case CAL_MOTOR_CMD:
-//            return CalMotor_Start();
-            
-//        case CAL_PID_LEFT_CMD:
-//            return CalPid_Start(WHEEL_LEFT);
-
-//        case CAL_PID_RIGHT_CMD:
-//            return CalPid_Start(WHEEL_RIGHT);
-            
-        case CAL_LINEAR_CMD:
-            return CalLin_Start();
-            
-        case CAL_ANGULAR_CMD:
-            return CalAng_Start();
-            
-        default:
-            // Do nothing
-            break;
-    }
-    
-    return (CALVAL_INTERFACE_TYPE *) 0;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: GetValidation
- * Description: Gets the validation specified by command
- * Parameters: cmd - the requested validation.
- * Return: the specified validation type; otherwise, NULL.
- * 
- *-------------------------------------------------------------------------------------------------*/
-static CALVAL_INTERFACE_TYPE* GetValidation(UINT8 cmd)
-{
-    switch (cmd)
-    {
-//        case VAL_MOTOR_CMD:
-//            Ser_PutString("\r\nPerforming Motor Validation by operating the motors at varying velocities.\r\n");
-//            return ValMotor_Start();
-
-        case VAL_PID_CMD:
-            Ser_PutString("\r\nCommand not supported\r\n");
-            DisplayMenu(CAL_VALIDATE_STAGE);            
-            break;
-            
-        case VAL_PID_LEFT_FWD_CMD:
-            Ser_PutString("\r\nPerforming Left PID validation in the forward direction.\r\n");
-            //return ValPid_Start(VAL_PID_LEFT_FORWARD);
-
-        case VAL_PID_LEFT_BWD_CMD:
-            Ser_PutString("\r\nPerforming Left PID validation in the backward direction.\r\n");
-            //return ValPid_Start(VAL_PID_LEFT_BACKWARD);
-
-        case VAL_PID_RIGHT_FWD_CMD:
-            Ser_PutString("\r\nPerforming Right PID validation in the forward direction.\r\n");
-            //return ValPid_Start(VAL_PID_RIGHT_FORWARD);
-
-        case VAL_PID_RIGHT_BWD_CMD:
-            Ser_PutString("\r\nPerforming Right PID validation in the backward direction.\r\n");
-            //return ValPid_Start(VAL_PID_RIGHT_BACKWARD);
-                       
-        case VAL_LINEAR_FWD_CMD:
-            Ser_PutString("\r\nPerforming straight line validation in the forward direction.\r\n");
-            return ValLin_Start(DIR_FORWARD);
-                
-        case VAL_LINEAR_BWD_CMD:
-            Ser_PutString("\r\nPerforming straight line validation in the backward direction.\r\n");
-            return ValLin_Start(DIR_BACKWARD);
-            
-        case VAL_ANGULAR_CW_CMD:
-            Ser_PutString("\r\nPerforming rotation validation in the clockwise direction.\r\n");
-            return ValAng_Start(DIR_CW);
-
-        case VAL_ANGULAR_CCW_CMD:
-            Ser_PutString("\r\nPerforming rotation validation in the counter clockwise direction.\r\n");
-            return ValAng_Start(DIR_CCW);
-
-        default:
-            //Ser_PutStringFormat("\r\nUnknown command: %c\r\n", cmd);
-            // Do nothing
-            break;
-
-    }
-    
-    return (CALVAL_INTERFACE_TYPE *) 0;
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: HandleError
- * Description: Prints an error message to the serial for the specified calibration/validation
- * Parameters: None
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-static void HandleError()
-{
-    /* Maybe more can go here, but for now, just print an error */
-    
-    Ser_PutStringFormat("Error processing stage %s, state %s\r\n", CAL_STAGE_TO_STRING(active_calval->stage), CAL_STATE_TO_STRING(active_calval->state));
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: Process
- * Description: The main routine for processing a calibration/validation.  Each calibration/validation 
- *              module provides a common function interface: init, start, update, stop, results. 
- * Parameters: None
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-static void Process()
-{
-    UINT8 result;
-
-    switch (active_calval->state)
-    {
-        case CAL_INIT_STATE:
-            result = active_calval->init();
-            if (result == CAL_OK)
-            {
-                active_calval->state = CAL_START_STATE;
-            }
-            else
-            {
-                HandleError();
-            }
-            break;
-            
-        case CAL_START_STATE:
-            result = active_calval->start();
-            if (result == CAL_OK)
-            {
-                active_calval->state = CAL_RUNNING_STATE;
-            }
-            else
-            {
-                HandleError();
-            }
-            break;
-            
-        case CAL_RUNNING_STATE:
-            result = active_calval->update();
-            if (result == CAL_COMPLETE)
-            {
-                active_calval->state = CAL_STOP_STATE;
-            }
-            else if (result == CAL_OK)
-            {
-                /* Figure out how to output a progress indication ... that will work for all calibration/validation */
-            }
-            else
-            {
-                HandleError();
-            }
-            break;
-            
-        case CAL_STOP_STATE:
-            result =active_calval->stop();
-            if (result == CAL_OK)
-            {
-                active_calval->state = CAL_RESULTS_STATE;
-            }
-            else
-            {
-                HandleError();
-            }
-            break;
-            
-        case CAL_RESULTS_STATE:
-            result = active_calval->results();
-            if (result == CAL_OK)
-            {
-                active_calval->state = CAL_DONE_STATE;                
-            }
-            else
-            {
-                HandleError();
-            }
-            break;
-            
-        case CAL_DONE_STATE:
-        default:
-            DisplayMenu(active_calval->stage);
-            active_calval = (CALVAL_INTERFACE_TYPE *) 0;
-            break;
-    }
-}
-
 
 /*----------------------------------------------------------------------------------------------------------------------
  * Module Interface Routines
@@ -1016,10 +422,6 @@ void Cal_Init()
     Cal_LeftTarget = LeftTarget;
     Cal_RightTarget = RightTarget;
     
-    //CalMotor_Init(WHEEL_LEFT, 3);
-    //ValMotor_Init();
-    //CalPid_Init();
-    //ValPid_Init();
     CalLin_Init();
     CalAng_Init();
 }
@@ -1042,156 +444,40 @@ void Cal_Start()
 }
 
 /*---------------------------------------------------------------------------------------------------
- * Name: Cal_Update
- * Description: Called from the main loop to process calibration/validation. 
- * Parameters: None
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-void Cal_Update()
-{
-    UINT8 cmd = NULL_CMD;
-    
-    switch (ui_state)
-    {
-        case UI_STATE_INIT:
-            {        
-                cmd = GetCommand(CMD_TOP_LEVEL);
-                
-                switch (cmd)
-                {
-                    case CAL_REQUEST:
-                        DisplayCalMenu();
-                        ui_state = UI_STATE_CALIBRATION;
-                        break;
-                    
-                    case VAL_REQUEST:
-                        DisplayValMenu();
-                        ui_state = UI_STATE_VALIDATION;
-                        break;
-                    
-                    case SETTING_REQUEST:
-                        DisplaySettingsMenu();
-                        ui_state = UI_STATE_SETTINGS;
-                        break;
-
-                    /* Handles error case for serial input failure or invalid input for specified menu */
-                    default:
-                        ui_state = UI_STATE_INIT;
-                        break;
-                }
-                break;
-            }
-            break;
-        
-        case UI_STATE_CALIBRATION:
-        case UI_STATE_VALIDATION:
-            {
-                /* Don't get a command unless there is no activate calibration/validation */
-                if (!active_calval)
-                {
-                    UINT8 cal_val = (ui_state == UI_STATE_CALIBRATION) ? CMD_CALIBRATION : CMD_VALIDATION;
-                    cmd = GetCommand(cal_val);
-                    
-                    switch (cmd)
-                    {
-                        case NULL_CMD:
-                            /* If cmd is NULL_CMD then
-                                we are waiting for an entry or there is a serial problem
-                                either way, don't process null commands
-                            */
-                            break;
-                        
-                        case EXIT_CMD:
-                            ui_state = UI_STATE_EXIT;
-                            break;
-                        
-                        default:
-                            active_calval = (ui_state == UI_STATE_CALIBRATION) ? GetCalibration(cmd) : GetValidation(cmd);
-                            break;
-                    }
-                }
-
-                /* Always process an activate calibration/validation */   
-                if (active_calval)
-                {
-                    Process();
-                    
-                    /* Process will set active_calval to NULL upon completion and redisplay the menu */
-                }    
-            }
-            break;
-        
-        case UI_STATE_SETTINGS:
-            cmd = GetCommand(CMD_SETTINGS);
-            
-            switch (cmd)
-            {
-                case NULL_CMD:
-                    /* If cmd is NULL_CMD then
-                        we are waiting for an entry or there is a serial problem
-                        either way, don't process null commands
-                    */
-                    break;
-
-                case EXIT_CMD:
-                    ui_state = UI_STATE_EXIT;
-                    break;
-                
-                
-                /* Perform processing 
-                      Note: Display menu is handled within ProcessSettingsCmd
-                 */
-                default:
-                    ProcessSettingsCmd(cmd);
-                    break;
-            }
-            break;
-                
-        case UI_STATE_EXIT:
-            DisplayExit();
-            Control_OverrideDebug(FALSE);
-            ui_state = UI_STATE_INIT;
-            break;
-            
-        default:
-            ui_state = UI_STATE_INIT;                
-            break;
-    }
-    
-}
-
-/*---------------------------------------------------------------------------------------------------
  * Name: Cal_ReadResponse
- * Description: Read a floating point value from the serial port.
+ * Description: Reads a line of text from the the serial port.
  *              NOTE: This a blocking call and should only be used it is known not to impact other
  *              module updates.   The serial module update is kicked to keep the connection alive.
  * Parameters: None
  * Return: None
  * 
  *-------------------------------------------------------------------------------------------------*/
-int Cal_ReadResponse(CHAR * const digits, BOOL echo, UINT8 max_length)
+INT16 Cal_ReadResponse(CHAR * const digits, BOOL echo, UINT8 max_length)
 {
-    int result;
+    INT16 result;
+
+    REQUIRE(digits != NULL);
 
     do
     {
-        USBIF_Update();
+        ConSer_Update();
     
-        result = Ser_ReadLine(digits, echo, max_length);
+        result = ConSer_ReadLine(digits, echo, max_length);
         if (result >= 0)
         {
             break;
         }
     } while (result < 1);
+
+    ENSURE(in_range(result, -1, MAX_STRING_LENGTH));
     
     return result;
 }
 
 FLOAT Cal_ReadResponseFloat()
 {
-    static char digits[10] = {0};
-    int result;
+    CHAR digits[10] = {0};
+    INT16 result;
 
     result = Cal_ReadResponse(digits, TRUE, 10);
     if (result > 0)
@@ -1204,8 +490,8 @@ FLOAT Cal_ReadResponseFloat()
 
 UINT8 Cal_ReadResponseReturn()
 {
-    static char digits[10] = {0};
-    int result;
+    CHAR digits[10] = {0};
+    INT16 result;
 
     result = Cal_ReadResponse(digits, TRUE, 10);
     if (result == 0)
@@ -1219,7 +505,7 @@ UINT8 Cal_ReadResponseReturn()
 CHAR Cal_ReadResponseChar()
 {
     CHAR chars[2] = {'0'};
-    int result;
+    INT16 result;
 
     result = Cal_ReadResponse(chars, TRUE, 10);
     if (result > 0)
@@ -1232,18 +518,16 @@ CHAR Cal_ReadResponseChar()
 
 FLOAT Cal_ReadResponseWithDefault(FLOAT dflt)
 {
-    static char digits[10] = {0};
-    int result;
+    CHAR digits[10] = {0};
+    INT16 result;
 
     result = Cal_ReadResponse(digits, TRUE, 10);
     if (result > 0)
     {
         return atof((char *) digits);
     }
-    else
-    {
-        return dflt;
-    }
+    
+    return dflt;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -1253,27 +537,27 @@ FLOAT Cal_ReadResponseWithDefault(FLOAT dflt)
  * Return: pointer to CAL_PID_TYPE
  * 
  *-------------------------------------------------------------------------------------------------*/
-CAL_PID_TYPE* Cal_GetPidGains(PID_ENUM_TYPE pid)
+CAL_PID_PTR_TYPE Cal_GetPidGains(PID_ENUM_TYPE pid)
 {
     switch (pid)
     {
         case PID_TYPE_LEFT:
-            return (CAL_PID_TYPE *) &p_cal_eeprom->left_gains;
+            return (CAL_PID_PTR_TYPE) &p_cal_eeprom->left_gains;
 
         case PID_TYPE_RIGHT:
-            return (CAL_PID_TYPE *) &p_cal_eeprom->right_gains;        
+            return (CAL_PID_PTR_TYPE) &p_cal_eeprom->right_gains;        
 
         case PID_TYPE_LINEAR:
-            return (CAL_PID_TYPE *) &p_cal_eeprom->linear_gains;        
+            return (CAL_PID_PTR_TYPE) &p_cal_eeprom->linear_gains;        
 
         case PID_TYPE_ANGULAR:
-            return (CAL_PID_TYPE *) &p_cal_eeprom->angular_gains;
+            return (CAL_PID_PTR_TYPE) &p_cal_eeprom->angular_gains;
             
         default:
-            return (CAL_PID_TYPE *) NULL;
+            return (CAL_PID_PTR_TYPE) NULL;
     }
     
-    return (CAL_PID_TYPE *) NULL;
+    return (CAL_PID_PTR_TYPE) NULL;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -1303,29 +587,33 @@ PWM_TYPE Cal_CpsToPwm(WHEEL_TYPE wheel, FLOAT cps)
 {
     static UINT8 send_once = 0;
     PWM_TYPE pwm;
-    
-    
+    CONST_CAL_DATA_PTR_TYPE p_cal_data;
+
+    REQUIRE(wheel == WHEEL_LEFT || wheel == WHEEL_RIGHT);
+    REQUIRE(in_range_float(cps, -MAX_WHEEL_COUNT_PER_SECOND, MAX_WHEEL_COUNT_PER_SECOND));
+
     pwm = PWM_STOP;
     
     /* The conversion from CPS to PWM is valid only when calibration has been performed */
     
     if (Cal_GetCalibrationStatusBit(CAL_MOTOR_BIT))
-    {
-    
-        CAL_DATA_TYPE *p_cal_data = WHEEL_DIR_TO_CAL_DATA[wheel][cps >= 0 ? 0 : 1];
-        
+    {    
+        p_cal_data = (CONST_CAL_DATA_PTR_TYPE) WHEEL_DIR_TO_CAL_DATA[wheel][cps >= 0 ? DIR_FORWARD : DIR_BACKWARD];
+        //REQUIRE(in_range_float(cps, p_cal_data->cps_min, p_cal_data->cps_max));    
         cps = constrain((INT16) cps, p_cal_data->cps_min, p_cal_data->cps_max);
-        pwm = CpsToPwm((INT16) cps, &p_cal_data->cps_data[0], &p_cal_data->pwm_data[0], CAL_DATA_SIZE);
+        pwm = CpsToPwm((INT16) cps, (INT16 *) &p_cal_data->cps_data[0], (UINT16 *) &p_cal_data->pwm_data[0], CAL_DATA_SIZE);
     }
     else
     {
         if (!send_once)
         {
-            Ser_PutString("Motor calibration status not set\r\n");
+            ConSer_WriteLine(FALSE, "Motor calibration status not set");
             send_once = 1;
         }
     }
     
+    ENSURE(in_range(pwm, MIN_PWM_VALUE, MAX_PWM_VALUE));
+
     return pwm;
 }
 
@@ -1350,6 +638,12 @@ void Cal_CalcForwardOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT*
     INT16 right_forward_cps_max;
     INT16 forward_cps_max;
 
+    REQUIRE(start != NULL);
+    REQUIRE(stop != NULL);
+    REQUIRE(in_range_float(low_percent, 0.0, 1.0));
+    REQUIRE(in_range_float(high_percent, 0.0, 1.0));
+    REQUIRE(low_percent < high_percent);
+
     /* Get the min/max forward values for each motor */
     left_forward_cps_max = WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_FORWARD]->cps_max;
     right_forward_cps_max = WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_FORWARD]->cps_max;
@@ -1363,6 +657,8 @@ void Cal_CalcForwardOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT*
     *start = tmp_start;
     *stop = tmp_stop;
 
+    ENSURE(in_range_float(*start, 0, forward_cps_max));
+    ENSURE(in_range_float(*stop, 0, forward_cps_max));
 }
 
 void Cal_CalcBackwardOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT* const start, FLOAT* const stop)
@@ -1373,9 +669,15 @@ void Cal_CalcBackwardOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT
     INT16 right_backward_cps_max;
     INT16 backward_cps_max;
 
+    REQUIRE(start != NULL);
+    REQUIRE(stop != NULL);
+    REQUIRE(in_range_float(low_percent, 0.0, 1.0));
+    REQUIRE(in_range_float(high_percent, 0.0, 1.0));
+    REQUIRE(low_percent < high_percent);
+
     /* Get the min/max forward values for each motor */
-    left_backward_cps_max = p_cal_eeprom->left_motor_bwd.cps_min;
-    right_backward_cps_max = p_cal_eeprom->right_motor_bwd.cps_min;
+    left_backward_cps_max = WHEEL_DIR_TO_CAL_DATA[WHEEL_LEFT][DIR_BACKWARD]->cps_min;
+    right_backward_cps_max = WHEEL_DIR_TO_CAL_DATA[WHEEL_RIGHT][DIR_BACKWARD]->cps_min;
 
     /* Select the min of the max */
     backward_cps_max = min(left_backward_cps_max, right_backward_cps_max);
@@ -1385,6 +687,9 @@ void Cal_CalcBackwardOperatingRange(FLOAT low_percent, FLOAT high_percent, FLOAT
 
     *start = tmp_start;
     *stop = tmp_stop;
+
+    ENSURE(in_range_float(*start, backward_cps_max, 0));
+    ENSURE(in_range_float(*stop, backward_cps_max, 0));
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -1409,7 +714,11 @@ void Cal_CalcTriangularProfile(UINT8 num_points, FLOAT lower_limit, FLOAT upper_
     FLOAT stop;
     int ii;
 
-    ASSERTION(num_points % 2 != 0, "num_points is even");
+    REQUIRE(num_points % 2 != 0);
+    REQUIRE(in_range(lower_limit, 0.0, 1.0));
+    REQUIRE(in_range(upper_limit, 0.0, 1.0));
+    REQUIRE(forward_profile != NULL);
+    REQUIRE(backward_profile != NULL);
 
     for (ii = 0; ii < num_points; ++ii)
     {
@@ -1429,7 +738,8 @@ void Cal_CalcTriangularProfile(UINT8 num_points, FLOAT lower_limit, FLOAT upper_
     }
     else
     {
-        Ser_PutString("\r\nMotor calibration not done\r\n");
+        ConSer_WriteLine(TRUE, "");
+        ConSer_WriteLine(TRUE, "Motor calibration not done");
     }
 }
 
@@ -1478,12 +788,14 @@ FLOAT Cal_GetAngularBias()
  *-------------------------------------------------------------------------------------------------*/
 void Cal_SetLinearBias(FLOAT bias)
 {
+    REQUIRE(in_range_float(bias, CAL_LINEAR_BIAS_MIN, CAL_LINEAR_BIAS_MAX));
     bias = constrain(bias, CAL_LINEAR_BIAS_MIN, CAL_LINEAR_BIAS_MAX);
     Nvstore_WriteFloat(bias, LINEAR_BIAS_OFFSET);
 }
 
 void Cal_SetAngularBias(FLOAT bias)
 {
+    REQUIRE(in_range_float(bias, CAL_ANGULAR_BIAS_MIN, CAL_ANGULAR_BIAS_MAX));
     bias = constrain(bias, CAL_ANGULAR_BIAS_MIN, CAL_ANGULAR_BIAS_MAX);
     Nvstore_WriteFloat(bias, ANGULAR_BIAS_OFFSET);
 }
@@ -1496,6 +808,9 @@ UINT16 Cal_GetStatus()
 
 void Cal_SetGains(PID_ENUM_TYPE pid, FLOAT* const gains)
 {
+    REQUIRE(pid == PID_TYPE_LEFT || pid == PID_TYPE_RIGHT);
+    REQUIRE(gains != NULL);
+
     switch (pid)
     {
         case PID_TYPE_LEFT:
@@ -1521,13 +836,18 @@ void Cal_SetGains(PID_ENUM_TYPE pid, FLOAT* const gains)
 
 void Cal_SetMotorData(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *data)
 {
+    REQUIRE(wheel == WHEEL_LEFT || wheel == WHEEL_RIGHT);
+    REQUIRE(data != NULL);
+
     /* Write the calibration to non-volatile storage */
     Nvstore_WriteBytes((UINT8 *) data, sizeof(*data), MOTOR_DATA_OFFSET(wheel, dir));
 }
 
-CAL_DATA_TYPE* Cal_GetMotorData(WHEEL_TYPE wheel, DIR_TYPE dir)
+CONST_CAL_DATA_CONST_PTR_TYPE Cal_GetMotorData(WHEEL_TYPE wheel, DIR_TYPE dir)
 {
-    return WHEEL_DIR_TO_CAL_DATA[wheel][dir];
+    REQUIRE(wheel == WHEEL_LEFT || wheel == WHEEL_RIGHT);
+    REQUIRE(dir == DIR_FORWARD || dir == DIR_BACKWARD);
+    return (CONST_CAL_DATA_CONST_PTR_TYPE) WHEEL_DIR_TO_CAL_DATA[wheel][dir];
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -1566,6 +886,47 @@ FLOAT Cal_CalcMaxCps()
     max_leftright_pid = min(LEFTPID_MAX, RIGHTPID_MAX);
 
     return min(max_leftright_cps, max_leftright_pid);
+}
+
+void Cal_PrintParams(BOOL as_json)
+{
+    REQUIRE(as_json == FALSE);
+
+    ConSer_WriteLine(TRUE, "----------- Physical Characteristics -----------");
+    ConSer_WriteLine(TRUE, "Track Width         : %.4f meter", TRACK_WIDTH);
+    ConSer_WriteLine(TRUE, "Wheel Radius        : %.4f meter", WHEEL_RADIUS);
+    ConSer_WriteLine(TRUE, "Wheel Diameter      : %.4f meter", WHEEL_DIAMETER);
+    ConSer_WriteLine(TRUE, "Wheel Circumference : %.4f meter", WHEEL_CIRCUMFERENCE);
+    ConSer_WriteLine(TRUE, "Wheel Max Rotation  : %2.0f RPM", MAX_WHEEL_RPM);
+    ConSer_WriteLine(TRUE, "Wheel Encoder Tick  : %d tick/rev", WHEEL_ENCODER_TICK_PER_REV);
+    ConSer_WriteLine(TRUE, "Wheel Encoder Count : %d count/rev", WHEEL_COUNT_PER_REV);
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "------------ Wheel Rates -----------");
+    ConSer_WriteLine(TRUE, "Wheel (meter/count)   : %.4f", WHEEL_METER_PER_COUNT);
+    ConSer_WriteLine(TRUE, "Wheel (radian/count)  : %.4f", WHEEL_RADIAN_PER_COUNT);            
+    ConSer_WriteLine(TRUE, "Wheel (radian/second) : %.4f", MAX_WHEEL_RADIAN_PER_SECOND);
+    ConSer_WriteLine(TRUE, "Wheel (count/meter)   : %.4f", WHEEL_COUNT_PER_METER);
+    ConSer_WriteLine(TRUE, "Wheel (count/radian)  : %.4f", WHEEL_COUNT_PER_RADIAN);
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "---------------------------- Wheel Maxes ---------------------------");
+    ConSer_WriteLine(TRUE, "Wheel Forward Max  : %.4f meter/second", MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
+    ConSer_WriteLine(TRUE, "Wheel Forward Max  : %.4f count/second", MAX_WHEEL_FORWARD_COUNT_PER_SEC);
+    ConSer_WriteLine(TRUE, "Wheel Backward Max : %.4f meter/second", MAX_WHEEL_BACKWARD_LINEAR_VELOCITY);
+    ConSer_WriteLine(TRUE, "Wheel Backward Max : %.4f count/second", MAX_WHEEL_BACKWARD_COUNT_PER_SEC);
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "Wheel CW Max       : %.4f radian/second", MAX_WHEEL_CW_ANGULAR_VELOCITY);
+    ConSer_WriteLine(TRUE, "Wheel CW Max       : %.4f count/second", MAX_WHEEL_CW_COUNT_PER_SEC);
+    ConSer_WriteLine(TRUE, "Wheel CCW Max      : %.4f radian/second", MAX_WHEEL_CCW_ANGULAR_VELOCITY);
+    ConSer_WriteLine(TRUE, "Wheel CCW Max      : %.4f count/second", MAX_WHEEL_CCW_COUNT_PER_SEC);
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "---------------------------- Robot Max ---------------------------");
+    ConSer_WriteLine(TRUE, "Robot Max Rotation : %.4f RPM", MAX_ROBOT_RPM);
+    ConSer_WriteLine(TRUE, "Robot Rotation     : %.4f meter/rev", ROBOT_METER_PER_REV);
+    ConSer_WriteLine(TRUE, "Robot Rotation     : %.4f count/rev", ROBOT_COUNT_PER_REV);
+    ConSer_WriteLine(TRUE, "Robot Forward Max  : %.4f meter/second", MAX_WHEEL_FORWARD_LINEAR_VELOCITY);
+    ConSer_WriteLine(TRUE, "Robot Backward Max : %.4f meter/second", MAX_WHEEL_BACKWARD_LINEAR_VELOCITY);
+    ConSer_WriteLine(TRUE, "Robot CW Max       : %.4f radian/second", MAX_ROBOT_CW_RADIAN_PER_SECOND);
+    ConSer_WriteLine(TRUE, "Robot CCW Max      : %.4f radian/second", MAX_ROBOT_CCW_RADIAN_PER_SECOND);
 }
 
 /*-------------------------------------------------------------------------------*/

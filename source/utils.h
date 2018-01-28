@@ -58,6 +58,9 @@ SOFTWARE.
 #define compare_float(f1, f2, precision) (equal_float(f1, f2, precision) ? 0 : (lessthan_float(f1, f2, precision) ? -1 : 1))
 #define in_range_float(value, lower, upper) (greaterthan_float(value, lower, FLOAT_PRECISION) ? (lessthan_float(value, upper, FLOAT_PRECISION) ? TRUE : FALSE) : FALSE)
 
+#define is_power_of_two(mask) (((mask & (mask - 1)) == 0) ? TRUE : FALSE)
+#define is_set(mask) (mask != 0 ? TRUE : FALSE)
+
 // Scale X -> Y
 //    X          Y
 //  -----    = -----  => y = x * y range / x range
@@ -141,7 +144,7 @@ void Uint16ToTwoBytes(UINT16 value, UINT8* const bytes);
 void FloatToFourBytes(FLOAT value, UINT8* const bytes);
 
 void BinaryRangeSearch(INT16 search, INT16* const data_points, UINT8 num_points, UINT8* const lower_index, UINT8* const upper_index);
-INT16 Interpolate(INT16 x, INT16 x1, INT16 x2, UINT16 y1, UINT16 y2);
+INT32 Interpolate(INT32 x, INT32 x1, INT32 x2, INT32 y1, INT32 y2);
 
 void UniToDiff(FLOAT linear, FLOAT angular, FLOAT* const left, FLOAT* const right);
 void DiffToUni(FLOAT left, FLOAT right, FLOAT* const linear, FLOAT* const angular);
@@ -161,6 +164,8 @@ FLOAT CalcMaxDiffVelocity();
 
 CHAR * const WheelToString(WHEEL_TYPE wheel, FORMAT_TYPE format);
 CHAR * format_string(CHAR *str, FORMAT_TYPE format);
+
+UINT32 GetRandomValue(UINT32 start, UINT32 end);
 
 #endif
 

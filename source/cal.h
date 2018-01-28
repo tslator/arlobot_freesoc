@@ -178,7 +178,7 @@ typedef struct _angular_params
 void Cal_Init();
 void Cal_Start();
 void Cal_Update();
-int Cal_ReadResponse(CHAR * const digits, BOOL echo, UINT8 max_length);
+INT16 Cal_ReadResponse(CHAR * const digits, BOOL echo, UINT8 max_length);
 FLOAT Cal_ReadResponseFloat();
 CHAR Cal_ReadResponseChar();
 UINT8 Cal_ReadResponseReturn();
@@ -196,8 +196,8 @@ void Cal_PrintLeftMotorParams(BOOL as_json);
 void Cal_PrintRightMotorParams(BOOL as_json);
 void Cal_PrintAllMotorParams(BOOL as_json);
 void Cal_PrintMotorParams(WHEEL_TYPE wheel, BOOL as_json);
-void Cal_PrintSamples(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE* const cal_data, UINT8 as_json);
-void Cal_PrintPidGains(WHEEL_TYPE wheel, FLOAT* const gains, UINT8 as_json);
+void Cal_PrintSamples(WHEEL_TYPE wheel, DIR_TYPE dir, CONST_CAL_DATA_CONST_PTR_TYPE cal_data, UINT8 as_json);
+void Cal_PrintPidGains(WHEEL_TYPE wheel, FLOAT const * const gains, UINT8 as_json);
 void Cal_PrintLeftPidGains(BOOL as_json);
 void Cal_PrintRightPidGains(BOOL as_json);
 void Cal_PrintAllPidGains(BOOL as_json);
@@ -216,13 +216,15 @@ CAL_PID_TYPE* Cal_GetPidGains(PID_ENUM_TYPE pid);
 UINT16 Cal_GetStatus();
 void Cal_PrintStatus(UINT8 as_json);
 void Cal_SetGains(PID_ENUM_TYPE pid, FLOAT* const gains);
-CAL_DATA_TYPE* Cal_GetMotorData(WHEEL_TYPE wheel, DIR_TYPE dir);
+CONST_CAL_DATA_CONST_PTR_TYPE Cal_GetMotorData(WHEEL_TYPE wheel, DIR_TYPE dir);
 
 void Cal_SetAngularBias(FLOAT bias);
 void Cal_SetLinearBias(FLOAT bias);
 void Cal_SetMotorData(WHEEL_TYPE wheel, DIR_TYPE dir, CAL_DATA_TYPE *data);
 
 FLOAT Cal_CalcMaxCps();
+
+void Cal_PrintParams(BOOL as_json);
 #endif
 
 /* [] END OF FILE */

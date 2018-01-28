@@ -35,7 +35,6 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/
 #include "freesoc.h"
 #include "config.h"
-#include "serial.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -75,32 +74,27 @@ SOFTWARE.
     
 char formatted_string[256];
 
-#define NONE    0x00
-#define DBG     0x1F
-#define INFO    0x0F
-#define ERR     0x07
-#define EMR     0x03
-#define CRIT    0x01
+#define DBG_NONE    0x00
+#define DBG_DBG     0x10
+#define DBG_INFO    0x02
+#define DBG_ERR     0x03
+#define DBG_EMR     0x04
+#define DBG_CRIT    0x02
 
-#define DEBUG_LEVEL ERR
-
-#define WHERESTR "[FILE : %s, FUNC : %s, LINE : %d]: "
-#define WHEREARG __FILE__,__func__,__LINE__
 #define INSIDE_DEBUG_DETAIL(...)    do {                                                                \
                                     snprintf(formatted_string, sizeof(formatted_string), __VA_ARGS__);  \
-                                    Ser_PutString(formatted_string);                                    \
+                                    Debug_Print(THIS_FILE__, __func__, __LINE__, formatted_string);                                    \
                                     } while (0)
 
-#define INSIDE_DEBUG(...)           do {                                                                     \
-                                    snprintf(formatted_string, sizeof(formatted_string), __VA_ARGS__);  \
-                                    Ser_PutString(formatted_string);                                    \
-                                    } while (0)                                
-    
-#define DEBUG_PRINT_STR(_fmt)               INSIDE_DEBUG(_fmt)
-#define DEBUG_PRINT_ARG(_fmt, ...)          INSIDE_DEBUG(_fmt, __VA_ARGS__)
-#define DEBUG_PRINT_LINEFILE(_fmt, ...)     INSIDE_DEBUG_DETAIL(WHERESTR _fmt, WHEREARG,__VA_ARGS__)
-#define DEBUG_PRINT_LEVEL(X, _fmt, ...)     if((DEBUG_LEVEL & X) == X) \
-                                                INSIDE_DEBUG_DETAIL(WHERESTR _fmt, WHEREARG,__VA_ARGS__)
+#define DEBUG_PRINT_LEVEL(level, msg, ...)  if((Debug_GetLevel() & level) == level) \
+                                                INSIDE_DEBUG_DETAIL(msg, ##__VA_ARGS__)
+
+#define DEBUG_PRINT_DBG(msg, ...) DEBUG_PRINT_LEVEL(DBG_DBG, msg, ##__VA_ARGS__)
+#define DEBUG_PRINT_INFO(msg, ...) DEBUG_PRINT_LEVEL(DBG_INFO, msg, ##__VA_ARGS__)
+#define DEBUG_PRINT_ERR(msg, ...) DEBUG_PRINT_LEVEL(DBG_ERR, msg, ##__VA_ARGS__)
+#define DEBUG_PRINT_EMR(msg, ...) DEBUG_PRINT_LEVEL(DBG_EMR, msg, ##__VA_ARGS__)
+#define DEBUG_PRINT_CRIT(msg, ...) DEBUG_PRINT_LEVEL(DBG_CRIT, msg, ##__VA_ARGS__)
+
 
 
 /*
@@ -154,14 +148,19 @@ char formatted_string[256];
  *-------------------------------------------------------------------------------------------------*/    
 void Debug_Init();
 void Debug_Start();
-void Debug_Enable(UINT16 flag);
-void Debug_Disable(UINT16 flag);
-UINT16 Debug_IsEnabled(UINT16 flag);
+void Debug_Enable(UINT8 flag);
+void Debug_Disable(UINT8 flag);
+UINT8 Debug_IsEnabled(UINT8 flag);
 void Debug_EnableAll();
 void Debug_DisableAll();
 void Debug_Store();
 void Debug_Restore();
 UINT16 Debug_GetMask();
+void Debug_Update(UINT8 bits);
+void Debug_SetLevel(UINT8 level);
+UINT8 Debug_GetLevel();
+void Debug_Print(CHAR const * const file, CHAR const * const func, UINT16 line, CHAR const * const msg, ...);
+
 
 #endif
 

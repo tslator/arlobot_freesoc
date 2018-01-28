@@ -1,15 +1,11 @@
 Arlobot Console
 
 Usage:
-    console motor --left-speed=<speed> [--duration=<duration>] [--no-pid] [--no-accel] [--no-control]
-    console motor --right-speed=<speed> [--duration=<duration>] [--no-pid] [--no-accel] [--no-control]
-    console motor (--left-speed=<speed> --right-speed=<speed>) [--duration=<duration>] [--no-pid] [--no-accel] [--no-control]
-    console motor rep --first=<speed> --second=<speed> --interval=<interval> --iters=<iters>  [--no-pid] [--no-accel] [--no-control]
-    console motor rep left --first=<speed> --second=<speed> --interval=<interval> --iters=<iters>  [--no-pid] [--no-accel] [--no-control]
-    console motor rep right --first=<speed> --second=<speed> --interval=<interval> --iters=<iters> [--no-pid] [--no-accel] [--no-control]
-    console motor show [left|right] [--plain-text]
-    console motor cal [left|right] [--iters=<iters>] [--with-debug]
-    console motor val [left|right] (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]
+    console motor (--left-speed=<speed> | --right-speed=<speed> | --left-speed=<speed> --right-speed=<speed>) [--duration=<duration>] [--no-pid] [--no-accel] [--no-control]
+    console motor rep [(left|right|left right)] --first=<speed> --second=<speed> --interval=<interval> --iters=<iters>  [--no-pid] [--no-accel] [--no-control]
+    console motor show [(left|right|left right)] [--plain-text]
+    console motor cal [(left|right|left right)] [--iters=<iters>] [--no-debug]
+    console motor val [(left|right|left right)] (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]
     console motor help
     console pid cal (set|clear) [--step=<step>] [--interactive] [--no-debug] [--load-gains]
     console pid cal (left|right) [--impulse] [--step=<step>] [--iters=<iters>]
@@ -25,7 +21,7 @@ Usage:
     console motion cal linear [--linear-speed=<speed>] [--distance=<distance>]
     console motion cal angular [--angular-speed=<speed>] [--angle=<angle>]
     console motion cal umbmark [--linear-speed=<speed>] [--distance=<distance>]
-    console motion val linear [--linear-speed=<speed>] [--distance=<distance>] [--angular-speed] [--angle=<angle>]
+    console motion val linear [--linear-speed=<speed>] [--distance=<distance>] [--angular-speed=<speed>] [--angle=<angle>]
     console motion val angular [--angular-speed=<speed>] [--angle=<angle>]
     console motion val square (left|right) [--side=<side>] [--linear-speed=<speed>] [--angular-speed=<speed>]
     console motion val circle (cw|ccw) [--radius=<radius>] [--angular-speed=<speed>]
@@ -35,10 +31,10 @@ Usage:
     
 
 Options:
-    -l --left-speed=<speed>     Speed of the left motor (meter/second)
-    -r --right-speed=<speed>    Speed of the right motor (meter/second)
+    -l --left-speed=<speed>     Speed of the left motor (meter/second) [default: 0.2]
+    -r --right-speed=<speed>    Speed of the right motor (meter/second) [default: 0.2]
     -d --duration=<duration>    Duration in seconds [default: 5]
-    -m --mask=<mask>            Bitmap of debug flags
+    -k --mask=<mask>            Bitmap of debug flags
     -p --plain-text             Display output as plain text (default is JSON)
     -w --no-debug               Enable PID debug output
     -i --impulse                Enable impulse response
@@ -48,11 +44,11 @@ Options:
     -e --step=<step>            Percentage of maximum speed to use for step response [default: 0.8]
     -a --radius=<radius>        Radius of the circle [default: 0.0]
     -h --side=<side>            Side of the square [default: 1.0]
-    -n --min-percent=<percent>  Minimum value for profile range specified in percent of maximum speed [default: 0.2]
+    -m --min-percent=<percent>  Minimum value for profile range specified in percent of maximum speed [default: 0.2]
     -x --max-percent=<percent>  Maximum value for profile range specified in percent of maximum speed [default: 0.8]
     -f --first=<speed>          First speed of the cycle
     -o --second=<speed>         Second speed of the cycle
     -v --interval=<interval>    Time between speed change [default: 10]
     -u --num-points=<points>    Number of velocity values [default: 7]
-    --linear-speed=<speed>      Linear speed of robot [default: 0.3]
-    --angular-speed=<speed>     Angular speed of robot [default: 0.3]
+    -n --linear-speed=<speed>   Linear speed of robot [default: 0.3]
+    -a --angular-speed=<speed>  Angular speed of robot [default: 0.3]

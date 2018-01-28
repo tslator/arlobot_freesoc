@@ -46,6 +46,11 @@ SOFTWARE.
 #include "consts.h"
 
 /*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/
+DEFINE_THIS_FILE;
+
+/*---------------------------------------------------------------------------------------------------
  * Defines
  *-------------------------------------------------------------------------------------------------*/
 
@@ -81,67 +86,6 @@ static FLOAT linear_gain;
 static FLOAT linear_trim;
 
 
-/*---------------------------------------------------------------------------------------------------
- * Name: Update_Debug
- * Description: Enables/Disables debug based on the specified bits.
- * Parameters: bits - contains bits corresponding to the supported debug, e.g., encoder, pid, motor, etc
- *                    1 indicates debug is enabled, 0 indicates debug is disabled
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/ 
-static void Update_Debug(UINT16 bits)
-{
-    if (bits & ENCODER_DEBUG_BIT)
-    {
-        Debug_Enable(DEBUG_LEFT_ENCODER_ENABLE_BIT);
-        Debug_Enable(DEBUG_RIGHT_ENCODER_ENABLE_BIT);
-    }
-    else
-    {
-        Debug_Disable(DEBUG_LEFT_ENCODER_ENABLE_BIT);
-        Debug_Disable(DEBUG_RIGHT_ENCODER_ENABLE_BIT);
-    }
-    
-    if (bits & PID_DEBUG_BIT)
-    {
-        Debug_Enable(DEBUG_LEFT_PID_ENABLE_BIT);
-        Debug_Enable(DEBUG_RIGHT_PID_ENABLE_BIT);
-    }
-    else
-    {
-        Debug_Disable(DEBUG_LEFT_PID_ENABLE_BIT);
-        Debug_Disable(DEBUG_RIGHT_PID_ENABLE_BIT);
-    }
-    
-    if (bits & MOTOR_DEBUG_BIT)
-    {
-        Debug_Enable(DEBUG_LEFT_MOTOR_ENABLE_BIT);
-        Debug_Enable(DEBUG_RIGHT_MOTOR_ENABLE_BIT);
-    }
-    else
-    {
-        Debug_Disable(DEBUG_LEFT_MOTOR_ENABLE_BIT);
-        Debug_Disable(DEBUG_RIGHT_MOTOR_ENABLE_BIT);
-    }
-
-    if (bits & ODOM_DEBUG_BIT)
-    {
-        Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
-    }
-    else
-    {
-        Debug_Disable(DEBUG_ODOM_ENABLE_BIT);
-    }
-    
-    if (bits & SAMPLE_DEBUG_BIT)
-    {
-        Debug_Enable(DEBUG_SAMPLE_ENABLE_BIT);
-    }
-    else
-    {
-        Debug_Disable(DEBUG_SAMPLE_ENABLE_BIT);
-    }
-}
     
 /*---------------------------------------------------------------------------------------------------
  * Name: Control_Init
@@ -222,7 +166,7 @@ void Control_Update()
        is enabled at compile time.  At runtime there are two control points for debug:
     
         1. The control module (this module) where the control interface has a facility to dynamically turning on/off
-           debug.
+           debug and set the debug level
         2. The calibration module where each calibration type controls what debug is enabled.
     
       The debug_override flag defaults to False which allows the control interface to determine what debug is enabled.
@@ -234,7 +178,8 @@ void Control_Update()
     if (!debug_override)
     {
         debug_control = ReadDebugControl();
-        Update_Debug(debug_control);
+        Debug_Update((UINT8)((debug_control & 0xF0) >> 8));
+        Debug_SetLevel((UINT8) (debug_control & 0x0F));
     }
     
     if (device_control & CONTROL_CLEAR_ODOMETRY_BIT)
@@ -389,7 +334,7 @@ FLOAT Control_LeftGetCmdVelocityCps()
 
     velocity = (linear_gain - linear_trim) * left_velocity_cps;
     
-    //Ser_PutStringFormat("Control_LeftGetCmdVelocityCps: %.3f %.3f\r\n", left_velocity_cps, velocity);
+    //DEBUG_PRINT_INFO("Control_LeftGetCmdVelocityCps: %.3f %.3f", left_velocity_cps, velocity);
     return velocity;
 }
 
@@ -406,7 +351,7 @@ FLOAT Control_RightGetCmdVelocityCps()
 
     velocity = (linear_gain + linear_trim) * right_velocity_cps;
     
-    //Ser_PutStringFormat("Control_RightGetCmdVelocityCps: %.3f %.3f\r\n", right_velocity_cps, velocity);
+    //DEBUG_PRINT_INFO("Control_RightGetCmdVelocityCps: %.3f %.3f", right_velocity_cps, velocity);
     return velocity;
 }
 

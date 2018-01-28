@@ -34,11 +34,11 @@ SOFTWARE.
  * Includes
  *-------------------------------------------------------------------------------------------------*/
 #include "freesoc.h"
+#include "consts.h"
     
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/
-#define CAL_NUM_SAMPLES (51)
 #define CAL_DATA_SIZE (CAL_NUM_SAMPLES)    
     
 /*---------------------------------------------------------------------------------------------------
@@ -46,7 +46,7 @@ SOFTWARE.
  *-------------------------------------------------------------------------------------------------*/
  
 
- typedef struct _CAL_DATA_TYPE
+ typedef struct _tag_cal_data_type
 {
     INT16  cps_min;
     INT16  cps_max;
@@ -63,6 +63,11 @@ typedef struct _cal_pid_tag
     FLOAT kf;
     // Note: Total size is 16 bytes, 1 row
 } __attribute__ ((packed)) CAL_PID_TYPE;
+
+typedef CAL_PID_TYPE * CAL_PID_PTR_TYPE;
+typedef CAL_DATA_TYPE * const CAL_DATA_CONST_PTR_TYPE;
+typedef CAL_DATA_TYPE const * CONST_CAL_DATA_PTR_TYPE;
+typedef CAL_DATA_TYPE const * const CONST_CAL_DATA_CONST_PTR_TYPE;
 
 typedef struct _eeprom_tag
 {

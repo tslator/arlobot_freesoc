@@ -35,9 +35,12 @@ SOFTWARE.
 #include "time.h"
 #include "utils.h"
 #include "config.h"
-#include "consts.h"
-#include "assertion.h"
 #include "serial.h"
+
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/    
+DEFINE_THIS_FILE;
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -68,8 +71,7 @@ MA[i]= MA*[i]/N
 {
     INT32 ma_curr;
 
-    ASSERTION(ma != NULL, "ma is NULL");
-    RETURN_VALUE_ON_FAILURE(ma == NULL, 0);
+    REQUIRE(ma != NULL);
     
     ma_curr = ma->last + value - ma->last/ma->n;
     ma->last = ma_curr;
@@ -97,8 +99,7 @@ MA[i]= MA*[i]/N
 {
     FLOAT ma_curr;
     
-    ASSERTION(ma != NULL, "ma is NULL");
-    RETURN_VALUE_ON_FAILURE(ma == NULL, 0.0);
+    REQUIRE(ma != NULL);
     
     ma_curr = ma->last + value - ma->last/ma->n;
     ma->last = ma_curr;
@@ -119,8 +120,7 @@ void Uint16ToTwoBytes(UINT16 value, UINT8* const bytes)
 {
     /* Note: We are not changing the endianess, we're just getting a pointer to the first byte */
     
-    ASSERTION(bytes != NULL, "bytes is null");
-    RETURN_ON_FAILURE(bytes == NULL);
+    REQUIRE(bytes != NULL);
     
     UINT8 *p_bytes = (UINT8 *) &value;
     
@@ -141,8 +141,7 @@ void Uint32ToFourBytes(UINT32 value, UINT8* const bytes)
 {
     /* Note: We are not changing the endianess, we're just getting a pointer to the first byte */
 
-    ASSERTION(bytes != NULL, "bytes is null");
-    RETURN_ON_FAILURE(bytes == NULL);
+    REQUIRE(bytes != NULL);
     
     UINT8 *p_bytes = (UINT8 *) &value;
     
@@ -163,6 +162,7 @@ void Uint32ToFourBytes(UINT32 value, UINT8* const bytes)
  *-------------------------------------------------------------------------------------------------*/
 void Int32ToFourBytes(INT32 value, UINT8* const bytes)
 {
+    REQUIRE(bytes != NULL);
     Uint32ToFourBytes((UINT32)value, bytes);
 }
 
@@ -179,9 +179,8 @@ void FloatToFourBytes(FLOAT value, UINT8* const bytes)
 {
     /* Note: We are not changing the endianess, we're just getting a pointer to the first byte */
 
-    ASSERTION(bytes != NULL, "bytes is null");
-    RETURN_ON_FAILURE(bytes == NULL);
-    
+    REQUIRE(bytes != NULL);
+
     UINT8 *p_bytes = (UINT8 *) &value;
     
     bytes[0] = p_bytes[0];
@@ -200,8 +199,7 @@ void FloatToFourBytes(FLOAT value, UINT8* const bytes)
  *-------------------------------------------------------------------------------------------------*/
 UINT16 TwoBytesToUint16(UINT8* const bytes)
 {
-    ASSERTION(bytes != NULL, "bytes is null");
-    RETURN_VALUE_ON_FAILURE(bytes == NULL, 0);
+    REQUIRE(bytes != NULL);
     
     UINT16 value = *((UINT16 *) bytes);
     return value;
@@ -217,6 +215,7 @@ UINT16 TwoBytesToUint16(UINT8* const bytes)
  *-------------------------------------------------------------------------------------------------*/
 INT16 TwoBytesToInt16(UINT8* const bytes)
 {
+    REQUIRE(bytes != NULL);
     return (INT16) TwoBytesToUint16(bytes);
 }
 
@@ -230,8 +229,7 @@ INT16 TwoBytesToInt16(UINT8* const bytes)
  *-------------------------------------------------------------------------------------------------*/
 UINT32 FourBytesToUint32(UINT8* const bytes)
 {
-    ASSERTION(bytes != NULL, "bytes is null");
-    RETURN_VALUE_ON_FAILURE(bytes == NULL, 0);
+    REQUIRE(bytes != NULL);
     
     UINT32 value = *((UINT32 *) bytes);
     return value;
@@ -247,6 +245,7 @@ UINT32 FourBytesToUint32(UINT8* const bytes)
  *-------------------------------------------------------------------------------------------------*/
 INT32 FourBytesToInt32(UINT8* const bytes)
 {
+    REQUIRE(bytes != NULL);
     return (INT32) FourBytesToUint32(bytes);
 }
 
@@ -260,8 +259,7 @@ INT32 FourBytesToInt32(UINT8* const bytes)
  *-------------------------------------------------------------------------------------------------*/
 FLOAT FourBytesToFloat(UINT8* const bytes)
 {   
-    ASSERTION(bytes != NULL, "bytes is null");
-    RETURN_VALUE_ON_FAILURE(bytes == NULL, 0);
+    REQUIRE(bytes != NULL);
     
     FLOAT value = *((FLOAT *) bytes);    
     return value;
@@ -297,11 +295,10 @@ void BinaryRangeSearch(INT16 search, INT16* const data_points, UINT8 num_points,
     UINT8 last = num_points - 1;
     UINT8 middle = (first+last)/2;
     
-    ASSERTION(data_points != NULL, "data_points is NULL");
-    ASSERTION(lower_index != NULL, "lower_index is NULL");
-    ASSERTION(upper_index != NULL, "upper_index is NULL");
-    ASSERTION(num_points > 1, "num_points <= 1");
-    RETURN_ON_FAILURE(data_points == NULL || lower_index == NULL || upper_index == NULL || num_points <= 1);
+    REQUIRE(data_points != NULL);
+    REQUIRE(lower_index != NULL);
+    REQUIRE(upper_index != NULL);
+    REQUIRE(num_points == CAL_NUM_SAMPLES);
     
     *lower_index = 0;
     *upper_index = 0;
@@ -331,10 +328,14 @@ void BinaryRangeSearch(INT16 search, INT16* const data_points, UINT8 num_points,
         else
         {
             // There are no other possibilities :-)
+            REQUIRE(FALSE);
         }
  
         middle = (first + last)/2;
    }
+
+   ENSURE(in_range(*lower_index, 0, num_points-1));
+   ENSURE(in_range(*upper_index, 0, num_points-1));
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -361,12 +362,16 @@ void UniToDiff(FLOAT linear, FLOAT angular, FLOAT* const left, FLOAT* const righ
         R - the radius of the wheel
 */
 {
-    ASSERTION(left != NULL, "left is NULL");
-    ASSERTION(right != NULL, "right is NULL");
-    RETURN_ON_FAILURE(left == NULL || right == NULL);
+    REQUIRE(left != NULL);
+    REQUIRE(right != NULL);
+    REQUIRE(in_range_float(linear, MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, MAX_WHEEL_FORWARD_LINEAR_VELOCITY));
+    REQUIRE(in_range_float(angular, MAX_WHEEL_CCW_ANGULAR_VELOCITY, MAX_WHEEL_CW_ANGULAR_VELOCITY));
     
     *left = (2*linear - angular*TRACK_WIDTH)/WHEEL_DIAMETER;
     *right = (2*linear + angular*TRACK_WIDTH)/WHEEL_DIAMETER;
+
+    ENSURE(in_range_float(*left, -MAX_WHEEL_RADIAN_PER_SECOND, MAX_WHEEL_RADIAN_PER_SECOND));
+    ENSURE(in_range_float(*right, -MAX_WHEEL_RADIAN_PER_SECOND, MAX_WHEEL_RADIAN_PER_SECOND));
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -395,12 +400,16 @@ void DiffToUni(FLOAT left, FLOAT right, FLOAT* const linear, FLOAT* const angula
 
 */
 {
-    ASSERTION(linear != NULL, "linear is NULL");
-    ASSERTION(angular != NULL, "angular is NULL");
-    RETURN_ON_FAILURE(linear == NULL || angular == NULL);
+    REQUIRE(linear != NULL);
+    REQUIRE(angular != NULL);
+    REQUIRE(in_range_float(left, -MAX_WHEEL_RADIAN_PER_SECOND, MAX_WHEEL_RADIAN_PER_SECOND));
+    REQUIRE(in_range_float(right, -MAX_WHEEL_RADIAN_PER_SECOND, MAX_WHEEL_RADIAN_PER_SECOND));
     
     *linear = WHEEL_RADIUS * (right + left) / 2;
-    *angular = WHEEL_RADIUS * (right - left) / TRACK_WIDTH;    
+    *angular = WHEEL_RADIUS * (right - left) / TRACK_WIDTH;
+
+    ENSURE(in_range_float(*linear, MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, MAX_WHEEL_FORWARD_LINEAR_VELOCITY));
+    ENSURE(in_range_float(*angular, MAX_WHEEL_CCW_ANGULAR_VELOCITY, MAX_WHEEL_CW_ANGULAR_VELOCITY));
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -415,9 +424,15 @@ void DiffToUni(FLOAT left, FLOAT right, FLOAT* const linear, FLOAT* const angula
  * Return: interpolated output
  * 
  *-------------------------------------------------------------------------------------------------*/
-INT16 Interpolate(INT16 x, INT16 x1, INT16 x2, UINT16 y1, UINT16 y2)
+INT32 Interpolate(INT32 x, INT32 x1, INT32 x2, INT32 y1, INT32 y2)
 {
-    /* Y = ( ( X - X1 )( Y2 - Y1) / ( X2 - X1) ) + Y1 */
+    /* Goal:
+            Y = ( ( X - X1 )( Y2 - Y1) / ( X2 - X1) ) + Y1 
+    */
+
+    INT32 result;
+
+    result = 0;
 
     /* We are not guaranteed to not have duplicates in the array.
        
@@ -428,15 +443,19 @@ INT16 Interpolate(INT16 x, INT16 x1, INT16 x2, UINT16 y1, UINT16 y2)
     {
         if (y2 == y1)
         {
-            return y1;
+            result = y1;
         }
         else
         {
-            return (y2 - y1)/2 + y1;
+            result = ((y2 - y1)/2 + y1);
         }
     }
+    else
+    {
+        result = ((x - x1)*(y2 - y1))/(x2 - x1) + y1;
+    }
     
-    return ((x - x1)*((INT16) y2 - (INT16) y1))/(x2 - x1) + (INT16) y1;
+    return result;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -483,6 +502,8 @@ FLOAT NormalizeHeading(FLOAT heading)
         result -= TWOPI; 
     }
 
+    ENSURE(in_range_float(result, -PI, PI));
+
     return result;
 }
 
@@ -506,12 +527,9 @@ void CalcTriangularProfile(UINT8 num_points, FLOAT lower_limit, FLOAT upper_limi
     FLOAT value;
     UINT8 ii;
 
-    ASSERTION(num_points % 2 != 0, "num_points is not odd");
-    ASSERTION( (lower_limit < 0 && upper_limit < 0 && lower_limit > upper_limit) || 
-               (lower_limit > 0 && upper_limit > 0 && lower_limit < upper_limit), "lower_limit exceeds upper_limit");
-    RETURN_ON_FAILURE( (num_points % 2 == 0) ||
-                       (lower_limit < 0 && upper_limit < 0 && lower_limit <= upper_limit) ||
-                       (lower_limit > 0 && upper_limit > 0 && lower_limit >= upper_limit));
+    REQUIRE(num_points % 2 != 0);
+    REQUIRE((lower_limit < 0 && upper_limit < 0 && lower_limit > upper_limit) || 
+            (lower_limit > 0 && upper_limit > 0 && lower_limit < upper_limit));
 
     /* Calculate the mid point */
     mid_sample_offset = num_points / 2;
@@ -561,9 +579,8 @@ void EnsureAngularVelocity(FLOAT* const v, FLOAT* const w)
     FLOAT l_v;
     FLOAT r_v;
 
-    ASSERTION(v != NULL, "v is NULL");
-    ASSERTION(w != NULL, "w is NULL");
-    RETURN_ON_FAILURE(v == NULL || w == NULL);
+    REQUIRE(v != NULL);
+    REQUIRE(w != NULL);
 
     temp_v = *v;
     temp_w = *w;
@@ -603,6 +620,9 @@ void EnsureAngularVelocity(FLOAT* const v, FLOAT* const w)
         *v = temp_v;
         *w = temp_w;
     }
+
+    ENSURE(in_range_float(*v, MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, MAX_WHEEL_FORWARD_LINEAR_VELOCITY));
+    ENSURE(in_range_float(*w, MAX_WHEEL_CCW_ANGULAR_VELOCITY, MAX_WHEEL_CW_ANGULAR_VELOCITY));
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -633,8 +653,7 @@ static FLOAT AdjustVelocity(FLOAT last_velocity, FLOAT curr_velocity, FLOAT max_
     FLOAT velocity;
     FLOAT now;
     
-    ASSERTION(last_time != NULL, "last_time is NULL");
-    RETURN_VALUE_ON_FAILURE(last_time == NULL, 0);
+    REQUIRE(last_time != NULL);
     
     velocity = 0.0;
     
@@ -664,6 +683,8 @@ static FLOAT AdjustVelocity(FLOAT last_velocity, FLOAT curr_velocity, FLOAT max_
         velocity = max(last_velocity + adjust, curr_velocity);
     }
 
+    ENSURE(in_range_float(velocity, last_velocity, max_velocity));
+
     return velocity;
 }
 
@@ -676,16 +697,22 @@ static FLOAT AdjustVelocity(FLOAT last_velocity, FLOAT curr_velocity, FLOAT max_
  * Return: updated velocity
  * 
  *-------------------------------------------------------------------------------------------------*/ 
-FLOAT LimitLinearAccel(FLOAT linear_velocity, FLOAT max_linear, FLOAT response_time)
+FLOAT LimitLinearAccel(FLOAT const linear_velocity, FLOAT const max_linear, FLOAT const response_time)
 {
     static FLOAT last_velocity = 0.0;
     static UINT32 last_time = 0;
+
+    ENSURE(in_range_float(linear_velocity, MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, MAX_WHEEL_FORWARD_LINEAR_VELOCITY));
+    ENSURE(in_range_float(max_linear, MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, MAX_WHEEL_FORWARD_LINEAR_VELOCITY));
+    ENSURE(linear_velocity >= 0.0 ? linear_velocity < max_linear : linear_velocity > max_linear);
     
     last_velocity = AdjustVelocity(last_velocity, 
                                    linear_velocity, 
                                    max_linear, 
                                    response_time, 
                                    &last_time);
+
+    ENSURE(in_range_float(last_velocity, MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, MAX_WHEEL_FORWARD_LINEAR_VELOCITY));
 
     return last_velocity;
 }
@@ -704,11 +731,17 @@ FLOAT LimitAngularAccel(FLOAT angular_velocity, FLOAT max_angular, FLOAT respons
     static FLOAT last_velocity = 0.0;
     static UINT32 last_time = 0;
 
+    ENSURE(in_range_float(angular_velocity, MAX_WHEEL_CCW_ANGULAR_VELOCITY, MAX_WHEEL_CW_ANGULAR_VELOCITY));
+    ENSURE(in_range_float(max_angular, MAX_WHEEL_CCW_ANGULAR_VELOCITY, MAX_WHEEL_CW_ANGULAR_VELOCITY));
+    ENSURE(angular_velocity >= 0.0 ? angular_velocity < max_angular : angular_velocity > max_angular);
+
     last_velocity = AdjustVelocity(last_velocity, 
                                    angular_velocity, 
                                    max_angular, 
                                    response_time, 
                                    &last_time);
+
+    ENSURE(in_range_float(last_velocity, MAX_WHEEL_CCW_ANGULAR_VELOCITY, MAX_WHEEL_CCW_ANGULAR_VELOCITY));
 
     return last_velocity;    
 }
@@ -720,6 +753,8 @@ FLOAT CalcMaxLinearVelocity()
     
     DiffToUni(MAX_WHEEL_RADIAN_PER_SECOND, MAX_WHEEL_RADIAN_PER_SECOND, &max_linear, &dont_care);
     
+    ENSURE(in_range_float(max_linear, MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, MAX_WHEEL_FORWARD_LINEAR_VELOCITY));
+    
     return max_linear;
 }
 
@@ -729,6 +764,8 @@ FLOAT CalcMaxAngularVelocity()
     FLOAT dont_care;
     
     DiffToUni(MAX_WHEEL_RADIAN_PER_SECOND, -MAX_WHEEL_RADIAN_PER_SECOND, &dont_care, &max_angular);
+    
+    ENSURE(in_range_float(max_angular, MAX_WHEEL_CCW_ANGULAR_VELOCITY, MAX_WHEEL_CCW_ANGULAR_VELOCITY));
     
     return max_angular;
 }
@@ -740,11 +777,16 @@ FLOAT CalcMaxDiffVelocity()
     
     UniToDiff(MAX_WHEEL_METER_PER_SECOND, 0, &max_diff, &dont_care);
     
+    ENSURE(in_range_float(max_diff, MAX_WHEEL_BACKWARD_LINEAR_VELOCITY, MAX_WHEEL_FORWARD_LINEAR_VELOCITY));
+    
     return max_diff;
 }
 
 CHAR * format_string(CHAR *str, FORMAT_TYPE format)
 {
+    ENSURE(str != NULL);
+    ENSURE(format == FORMAT_UPPER || format == FORMAT_LOWER || format == FORMAT_TITLE);
+
     switch (format)
     {
         case FORMAT_UPPER:
@@ -813,6 +855,11 @@ CHAR * const WheelToString(WHEEL_TYPE wheel, FORMAT_TYPE format)
     }
 
     return "unknown wheel";
+}
+
+UINT32 GetRandomValue(UINT32 start, UINT32 end)
+{
+    return constrain((systick() % end), start, end);
 }
 
 /* [] END OF FILE */

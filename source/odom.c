@@ -42,6 +42,10 @@ SOFTWARE.
 #include "control.h"
 #include "consts.h"
 
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/    
+DEFINE_THIS_FILE;
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
@@ -93,7 +97,7 @@ static void DumpOdom()
 {
     if (Debug_IsEnabled(DEBUG_ODOM_ENABLE_BIT)) 
     {    
-        DEBUG_PRINT_ARG("{\"odom\":{\"left_mps\":%.3f,\"right_mps\":%.3f,\"x_pos\":%.3f,\"y_pos\":%.3f,\"theta\":%.3f,\"lin_vel\":%.3f,\"ang_vel\":%.3f,}}\r\n",
+        DEBUG_PRINT_INFO("{\"odom\":{\"left_mps\":%.3f,\"right_mps\":%.3f,\"x_pos\":%.3f,\"y_pos\":%.3f,\"theta\":%.3f,\"lin_vel\":%.3f,\"ang_vel\":%.3f,}}\r\n",
                         left_mps, 
                         right_mps, 
                         x_position, 

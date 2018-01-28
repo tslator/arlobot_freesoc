@@ -42,6 +42,11 @@ SOFTWARE.
 #include "consts.h"
 
 /*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/    
+DEFINE_THIS_FILE;
+
+/*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
 #ifdef  LEFT_ENC_DUMP_ENABLED     
@@ -132,12 +137,12 @@ static ENCODER_TYPE right_enc = {
 {
     if (Debug_IsEnabled(enc->debug_bit)) 
     {    
-        DEBUG_PRINT_ARG("{\"%s enc\": {\"avg_cps\":%.3f, \"avg_mps\":%.3f, \"avg_delta_count\":%.3f, \"delta_count\":%ld, \"delta_dist\":%.3f}}\r\n",
+        DEBUG_PRINT_INFO("{\"%s enc\": {\"avg_cps\":%.3f, \"avg_mps\":%.3f, \"avg_delta_count\":%.3f, \"delta_count\":%i, \"delta_dist\":%.3f}}\r\n",
                 enc->name, 
                 enc->avg_cps, 
                 enc->avg_mps, 
                 enc->avg_delta_count, 
-                enc->delta_count, 
+                (int) enc->delta_count, 
                 enc->delta_dist
         );
     }                    

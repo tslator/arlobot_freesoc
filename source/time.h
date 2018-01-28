@@ -47,6 +47,7 @@ SOFTWARE.
 void Time_Init();
 void Time_Start();
 UINT32 millis();
+UINT32 systick();
 
 #endif
 

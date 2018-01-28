@@ -11,25 +11,26 @@
 #include "conparser.h"
 #endif
 
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/
+DEFINE_THIS_FILE;
+
 
 const char help_message[] =
 "Arlobot Console\r\n"
 "\r\n"
 "Usage:\r\n"
-"    motor --left-speed=<speed> [--duration=<duration>] [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor --right-speed=<speed> [--duration=<duration>] [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor (--left-speed=<speed> --right-speed=<speed>) [--duration=<duration>] [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor rep --first=<speed> --second=<speed> --intvl=<interval> --iters=<iters>  [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor rep left --first=<speed> --second=<speed> --intvl=<interval> --iters=<iters>  [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor rep right --first=<speed> --second=<speed> --intvl=<interval> --iters=<iters> [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor show [--plain-text]\r\n"
-"    motor cal [left|right] [--iters=<iters>] [--with-debug]\r\n"
-"    motor val [left|right] (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
+"    motor (--left-speed=<speed> | --right-speed=<speed> | --left-speed=<speed> --right-speed=<speed>) [--duration=<duration>] [--no-pid] [--no-accel] [--no-control]\r\n"
+"    motor rep [(left|right|left right)] --first=<speed> --second=<speed> --interval=<interval> --iters=<iters>  [--no-pid] [--no-accel] [--no-control]\r\n"
+"    motor show [(left|right|left right)] [--plain-text]\r\n"
+"    motor cal [(left|right|left right)] [--iters=<iters>] [--no-debug]\r\n"
+"    motor val [(left|right|left right)] (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
 "    motor help\r\n"
-"    pid cal left ([--impulse] | [--step=<step>]) [--with-debug]\r\n"
-"    pid cal right ([--impulse] | [--step=<step>]) [--with-debug]\r\n"
+"    pid cal (set|clear) [--step=<step>] [--interactive] [--no-debug] [--load-gains]\r\n"
+"    pid cal (left|right) [--impulse] [--step=<step>] [--iters=<iters>]\r\n"
 "    pid val (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
-"    pid val left (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
+"    pid val left (forward|backward) [--step=<step>] [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
 "    pid val right (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
 "    pid show [left|right] [--plain-text]\r\n"
 "    pid help\r\n"
@@ -37,10 +38,10 @@ const char help_message[] =
 "    config show [motor|pid|bias|debug|status|params] [--plain-text]\r\n"
 "    config clear (motor|pid|bias|debug|all)\r\n"
 "    config help\r\n"
-"    motion cal linear [--speed] [--distance=<distance>]\r\n"
-"    motion cal angular [--speed] [--angle=<angle>]\r\n"
-"    motion cal umbmark\r\n"
-"    motion val linear [--linear-speed=<speed>] [--distance=<distance>]\r\n"
+"    motion cal linear [--linear-speed=<speed>] [--distance=<distance>]\r\n"
+"    motion cal angular [--angular-speed=<speed>] [--angle=<angle>]\r\n"
+"    motion cal umbmark [--linear-speed=<speed>] [--distance=<distance>]\r\n"
+"    motion val linear [--linear-speed=<speed>] [--distance=<distance>] [--angular-speed=<speed>] [--angle=<angle>]\r\n"
 "    motion val angular [--angular-speed=<speed>] [--angle=<angle>]\r\n"
 "    motion val square (left|right) [--side=<side>] [--linear-speed=<speed>] [--angular-speed=<speed>]\r\n"
 "    motion val circle (cw|ccw) [--radius=<radius>] [--angular-speed=<speed>]\r\n"
@@ -50,12 +51,12 @@ const char help_message[] =
 "    \r\n"
 "\r\n"
 "Options:\r\n"
-"    -l --left-speed=<speed>     Speed of the left motor (meter/second)\r\n"
-"    -r --right-speed=<speed>    Speed of the right motor (meter/second)\r\n"
+"    -l --left-speed=<speed>     Speed of the left motor (meter/second) [default: 0.2]\r\n"
+"    -r --right-speed=<speed>    Speed of the right motor (meter/second) [default: 0.2]\r\n"
 "    -d --duration=<duration>    Duration in seconds [default: 5]\r\n"
-"    -m --mask=<mask>            Bitmap of debug flags\r\n"
+"    -k --mask=<mask>            Bitmap of debug flags\r\n"
 "    -p --plain-text             Display output as plain text (default is JSON)\r\n"
-"    -w --with-debug             Enable PID debug output\r\n"
+"    -w --no-debug               Enable PID debug output\r\n"
 "    -i --impulse                Enable impulse response\r\n"
 "    -s --distance=<distance>    Amount of travel (meter) [default: 1.0]\r\n"
 "    -g --angle=<angle>          Amount of travel (degree)   [default: 360] \r\n"
@@ -63,32 +64,27 @@ const char help_message[] =
 "    -e --step=<step>            Percentage of maximum speed to use for step response [default: 0.8]\r\n"
 "    -a --radius=<radius>        Radius of the circle [default: 0.0]\r\n"
 "    -h --side=<side>            Side of the square [default: 1.0]\r\n"
-"    -n --min-percent=<percent>  Minimum value for profile range specified in percent of maximum speed [default: 0.2]\r\n"
+"    -m --min-percent=<percent>  Minimum value for profile range specified in percent of maximum speed [default: 0.2]\r\n"
 "    -x --max-percent=<percent>  Maximum value for profile range specified in percent of maximum speed [default: 0.8]\r\n"
 "    -f --first=<speed>          First speed of the cycle\r\n"
 "    -o --second=<speed>         Second speed of the cycle\r\n"
-"    -v --intvl=<interval>       Time between speed change [default: 10]\r\n"
+"    -v --interval=<interval>    Time between speed change [default: 10]\r\n"
 "    -u --num-points=<points>    Number of velocity values [default: 7]\r\n"
-"    -q --no-pid                 Disables PID control\r\n"
-"    -j --no-accel               Disables acceleration profile\r\n"
-"    -z --no-control             Bypasses the Control/Safety module";
+"    -n --linear-speed=<speed>   Linear speed of robot [default: 0.3]\r\n"
+"    -a --angular-speed=<speed>  Angular speed of robot [default: 0.3]";
 
 const char usage_pattern[] =
 "Usage:\r\n"
-"    motor --left-speed=<speed> [--duration=<duration>] [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor --right-speed=<speed> [--duration=<duration>] [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor (--left-speed=<speed> --right-speed=<speed>) [--duration=<duration>] [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor rep --first=<speed> --second=<speed> --intvl=<interval> --iters=<iters>  [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor rep left --first=<speed> --second=<speed> --intvl=<interval> --iters=<iters>  [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor rep right --first=<speed> --second=<speed> --intvl=<interval> --iters=<iters> [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor show [--plain-text]\r\n"
-"    motor cal [left|right] [--iters=<iters>] [--with-debug]\r\n"
-"    motor val [left|right] (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
+"    motor (--left-speed=<speed> | --right-speed=<speed> | --left-speed=<speed> --right-speed=<speed>) [--duration=<duration>] [--no-pid] [--no-accel] [--no-control]\r\n"
+"    motor rep [(left|right|left right)] --first=<speed> --second=<speed> --interval=<interval> --iters=<iters>  [--no-pid] [--no-accel] [--no-control]\r\n"
+"    motor show [(left|right|left right)] [--plain-text]\r\n"
+"    motor cal [(left|right|left right)] [--iters=<iters>] [--no-debug]\r\n"
+"    motor val [(left|right|left right)] (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
 "    motor help\r\n"
-"    pid cal left ([--impulse] | [--step=<step>]) [--with-debug]\r\n"
-"    pid cal right ([--impulse] | [--step=<step>]) [--with-debug]\r\n"
+"    pid cal (set|clear) [--step=<step>] [--interactive] [--no-debug] [--load-gains]\r\n"
+"    pid cal (left|right) [--impulse] [--step=<step>] [--iters=<iters>]\r\n"
 "    pid val (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
-"    pid val left (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
+"    pid val left (forward|backward) [--step=<step>] [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
 "    pid val right (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
 "    pid show [left|right] [--plain-text]\r\n"
 "    pid help\r\n"
@@ -96,10 +92,10 @@ const char usage_pattern[] =
 "    config show [motor|pid|bias|debug|status|params] [--plain-text]\r\n"
 "    config clear (motor|pid|bias|debug|all)\r\n"
 "    config help\r\n"
-"    motion cal linear [--speed] [--distance=<distance>]\r\n"
-"    motion cal angular [--speed] [--angle=<angle>]\r\n"
-"    motion cal umbmark\r\n"
-"    motion val linear [--linear-speed=<speed>] [--distance=<distance>]\r\n"
+"    motion cal linear [--linear-speed=<speed>] [--distance=<distance>]\r\n"
+"    motion cal angular [--angular-speed=<speed>] [--angle=<angle>]\r\n"
+"    motion cal umbmark [--linear-speed=<speed>] [--distance=<distance>]\r\n"
+"    motion val linear [--linear-speed=<speed>] [--distance=<distance>] [--angular-speed=<speed>] [--angle=<angle>]\r\n"
 "    motion val angular [--angular-speed=<speed>] [--angle=<angle>]\r\n"
 "    motion val square (left|right) [--side=<side>] [--linear-speed=<speed>] [--angular-speed=<speed>]\r\n"
 "    motion val circle (cw|ccw) [--radius=<radius>] [--angular-speed=<speed>]\r\n"
@@ -110,72 +106,64 @@ const char usage_pattern[] =
 const char motor_help_message[] = 
 "Motor Help\r\n"
 "Usage:\r\n"
-"    motor --left-speed=<speed> [--duration=<duration>] [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor --right-speed=<speed> [--duration=<duration>] [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor (--left-speed=<speed> --right-speed=<speed>) [--duration=<duration>] [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor rep --first=<speed> --second=<speed> --intvl=<interval> --iters=<iters>  [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor rep left --first=<speed> --second=<speed> --intvl=<interval> --iters=<iters>  [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor rep right --first=<speed> --second=<speed> --intvl=<interval> --iters=<iters> [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor show [--plain-text]\r\n"
-"    motor cal [left|right] [--iters=<iters>] [--with-debug]\r\n"
-"    motor val [left|right] (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
+"    motor (--left-speed=<speed> | --right-speed=<speed> | --left-speed=<speed> --right-speed=<speed>) [--duration=<duration>] [--no-pid] [--no-accel] [--no-control]\r\n"
+"    motor rep [(left|right|left right)] --first=<speed> --second=<speed> --interval=<interval> --iters=<iters>  [--no-pid] [--no-accel] [--no-control]\r\n"
+"    motor show [(left|right|left right)] [--plain-text]\r\n"
+"    motor cal [(left|right|left right)] [--iters=<iters>] [--no-debug]\r\n"
+"    motor val [(left|right|left right)] (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
 "    motor help\r\n"
 "\r\n"
 "Options:\r\n"
-"    -z --no-control             Bypasses the Control/Safety module\r\n"
-"    -r --right-speed=<speed>    Speed of the right motor (meter/second)\r\n"
-"    -u --num-points=<points>    Number of velocity values [default: 7]\r\n"
 "    -t --iters=<iters>          Number of iterations per wheel [default: 3]\r\n"
-"    -d --duration=<duration>    Duration in seconds [default: 5]\r\n"
+"    -u --num-points=<points>    Number of velocity values [default: 7]\r\n"
 "    -f --first=<speed>          First speed of the cycle\r\n"
-"    -n --min-percent=<percent>  Minimum value for profile range specified in percent of maximum speed [default: 0.2]\r\n"
 "    -x --max-percent=<percent>  Maximum value for profile range specified in percent of maximum speed [default: 0.8]\r\n"
+"    -m --min-percent=<percent>  Minimum value for profile range specified in percent of maximum speed [default: 0.2]\r\n"
+"    -v --interval=<interval>    Time between speed change [default: 10]\r\n"
 "    -p --plain-text             Display output as plain text (default is JSON)\r\n"
 "    -o --second=<speed>         Second speed of the cycle\r\n"
-"    -q --no-pid                 Disables PID control\r\n"
-"    -w --with-debug             Enable PID debug output\r\n"
-"    -v --intvl=<interval>       Time between speed change [default: 10]\r\n"
-"    -j --no-accel               Disables acceleration profile";
+"    -r --right-speed=<speed>    Speed of the right motor (meter/second) [default: 0.2]\r\n"
+"    -d --duration=<duration>    Duration in seconds [default: 5]\r\n"
+"    -w --no-debug               Enable PID debug output";
 
 const char motor_usage_pattern[] =
 "Motor Usage\r\n"
 "Usage:\r\n"
-"    motor --left-speed=<speed> [--duration=<duration>] [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor --right-speed=<speed> [--duration=<duration>] [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor (--left-speed=<speed> --right-speed=<speed>) [--duration=<duration>] [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor rep --first=<speed> --second=<speed> --intvl=<interval> --iters=<iters>  [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor rep left --first=<speed> --second=<speed> --intvl=<interval> --iters=<iters>  [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor rep right --first=<speed> --second=<speed> --intvl=<interval> --iters=<iters> [--no-pid] [--no-accel] [--no-control]\r\n"
-"    motor show [--plain-text]\r\n"
-"    motor cal [left|right] [--iters=<iters>] [--with-debug]\r\n"
-"    motor val [left|right] (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
+"    motor (--left-speed=<speed> | --right-speed=<speed> | --left-speed=<speed> --right-speed=<speed>) [--duration=<duration>] [--no-pid] [--no-accel] [--no-control]\r\n"
+"    motor rep [(left|right|left right)] --first=<speed> --second=<speed> --interval=<interval> --iters=<iters>  [--no-pid] [--no-accel] [--no-control]\r\n"
+"    motor show [(left|right|left right)] [--plain-text]\r\n"
+"    motor cal [(left|right|left right)] [--iters=<iters>] [--no-debug]\r\n"
+"    motor val [(left|right|left right)] (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
 "    motor help";
 
 const char pid_help_message[] =
 "Pid Help\r\n"
 "Usage:\r\n"
-"    pid cal left ([--impulse] | [--step=<step>]) [--with-debug]\r\n"
-"    pid cal right ([--impulse] | [--step=<step>]) [--with-debug]\r\n"
+"    pid cal (set|clear) [--step=<step>] [--interactive] [--no-debug] [--load-gains]\r\n"
+"    pid cal (left|right) [--impulse] [--step=<step>] [--iters=<iters>]\r\n"
 "    pid val (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
-"    pid val left (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
+"    pid val left (forward|backward) [--step=<step>] [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
 "    pid val right (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
 "    pid show [left|right] [--plain-text]\r\n"
 "    pid help\r\n"
 "\r\n"
 "Options:\r\n"
-"    -p --plain-text             Display output as plain text (default is JSON)\r\n"
+"    -t --iters=<iters>          Number of iterations per wheel [default: 3]\r\n"
 "    -u --num-points=<points>    Number of velocity values [default: 7]\r\n"
-"    -n --min-percent=<percent>  Minimum value for profile range specified in percent of maximum speed [default: 0.2]\r\n"
 "    -x --max-percent=<percent>  Maximum value for profile range specified in percent of maximum speed [default: 0.8]\r\n"
-"    -w --with-debug             Enable PID debug output";
+"    -m --min-percent=<percent>  Minimum value for profile range specified in percent of maximum speed [default: 0.2]\r\n"
+"    -p --plain-text             Display output as plain text (default is JSON)\r\n"
+"    -e --step=<step>            Percentage of maximum speed to use for step response [default: 0.8]\r\n"
+"    -i --impulse                Enable impulse response\r\n"
+"    -w --no-debug               Enable PID debug output";
 
 const char pid_usage_pattern[] =
 "Pid Usage\r\n"
 "Usage:\r\n"
-"    pid cal left ([--impulse] | [--step=<step>]) [--with-debug]\r\n"
-"    pid cal right ([--impulse] | [--step=<step>]) [--with-debug]\r\n"
+"    pid cal (set|clear) [--step=<step>] [--interactive] [--no-debug] [--load-gains]\r\n"
+"    pid cal (left|right) [--impulse] [--step=<step>] [--iters=<iters>]\r\n"
 "    pid val (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
-"    pid val left (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
+"    pid val left (forward|backward) [--step=<step>] [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
 "    pid val right (forward|backward) [--min-percent=<percent>] [--max-percent=<percent>] [--num-points=<points>]\r\n"
 "    pid show [left|right] [--plain-text]\r\n"
 "    pid help";
@@ -189,8 +177,8 @@ const char config_help_message[] =
 "    config help\r\n"
 "\r\n"
 "Options:\r\n"
-"    -p --plain-text             Display output as plain text (default is JSON)\r\n"
-"    -m --mask=<mask>            Bitmap of debug flags";
+"    -k --mask=<mask>            Bitmap of debug flags\r\n"
+"    -p --plain-text             Display output as plain text (default is JSON)";
 
 const char config_usage_pattern[] =
 "Config Usage\r\n"
@@ -203,10 +191,10 @@ const char config_usage_pattern[] =
 const char motion_help_message[] =
 "Motion Help\r\n"
 "Usage:\r\n"
-"    motion cal linear [--speed] [--distance=<distance>]\r\n"
-"    motion cal angular [--speed] [--angle=<angle>]\r\n"
-"    motion cal umbmark\r\n"
-"    motion val linear [--linear-speed=<speed>] [--distance=<distance>]\r\n"
+"    motion cal linear [--linear-speed=<speed>] [--distance=<distance>]\r\n"
+"    motion cal angular [--angular-speed=<speed>] [--angle=<angle>]\r\n"
+"    motion cal umbmark [--linear-speed=<speed>] [--distance=<distance>]\r\n"
+"    motion val linear [--linear-speed=<speed>] [--distance=<distance>] [--angular-speed=<speed>] [--angle=<angle>]\r\n"
 "    motion val angular [--angular-speed=<speed>] [--angle=<angle>]\r\n"
 "    motion val square (left|right) [--side=<side>] [--linear-speed=<speed>] [--angular-speed=<speed>]\r\n"
 "    motion val circle (cw|ccw) [--radius=<radius>] [--angular-speed=<speed>]\r\n"
@@ -214,18 +202,20 @@ const char motion_help_message[] =
 "    motion help\r\n"
 "\r\n"
 "Options:\r\n"
-"    -g --angle=<angle>          Amount of travel (degree)   [default: 360] \r\n"
 "    -a --radius=<radius>        Radius of the circle [default: 0.0]\r\n"
+"    -s --distance=<distance>    Amount of travel (meter) [default: 1.0]\r\n"
+"    -n --linear-speed=<speed>   Linear speed of robot [default: 0.3]\r\n"
+"    -g --angle=<angle>          Amount of travel (degree)   [default: 360] \r\n"
 "    -h --side=<side>            Side of the square [default: 1.0]\r\n"
-"    -s --distance=<distance>    Amount of travel (meter) [default: 1.0]";
+"    -a --angular-speed=<speed>  Angular speed of robot [default: 0.3]";
 
 const char motion_usage_pattern[] =
 "Motion Usage\r\n"
 "Usage:\r\n"
-"    motion cal linear [--speed] [--distance=<distance>]\r\n"
-"    motion cal angular [--speed] [--angle=<angle>]\r\n"
-"    motion cal umbmark\r\n"
-"    motion val linear [--linear-speed=<speed>] [--distance=<distance>]\r\n"
+"    motion cal linear [--linear-speed=<speed>] [--distance=<distance>]\r\n"
+"    motion cal angular [--angular-speed=<speed>] [--angle=<angle>]\r\n"
+"    motion cal umbmark [--linear-speed=<speed>] [--distance=<distance>]\r\n"
+"    motion val linear [--linear-speed=<speed>] [--distance=<distance>] [--angular-speed=<speed>] [--angle=<angle>]\r\n"
 "    motion val angular [--angular-speed=<speed>] [--angle=<angle>]\r\n"
 "    motion val square (left|right) [--side=<side>] [--linear-speed=<speed>] [--angular-speed=<speed>]\r\n"
 "    motion val circle (cw|ccw) [--radius=<radius>] [--angular-speed=<speed>]\r\n"
@@ -454,18 +444,20 @@ int elems_to_args(Elements *elements, DocoptArgs *args, bool help,
             return 1;
         } else if (!strcmp(option->olong, "--impulse")) {
             args->impulse = option->value;
+        } else if (!strcmp(option->olong, "--interactive")) {
+            args->interactive = option->value;
+        } else if (!strcmp(option->olong, "--load-gains")) {
+            args->load_gains = option->value;
         } else if (!strcmp(option->olong, "--no-accel")) {
             args->no_accel = option->value;
         } else if (!strcmp(option->olong, "--no-control")) {
             args->no_control = option->value;
+        } else if (!strcmp(option->olong, "--no-debug")) {
+            args->no_debug = option->value;
         } else if (!strcmp(option->olong, "--no-pid")) {
             args->no_pid = option->value;
         } else if (!strcmp(option->olong, "--plain-text")) {
             args->plain_text = option->value;
-        } else if (!strcmp(option->olong, "--speed")) {
-            args->speed = option->value;
-        } else if (!strcmp(option->olong, "--with-debug")) {
-            args->with_debug = option->value;
         } else if (!strcmp(option->olong, "--angle")) {
             if (option->argument)
                 args->angle = option->argument;
@@ -481,9 +473,9 @@ int elems_to_args(Elements *elements, DocoptArgs *args, bool help,
         } else if (!strcmp(option->olong, "--first")) {
             if (option->argument)
                 args->first = option->argument;
-        } else if (!strcmp(option->olong, "--intvl")) {
+        } else if (!strcmp(option->olong, "--interval")) {
             if (option->argument)
-                args->intvl = option->argument;
+                args->interval = option->argument;
         } else if (!strcmp(option->olong, "--iters")) {
             if (option->argument)
                 args->iters = option->argument;
@@ -587,6 +579,8 @@ int elems_to_args(Elements *elements, DocoptArgs *args, bool help,
             args->rmotor = command->value;
         } else if (!strcmp(command->name, "rpid")) {
             args->rpid = command->value;
+        } else if (!strcmp(command->name, "set")) {
+            args->set = command->value;
         } else if (!strcmp(command->name, "show")) {
             args->show = command->value;
         } else if (!strcmp(command->name, "square")) {
@@ -614,11 +608,13 @@ int elems_to_args(Elements *elements, DocoptArgs *args, bool help,
 DocoptArgs docopt(int argc, char *argv[], bool help, const char *version, int* success) {
     DocoptArgs args = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (char*) "360",
-        NULL, (char*) "1.0", (char*) "5", NULL, (char*) "10", (char*) "3", NULL,
-        NULL, NULL, (char*) "0.8", (char*) "0.2", (char*) "7", (char*) "0.0",
-        NULL, NULL, (char*) "1.0", (char*) "0.8",
-        usage_pattern, help_message, motor_usage_pattern, motor_help_message,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (char*)
+        "360", (char*) "0.3", (char*) "1.0", (char*) "5", NULL, (char*) "10",
+        (char*) "3", (char*) "0.2", (char*) "0.3", NULL, (char*) "0.8", (char*)
+        "0.2", (char*) "7", (char*) "0.0", (char*) "0.2", NULL, (char*) "1.0",
+        (char*) "0.8",
+        usage_pattern, help_message,
+        motor_usage_pattern, motor_help_message,
         pid_usage_pattern, pid_help_message, config_usage_pattern, config_help_message,
         motion_usage_pattern, motion_help_message
     };
@@ -655,6 +651,7 @@ DocoptArgs docopt(int argc, char *argv[], bool help, const char *version, int* s
         {"right", 0},
         {"rmotor", 0},
         {"rpid", 0},
+        {"set", 0},
         {"show", 0},
         {"square", 0},
         {"status", 0},
@@ -665,24 +662,25 @@ DocoptArgs docopt(int argc, char *argv[], bool help, const char *version, int* s
     };
     Option options[] = {
         {"-i", "--impulse", 0, 0, NULL},
-        {"-j", "--no-accel", 0, 0, NULL},
-        {"-z", "--no-control", 0, 0, NULL},
-        {"-q", "--no-pid", 0, 0, NULL},
+        {NULL, "--interactive", 0, 0, NULL},
+        {NULL, "--load-gains", 0, 0, NULL},
+        {NULL, "--no-accel", 0, 0, NULL},
+        {NULL, "--no-control", 0, 0, NULL},
+        {"-w", "--no-debug", 0, 0, NULL},
+        {NULL, "--no-pid", 0, 0, NULL},
         {"-p", "--plain-text", 0, 0, NULL},
-        {NULL, "--speed", 0, 0, NULL},
-        {"-w", "--with-debug", 0, 0, NULL},
         {"-g", "--angle", 1, 0, NULL},
-        {NULL, "--angular-speed", 1, 0, NULL},
+        {"-a", "--angular-speed", 1, 0, NULL},
         {"-s", "--distance", 1, 0, NULL},
         {"-d", "--duration", 1, 0, NULL},
         {"-f", "--first", 1, 0, NULL},
-        {"-v", "--intvl", 1, 0, NULL},
+        {"-v", "--interval", 1, 0, NULL},
         {"-t", "--iters", 1, 0, NULL},
         {"-l", "--left-speed", 1, 0, NULL},
-        {NULL, "--linear-speed", 1, 0, NULL},
-        {"-m", "--mask", 1, 0, NULL},
+        {"-n", "--linear-speed", 1, 0, NULL},
+        {"-k", "--mask", 1, 0, NULL},
         {"-x", "--max-percent", 1, 0, NULL},
-        {"-n", "--min-percent", 1, 0, NULL},
+        {"-m", "--min-percent", 1, 0, NULL},
         {"-u", "--num-points", 1, 0, NULL},
         {"-a", "--radius", 1, 0, NULL},
         {"-r", "--right-speed", 1, 0, NULL},
@@ -690,7 +688,7 @@ DocoptArgs docopt(int argc, char *argv[], bool help, const char *version, int* s
         {"-h", "--side", 1, 0, NULL},
         {"-e", "--step", 1, 0, NULL}
     };
-    Elements elements = {36, 0, 25, commands, arguments, options};
+    Elements elements = {37, 0, 26, commands, arguments, options};
 
     *success = 1;
     

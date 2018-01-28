@@ -46,8 +46,14 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
-void CalPid_Init(WHEEL_TYPE wheel, BOOL impulse, FLOAT step, BOOL no_debug);
-UINT8 CalPid_Update();
+void CalPid_Init(WHEEL_TYPE wheel, BOOL impulse, FLOAT step, UINT8 iterations);
+BOOL CalPid_Update(void);
+void CalPid_Results(void);
+void CalPid_SetStep(FLOAT step);
+void CalPid_SetDebug(BOOL no_debug);
+void CalPid_SetInteractive();
+void CalPid_SetLoadGains();
+void CalPid_Clear();
 
 
 #endif

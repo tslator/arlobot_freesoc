@@ -38,11 +38,16 @@ SOFTWARE.
 #include "pid.h"
 #include "time.h"
 #include "utils.h"
-#include "serial.h"
+#include "conserial.h"
 #include "nvstore.h"
 #include "debug.h"
 #include "pwm.h"
 #include "consts.h"
+
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/    
+DEFINE_THIS_FILE;
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -170,7 +175,8 @@ static UINT8 Init()
     p_ang_params->linear = 0.0;
     p_ang_params->angular = p_ang_params->direction == DIR_CW ? -ANGULAR_BIAS_VELOCITY : ANGULAR_BIAS_VELOCITY;
 
-    Ser_PutStringFormat("\r\n%s Angular validation\r\n", 
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "%s Angular validation\r\n", 
                         p_ang_params->direction == DIR_CW ? "Clockwise" : "Counter Clockwise");
     
     Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
@@ -193,8 +199,8 @@ static UINT8 Start()
     Pid_Reset();
     Odom_Reset();
 
-    Ser_PutString("Angular Validation Start\r\n");            
-    Ser_PutString("\r\nValidating\r\n");
+    ConSer_WriteLine(TRUE, "Angular Validation Start");            
+    ConSer_WriteLine(TRUE, "\r\nValidating");
 
     start_time = millis();
 
@@ -244,7 +250,8 @@ static UINT8 Update()
     }
     end_time = millis();
     delay_completed = FALSE;
-    Ser_PutString("\r\nRun time expired\r\n");
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "Run time expired");
     
     return CAL_COMPLETE;
 }
@@ -262,7 +269,8 @@ static UINT8 Stop()
     Control_RestoreCommandVelocityFunc();
     Debug_Restore();    
 
-    Ser_PutStringFormat("\r\n%s Angular Validation complete\r\n", 
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "%s Angular Validation complete", 
                         p_ang_params->direction == DIR_CW ? "clockwise" : "counter clockwise");
 
     return CAL_OK;
@@ -288,12 +296,14 @@ static UINT8 Results()
     heading = Odom_GetHeading();
     angular_bias = Cal_GetAngularBias();
 
-    Ser_PutStringFormat("X: %.6f\r\nY: %.6f\r\n", x, y);
-    Ser_PutStringFormat("Heading: %.6f\r\n", heading);
-    Ser_PutStringFormat("Elapsed Time: %ld\r\n", end_time - start_time);
-    Ser_PutStringFormat("Angular Bias: %.6f\r\n", angular_bias);
+    ConSer_WriteLine(TRUE, "X: %.6f", x);
+    ConSer_WriteLine(TRUE, "Y: %.6f", y);
+    ConSer_WriteLine(TRUE, "Heading: %.6f", heading);
+    ConSer_WriteLine(TRUE, "Elapsed Time: %ld", end_time - start_time);
+    ConSer_WriteLine(TRUE, "Angular Bias: %.6f", angular_bias);
         
-    Ser_PutString("\r\nPrinting Angular validation results\r\n");
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "Printing Angular validation results");
 
     return CAL_OK;
 }

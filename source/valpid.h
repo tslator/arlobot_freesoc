@@ -33,26 +33,17 @@ SOFTWARE.
  * Includes
  *-------------------------------------------------------------------------------------------------*/
 #include "freesoc.h"
-#include "cal.h"
-
-/*---------------------------------------------------------------------------------------------------
- * Constants
- *-------------------------------------------------------------------------------------------------*/
-
-/*---------------------------------------------------------------------------------------------------
- * Types
- *-------------------------------------------------------------------------------------------------*/
-typedef enum {VAL_PID_LEFT_FORWARD, 
-              VAL_PID_LEFT_BACKWARD, 
-              VAL_PID_RIGHT_FORWARD, 
-              VAL_PID_RIGHT_BACKWARD} VAL_PID_TYPE;
-
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
-void ValPid_Init(WHEEL_TYPE wheel, DIR_TYPE direction, FLOAT min_percent, FLOAT max_percent, UINT8 num_points);
-UINT8 ValPid_Update();
+void ValPid_Init(WHEEL_TYPE wheel, 
+                 DIR_TYPE direction, 
+                 FLOAT min_percent, 
+                 FLOAT max_percent, 
+                 UINT8 num_points, 
+                 FLOAT duration);
+BOOL ValPid_Update();
 void ValPid_Results();
 
 #endif

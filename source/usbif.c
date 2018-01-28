@@ -3,8 +3,13 @@
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/
+DEFINE_THIS_FILE;
 #define USBFS_DEVICE    (0u)
 #define CDC_IS_READY_TIMEOUT (10)
+
+/* The buffer size is equal to the maximum packet size of the IN and OUT bulk endpoints.
+*/
+#define USBUART_BUFFER_SIZE (64u)
 
 /*---------------------------------------------------------------------------------------------------
  * Variables
@@ -166,18 +171,6 @@ void USBIF_PutChar(CHAR value)
     {
         USBUART_PutChar(value);
     }
-}
-
-/*---------------------------------------------------------------------------------------------------
- * Name: Ser_GetConnectState
- * Description: Returns the connection state of the serial interface.
- * Parameters: None
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-UINT8 USBIF_GetConnectState(void)
-{
-    return is_connected;
 }
 
 /* [] END OF FILE */

@@ -45,10 +45,15 @@ SOFTWARE.
 #include "pid.h"
 #include "time.h"
 #include "utils.h"
-#include "serial.h"
+#include "conserial.h"
 #include "nvstore.h"
 #include "debug.h"
 #include "pwm.h"
+
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/
+DEFINE_THIS_FILE;
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
@@ -146,9 +151,11 @@ static UINT8 Init()
     /* Note: Do we want to support both forward and backward calibration?  How would the
         bias be different?  How would it be applied?
         */
-    Ser_PutString("\r\nLinear Calibration\r\n");
-    Ser_PutString("\r\nPlace a meter stick along side the robot starting centered");
-    Ser_PutString("\r\non the wheel and extending toward the front of the robot\r\n");
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "Linear Calibration");
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "Place a meter stick along side the robot starting centered");
+    ConSer_WriteLine(TRUE, "on the wheel and extending toward the front of the robot");
                 
     Debug_Enable(DEBUG_ODOM_ENABLE_BIT);
 
@@ -174,13 +181,13 @@ static UINT8 Start()
     Pid_Reset();
     Odom_Reset();
 
-    Ser_PutString("Linear Calibration Start\r\n");         
-    Ser_PutString("\r\nCalibrating\r\n");
+    ConSer_WriteLine(TRUE, "Linear Calibration Start");
+    ConSer_WriteLine(TRUE, "Calibrating");
     
     left_count = Encoder_LeftGetCount();
     right_count = Encoder_RightGetCount();
     Odom_GetXYPosition(&x_pos, &y_pos);
-    Ser_PutStringFormat("LC: %d RC: %d XP: %.3f YP: %.3f\r\n", left_count, right_count, x_pos, y_pos);
+    ConSer_WriteLine(TRUE, "LC: %d RC: %d XP: %.3f YP: %.3f", left_count, right_count, x_pos, y_pos);
 
     start_time = millis();
 
@@ -210,7 +217,8 @@ static UINT8 Update()
         return CAL_OK;
     }
     end_time = millis();
-    Ser_PutString("\r\nRun time expired\r\n");
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "Run time expired");
 
     return CAL_COMPLETE;
 }
@@ -227,7 +235,8 @@ static UINT8 Stop()
     Control_RestoreCommandVelocityFunc();
     Debug_Restore();    
     
-    Ser_PutString("\r\nLinear Calibration complete\r\n");
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "Linear Calibration complete");
 
     return CAL_OK;
 }
@@ -256,19 +265,22 @@ static UINT8 Results()
 
     left_count = Encoder_LeftGetCount();
     right_count = Encoder_RightGetCount();
-    Ser_PutStringFormat("X: %.6f\r\nY: %.6f\r\nDistance: %.6f\r\nLC: %d RC: %d\r\n", x, y, p_lin_params->distance, left_count, right_count);
-    Ser_PutStringFormat("Heading: %.6f\r\n", heading);
-    Ser_PutStringFormat("Elapsed Time: %ld\r\n", end_time - start_time);
-    Ser_PutStringFormat("Linear Bias: %.6f\r\n", linear_bias);
+    ConSer_WriteLine(TRUE, "X: %.6f", x);
+    ConSer_WriteLine(TRUE, "Y: %.6f", y);
+    ConSer_WriteLine(TRUE, "Distance: %.6f", p_lin_params->distance);
+    ConSer_WriteLine(TRUE, "LC: %d RC: %d", left_count, right_count);
+    ConSer_WriteLine(TRUE, "Heading: %.6f", heading);
+    ConSer_WriteLine(TRUE, "Elapsed Time: %ld", end_time - start_time);
+    ConSer_WriteLine(TRUE, "Linear Bias: %.6f", linear_bias);
     
-    Ser_PutString("\r\nMeasure the distance traveled by the robot.");
-    Ser_PutString("\r\nEnter the distance (0.5 to 1.5): ");
+    ConSer_WriteLine(TRUE, "");
+    ConSer_WriteLine(TRUE, "Measure the distance traveled by the robot.");
+    ConSer_WriteLine(TRUE, "Enter the distance (0.5 to 1.5): ");
     //distance = Cal_ReadResponse();
-    Ser_PutString("\r\n");
 
     if (distance < CAL_LINEAR_BIAS_MIN || distance > CAL_LINEAR_BIAS_MAX)
     {
-        Ser_PutStringFormat("The distance entered %.2f is out of the allowed range.  No change will be made.\r\n", distance);
+        ConSer_WriteLine(TRUE, "The distance entered %.2f is out of the allowed range.  No change will be made.", distance);
         distance = linear_bias;
     }
 

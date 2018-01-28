@@ -34,13 +34,29 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Includes
  *-------------------------------------------------------------------------------------------------*/    
+#include <stdarg.h>
 #include "freesoc.h"
 
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/    
-#define MAX_STRING_LENGTH (127)
-#define MAX_LINE_LENGTH (MAX_STRING_LENGTH)
+
+
+/*---------------------------------------------------------------------------------------------------
+ * Types
+ *-------------------------------------------------------------------------------------------------*/
+typedef void (*PUT_STRING_FUNC)(CHAR * const str);
+typedef UINT8 (*GET_ALL_FUNC)(CHAR * const data);
+typedef UINT8 (*GET_CHAR_FUNC)(void);
+typedef void (*PUT_CHAR_FUNC)(CHAR value);
+
+typedef struct _tag_serial_device
+{
+    PUT_STRING_FUNC put_string;
+    GET_ALL_FUNC get_all;
+    GET_CHAR_FUNC get_char;
+    PUT_CHAR_FUNC put_char;  
+} SERIAL_DEVICE_TYPE;
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
@@ -48,15 +64,14 @@ SOFTWARE.
 void Ser_Init();
 void Ser_Start();
 
-void Ser_PutString(CHAR const * const str);
-void Ser_PutStringFormat(CHAR const * const fmt, ...);
-UINT8 Ser_ReadData(CHAR * const data);
-UINT8 Ser_ReadByte();
-INT8 Ser_ReadLine(CHAR* const line, BOOL echo, UINT8 max_length);
-void Ser_WriteByte(UINT8 value);
-void Ser_WriteLine(CHAR* const line, BOOL newline);
+void Ser_PutString(SERIAL_DEVICE_TYPE device, CHAR const * const str);
+void Ser_PutStringFormat(SERIAL_DEVICE_TYPE device, CHAR const * const fmt, ...);
+UINT8 Ser_ReadData(SERIAL_DEVICE_TYPE device, CHAR * const data);
+UINT8 Ser_ReadByte(SERIAL_DEVICE_TYPE device);
+INT16 Ser_ReadLine(SERIAL_DEVICE_TYPE device, CHAR* const line, BOOL echo, UINT16 max_length);
+void Ser_WriteByte(SERIAL_DEVICE_TYPE device, UINT8 value);
+void Ser_WriteLine(SERIAL_DEVICE_TYPE device, BOOL new_line, CHAR const * const fmt, va_list args);
 
-UINT8 Ser_GetConnectState(void);
 #endif
 
 /* [] END OF FILE */

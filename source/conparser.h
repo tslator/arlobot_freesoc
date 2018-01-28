@@ -1,7 +1,7 @@
 #ifndef CONPARSER_H
 #define CONPARSER_H
 
-#include <stdbool.h>
+#include "freesoc.h"
 
 typedef struct {
     /* commands */
@@ -36,6 +36,7 @@ typedef struct {
     int right;
     int rmotor;
     int rpid;
+    int set;
     int show;
     int square;
     int status;
@@ -43,19 +44,20 @@ typedef struct {
     int val;
     /* options without arguments */
     int impulse;
+    int interactive;
+    int load_gains;
     int no_accel;
     int no_control;
+    int no_debug;
     int no_pid;
     int plain_text;
-    int speed;
-    int with_debug;
     /* options with arguments */
     char *angle;
     char *angular_speed;
     char *distance;
     char *duration;
     char *first;
-    char *intvl;
+    char *interval;
     char *iters;
     char *left_speed;
     char *linear_speed;

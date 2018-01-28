@@ -51,7 +51,7 @@ SOFTWARE.
 #include "motor.h"
 #include "pwm.h"
 #include "nvstore.h"
-#include "serial.h"
+#include "conserial.h"
 #include "encoder.h"
 #include "time.h"
 #include "utils.h"
@@ -64,6 +64,7 @@ SOFTWARE.
 /*---------------------------------------------------------------------------------------------------
  * Constants
  *-------------------------------------------------------------------------------------------------*/
+DEFINE_THIS_FILE;
 #define VAL_NUM_PROFILE_DATA_POINTS (13)
 #define NUM_MOTOR_VAL_PARAMS (4)
 
@@ -94,6 +95,32 @@ typedef struct
     GET_ENCODER_FUNC_TYPE   get_cps;
     SET_LEFT_RIGHT_VELOCITY_TYPE set_velocity;
 } VAL_MOTOR_PARAMS;
+
+typedef struct _tag_motor_repeat
+{
+    BOOL is_first;
+    WHEEL_TYPE wheel;
+    FLOAT first;
+    FLOAT second;
+    FLOAT interval;
+    UINT8 iterations;
+    BOOL no_pid;
+    BOOL no_accel;
+} MOTOR_REPEAT_TYPE;
+
+typedef struct _tag_motor_val
+{
+    WHEEL_TYPE wheel;
+    DIR_TYPE direction;
+    FLOAT min_percent;
+    FLOAT max_percent;
+    INT8 num_points;    
+} MOTOR_VAL_TYPE;
+
+typedef struct _tag_motor_move
+{
+    FLOAT duration;
+} MOTOR_MOVE_TYPE;
 
 /*---------------------------------------------------------------------------------------------------
  * Variables
@@ -210,6 +237,15 @@ static UINT8 motor_val_sequence_end;
 static UINT8 motor_val_sequence[NUM_MOTOR_VAL_PARAMS];
 static UINT8 num_profile_data_points;
 
+static MOTOR_REPEAT_TYPE motor_repeat;
+static MOTOR_VAL_TYPE motor_val;
+static MOTOR_MOVE_TYPE motor_move;
+
+static UINT32 last_time;
+
+static FLOAT velocity_cmd_linear;
+static FLOAT velocity_cmd_angular;
+
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/
@@ -220,19 +256,48 @@ static UINT8 num_profile_data_points;
 
 void PrintWheelVelocity(FLOAT cps)
 {    
-    Ser_PutStringFormat("{\"calc cps\":%.3f,\"meas cps\":%.3f,\"diff\":%.3f, \"%% diff\":%.3f}\r\n", 
+    ConSer_WriteLine(TRUE, "{\"calc cps\":%.3f,\"meas cps\":%.3f,\"diff\":%.3f, \"%% diff\":%.3f}", 
         cps, val_params->get_cps(), cps - val_params->get_cps(), 100.0 * (cps - val_params->get_cps())/cps);
 }
 
-/*---------------------------------------------------------------------------------------------------
- * Name: PrintMotorValidationResults
- * Description: Prints the left/right, forward/backward count/sec and pwm calibration values
- * Parameters: None
- * Return: None
- * 
- *-------------------------------------------------------------------------------------------------*/
-static void PrintMotorValidationResults()
+static void VelocityCmd(FLOAT *linear, FLOAT *angular, UINT32 *timeout)
 {
+    *linear = velocity_cmd_linear;
+    *angular = velocity_cmd_angular;
+    *timeout = 0;
+}
+
+static void SetLeftRightSpeed(FLOAT left, FLOAT right)
+{
+    /* Convert m/s to r/s 
+        m/s * r/m
+    */
+    left = left * WHEEL_RADIAN_PER_METER;
+    right = right * WHEEL_RADIAN_PER_METER;
+    DiffToUni(left, right, &velocity_cmd_linear, &velocity_cmd_angular);
+}
+
+
+static void SetWheelSpeed(WHEEL_TYPE wheel, FLOAT value)
+{
+    FLOAT left = 0.0;
+    FLOAT right = 0.0;
+
+    if (wheel == WHEEL_BOTH)
+    {
+        left = value;
+        right = value;
+    }
+    else if (wheel == WHEEL_LEFT)
+    {
+        left = value;
+    }
+    else if (wheel == WHEEL_RIGHT)
+    {
+        right = value;
+    }
+        
+    SetLeftRightSpeed(left, right);
 }
 
 static UINT8 GetNextCps(FLOAT *cps)
@@ -296,7 +361,7 @@ static UINT8 PerformMotorValidation()
         if( result )
         {
             val_params->set_pwm(PWM_STOP);
-            return CAL_COMPLETE;
+            return VAL_COMPLETE;
         }
         SetNextVelocity(cps);
         start_time = millis();
@@ -307,7 +372,7 @@ static UINT8 PerformMotorValidation()
     {
         if ( millis() - start_time < val_params->run_time )
         {
-            return CAL_OK;
+            return VAL_OK;
         }
         PrintWheelVelocity(cps);
         
@@ -326,10 +391,10 @@ static UINT8 PerformMotorValidation()
         }
         SetNextVelocity(cps);
         start_time = millis();
-        return CAL_OK;
+        return VAL_OK;
     }
     
-    return CAL_OK;
+    return VAL_OK;
 }
 
 static void InitValParams(WHEEL_TYPE wheel, DIR_TYPE direction)
@@ -420,6 +485,68 @@ void ValMotor_Init(WHEEL_TYPE wheel, DIR_TYPE direction, FLOAT min_percent, FLOA
 
     
     Motor_SetPwm(PWM_STOP, PWM_STOP);
+
+    motor_val.wheel = wheel;
+    motor_val.direction = direction;
+    motor_val.min_percent = min_percent;
+    motor_val.max_percent = max_percent;
+    motor_val.num_points = num_points;
+    
+
+    ConSer_WriteLine(TRUE, "Initialize motor validation");
+    Debug_Store();
+    Control_OverrideDebug(TRUE);
+
+    /* Setup the PIDs to be bypassed, i.e., they pass the target unchanged to the output. */
+    Pid_BypassAll(TRUE);
+    Control_SetLeftRightVelocityOverride(TRUE);
+    Control_SetLeftRightVelocityCps(0, 0);
+
+    ConSer_WriteLine(TRUE, "Performing motor validation");
+    
+}
+
+
+void ValMotor_RepeatInit(WHEEL_TYPE wheel, FLOAT first, FLOAT second, FLOAT interval, INT8 iterations, BOOL no_pid, BOOL no_accel)
+{
+    motor_repeat.wheel = wheel;
+    motor_repeat.first = first;
+    motor_repeat.second = second;
+    motor_repeat.interval = (UINT32)(interval * 1000);
+    motor_repeat.iterations = iterations;
+    motor_repeat.no_pid = no_pid;
+    motor_repeat.no_accel = no_accel;
+
+    ConSer_WriteLine(TRUE, "Motor Repeat: %d %f %f %f %d", 
+        motor_repeat.wheel,
+        motor_repeat.first,
+        motor_repeat.second,
+        interval,
+        motor_repeat.iterations);
+
+    Pid_BypassAll(motor_repeat.no_pid);
+    Control_EnableAcceleration(!motor_repeat.no_accel);
+    Control_SetCommandVelocityFunc(VelocityCmd);
+                
+
+    last_time = millis();
+    ConSer_WriteLine(TRUE, "Motor Repeat setting first speed");
+    SetWheelSpeed(motor_repeat.wheel, motor_repeat.first);
+    motor_repeat.is_first = FALSE;
+    
+}
+
+void ValMotor_MoveInit(FLOAT left, FLOAT right, FLOAT duration, BOOL no_pid, BOOL no_accel)
+{
+    motor_move.duration = (UINT32) (duration * 1000);
+    
+    Pid_BypassAll(no_pid);
+    Control_EnableAcceleration(!no_accel);
+    Control_SetCommandVelocityFunc(VelocityCmd);
+    SetLeftRightSpeed(0.0, 0.0);
+    SetLeftRightSpeed(left, right);
+
+    last_time = millis();
     
 }
 
@@ -432,7 +559,7 @@ void ValMotor_Init(WHEEL_TYPE wheel, DIR_TYPE direction, FLOAT min_percent, FLOA
  * Return: UINT8 - CAL_OK, CAL_COMPLETE
  * 
  *-------------------------------------------------------------------------------------------------*/
-UINT8 ValMotor_Update()
+BOOL ValMotor_Update()
 {
     
     /* Here is where we can decide what validation to do.  The validation menu has one option for
@@ -445,9 +572,77 @@ UINT8 ValMotor_Update()
     if( result == INTERATION_DONE )
     {
         result = NextValParams();
+
+        if (result == VAL_COMPLETE)
+        {
+            Control_SetLeftRightVelocityCps(0, 0);
+            Control_SetLeftRightVelocityOverride(FALSE);
+            Pid_BypassAll(FALSE);
+            Control_OverrideDebug(FALSE);
+            Debug_Restore();    
+        }
     }
     
-    return result;
+    return (result == VAL_OK) ? TRUE : FALSE;
+}
+
+BOOL ValMotor_RepeatUpdate(void)
+{
+    UINT32 delta;
+
+    delta = millis() - last_time;
+    if (delta >= motor_repeat.interval)
+    {
+        last_time = millis();
+        if (motor_repeat.is_first)
+        {
+            ConSer_WriteLine(TRUE, "Motor Repeat setting first speed");
+            SetWheelSpeed(motor_repeat.wheel, motor_repeat.first);
+            motor_repeat.is_first = FALSE;
+        }
+        else
+        {
+            ConSer_WriteLine(TRUE, "Motor Repeat setting second speed");
+            SetWheelSpeed(motor_repeat.wheel, motor_repeat.second);
+            motor_repeat.is_first = TRUE;
+
+            ConSer_WriteLine(TRUE, "Motor Repeat end iteration %d", motor_repeat.iterations);
+            motor_repeat.iterations--;
+            if (motor_repeat.iterations == 0)
+            {
+                SetWheelSpeed(0.0, 0.0);
+                Pid_BypassAll(FALSE);
+                Control_EnableAcceleration(TRUE);
+                Control_RestoreCommandVelocityFunc();
+                return FALSE;
+            }
+        }
+    }
+
+    return TRUE;
+}
+
+BOOL ValMotor_MoveUpdate(void)
+{
+    UINT32 delta;
+    
+    delta = millis() - last_time;
+    if (delta < motor_move.duration)
+    {
+        last_time = millis();
+        motor_move.duration -= delta;
+    }    
+    else
+    {
+        SetLeftRightSpeed(0.0, 0.0);
+        Control_EnableAcceleration(TRUE);
+        Pid_BypassAll(FALSE);
+        Control_RestoreCommandVelocityFunc();
+
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 /* [] END OF FILE */

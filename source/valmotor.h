@@ -39,6 +39,12 @@ SOFTWARE.
  * Functions
  *-------------------------------------------------------------------------------------------------*/
 void ValMotor_Init(WHEEL_TYPE wheel, DIR_TYPE direction, FLOAT min_percent, FLOAT max_percent, UINT8 num_points);
-UINT8 ValMotor_Update(void);
+void ValMotor_RepeatInit(WHEEL_TYPE wheel, FLOAT first, FLOAT second, FLOAT interval, INT8 iterations, BOOL no_pid, BOOL no_accel);
+void ValMotor_MoveInit(FLOAT left, FLOAT right, FLOAT duration, BOOL no_pid, BOOL no_accel);
+BOOL ValMotor_Update(void);
+BOOL ValMotor_RepeatUpdate(void);
+BOOL ValMotor_MoveUpdate(void);
+void ValMotor_Results(void);
+
 
 #endif    

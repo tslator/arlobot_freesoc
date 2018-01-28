@@ -8,12 +8,13 @@
 #include "mock_Left_HB25_PWM.h"
 #include "mock_Right_HB25_PWM.h"
 #include "mock_debug.h"
-#include "mock_serial.h"
 #include "mock_control.h"
 #include "motor.h"
 
 void setUp(void)
 {
+    Debug_GetLevel_IgnoreAndReturn(DBG_INFO);
+    Debug_Print_Ignore();
 }
 
 void tearDown(void)
@@ -47,9 +48,8 @@ void test_WhenMotorStart_ThenSuccessful(void)
 void test_WhenLeftPwmIs1000_ThenExpectedPwmValue(void)
 {
     Left_HB25_PWM_WriteCompare_Expect(1000);
-    Debug_IsEnabled_ExpectAndReturn(0x0030, 1);
+    Debug_IsEnabled_ExpectAndReturn(DEBUG_LEFT_MOTOR_ENABLE_BIT, 1);
     Left_HB25_PWM_ReadCompare_ExpectAndReturn(1000);
-    Ser_PutString_Expect("{\"left motor\": {\"pwm\":1000}}\r\n");
     
     // When
     Motor_LeftSetPwm(1000);
@@ -58,9 +58,8 @@ void test_WhenLeftPwmIs1000_ThenExpectedPwmValue(void)
 void test_WhenRightPwmIs1000_ThenExpectedPwmValue(void)
 {
     Right_HB25_PWM_WriteCompare_Expect(1000);
-    Debug_IsEnabled_ExpectAndReturn(0x0030, 1);
+    Debug_IsEnabled_ExpectAndReturn(DEBUG_RIGHT_MOTOR_ENABLE_BIT, 1);
     Right_HB25_PWM_ReadCompare_ExpectAndReturn(1000);
-    Ser_PutString_Expect("{\"right motor\": {\"pwm\":1000}}\r\n");
     
     // When
     Motor_RightSetPwm(1000);

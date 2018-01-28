@@ -30,29 +30,33 @@ SOFTWARE.
 #include "disp.h"
 #include "serial.h"
 #include "concmd.h"
-#include "conmotor.h"
-#include "conconfig.h"
-#include "conpid.h"
-#include "conmotion.h"
+#include "dispmotor.h"
+#include "dispconfig.h"
+#include "disppid.h"
+#include "dispmotion.h"
 #include "debug.h"
 #include "utils.h"
+#include "concmdif.h"
+
+/*---------------------------------------------------------------------------------------------------
+ * Constants
+ *-------------------------------------------------------------------------------------------------*/    
+DEFINE_THIS_FILE;
 
 /*---------------------------------------------------------------------------------------------------
  * Macros
  *-------------------------------------------------------------------------------------------------*/    
 #define BOOL_TO_BITMASK(value, bit)  (value ? 1 << bit : 0)
 
-
 /*---------------------------------------------------------------------------------------------------
  * Variables
  *-------------------------------------------------------------------------------------------------*/    
-static CONCMD_IF_TYPE * p_active_command;
+static CONCMD_IF_PTR_TYPE p_active_command;
 
 /*---------------------------------------------------------------------------------------------------
  * Functions
  *-------------------------------------------------------------------------------------------------*/    
-
-static CONCMD_IF_PTR_TYPE validate_config_command(COMMAND_TYPE* const command)
+static void ValidateConfigCommand(COMMAND_TYPE* const command)
 {
     /* Note: The args flags have contextual meaning.  To resolve ambiguity, 'clear' is processed
        before 'debug': 
@@ -78,7 +82,7 @@ static CONCMD_IF_PTR_TYPE validate_config_command(COMMAND_TYPE* const command)
             mask |= command->args.debug ? CONCONFIG_DEBUG_BIT : 0;
         }
 
-        return ConConfig_InitConfigClear(mask, command->args.plain_text);
+        DispConfig_InitConfigClear(mask, command->args.plain_text);
     }
     else if (command->args.show)
     {
@@ -91,7 +95,7 @@ static CONCMD_IF_PTR_TYPE validate_config_command(COMMAND_TYPE* const command)
         mask |= command->args.status ? CONCONFIG_STATUS_BIT : 0;
         mask |= command->args.params ? CONCONFIG_PARAMS_BIT : 0;
 
-        return ConConfig_InitConfigShow(mask, command->args.plain_text);
+        DispConfig_InitConfigShow(mask, command->args.plain_text);
     }
     else if (command->args.debug)
     {
@@ -116,13 +120,11 @@ static CONCMD_IF_PTR_TYPE validate_config_command(COMMAND_TYPE* const command)
             mask |= command->args.odom ? DEBUG_ODOM_ENABLE_BIT : 0;
         }
 
-        return ConConfig_InitConfigDebug(command->args.enable, mask);
+        DispConfig_InitConfigDebug(command->args.enable, mask);
     }
-
-    return (CONCMD_IF_TYPE *) NULL;
 }
 
-static CONCMD_IF_PTR_TYPE validate_motor_command(COMMAND_TYPE* const command)
+static void ValidateMotorCommand(COMMAND_TYPE* const command)
 {
     if (command->args.show)
     {
@@ -132,7 +134,7 @@ static CONCMD_IF_PTR_TYPE validate_motor_command(COMMAND_TYPE* const command)
 
         if (wheel >= 0)
         {
-            return ConMotor_InitMotorShow(wheel, command->args.plain_text);
+            DispMotor_InitMotorShow(wheel, command->args.plain_text);
         }
     }
     else if (command->args.rep)
@@ -143,11 +145,11 @@ static CONCMD_IF_PTR_TYPE validate_motor_command(COMMAND_TYPE* const command)
 
         if (wheel >= 0)
         {
-            return ConMotor_InitMotorRepeat(
+            DispMotor_InitMotorRepeat(
                 (WHEEL_TYPE) wheel,
                 STR_TO_FLOAT(command->args.first),
                 STR_TO_FLOAT(command->args.second),
-                STR_TO_FLOAT(command->args.intvl),
+                STR_TO_FLOAT(command->args.interval),
                 (UINT8) STR_TO_INT(command->args.iters),
                 command->args.no_pid,
                 command->args.no_accel);
@@ -162,7 +164,7 @@ static CONCMD_IF_PTR_TYPE validate_motor_command(COMMAND_TYPE* const command)
         iters = (UINT8) STR_TO_INT(command->args.iters);
         if (wheel >= 0)
         {
-            return ConMotor_InitMotorCal(
+            DispMotor_InitMotorCal(
                 (WHEEL_TYPE) wheel,
                 iters);
         }
@@ -177,7 +179,7 @@ static CONCMD_IF_PTR_TYPE validate_motor_command(COMMAND_TYPE* const command)
 
         if (wheel >= 0 && direction >= 0)
         {
-            return ConMotor_InitMotorVal(
+            DispMotor_InitMotorVal(
                 (WHEEL_TYPE) wheel,
                 (DIR_TYPE) direction,
                 STR_TO_FLOAT(command->args.min_percent),
@@ -187,18 +189,16 @@ static CONCMD_IF_PTR_TYPE validate_motor_command(COMMAND_TYPE* const command)
     }
     else
     {
-        return ConMotor_InitMotorMove(
+        DispMotor_InitMotorMove(
             STR_TO_FLOAT(command->args.left_speed),
             STR_TO_FLOAT(command->args.right_speed),
             STR_TO_FLOAT(command->args.duration),
             command->args.no_pid,
             command->args.no_accel);
     }
-
-    return (CONCMD_IF_TYPE *) NULL;
 }
 
-static CONCMD_IF_PTR_TYPE validate_pid_command(COMMAND_TYPE* const command)
+static void ValidatePidCommand(COMMAND_TYPE* const command)
 {
     if (command->args.show)
     {
@@ -208,7 +208,7 @@ static CONCMD_IF_PTR_TYPE validate_pid_command(COMMAND_TYPE* const command)
 
         if (wheel >= 0)
         {
-            return ConPid_InitPidShow(wheel, command->args.plain_text);
+            DispPid_InitPidShow(wheel, command->args.plain_text);
         }
     }
     else if (command->args.cal)
@@ -226,91 +226,91 @@ static CONCMD_IF_PTR_TYPE validate_pid_command(COMMAND_TYPE* const command)
 
         if (wheel >= 0)
         {
-            return ConPid_InitPidCal(wheel,
-                                                command->args.impulse,
-                                                step,
-                                                command->args.with_debug);
+            DispPid_InitPidCal(FALSE,
+                FALSE,
+                FALSE,
+                FALSE,
+                wheel,
+                command->args.impulse,
+                step,
+                command->args.no_debug);
         }
     }
     else if (command->args.val)
     {
         int wheel;
         int direction;
+        FLOAT duration;
 
         wheel = GET_WHEEL(command->args.left, command->args.right);
         direction = GET_DIRECTON(command->args.forward, command->args.backward);
+        /* Take duration from command when the console supports duration for PID validation */
+        duration = 3.0;
 
         if (wheel >= 0 && direction >= 0)
         {
-            return ConPid_InitPidVal(
+            DispPid_InitPidVal(
                 wheel,
                 direction,
                 STR_TO_FLOAT(command->args.min_percent),
                 STR_TO_FLOAT(command->args.max_percent),
-                STR_TO_INT(command->args.num_points));
+                STR_TO_INT(command->args.num_points),
+                duration);
         }
     }
-
-    return (CONCMD_IF_TYPE *) NULL;
 }
 
-static CONCMD_IF_PTR_TYPE validate_motion_cal_commands(COMMAND_TYPE* const command)
+static void ValidateMotionCalCommands(COMMAND_TYPE* const command)
 {
     if (command->args.linear)
     {
-        return ConMotion_InitCalLinear(STR_TO_FLOAT(command->args.distance));
+        DispMotion_InitCalLinear(STR_TO_FLOAT(command->args.distance));
     }
     else if (command->args.angular)
     {
-        return ConMotion_InitMotionCalAngular(STR_TO_FLOAT(command->args.angle));
+        DispMotion_InitMotionCalAngular(STR_TO_FLOAT(command->args.angle));
     }
     else if (command->args.umbmark)
     {
         // http://www-personal.umich.edu/~johannb/Papers/umbmark.pdf
-        return ConMotion_InitMotionCalUmbmark();
+        DispMotion_InitMotionCalUmbmark();
     }
-
-    return (CONCMD_IF_TYPE *) NULL;
 }
 
-static CONCMD_IF_PTR_TYPE validate_motion_val_commands(COMMAND_TYPE* const command)
+static void ValidateMotionValCommands(COMMAND_TYPE* const command)
 {
     if (command->args.linear)
     {
-        return ConMotion_InitMotionValLinear(STR_TO_FLOAT(command->args.distance));
+        DispMotion_InitMotionValLinear(STR_TO_FLOAT(command->args.distance));
     }
     else if (command->args.angular)
     {
-        return ConMotion_InitMotionValAngular(STR_TO_FLOAT(command->args.angle));
+        DispMotion_InitMotionValAngular(STR_TO_FLOAT(command->args.angle));
     }        
     else if (command->args.square)
     {
-        return ConMotion_InitMotionValSquare(command->args.left, STR_TO_FLOAT(command->args.side));
+        DispMotion_InitMotionValSquare(command->args.left, STR_TO_FLOAT(command->args.side));
     }
     else if (command->args.circle)
     {
-        return ConMotion_InitMotionValCircle(command->args.cw, STR_TO_FLOAT(command->args.radius));
+        DispMotion_InitMotionValCircle(command->args.cw, STR_TO_FLOAT(command->args.radius));
     }
     else if (command->args.out_and_back)
     {
-        return ConMotion_InitMotionValOutAndBack(STR_TO_FLOAT(command->args.distance));
+        DispMotion_InitMotionValOutAndBack(STR_TO_FLOAT(command->args.distance));
     }
-
-    return (CONCMD_IF_TYPE *) NULL;
 }
 
-static CONCMD_IF_PTR_TYPE validate_motion_command(COMMAND_TYPE* const command)
+static void ValidateMotionCommand(COMMAND_TYPE* const command)
 {
     if (command->args.cal)
     {
-        return validate_motion_cal_commands(command);
+        ValidateMotionCalCommands(command);
     }
     else if (command->args.val)
     {
-        return validate_motion_val_commands(command);
+        ValidateMotionValCommands(command);
     }
-
-    return (CONCMD_IF_TYPE *) NULL;
 }
 
 /*---------------------------------------------------------------------------------------------------
@@ -321,25 +321,32 @@ void Disp_Init(void)
 {
     p_active_command = (CONCMD_IF_TYPE *) NULL;
     
-    ConConfig_Init();
-    ConMotor_Init();
-    ConPid_Init();
-    ConMotion_Init();
+    DispConfig_Init();
+    DispMotor_Init();
+    DispPid_Init();
+    DispMotion_Init();
 }
 
 void Disp_Start(void)
 {
-    ConConfig_Start();
-    ConMotor_Start();
-    ConPid_Start();
-    ConMotion_Start();
+    DispConfig_Start();
+    DispMotor_Start();
+    DispPid_Start();
+    DispMotion_Start();
 }
 
 BOOL Disp_IsRunning(void)
 {
-    if (p_active_command && p_active_command->status)
+    if (p_active_command)
     {
-        return p_active_command->status();
+        if (p_active_command->status)
+        {
+            return p_active_command->status();
+        }
+        else
+        {
+            return TRUE;
+        }
     }
     
     return FALSE;
@@ -362,33 +369,31 @@ void Disp_Results()
         p_active_command->results();
     }
 
+    ConCmdIf_ReleaseIfacePtr();
     p_active_command = (CONCMD_IF_TYPE *) NULL;
 }
 
 void Disp_Dispatch(COMMAND_TYPE* const command)
 {
-    p_active_command = (CONCMD_IF_TYPE *) NULL;
-
     /* Note: config needs to be checked first to eliminate any ambiguity between config the command and config */
     if (command->args.config)
     {
-        p_active_command = validate_config_command(command);
+        ValidateConfigCommand(command);
     }
     else if (command->args.pid)
     {
-        p_active_command = validate_pid_command(command);
+        ValidatePidCommand(command);
     }
     else if (command->args.motor)
     {   
-        p_active_command = validate_motor_command(command);
+        ValidateMotorCommand(command);
     }
     else if (command->args.motion)
     {
-        p_active_command = validate_motion_command(command);
+        ValidateMotionCommand(command);
     }
-    
-    command->is_valid = p_active_command != (CONCMD_IF_TYPE *) NULL ? TRUE : FALSE;    
 
-} 
+    command->is_valid = ConCmdIf_GetIfacePtr(&p_active_command);
+}
 
 /* [] END OF FILE */
